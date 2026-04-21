@@ -25,7 +25,8 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
   fetchJobTitles = true,
   isServerSide = false,
   onFiltersChange?: (filters: CandidateActiveFilters) => void,
-  passingThreshold = 65
+  passingThreshold = 65,
+  jobId?: string
 ) => {
   const [internalNameFilter, setInternalNameFilter] = useState("");
 
@@ -106,7 +107,7 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
     const handler = setTimeout(() => {
       const fetchLocations = async () => {
         try {
-          const response = await adminLocationService.getAllLocations(0, 500, locationSearch);
+          const response = await adminLocationService.getAllLocations(0, 500, locationSearch, jobId);
           const names = response.data.map((loc) => toTitleCase(loc.name.trim()));
           // Ensure unique and sorted names
           const uniqueNames = Array.from(new Set(names)).sort();

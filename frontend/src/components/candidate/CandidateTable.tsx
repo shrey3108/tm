@@ -32,6 +32,7 @@ export interface CandidateTableProps<T extends UnifiedCandidate> {
   showLocationFilter?: boolean;
   showStatusFilter?: boolean;
   onFiltersChange?: (filters: CandidateActiveFilters) => void;
+  jobId?: string;
 }
 
 export function CandidateTable<T extends UnifiedCandidate>({
@@ -51,6 +52,7 @@ export function CandidateTable<T extends UnifiedCandidate>({
   showLocationFilter = true,
   showStatusFilter = true,
   onFiltersChange,
+  jobId,
 }: CandidateTableProps<T>) {
   const {
     nameFilter,
@@ -79,7 +81,7 @@ export function CandidateTable<T extends UnifiedCandidate>({
     hasActiveFilters,
     clearFilters,
     availableJobs
-  } = useCandidateTableFilters(candidates, externalNameFilter, onNameFilterChange, showJobContext, isServerSide, onFiltersChange, passing_threshold);
+  } = useCandidateTableFilters(candidates, externalNameFilter, onNameFilterChange, showJobContext, isServerSide, onFiltersChange, passing_threshold, jobId);
 
   const columns = useCandidateTableColumns({
     renderActions,

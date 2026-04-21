@@ -153,7 +153,7 @@ export function CandidateDetailsModal({
   useEffect(() => {
     if (isOpen && candidate?.id) {
       candidateDecisionApi
-        .getDecisionHistory(candidate.id)
+        .getDecisionHistory(candidate.id, currentJobId)
         .then((data) => {
           setDecisionHistory(data.decisions);
           // The first item in history is the latest decision
@@ -169,7 +169,7 @@ export function CandidateDetailsModal({
       setHrDecision(null);
       setDecisionHistory([]);
     }
-  }, [isOpen, candidate?.id]);
+  }, [isOpen, candidate?.id, currentJobId]);
 
   if (!candidate) return null;
 
@@ -193,11 +193,13 @@ export function CandidateDetailsModal({
         candidate_id: candidate.id,
         decision: data.decision,
         note: data.note,
+        job_id: currentJobId,
       });
       setHrDecision(result);
       // Refresh history to include the new decision
       const historyResponse = await candidateDecisionApi.getDecisionHistory(
         candidate.id,
+        currentJobId
       );
       setDecisionHistory(historyResponse.decisions);
       await onDecisionSubmitted?.();

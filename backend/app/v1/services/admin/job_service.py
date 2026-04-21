@@ -1,3 +1,4 @@
+from datetime import datetime
 import uuid
 from typing import Any
 
@@ -358,6 +359,7 @@ class JobAdminService:
         from app.v1.db.models.audit_logs import AuditLog
         from app.v1.db.models.candidates import Candidate
         from app.v1.db.models.cross_job_matches import CrossJobMatch
+        from app.v1.db.models.hr_decisions import HrDecision
 
         # 1. Verify job existence and get creation time
         job = await job_repository.get(db=db, id=job_id)
@@ -375,6 +377,10 @@ class JobAdminService:
                 Candidate.applied_job_id == job_id,
                 Candidate.id.in_(
                     select(CrossJobMatch.candidate_id).where(CrossJobMatch.matched_job_id == job_id)
+                ),
+                # Include candidates who have a decision for this job (manual assignments/moves)
+                Candidate.id.in_(
+                    select(HrDecision.candidate_id).where(HrDecision.job_id == job_id)
                 )
             )
         )
@@ -445,29 +451,40 @@ class JobAdminService:
             if not include_sessions and not s["is_current"]:
                 continue
 
-            # Build conditions dynamically to handle None end_dates
+            # Include candidates from all three sources: Applied, Cross-Matched, and Decided
+            # Each source must satisfy the date range of the session.
             conditions = [
                 or_(
-                    and_(Candidate.applied_job_id == job_id, Candidate.created_at >= s["start_date"]),
+                    # 1. Native applications created within range
+                    and_(
+                        Candidate.applied_job_id == job_id,
+                        and_(
+                            Candidate.created_at >= s["start_date"],
+                            Candidate.created_at <= (s["end_date"] if s.get("end_date") else datetime.max.replace(tzinfo=s["start_date"].tzinfo))
+                        )
+                    ),
+                    # 2. Cross-job matches created within range
                     Candidate.id.in_(
                         select(CrossJobMatch.candidate_id).where(
-                            and_(CrossJobMatch.matched_job_id == job_id, CrossJobMatch.created_at >= s["start_date"])
+                            and_(
+                                CrossJobMatch.matched_job_id == job_id,
+                                CrossJobMatch.created_at >= s["start_date"],
+                                CrossJobMatch.created_at <= (s["end_date"] if s.get("end_date") else datetime.max.replace(tzinfo=s["start_date"].tzinfo))
+                            )
                         )
-                    )
-                )
-            ]
-            
-            if s.get("end_date") is not None:
-                conditions.append(
-                    or_(
-                        and_(Candidate.applied_job_id == job_id, Candidate.created_at <= s["end_date"]),
-                        Candidate.id.in_(
-                            select(CrossJobMatch.candidate_id).where(
-                                and_(CrossJobMatch.matched_job_id == job_id, CrossJobMatch.created_at <= s["end_date"])
+                    ),
+                    # 3. HR Decisions made within range (manual assignments/moves)
+                    Candidate.id.in_(
+                        select(HrDecision.candidate_id).where(
+                            and_(
+                                HrDecision.job_id == job_id,
+                                HrDecision.decided_at >= s["start_date"],
+                                HrDecision.decided_at <= (s["end_date"] if s.get("end_date") else datetime.max.replace(tzinfo=s["start_date"].tzinfo))
                             )
                         )
                     )
                 )
+            ]
 
             session_unique_stmt = select(
                 func.count(func.distinct(func.coalesce(Candidate.email, func.cast(Candidate.id, Text))))

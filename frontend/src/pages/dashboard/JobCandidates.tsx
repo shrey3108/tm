@@ -170,6 +170,7 @@ export default function JobCandidates() {
                       isServerSide={true}
                       showLocationFilter={true}
                       showStatusFilter={true}
+                      jobId={job?.id}
                       pagination={{ pageIndex, pageSize }}
                       onPaginationChange={setPagination}
                       pageCount={Math.ceil(totalCandidates / pageSize)}

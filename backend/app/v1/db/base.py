@@ -18,3 +18,7 @@ from app.v1.db.models.resume_version_results import ResumeVersionResult  # noqa:
 from app.v1.db.models.stage_templates import StageTemplate  # noqa: F401
 from app.v1.db.models.job_stage_configs import JobStageConfig  # noqa: F401
 from app.v1.db.models.candidate_stages import CandidateStage  # noqa: F401
+from app.v1.db.models.criteria import Criterion  # noqa: F401
+from app.v1.db.models.stage_template_criteria import StageTemplateCriterion  # noqa: F401
+from app.v1.db.models.evaluations import Evaluation  # noqa: F401
+from app.v1.db.models.transcript_chunks import TranscriptChunk  # noqa: F401
