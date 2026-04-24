@@ -4,7 +4,7 @@ API routes for candidate-related operations in version 1.
 
 import uuid
 from datetime import datetime
-from typing import Any
+from typing import Any, List
 
 from app.v1.db.session import get_db
 from app.v1.dependencies import check_permission
@@ -66,7 +66,7 @@ async def get_job_stats(
 @router.get("/search", response_model=PaginatedData[CandidateResponse])
 async def search_candidates(
     query: str | None = Query(None, description="General search query (name, email)"),
-    job: str | None = Query(None, description="Job name or UUID"),
+    job: List[str] | None = Query(None, description="Job UUID(s) — can be specified multiple times"),
     hr_decision: str | None = Query(None, description="Latest HR decision (approved, rejected, maybe)"),
     city: str | None = Query(None, description="City/Location name"),
     db: AsyncSession = Depends(get_db),
@@ -77,10 +77,13 @@ async def search_candidates(
     limit: int = Query(100, ge=1, le=500),
 ) -> Any:
     """Search candidates across all jobs with advanced filters."""
+    # Pass the first job filter value to the service (or None).
+    # The service handles UUID vs title detection internally.
+    job_filter = job[0] if job else None
     return await admin_service.search_candidates(
         db=db, 
         query=query, 
-        job=job,
+        job=job_filter,
         hr_decision=hr_decision,
         city=city,
         start_date=start_date,

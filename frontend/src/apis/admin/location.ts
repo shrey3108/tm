@@ -15,11 +15,12 @@ export const adminLocationService = {
     skip = 0,
     limit = 100,
     q?: string,
+    jobId?: string,
   ): Promise<PaginatedResponse<LocationRead>> => {
     const response = await apiClient.get<PaginatedResponse<LocationRead>>(
       "/locations",
       {
-        params: { skip, limit, q: q ? q : undefined },
+        params: { skip, limit, q: q ? q : undefined, job_id: jobId },
       },
     );
     return response.data;

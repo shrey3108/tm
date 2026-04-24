@@ -245,18 +245,22 @@ class CandidateAdminService:
                 pass
 
             if is_uuid:
-                # Direct UUID comparison
+                # Direct UUID comparison — include native, cross-matched AND decided candidates
+                from app.v1.db.models.hr_decisions import HrDecision
                 xm_subq = select(CrossJobMatch.candidate_id).where(CrossJobMatch.matched_job_id == job)
-                stmt = stmt.where(or_(Candidate.applied_job_id == job, Candidate.id.in_(xm_subq)))
-                total_stmt = total_stmt.where(or_(Candidate.applied_job_id == job, Candidate.id.in_(xm_subq)))
+                dec_subq = select(HrDecision.candidate_id).where(HrDecision.job_id == job)
+                stmt = stmt.where(or_(Candidate.applied_job_id == job, Candidate.id.in_(xm_subq), Candidate.id.in_(dec_subq)))
+                total_stmt = total_stmt.where(or_(Candidate.applied_job_id == job, Candidate.id.in_(xm_subq), Candidate.id.in_(dec_subq)))
             else:
-                # Title search
+                # Title search — include native, cross-matched AND decided candidates
+                from app.v1.db.models.hr_decisions import HrDecision
                 xm_subq = select(CrossJobMatch.candidate_id).join(Job, CrossJobMatch.matched_job_id == Job.id).where(Job.title.ilike(f"%{job}%"))
+                dec_subq = select(HrDecision.candidate_id).join(Job, HrDecision.job_id == Job.id).where(Job.title.ilike(f"%{job}%"))
                 stmt = stmt.outerjoin(Job, Candidate.applied_job_id == Job.id).where(
-                    or_(Job.title.ilike(f"%{job}%"), Candidate.id.in_(xm_subq))
+                    or_(Job.title.ilike(f"%{job}%"), Candidate.id.in_(xm_subq), Candidate.id.in_(dec_subq))
                 )
                 total_stmt = total_stmt.outerjoin(Job, Candidate.applied_job_id == Job.id).where(
-                    or_(Job.title.ilike(f"%{job}%"), Candidate.id.in_(xm_subq))
+                    or_(Job.title.ilike(f"%{job}%"), Candidate.id.in_(xm_subq), Candidate.id.in_(dec_subq))
                 )
 
         # 3. City filter
@@ -312,8 +316,15 @@ class CandidateAdminService:
         result = await db.execute(stmt)
         candidates = list(result.scalars().unique().all())
 
+        target_job_id = None
+        if job:
+            try:
+                target_job_id = uuid.UUID(str(job))
+            except ValueError:
+                pass
+
         return PaginatedData[CandidateResponse](
-            data=[self._map_candidate_to_response(c) for c in candidates],
+            data=[self._map_candidate_to_response(c, target_job_id) for c in candidates],
             total=total or 0,
         )
 
@@ -592,7 +603,7 @@ class CandidateAdminService:
             linkedin_url=linkedin_url,
             github_url=github_url,
             current_status=current_stage.template_name if current_stage else candidate.current_status,
-            applied_job_id=candidate.applied_job_id,
+            applied_job_id=mapping_job_id,  # Overridden so the frontend local filter passes when returning cross-matched or decided candidates
             applied_version_number=candidate.applied_version_number,
             job_id=mapping_job_id,
             job_name=mapping_job_name,

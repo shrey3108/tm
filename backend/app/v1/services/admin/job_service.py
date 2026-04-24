@@ -492,6 +492,11 @@ class JobAdminService:
                         select(CrossJobMatch.candidate_id).where(
                             and_(CrossJobMatch.matched_job_id == job_id, CrossJobMatch.created_at >= s["start_date"], CrossJobMatch.created_at <= (s["end_date"] if s["end_date"] else func.now()))
                         )
+                    ),
+                    Candidate.id.in_(
+                        select(HrDecision.candidate_id).where(
+                            and_(HrDecision.job_id == job_id, HrDecision.decided_at >= s["start_date"], HrDecision.decided_at <= (s["end_date"] if s["end_date"] else func.now()))
+                        )
                     )
                 )
             )

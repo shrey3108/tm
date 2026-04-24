@@ -18,6 +18,7 @@ from app.v1.routes.users import router as auth_router
 from app.v1.routes.cross_job_matches import router as cross_job_match_router
 from app.v1.routes.locations import router as locations_router
 from app.v1.routes.job_priorities import router as job_priorities_router
+from app.v1.api.routes.transcripts import router as transcripts_router
 
 api_router = APIRouter()
 
@@ -32,3 +33,4 @@ api_router.include_router(admin_router, prefix="/admin", tags=["admin"])
 api_router.include_router(cross_job_match_router, prefix="/cross-match", tags=["cross-match"])
 api_router.include_router(locations_router, prefix="/locations", tags=["locations"])
 api_router.include_router(job_priorities_router, prefix="/job-priorities", tags=["job-priorities"])
+api_router.include_router(transcripts_router, tags=["transcripts"])
