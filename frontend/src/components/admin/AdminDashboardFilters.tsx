@@ -146,7 +146,7 @@ const AdminDashboardFilters = ({
                     onClick={() =>
                       toggleFilter("jobIds", job.id)
                     }
-                    className={"capitalize px-1"}
+                    className="capitalize"
                   >
                     <HoverCard>
                       <HoverCardTrigger delay={10} closeDelay={10} className={"w-full"}>

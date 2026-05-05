@@ -245,7 +245,7 @@ export function DataTable<TData, TValue>({
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
+                <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground" >
                   {emptyMessage}
                 </TableCell>
               </TableRow>
@@ -258,7 +258,7 @@ export function DataTable<TData, TValue>({
       <div className="flex flex-col items-center justify-center gap-3 py-2 sm:flex-row sm:gap-4">
         <div className="flex w-full flex-wrap items-center justify-center gap-3 sm:w-auto sm:gap-5 lg:gap-6">
           <div className="flex items-center space-x-2">
-            <p className="text-sm font-medium">Rows per page</p>
+            <p className={cn("text-sm font-medium", !data.length && "text-muted-foreground")}>Rows per page</p>
             <DropdownMenu>
               <DropdownMenuTrigger
                 className={cn(
@@ -285,7 +285,7 @@ export function DataTable<TData, TValue>({
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-          <div className="flex w-[100px] items-center justify-center text-sm font-medium">
+          <div className={cn("flex w-[100px] items-center justify-center text-sm font-medium", !data.length && "text-muted-foreground")}>
             Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
           </div>
           <div className="flex items-center space-x-2">

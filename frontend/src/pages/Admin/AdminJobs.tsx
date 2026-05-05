@@ -10,9 +10,7 @@ import { slugify } from "@/utils/slug";
 import type { PaginationState } from "@tanstack/react-table";
 
 // Sub-components
-import { JobSkeleton } from "@/components/job-board/JobSkeleton";
 import { JobBoardHeader } from "@/components/job-board/JobBoardHeader";
-import { NoJobsFound } from "@/components/job-board/NoJobsFound";
 import { JobDeleteDialog } from "@/components/job-board/JobDeleteDialog";
 import { getJobColumns } from "@/components/job-board/JobColumns";
 import { JobTableFilters } from "@/components/job-board/JobTableFilters";
@@ -191,48 +189,40 @@ const AdminJobs = () => {
     <AppPageShell width="wide">
       <JobBoardHeader />
 
-      <div className="">
-        {loading && jobs.length === 0 ? (
-          <div className="flex flex-col gap-4">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <JobSkeleton key={i} />
-            ))}
-          </div>
-        ) : jobs.length === 0 ? (
-          <NoJobsFound />
-        ) : (
-          <div className="space-y-4">
-            <JobTableFilters
-              titleFilter={titleFilter}
-              setTitleFilter={setTitleFilter}
-              statusFilter={statusFilter}
-              setStatusFilter={setStatusFilter}
-              departmentFilter={departmentFilter}
-              setDepartmentFilter={setDepartmentFilter}
-              dateRange={dateRange}
-              setDateRange={setDateRange}
-              departmentOptions={departmentOptions}
-              departmentSearch={departmentSearch}
-              setDepartmentSearch={setDepartmentSearch}
-              hasActiveFilters={hasActiveFilters}
-              clearFilters={clearFilters}
-              resultCount={filteredJobs.length}
-              totalCount={total}
-              minDate={minDate}
-            />
-            <DataTable
-              columns={columns}
-              data={filteredJobs}
-              loading={loading}
-              isServerSide={true}
-              pageIndex={pagination.pageIndex}
-              pageSize={pagination.pageSize}
-              pageCount={Math.ceil(total / pagination.pageSize)}
-              onPaginationChange={setPagination}
-              totalRecords={total}
-            />
-          </div>
-        )}
+      <div>
+        <div className="space-y-4">
+          <JobTableFilters
+            titleFilter={titleFilter}
+            setTitleFilter={setTitleFilter}
+            statusFilter={statusFilter}
+            setStatusFilter={setStatusFilter}
+            departmentFilter={departmentFilter}
+            setDepartmentFilter={setDepartmentFilter}
+            dateRange={dateRange}
+            setDateRange={setDateRange}
+            departmentOptions={departmentOptions}
+            departmentSearch={departmentSearch}
+            setDepartmentSearch={setDepartmentSearch}
+            hasActiveFilters={hasActiveFilters}
+            clearFilters={clearFilters}
+            resultCount={filteredJobs.length}
+            totalCount={jobs.length}
+            minDate={minDate}
+          />
+          <DataTable
+            columns={columns}
+            data={filteredJobs}
+            pageSize={pagination.pageSize}
+            pageCount={Math.ceil(total / pagination.pageSize)}
+            onPaginationChange={setPagination}
+            totalRecords={total}
+            loading={loading}
+            isServerSide={true}
+            emptyMessage="No Jobs found"
+
+          />
+        </div>
+
       </div>
 
       <JobDeleteDialog

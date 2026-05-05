@@ -113,7 +113,7 @@ export function CandidateTimeline({
           Hiring Journey Timeline
         </h3>
         <div className="w-full flex items-end justify-end px-4 py-2">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-end gap-2">
             <Button
               variant="secondary"
               className="rounded-xl border border-muted-foreground/10 px-5 font-semibold"
@@ -123,7 +123,7 @@ export function CandidateTimeline({
             </Button>
             {<TranscriptUpload
               stageId={stageId}
-              className="w-full sm:max-w-xs"
+              className="w-1/2 sm:max-w-xs"
               job={job!}
               disabled={isPolling || currentStage === "Resume Screening"}
               onSuccess={() => {
@@ -169,7 +169,7 @@ export function CandidateTimeline({
                     isAfterRejection && "opacity-40 grayscale-[0.5]"
                   )}
                 >
-                  <div className="space-y-0.5">
+                  <div className="space-y-0.5 min-h-[38px]">
                     <h4 className={cn(
                       "font-black text-xs text-wrap line-clamp-1",
                       isSelected ? "text-black font-bold dark:text-white" : isPending ? "text-foreground" : "text-foreground/90"
@@ -191,19 +191,23 @@ export function CandidateTimeline({
                   {event.result && (
                     <>
                       <div className="pt-1.5 border-t border-muted-foreground/10 mt-auto">
-                        <div className="flex flex-col gap-2">
-                          {event.ai_result && !isAfterRejection && <div className="flex items-center justify-start gap-2">
-                            <span className="text-xs font-bold uppercase tracking-tight text-muted-foreground">AI result:</span>
-                            <CandidateStatusBadge status={event.ai_result?.replace("ed", "") || "N/A"} /> {event.score !== null && event.score !== undefined && (
-                              <span className="text-xs font-bold ">
-                                {event.score}{event.title !== "Resume Screening" ? "/5" : "%"}
-                              </span>
-                            )}
-                          </div>}
-                          {event.hr_decision && event.hr_decision.toLowerCase() !== "may be" && <div className="flex items-center justify-start gap-2">
-                            <span className="text-xs font-bold uppercase tracking-tight text-muted-foreground">HR decision:</span>
-                            <CandidateStatusBadge status={event.hr_decision?.replace("ed", "") || "N/A"} />
-                          </div>}
+                        <div className="flex flex-col gap-2 min-h-[54px]">
+                          {event.ai_result && !isAfterRejection &&
+                            <div className="flex items-center justify-start gap-2">
+                              <span className="text-xs font-bold uppercase tracking-tight text-muted-foreground">AI result:</span>
+                              <CandidateStatusBadge status={event.ai_result?.replace("ed", "") || "N/A"} /> {event.score !== null && event.score !== undefined && (
+                                <span className="text-xs font-bold ">
+                                  {event.score}{event.title !== "Resume Screening" ? "/5" : "%"}
+                                </span>
+                              )}
+                            </div>}
+
+                          {event.hr_decision && event.hr_decision.toLowerCase() !== "may be" &&
+                            <div className="flex items-center justify-start gap-2">
+                              <span className="text-xs font-bold uppercase tracking-tight text-muted-foreground">HR decision:</span>
+                              <CandidateStatusBadge status={event.hr_decision?.replace("ed", "") || "N/A"} />
+                            </div>}
+
                         </div>
                       </div>
                     </>

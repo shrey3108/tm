@@ -55,7 +55,7 @@ export function JobInfoModal({ isOpen, onClose, job }: JobInfoModalProps) {
     if (isOpen && job) {
       // Initialize with latest version or current job info
       if (sortedVersions.length > 0) {
-        setSelectedVersionId(sortedVersions[0].id);
+        setSelectedVersionId(job.processing_version ? sortedVersions.filter(({ version_num }) => version_num == job.processing_version)[0].id : sortedVersions[0].id);
       } else {
         // Fallback to current job data if no versions
         setSelectedVersion({
@@ -147,10 +147,10 @@ export function JobInfoModal({ isOpen, onClose, job }: JobInfoModalProps) {
                       const button = (
                         <Button
                           key={v.id}
-                          variant={selectedVersionId === v.id ? "default" : "outline"}
+                          variant={selectedVersionId === v.id ? "default" : "secondary"}
                           size="sm"
                           onClick={() => setSelectedVersionId(v.id)}
-                          className="rounded-full h-9 px-4 text-xs font-bold uppercase transition-all"
+                          className={`rounded-full h-9 px-4 text-xs font-bold uppercase transition-all ${selectedVersionId === v.id ? "border border-primary" : ""}`}
                         >
                           V{v.version_num} {isProcessing && <Check className="w-3 h-3 ml-1" />}
                         </Button>
