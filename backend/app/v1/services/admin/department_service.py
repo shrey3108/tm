@@ -15,6 +15,7 @@ from app.v1.repository.department_repository import department_repository
 from app.v1.schemas.department import DepartmentCreate, DepartmentRead, DepartmentUpdate
 from app.v1.schemas.response import PaginatedData
 from app.v1.services.admin.audit_service import audit_service
+from app.v1.core.cache import cache
 
 
 class DepartmentService:
@@ -26,6 +27,18 @@ class DepartmentService:
         self, db: AsyncSession, skip: int = 0, limit: int = 100, q: str | None = None
     ) -> PaginatedData[DepartmentRead]:
         """Get all departments with pagination."""
+        # 0. Cache lookup
+        cache_key = f"departments:list:{skip}:{limit}:{q or 'none'}"
+        cached = await cache.get(cache_key)
+        if cached:
+            try:
+                return PaginatedData[DepartmentRead](
+                    data=[DepartmentRead.model_validate(d) for d in cached["data"]],
+                    total=cached["total"]
+                )
+            except Exception:
+                pass
+
         stmt = select(Department)
         count_stmt = select(func.count(Department.id))
 
@@ -43,22 +56,41 @@ class DepartmentService:
         departments = result.scalars().all()
         total = await db.scalar(count_stmt) or 0
 
-        return PaginatedData[DepartmentRead](
+        res = PaginatedData[DepartmentRead](
             data=[DepartmentRead.model_validate(d) for d in departments],
             total=total,
         )
+
+        # Cache the result (serialized)
+        await cache.set(cache_key, {
+            "data": [d.model_dump() for d in res.data],
+            "total": res.total
+        }, ttl=3600)
+
+        return res
 
     async def get_department_by_id(
         self, db: AsyncSession, department_id: uuid.UUID
     ) -> DepartmentRead:
         """Get a department by ID."""
+        cache_key = f"department:{department_id}"
+        cached = await cache.get(cache_key)
+        if cached:
+            try:
+                return DepartmentRead.model_validate(cached)
+            except Exception:
+                pass
+
         department = await department_repository.crud.get(db=db, id=department_id)
         if not department:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Department not found.",
             )
-        return DepartmentRead.model_validate(department)
+        
+        res = DepartmentRead.model_validate(department)
+        await cache.set(cache_key, res.model_dump(), ttl=3600)
+        return res
 
     async def create_department(
         self,
@@ -92,6 +124,9 @@ class DepartmentService:
             target_id=department.id,
             details={"name": department.name},
         )
+        # Invalidate cache
+        await cache.clear(pattern="departments:list:*")
+        
         return DepartmentRead.model_validate(department)
 
     async def update_department(
@@ -143,6 +178,10 @@ class DepartmentService:
             target_id=department_id,
             details={"updated_fields": list(update_data.keys())},
         )
+        # Invalidate cache
+        await cache.delete(f"department:{department_id}")
+        await cache.clear(pattern="departments:list:*")
+        
         return updated
 
     async def delete_department(
@@ -185,6 +224,9 @@ class DepartmentService:
             target_type="department",
             target_id=department_id,
         )
+        # Invalidate cache
+        await cache.delete(f"department:{department_id}")
+        await cache.clear(pattern="departments:list:*")
 
 
 department_service = DepartmentService()

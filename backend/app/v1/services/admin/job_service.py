@@ -24,6 +24,7 @@ from app.v1.services.admin.job_priority_service import job_priority_service
 from app.v1.services.stage.enrichment import enrich_stage_configs
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.v1.core.cache import cache
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +38,15 @@ class JobAdminService:
         self, db: AsyncSession, skip: int = 0, limit: int = 100, query: str | None = None
     ) -> JobsListRead:
         """Get all jobs with pagination and global dashboard summaries."""
+        # 0. Cache lookup
+        cache_key = f"jobs:list:{skip}:{limit}:{query or 'none'}"
+        cached = await cache.get(cache_key)
+        if cached:
+            try:
+                return JobsListRead.model_validate(cached)
+            except Exception:
+                pass
+
         result = await job_repository.get_multi(
             db=db, skip=skip, limit=limit, query=query
         )
@@ -64,7 +74,7 @@ class JobAdminService:
             
             job_reads.append(job_read)
 
-        return JobsListRead(
+        res = JobsListRead(
             data=job_reads,
             total=result["total"],
             global_decision_summary=await hr_decision_service.get_global_decision_summary(
@@ -75,10 +85,23 @@ class JobAdminService:
             ),
         )
 
+        # Cache the result (5 minutes)
+        await cache.set(cache_key, res.model_dump(), ttl=300)
+
+        return res
+
     async def search_jobs(
         self, db: AsyncSession, query: str, skip: int = 0, limit: int = 100
     ) -> JobsListRead:
         """Search jobs with global and per-job screening summaries."""
+        cache_key = f"jobs:search:{skip}:{limit}:{query}"
+        cached = await cache.get(cache_key)
+        if cached:
+            try:
+                return JobsListRead.model_validate(cached)
+            except Exception:
+                pass
+
         result = await job_repository.search(db=db, query=query, skip=skip, limit=limit)
 
         from app.v1.services.hr_decision_service import hr_decision_service

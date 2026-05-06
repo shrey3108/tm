@@ -23,6 +23,7 @@ from app.v1.core.logging import get_logger
 from sqlalchemy import or_, and_, Text, case
 from sqlalchemy.dialects.postgresql import UUID
 from app.v1.services.candidate_stage_service import candidate_stage_service
+from app.v1.services.admin.system_service import system_service
 
 logger = get_logger(__name__)
 
@@ -283,6 +284,10 @@ class HRDecisionService:
         final_res = await db.execute(final_stmt)
         hr_decision_final = final_res.scalar_one()
 
+        # Invalidate cache for the job
+        if actual_job_id:
+            await system_service.invalidate_job_cache(actual_job_id)
+
         return HRDecisionResponse.model_validate(hr_decision_final)
 
     async def get_decision_history(
@@ -501,6 +506,10 @@ class HRDecisionService:
         )
         final_res = await db.execute(final_stmt)
         decision_final = final_res.scalar_one()
+
+        # Invalidate cache for the job
+        if actual_job_id:
+            await system_service.invalidate_job_cache(actual_job_id)
 
         return HRDecisionResponse.model_validate(decision_final)
 

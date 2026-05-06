@@ -12,6 +12,7 @@ from app.v1.repository.skill_repository import skill_repository
 from app.v1.schemas.skill import SkillCreate, SkillRead, SkillUpdate
 from app.v1.schemas.response import PaginatedData
 from app.v1.services.admin.audit_service import audit_service
+from app.v1.core.cache import cache
 
 class SkillService:
     """
@@ -22,6 +23,18 @@ class SkillService:
         self, db: AsyncSession, skip: int = 0, limit: int = 100, search: str | None = None
     ) -> PaginatedData[SkillRead]:
         """Get all skills with pagination and optional search."""
+        # 0. Cache lookup
+        cache_key = f"skills:list:{skip}:{limit}:{search or 'none'}"
+        cached = await cache.get(cache_key)
+        if cached:
+            try:
+                return PaginatedData[SkillRead](
+                    data=[SkillRead.model_validate(s) for s in cached["data"]],
+                    total=cached["total"]
+                )
+            except Exception:
+                pass
+
         from sqlalchemy import func, or_
         stmt = select(Skill)
         count_stmt = select(func.count(Skill.id))
@@ -40,22 +53,41 @@ class SkillService:
         skills = result.scalars().all()
         total = await db.scalar(count_stmt) or 0
 
-        return PaginatedData[SkillRead](
+        res = PaginatedData[SkillRead](
             data=[SkillRead.model_validate(s) for s in skills],
             total=total,
         )
+        
+        # Cache the result (serialized)
+        await cache.set(cache_key, {
+            "data": [s.model_dump() for s in res.data],
+            "total": res.total
+        }, ttl=3600) # 1 hour for skills, they don't change often
+        
+        return res
 
     async def get_skill_by_id(
         self, db: AsyncSession, skill_id: uuid.UUID
     ) -> SkillRead:
         """Get a skill by ID."""
+        cache_key = f"skill:{skill_id}"
+        cached = await cache.get(cache_key)
+        if cached:
+            try:
+                return SkillRead.model_validate(cached)
+            except Exception:
+                pass
+
         skill = await skill_repository.crud.get(db=db, id=skill_id)
         if not skill:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Skill not found.",
             )
-        return SkillRead.model_validate(skill)
+        
+        res = SkillRead.model_validate(skill)
+        await cache.set(cache_key, res.model_dump(), ttl=3600)
+        return res
 
     async def create_skill(
         self, db: AsyncSession, admin_user_id: uuid.UUID, skill_in: SkillCreate
@@ -87,6 +119,9 @@ class SkillService:
             target_id=skill.id,
             details={"name": skill.name},
         )
+        # Invalidate cache
+        await cache.clear(pattern="skills:list:*")
+        
         return SkillRead.model_validate(skill)
 
     async def update_skill(
@@ -139,6 +174,10 @@ class SkillService:
             target_id=skill_id,
             details={"updated_fields": list(update_data.keys())},
         )
+        # Invalidate cache
+        await cache.delete(f"skill:{skill_id}")
+        await cache.clear(pattern="skills:list:*")
+        
         return updated_skill
 
     async def delete_skill(
@@ -190,5 +229,8 @@ class SkillService:
             target_id=skill_id,
             details={"name": skill_name}
         )
+        # Invalidate cache
+        await cache.delete(f"skill:{skill_id}")
+        await cache.clear(pattern="skills:list:*")
 
 skill_service = SkillService()

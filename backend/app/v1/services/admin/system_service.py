@@ -17,14 +17,50 @@ class SystemService:
         Clear application-specific cache keys (selective delete).
         This avoids deleting internal Celery/Broker keys.
         """
-        _log.info("Selective cache clear started for 'job*' and 'analytics*'")
+        _log.info("Comprehensive selective cache clear started")
         
-        # We use 'job*' to catch 'job_embedding', 'job_stats', etc.
-        res1 = await cache.clear(pattern="job*")
-        res2 = await cache.clear(pattern="analytics*")
+        patterns = [
+            "job*",
+            "analytics*",
+            "skills:*",
+            "departments:*",
+            "positions:*",
+            "priorities:*",
+            "locations:*",
+            "prompts:*",
+            "criteria:*",
+            "stage_templates:*",
+            "candidates:*"
+        ]
         
-        _log.info("Selective cache clear completed. Results: job=%s, analytics=%s", res1, res2)
-        return res1 and res2
+        success = True
+        for pattern in patterns:
+            res = await cache.clear(pattern=pattern)
+            if not res:
+                success = False
+                _log.warning("Failed to clear pattern: %s", pattern)
+        
+        _log.info("Comprehensive selective cache clear completed. Success: %s", success)
+        return success
+
+    async def invalidate_job_cache(self, job_id: str | uuid.UUID) -> None:
+        """
+        Invalidate all cache keys related to a specific job.
+        Used when a candidate's status or job data changes.
+        """
+        jid = str(job_id)
+        _log.info("Invalidating cache for job_id=%s", jid)
+        
+        # Clear stats, analytics, and candidate lists for this job
+        await cache.delete(f"job_stats:{jid}")
+        await cache.clear(pattern=f"analytics:hiring_report:{jid}:*")
+        await cache.clear(pattern=f"analytics:pipeline_stats:{jid}:*")
+        await cache.clear(pattern=f"candidates:for_job:{jid}:*")
+        
+        # Also clear global analytics and job lists as they might be affected
+        await cache.delete("analytics:summary")
+        await cache.clear(pattern="jobs:list:*")
+        await cache.clear(pattern="jobs:search:*")
 
 # Global instance
 system_service = SystemService()

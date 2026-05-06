@@ -6,6 +6,7 @@ from app.v1.db.models.job_priorities import JobPriority
 from app.v1.db.models.jobs import Job
 from app.v1.schemas.job_priority import JobPriorityCreate, JobPriorityUpdate
 from app.v1.services.admin.audit_service import audit_service
+from app.v1.core.cache import cache
 
 
 class JobPriorityService:
@@ -16,6 +17,12 @@ class JobPriorityService:
         limit: int = 100,
         search: str | None = None
     ) -> dict:
+        # 0. Cache lookup
+        cache_key = f"priorities:list:{skip}:{limit}:{search or 'none'}"
+        cached = await cache.get(cache_key)
+        if cached:
+            return cached
+
         stmt = select(JobPriority)
         if search:
             stmt = stmt.where(JobPriority.name.ilike(f"%{search}%"))
@@ -29,7 +36,13 @@ class JobPriorityService:
         result = await db.execute(stmt)
         priorities = list(result.scalars().all())
         
-        return {"data": priorities, "total": total}
+        from app.v1.schemas.job_priority import JobPriorityRead
+        res = {
+            "data": [JobPriorityRead.model_validate(p).model_dump() for p in priorities],
+            "total": total
+        }
+        await cache.set(cache_key, res, ttl=3600)
+        return res
 
     async def get_priority_by_id(self, db: AsyncSession, priority_id: uuid.UUID) -> Optional[JobPriority]:
         return await db.get(JobPriority, priority_id)
@@ -67,6 +80,10 @@ class JobPriorityService:
             target_id=db_obj.id,
             details={"name": db_obj.name},
         )
+        
+        # Invalidate cache
+        await cache.clear(pattern="priorities:list:*")
+        
         return db_obj
 
     async def update_priority(self, db: AsyncSession, admin_user_id: uuid.UUID, priority_id: uuid.UUID, obj_in: JobPriorityUpdate) -> Optional[JobPriority]:
@@ -97,6 +114,10 @@ class JobPriorityService:
             target_id=db_obj.id,
             details={"updated_fields": list(update_data.keys())},
         )
+        
+        # Invalidate cache
+        await cache.clear(pattern="priorities:list:*")
+        
         return db_obj
 
     async def delete_priority(self, db: AsyncSession, admin_user_id: uuid.UUID, priority_id: uuid.UUID) -> bool:
@@ -124,6 +145,10 @@ class JobPriorityService:
             target_id=priority_id,
             details={"name": priority_name},
         )
+        
+        # Invalidate cache
+        await cache.clear(pattern="priorities:list:*")
+        
         return True
 
 

@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.v1.repository.admin_repository import admin_repository
 from app.v1.schemas.admin import AnalyticsSummary, HiringReport, RecentUploadRead, JobPipelineStats
 from app.v1.schemas.response import PaginatedData
+from app.v1.core.cache import cache
 
 
 class AnalyticsService:
@@ -40,8 +41,15 @@ class AnalyticsService:
         @param db - Database session
         @returns AnalyticsSummary with counts for users, roles, permissions, jobs, candidates, and resumes
         """
+        cache_key = "analytics:summary"
+        cached = await cache.get(cache_key)
+        if cached:
+            return AnalyticsSummary(**cached)
+
         data = await admin_repository.get_analytics_summary(db=db)
-        return AnalyticsSummary(**data)
+        summary = AnalyticsSummary(**data)
+        await cache.set(cache_key, summary.model_dump(), ttl=600)  # 10 min
+        return summary
 
     async def get_hiring_report(
         self,
@@ -57,10 +65,17 @@ class AnalyticsService:
         @param stage_name - Optional stage name to filter pipeline stats (case-insensitive)
         @returns HiringReport with job statistics, candidate metrics, and resume performance data
         """
+        cache_key = f"analytics:hiring_report:{job_id or 'all'}:{stage_name or 'all'}"
+        cached = await cache.get(cache_key)
+        if cached:
+            return HiringReport(**cached)
+
         data = await admin_repository.get_hiring_report(
             db=db, job_id=job_id, stage_name=stage_name
         )
-        return HiringReport(**data)
+        report = HiringReport(**data)
+        await cache.set(cache_key, report.model_dump(), ttl=300)  # 5 min
+        return report
 
     async def get_pipeline_stats(
         self,
@@ -76,9 +91,16 @@ class AnalyticsService:
         @param stage_name - Optional stage name to filter results (case-insensitive)
         @returns List of stage-based statistics with job names as keys
         """
-        return await admin_repository.get_pipeline_stats(
+        cache_key = f"analytics:pipeline_stats:{job_id or 'all'}:{stage_name or 'all'}"
+        cached = await cache.get(cache_key)
+        if cached:
+            return cached
+
+        data = await admin_repository.get_pipeline_stats(
             db=db, job_id=job_id, stage_name=stage_name
         )
+        await cache.set(cache_key, data, ttl=300)  # 5 min
+        return data
 
 
 analytics_service = AnalyticsService()

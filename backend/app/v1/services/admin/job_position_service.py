@@ -4,11 +4,18 @@ from sqlalchemy import select, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.v1.db.models.job_positions import JobPosition
 from app.v1.schemas.job_position import JobPositionCreate, JobPositionUpdate
+from app.v1.core.cache import cache
 
 class JobPositionService:
     async def get_all_positions(
         self, db: AsyncSession, skip: int = 0, limit: int = 100, search: str | None = None
     ):
+        # 0. Cache lookup
+        cache_key = f"positions:list:{skip}:{limit}:{search or 'none'}"
+        cached = await cache.get(cache_key)
+        if cached:
+            return cached
+
         query = select(JobPosition)
         if search:
             query = query.where(JobPosition.name.ilike(f"%{search}%"))
@@ -22,7 +29,13 @@ class JobPositionService:
         result = await db.execute(query)
         data = result.scalars().all()
         
-        return {"data": data, "total": total}
+        from app.v1.schemas.job_position import JobPositionRead
+        res = {
+            "data": [JobPositionRead.model_validate(p).model_dump() for p in data],
+            "total": total
+        }
+        await cache.set(cache_key, res, ttl=3600)
+        return res
 
     async def create_position(self, db: AsyncSession, user_id: uuid.UUID, position_in: JobPositionCreate):
         # Check if exists
@@ -34,6 +47,10 @@ class JobPositionService:
         db.add(new_pos)
         await db.commit()
         await db.refresh(new_pos)
+        
+        # Invalidate cache
+        await cache.clear(pattern="positions:list:*")
+        
         return new_pos
 
     async def update_position(
@@ -55,6 +72,10 @@ class JobPositionService:
             
         await db.commit()
         await db.refresh(pos)
+        
+        # Invalidate cache
+        await cache.clear(pattern="positions:list:*")
+        
         return pos
 
     async def delete_position(self, db: AsyncSession, user_id: uuid.UUID, position_id: uuid.UUID):
@@ -70,6 +91,10 @@ class JobPositionService:
             
         await db.delete(pos)
         await db.commit()
+        
+        # Invalidate cache
+        await cache.clear(pattern="positions:list:*")
+        
         return True
 
 job_position_service = JobPositionService()

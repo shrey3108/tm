@@ -9,6 +9,7 @@ from app.v1.schemas.job_stage import (
     StageTemplateUpdate,
 )
 from app.v1.services.stage.enrichment import enrich_stage_configs, prepare_config_for_save
+from app.v1.core.cache import cache
 
 class StageTemplateService:
     """
@@ -23,12 +24,33 @@ class StageTemplateService:
         search: str | None = None
     ) -> dict:
         """Retrieve all available stage templates with pagination and search."""
+        # 0. Cache lookup
+        cache_key = f"stage_templates:list:{skip}:{limit}:{search or 'none'}"
+        cached = await cache.get(cache_key)
+        if cached:
+            return cached
+
         templates, total = await stage_repository.get_all_templates(
             db, skip=skip, limit=limit, search=search
         )
         # Enrich templates with criteria names
         await enrich_stage_configs(db, templates)
-        return {"data": templates, "total": total}
+        
+        res = {
+            "data": [t.to_dict() if hasattr(t, 'to_dict') else str(t) for t in templates], # Simplified for caching
+            "total": total
+        }
+        # Note: Since to_dict might not be reliable, we use model_validate if they are schemas
+        # But they are models here. I'll just use a safer serialization.
+        
+        serializable_data = []
+        from app.v1.schemas.job_stage import StageTemplateRead
+        for t in templates:
+            serializable_data.append(StageTemplateRead.model_validate(t).model_dump())
+            
+        final_res = {"data": serializable_data, "total": total}
+        await cache.set(cache_key, final_res, ttl=3600)
+        return final_res
 
     async def create_template(
         self, db: AsyncSession, template_in: StageTemplateCreate
@@ -41,6 +63,10 @@ class StageTemplateService:
         )
         template = await stage_repository.create_template(db, template)
         await enrich_stage_configs(db, template)
+        
+        # Invalidate cache
+        await cache.clear(pattern="stage_templates:list:*")
+        
         return template
 
     async def update_template(
@@ -63,6 +89,10 @@ class StageTemplateService:
             
         updated_template = await stage_repository.update_template(db, template, update_data)
         await enrich_stage_configs(db, updated_template)
+        
+        # Invalidate cache
+        await cache.clear(pattern="stage_templates:list:*")
+        
         return updated_template
 
     async def delete_template(
@@ -85,5 +115,8 @@ class StageTemplateService:
             )
             
         await stage_repository.delete_template(db, template)
+        
+        # Invalidate cache
+        await cache.clear(pattern="stage_templates:list:*")
 
 template_service = StageTemplateService()

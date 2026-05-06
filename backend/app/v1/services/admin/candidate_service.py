@@ -15,6 +15,7 @@ from app.v1.db.models.job_stage_configs import JobStageConfig
 from app.v1.schemas.upload import CandidateResponse, ResumeMatchAnalysis
 from app.v1.schemas.response import PaginatedData
 from app.v1.schemas.candidate_stage import CandidateStageSummary
+from app.v1.core.cache import cache
 
 
 class CandidateAdminService:
@@ -37,6 +38,26 @@ class CandidateAdminService:
         stage_id: uuid.UUID | None = None,
     ) -> PaginatedData[CandidateResponse]:
         from app.v1.db.models.cross_job_matches import CrossJobMatch
+
+        # 0. Cache lookup
+        cache_key = f"candidates:for_job:{job_id}:{skip}:{limit}"
+        if query: cache_key += f":q_{query}"
+        if hr_decision: cache_key += f":hr_{hr_decision}"
+        if jd_version is not None: cache_key += f":v_{jd_version}"
+        if start_date: cache_key += f":sd_{start_date.isoformat()}"
+        if end_date: cache_key += f":ed_{end_date.isoformat()}"
+        if candidate_id: cache_key += f":c_{candidate_id}"
+        if stage_id: cache_key += f":s_{stage_id}"
+
+        cached = await cache.get(cache_key)
+        if cached:
+            try:
+                return PaginatedData[CandidateResponse](
+                    data=[CandidateResponse.model_validate(c) for c in cached["data"]],
+                    total=cached["total"]
+                )
+            except Exception:
+                pass
 
         # 1. Fetch direct candidates
         dir_filter = or_(
@@ -227,10 +248,18 @@ class CandidateAdminService:
         total = len(responses)
         paginated_responses = responses[skip : skip + limit]
 
-        return PaginatedData[CandidateResponse](
+        result = PaginatedData[CandidateResponse](
             data=paginated_responses,
             total=total,
         )
+
+        # Cache the result (serialized to dicts)
+        await cache.set(cache_key, {
+            "data": [r.model_dump() for r in paginated_responses],
+            "total": total
+        }, ttl=300) # 5 min
+
+        return result
 
     # Note: search_candidates_for_job has been merged into get_candidates_for_job
 

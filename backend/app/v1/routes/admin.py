@@ -56,6 +56,7 @@ from app.v1.services.prompt_enhancer_service import prompt_enhancer_service
 import asyncio
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.v1.core.cache import cache
 
 logger = get_logger(__name__)
 
@@ -366,6 +367,12 @@ async def get_active_prompts(
     """
     Get all AI prompts currently in use by the system (Read-only), with optional search and pagination.
     """
+    # 0. Cache lookup
+    cache_key = f"prompts:list:{skip}:{limit}:{q or 'none'}"
+    cached = await cache.get(cache_key)
+    if cached:
+        return cached
+
     prompts = [
         {
             "name": "Resume Extraction Prompt",
@@ -417,7 +424,9 @@ async def get_active_prompts(
     total = len(prompts)
     paginated_prompts = prompts[skip : skip + limit]
 
-    return {"data": paginated_prompts, "total": total}
+    res = {"data": paginated_prompts, "total": total}
+    await cache.set(cache_key, res, ttl=3600)
+    return res
 
 
 # --- Criteria Management ---
@@ -432,6 +441,12 @@ async def get_all_criteria(
     q: str | None = Query(None),
 ):
     """Retrieve all available evaluation criteria with pagination and search."""
+    # 0. Cache lookup
+    cache_key = f"criteria:list:{skip}:{limit}:{q or 'none'}"
+    cached = await cache.get(cache_key)
+    if cached:
+        return cached
+
     stmt = select(Criterion)
     if q:
         stmt = stmt.where(
@@ -446,7 +461,13 @@ async def get_all_criteria(
     stmt = stmt.order_by(Criterion.name).offset(skip).limit(limit)
     res = await db.execute(stmt)
     criteria = res.scalars().all()
-    return {"data": criteria, "total": total}
+    
+    final_res = {
+        "data": [CriterionRead.model_validate(c).model_dump() for c in criteria],
+        "total": total
+    }
+    await cache.set(cache_key, final_res, ttl=3600)
+    return final_res
 
 
 @router.post(
@@ -478,6 +499,10 @@ async def create_criterion(
     db.add(criterion)
     await db.commit()
     await db.refresh(criterion)
+    
+    # Invalidate cache
+    await cache.clear(pattern="criteria:list:*")
+    
     return criterion
 
 
@@ -507,6 +532,10 @@ async def update_criterion(
 
     await db.commit()
     await db.refresh(criterion)
+    
+    # Invalidate cache
+    await cache.clear(pattern="criteria:list:*")
+    
     return criterion
 
 
@@ -523,4 +552,8 @@ async def delete_criterion(
 
     await db.delete(criterion)
     await db.commit()
+    
+    # Invalidate cache
+    await cache.clear(pattern="criteria:list:*")
+    
     return None

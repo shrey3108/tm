@@ -11,6 +11,7 @@ from app.v1.db.models.locations import Location
 from app.v1.db.models.candidates import Candidate
 from app.v1.schemas.location import LocationRead
 from app.v1.schemas.response import PaginatedData
+from app.v1.core.cache import cache
 
 
 class LocationService:
@@ -27,6 +28,18 @@ class LocationService:
         job_id: uuid.UUID | None = None
     ) -> PaginatedData[LocationRead]:
         """Get all locations with pagination, ordered alphabetically."""
+        # 0. Cache lookup
+        cache_key = f"locations:list:{skip}:{limit}:{q or 'none'}:{job_id or 'none'}"
+        cached = await cache.get(cache_key)
+        if cached:
+            try:
+                return PaginatedData[LocationRead](
+                    data=[LocationRead.model_validate(l) for l in cached["data"]],
+                    total=cached["total"]
+                )
+            except Exception:
+                pass
+
         query = select(Location)
         
         if job_id:
@@ -56,10 +69,18 @@ class LocationService:
             )
         ).all()
 
-        return PaginatedData[LocationRead](
+        res = PaginatedData[LocationRead](
             data=[LocationRead.model_validate(loc) for loc in locations],
             total=total or 0,
         )
+        
+        # Cache the result (1 hour)
+        await cache.set(cache_key, {
+            "data": [l.model_dump() for l in res.data],
+            "total": res.total
+        }, ttl=3600)
+        
+        return res
 
 
 location_service = LocationService()

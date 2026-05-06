@@ -39,6 +39,8 @@ from app.v1.schemas.job_stats import (
     JobStageDetails,
 )
 
+from app.v1.core.cache import cache
+
 
 class JobStatsService:
     """Aggregates various statistics for a specific job."""
@@ -62,6 +64,20 @@ class JobStatsService:
         Returns:
             JobStatsResponse with result, location, stages, and hr_decisions.
         """
+        # Cache lookup
+        cache_key = f"job_stats:{job_id}"
+        if start_date:
+            cache_key += f":{start_date.isoformat()}"
+        if end_date:
+            cache_key += f":{end_date.isoformat()}"
+
+        cached_data = await cache.get(cache_key)
+        if cached_data:
+            try:
+                return JobStatsResponse.model_validate(cached_data)
+            except Exception:
+                # If validation fails (e.g. schema changed), fall back to DB
+                pass
 
         result = await self._get_result_stats(db, job_id, start_date, end_date)
         location = await self._get_location_stats(db, job_id, start_date, end_date)
@@ -70,7 +86,7 @@ class JobStatsService:
         stage_details = await self._get_stage_details(db, job_id, start_date, end_date)
         priority_timeline = await self._get_priority_timeline(db, job_id)
 
-        return JobStatsResponse(
+        stats_response = JobStatsResponse(
             result=result,
             location=location,
             stages=stages,
@@ -78,6 +94,11 @@ class JobStatsService:
             stage_details=stage_details,
             priority_timeline=priority_timeline,
         )
+
+        # Store in cache (5 minutes TTL)
+        await cache.set(cache_key, stats_response.model_dump(), ttl=300)
+
+        return stats_response
 
     # -------------------------------------------------------------------------
     # Private helpers

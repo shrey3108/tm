@@ -9,6 +9,7 @@ from sqlalchemy.orm import selectinload
 from app.v1.db.models.candidate_stages import CandidateStage
 from app.v1.db.models.candidates import Candidate
 from app.v1.db.models.job_stage_configs import JobStageConfig
+from app.v1.services.admin.system_service import system_service
 
 
 class CandidateStageService:
@@ -72,6 +73,8 @@ class CandidateStageService:
         )
 
         await db.flush()
+        # Invalidate cache for the job
+        await system_service.invalidate_job_cache(job_id)
         return new_stages
 
     async def advance_candidate(
@@ -146,6 +149,8 @@ class CandidateStageService:
                 candidate.current_status = next_js.template.name if next_js.template else f"Stage {next_order}"
             
             await db.flush()
+            # Invalidate cache for the job
+            await system_service.invalidate_job_cache(job_id)
             return next_cs
         else:
             # End of pipeline
