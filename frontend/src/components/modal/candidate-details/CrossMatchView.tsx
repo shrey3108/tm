@@ -206,7 +206,7 @@ export function CrossMatchView({ resumeId, onClose }: CrossMatchViewProps) {
           </p>
         </div>
         <div className="flex items-center gap-2 sm:mr-1">
-          <Select
+          {matches.length > 0 && <Select
             value={statusFilter}
             onValueChange={(value) => value && setStatusFilter(value)}
           >
@@ -220,7 +220,7 @@ export function CrossMatchView({ resumeId, onClose }: CrossMatchViewProps) {
               <SelectItem value="pass">Pass</SelectItem>
               <SelectItem value="fail">Fail</SelectItem>
             </SelectContent>
-          </Select>
+          </Select>}
 
           <Button
             onClick={handleTrigger}

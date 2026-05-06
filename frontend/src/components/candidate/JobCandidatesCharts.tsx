@@ -5,7 +5,15 @@ import { ProgressBarChart } from "@/components/shared/Progressbar";
 import { ResultPieChart } from "@/components/shared/ResultPieChart";
 import type { JobStatsResponse } from "@/types/admin";
 import { CHART_TEXTS } from "@/constants";
-import { X } from "lucide-react";
+import { ChevronDown, X } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 interface JobCandidatesChartsProps {
   loading: boolean;
@@ -91,7 +99,39 @@ export function JobCandidatesCharts({
     );
   }
 
-  const obj: { title: string; description: string; chart: React.JSX.Element, takeFullSpace?: boolean }[] = [{
+  const stagesList = ["Resume Screening", ...Object.keys(jobStats?.stages || {})];
+  const StageSelector = (
+    <DropdownMenu>
+      <DropdownMenuTrigger className="inline-flex items-center justify-between gap-2 h-10 px-3 w-[200px] rounded-xl border text-sm font-medium cursor-pointer select-none transition-all truncate">
+        <span className="truncate">{selectedStage ?? "Resume Screening"}</span>
+        <ChevronDown className="h-4 w-4 opacity-60 shrink-0" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="center">
+        <DropdownMenuGroup>
+          <DropdownMenuLabel className="text-xs uppercase tracking-wider text-muted-foreground px-2 py-1.5">Stages</DropdownMenuLabel>
+          {stagesList.map((stage) => {
+            return <DropdownMenuCheckboxItem
+              checked={stage === selectedStage}
+              key={stage} className="rounded-lg my-0.5 capitalize"
+              onClick={() => handleStageClick(stage)}
+              onSelect={(e) => e.preventDefault()}
+            >
+              {stage}
+            </DropdownMenuCheckboxItem>
+          })}
+        </DropdownMenuGroup>
+      </DropdownMenuContent>
+
+    </DropdownMenu>
+  );
+
+  const obj: {
+    title: string;
+    description: string;
+    chart: React.JSX.Element,
+    takeFullSpace?: boolean;
+    action?: React.ReactNode
+  }[] = [{
     title: CHART_TEXTS.priorityTimeline.label,
     description: CHART_TEXTS.priorityTimeline.description,
     chart: <ProgressBarChart priorityTimeline={jobStats?.priority_timeline || null} />,
@@ -103,6 +143,7 @@ export function JobCandidatesCharts({
       ? `HR decisions for "${selectedStage}" stage`
       : CHART_TEXTS.hrDecision.description,
     chart: <CandidatesDistributionChart stats={activeHrStats} />,
+    action: StageSelector
   },
   {
     title: CHART_TEXTS.screeningResults.label,
@@ -110,6 +151,7 @@ export function JobCandidatesCharts({
       ? `Screening results for "${selectedStage}" stage`
       : CHART_TEXTS.screeningResults.description,
     chart: <ResultPieChart passCount={activeScreening.passCount} failCount={activeScreening.failCount} />,
+    action: StageSelector
   },
   {
     title: CHART_TEXTS.recruitmentStages.label,
@@ -128,7 +170,7 @@ export function JobCandidatesCharts({
     takeFullSpace: true
   },
 
-  ];
+    ];
   return (
     <div className={cn(
       "grid grid-cols-1 sm:grid-cols-2 gap-8 mt-4 animate-in fade-in slide-in-from-bottom-4 duration-700 p-0.5",
@@ -151,13 +193,18 @@ export function JobCandidatesCharts({
         </div>
       )}
       {
-        obj.map(({ chart, title, description, takeFullSpace }) => (
+        obj.map(({ chart, title, description, takeFullSpace, action }) => (
           <div className={cn("group overflow-hidden relative w-full", takeFullSpace && "md:col-span-2 w-full")} key={title}>
-            <div className="flex items-center gap-1 mb-2 border-b border-muted-foreground/10 pb-4">
+            <div className="flex items-center justify-between gap-1 mb-2 border-b border-muted-foreground/10 pb-4">
               <div>
                 <h4 className="font-black text-xl text-foreground tracking-tight uppercase">{title}</h4>
                 <p className="text-sm text-muted-foreground font-medium">{description}</p>
               </div>
+              {action && (
+                <div className="flex items-center animate-in fade-in slide-in-from-right-2 duration-500">
+                  {action}
+                </div>
+              )}
             </div>
             <div className="w-full min-h-[100px] max-h-[300px]">
               {chart}

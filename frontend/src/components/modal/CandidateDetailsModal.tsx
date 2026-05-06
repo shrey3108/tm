@@ -81,6 +81,8 @@ export function CandidateDetailsModal({
     useState<JobVersionDetail | null>(null);
   const [activeTab, setActiveTab] = useState<AnalysisTab>(initialTab);
   const [isLoadingVersion, setIsLoadingVersion] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [isLoadingJob, setIsLoadingJob] = useState(false);
 
   const form = useForm<CandidateDecisionFormValues>({
     resolver: zodResolver(candidateDecisionSchema),
@@ -102,11 +104,15 @@ export function CandidateDetailsModal({
 
   useEffect(() => {
     if (isOpen && currentJobId) {
+      setIsLoadingJob(true);
       adminJobService.getJobById(currentJobId).then((data) => {
         setJob(data as unknown as Job);
+      }).finally(() => {
+        setIsLoadingJob(false);
       });
     } else {
       setJob(null);
+      setIsLoadingJob(false);
     }
   }, [isOpen, jobId, (candidate as any)?.applied_job_id, currentJobId]);
 
@@ -156,6 +162,7 @@ export function CandidateDetailsModal({
 
   useEffect(() => {
     if (isOpen && candidate?.id) {
+      setIsLoadingHistory(true);
       candidateDecisionApi
         .getDecisionHistory(candidate.id, jobId)
         .then((data) => {
@@ -168,6 +175,9 @@ export function CandidateDetailsModal({
         .catch(() => {
           setHrDecision(null);
           setDecisionHistory([]);
+        })
+        .finally(() => {
+          setIsLoadingHistory(false);
         });
     } else {
       setHrDecision(null);
@@ -226,6 +236,11 @@ export function CandidateDetailsModal({
       .finally(() => setIsLoadingVersion(false));
   };
 
+  const filterHrDecision = decisionHistory.filter(
+    (d) => d.stage_config_id == null
+  )
+  const finalHrDecision = filterHrDecision.length > 0 ? filterHrDecision[0] : hrDecision
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose} >
       <DialogContent className="flex w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] flex-col sm:w-[92vw] sm:max-w-[92vw] lg:max-w-250 max-h-[calc(100vh-1rem)] sm:max-h-[92vh] p-0 overflow-hidden rounded-[1.75rem] sm:rounded-3xl border-muted-foreground/10 bg-card/95 backdrop-blur-xl shadow-2xl h-[650px]">
@@ -240,10 +255,10 @@ export function CandidateDetailsModal({
               setShowAllSkills={setShowAllSkills}
               jobId={currentJobId}
             >
-              {hrDecision && hrDecision.decision.toLowerCase() !== "may be" && (
-                <HrDecision decision={hrDecision} />
+              {finalHrDecision && finalHrDecision.decision.toLowerCase() !== "may be" && (
+                <HrDecision decision={finalHrDecision} />
               )}
-              <DecisionHistory decisions={decisionHistory} />
+              <DecisionHistory decisions={filterHrDecision} />
             </AnalysisContent>
           ) : activeTab === "jd" ? (
             <JobDescriptionView
@@ -272,7 +287,7 @@ export function CandidateDetailsModal({
           )}
         </div>
 
-        {canTakeDecision && (
+        {!isLoadingHistory && !isLoadingJob && canTakeDecision && (
           <PermissionGuard permissions={PERMISSIONS.CANDIDATES_DECIDE} hideWhenDenied>
             <ActionButtons
               onAction={handleAction}

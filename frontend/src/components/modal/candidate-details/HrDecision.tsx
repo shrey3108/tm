@@ -1,7 +1,7 @@
-import { Badge } from "@/components/ui/badge";
 import { DateDisplay } from "@/components/shared/DateDisplay"
 import { MessageSquare } from "lucide-react";
 import type { CandidateDecision } from "@/apis/candidateDecision";
+import { CandidateStatusBadge } from "@/components/shared";
 
 /**
  * Props for {@link HrDecision}.
@@ -23,22 +23,7 @@ export function HrDecision({ decision }: HrDecisionProps) {
           <MessageSquare className="h-4 w-4" />
           HR Decision
         </h3>
-        <Badge
-          variant={
-            decision.decision === "approve"
-              ? "default"
-              : decision.decision === "reject"
-                ? "destructive"
-                : "secondary"
-          }
-          className="rounded-full px-3 py-0.5 text-[10px] font-black uppercase"
-        >
-          {decision.decision === "approve"
-            ? "approve"
-            : decision.decision === "reject"
-              ? "reject"
-              : decision.decision}
-        </Badge>
+        <CandidateStatusBadge status={decision.decision.toUpperCase()} />
       </div>
       {decision.notes ? (
         <p className="text-sm text-muted-foreground italic leading-relaxed">
