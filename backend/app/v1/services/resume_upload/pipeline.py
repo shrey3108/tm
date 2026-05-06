@@ -225,19 +225,33 @@ async def run_resume_processing_pipeline(
 
                 h_info = extract_heuristic_info(raw_text)
                 
-                # Name fallback
-                parsed_name = (
-                    str(normalized["name"][0]["text"]).strip()
-                    if normalized.get("name") and not is_missing(normalized["name"][0]["text"])
-                    else None
-                )
-
                 # Email fallback
                 parsed_email = (
                     str(normalized["email"][0]["text"]).strip()
                     if normalized.get("email") and not is_missing(normalized["email"][0]["text"])
                     else h_info.get("email")
                 )
+
+                # Name fallback logic
+                # 1. Try LLM normalized name
+                parsed_name = (
+                    str(normalized["name"][0]["text"]).strip()
+                    if normalized.get("name") and not is_missing(normalized["name"][0]["text"])
+                    else None
+                )
+                
+                # 2. Try Heuristic name if LLM failed
+                if not parsed_name and h_info.get("name") and not is_missing(h_info["name"]):
+                    parsed_name = h_info["name"]
+                    
+                # 3. Last resort: Extract name from email if still None
+                if not parsed_name or is_missing(parsed_name):
+                    if parsed_email:
+                        email_user = parsed_email.split("@")[0]
+                        parsed_name = email_user.replace(".", " ").replace("_", " ").title()
+                        logger.info(f"Derived name from email: {parsed_name}")
+                    else:
+                        parsed_name = "Candidate"
 
                 # Phone fallback
                 parsed_phone = (
@@ -548,9 +562,21 @@ async def run_resume_processing_pipeline(
                 await db.commit()
                 logger.info(f"Auto-activated Stage 0 for candidate {candidate.id} with AI analysis results.")
             
-            # Invalidate job cache so the UI reflects the completed status immediately
-            from app.v1.services.admin.system_service import system_service
-            await system_service.invalidate_job_cache(job_id)
+            # Force-clear cache using synchronous redis to ensure reliability in Celery
+            try:
+                import redis
+                from app.v1.core.config import settings
+                r_client = redis.from_url(settings.REDIS_URL)
+                jid_str = str(job_id)
+                # Clear all variations of candidate lists for this job
+                keys_to_del = r_client.keys(f"candidates:for_job:{jid_str}*")
+                if keys_to_del:
+                    r_client.delete(*keys_to_del)
+                # Clear stats and analytics
+                r_client.delete(f"job_stats:{jid_str}")
+                logger.info(f"Force-cleared {len(keys_to_del)} cache keys for job {jid_str}")
+            except Exception as cache_err:
+                logger.error(f"Force cache clear failed: {cache_err}")
 
             log_stage(
                 stage="total",
@@ -575,6 +601,20 @@ async def run_resume_processing_pipeline(
                 current_parse_summary=parse_summary_snapshot,
                 error_message=str(exc),
             )
+            
+            # Force-clear cache on failure as well
+            try:
+                import redis
+                from app.v1.core.config import settings
+                r_client = redis.from_url(settings.REDIS_URL)
+                jid_str = str(job_id)
+                keys_to_del = r_client.keys(f"candidates:for_job:{jid_str}*")
+                if keys_to_del:
+                    r_client.delete(*keys_to_del)
+                r_client.delete(f"job_stats:{jid_str}")
+            except:
+                pass
+
             log_stage(
                 stage="total_failed",
                 started_at=total_started_at,

@@ -49,18 +49,22 @@ class SystemService:
         Used when a candidate's status or job data changes.
         """
         jid = str(job_id)
-        _log.info("Invalidating cache for job_id=%s", jid)
+        _log.info("Aggressive cache invalidation for job_id=%s", jid)
         
-        # Clear stats, analytics, and candidate lists for this job
+        # 1. Clear Job Specific Stats & Analytics
         await cache.delete(f"job_stats:{jid}")
         await cache.clear(pattern=f"analytics:hiring_report:{jid}:*")
         await cache.clear(pattern=f"analytics:pipeline_stats:{jid}:*")
-        await cache.clear(pattern=f"candidates:for_job:{jid}:*")
         
-        # Also clear global analytics and job lists as they might be affected
+        # 2. Aggressive Candidate List Clearing (matches any pagination/filter combo)
+        await cache.clear(pattern=f"candidates:for_job:{jid}*") 
+        
+        # 3. Clear Global State that might be affected
         await cache.delete("analytics:summary")
         await cache.clear(pattern="jobs:list:*")
         await cache.clear(pattern="jobs:search:*")
+        
+        _log.info("Aggressive cache invalidation completed for job_id=%s", jid)
 
 # Global instance
 system_service = SystemService()
