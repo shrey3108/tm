@@ -547,6 +547,11 @@ async def run_resume_processing_pipeline(
                     cs_zero.started_at = datetime.utcnow()
                 await db.commit()
                 logger.info(f"Auto-activated Stage 0 for candidate {candidate.id} with AI analysis results.")
+            
+            # Invalidate job cache so the UI reflects the completed status immediately
+            from app.v1.services.admin.system_service import system_service
+            await system_service.invalidate_job_cache(job_id)
+
             log_stage(
                 stage="total",
                 started_at=total_started_at,

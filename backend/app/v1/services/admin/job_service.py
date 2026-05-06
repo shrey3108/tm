@@ -241,6 +241,11 @@ class JobAdminService:
         # Re-fetch the job with all stages and templates fully loaded
         job = await self.get_job_by_id(db, job_id)
 
+        # Invalidate job board and search caches
+        from app.v1.core.cache import cache
+        await cache.clear(pattern="jobs:list:*")
+        await cache.clear(pattern="jobs:search:*")
+
         await audit_service.log_action(
             db=db,
             user_id=admin_user_id,
@@ -254,6 +259,11 @@ class JobAdminService:
         from app.v1.services.admin.job_tasks import match_all_resumes_to_job_task
         logger.info(f"Triggering mass matching task for new job: {job.id}")
         match_all_resumes_to_job_task.delay(str(job.id))
+
+        # Invalidate job board and search caches
+        from app.v1.core.cache import cache
+        await cache.clear(pattern="jobs:list:*")
+        await cache.clear(pattern="jobs:search:*")
 
         return JobRead.model_validate(job)
 
@@ -396,6 +406,11 @@ class JobAdminService:
                     full_refresh=("jd_text" in updated_fields)
                 )
 
+        # Invalidate job board and search caches
+        from app.v1.core.cache import cache
+        await cache.clear(pattern="jobs:list:*")
+        await cache.clear(pattern="jobs:search:*")
+
         return JobRead.model_validate(updated_job)
 
     async def update_job_status(
@@ -424,6 +439,11 @@ class JobAdminService:
             details={"is_active": status_in.is_active},
         )
 
+        # Invalidate job board and search caches
+        from app.v1.core.cache import cache
+        await cache.clear(pattern="jobs:list:*")
+        await cache.clear(pattern="jobs:search:*")
+
         return JobRead.model_validate(updated_job)
 
 
@@ -449,6 +469,11 @@ class JobAdminService:
             )
 
         await job_repository.force_delete(db=db, id=job_id)
+
+        # Invalidate job board and search caches
+        from app.v1.core.cache import cache
+        await cache.clear(pattern="jobs:list:*")
+        await cache.clear(pattern="jobs:search:*")
         await audit_service.log_action(
             db=db,
             user_id=admin_user_id,
