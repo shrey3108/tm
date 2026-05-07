@@ -37,7 +37,11 @@ class StageTemplateUpdate(BaseModel):
 
     name: str | None = None
     description: str | None = None
-    config: dict[str, Any] | None = None
+    config: dict[str, Any] | None = Field(
+        None, 
+        description="Default configuration JSON for this stage type",
+        validation_alias="default_config"
+    )
     is_default: bool | None = None
     default_order: int | None = None
 
