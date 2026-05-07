@@ -36,17 +36,10 @@ class StageTemplateService:
         # Enrich templates with criteria names
         await enrich_stage_configs(db, templates)
         
-        res = {
-            "data": [t.to_dict() if hasattr(t, 'to_dict') else str(t) for t in templates], # Simplified for caching
-            "total": total
-        }
-        # Note: Since to_dict might not be reliable, we use model_validate if they are schemas
-        # But they are models here. I'll just use a safer serialization.
-        
         serializable_data = []
         from app.v1.schemas.job_stage import StageTemplateRead
         for t in templates:
-            serializable_data.append(StageTemplateRead.model_validate(t).model_dump())
+            serializable_data.append(StageTemplateRead.model_validate(t).model_dump(by_alias=True))
             
         final_res = {"data": serializable_data, "total": total}
         await cache.set(cache_key, final_res, ttl=3600)
@@ -84,6 +77,7 @@ class StageTemplateService:
             )
 
         update_data = template_update.model_dump(exclude_unset=True)
+        # Handle the default_config/config mapping
         if "config" in update_data:
             update_data["default_config"] = prepare_config_for_save(update_data.pop("config"))
             

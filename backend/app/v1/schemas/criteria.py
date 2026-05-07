@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 class CriterionBase(BaseModel):
     name: str = Field(..., description="Name of the evaluation criterion")
     description: str | None = Field(None, description="Detailed description of what this criterion evaluates")
-    prompt_text: str = Field(..., description="The rubric/prompt text for the AI to follow")
+    prompt_text: str | None = Field(None, description="The rubric/prompt text for the AI to follow")
 
 class CriterionCreate(CriterionBase):
     pass

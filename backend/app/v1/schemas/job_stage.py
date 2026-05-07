@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class StageTemplateBase(BaseModel):
@@ -24,6 +24,33 @@ class StageTemplateBase(BaseModel):
         validation_alias="default_config",
         serialization_alias="config"
     )
+
+    @model_validator(mode="before")
+    @classmethod
+    def ensure_config_is_populated(cls, data: Any) -> Any:
+        """Fail-safe to ensure config is populated from default_config."""
+        if hasattr(data, "default_config") and not isinstance(data, dict):
+            # ORM object case: Force conversion to dict
+            val = getattr(data, "default_config", None)
+            
+            fields = ["id", "name", "description", "is_default", "default_order", "created_at"]
+            data_dict = {}
+            for field in fields:
+                if hasattr(data, field):
+                    data_dict[field] = getattr(data, field)
+            
+            # 🌟 THE TRICK: Set both to be absolutely sure Pydantic sees it
+            data_dict["config"] = val
+            data_dict["default_config"] = val
+            return data_dict
+            
+        elif isinstance(data, dict):
+            # Dictionary case
+            val = data.get("default_config") or data.get("config")
+            if val is not None:
+                data["config"] = val
+                data["default_config"] = val
+        return data
 
 
 class StageTemplateCreate(StageTemplateBase):

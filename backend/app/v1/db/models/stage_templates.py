@@ -66,3 +66,13 @@ class StageTemplate(Base):
         DateTime(timezone=True),
         server_default=func.now(),
     )
+
+    @property
+    def config(self) -> dict | None:
+        """Alias for default_config to match API schema naming."""
+        return self.default_config
+
+    @config.setter
+    def config(self, value: dict | None):
+        """Setter for the config alias."""
+        self.default_config = value
