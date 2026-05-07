@@ -37,8 +37,8 @@ interface CandidateTableFiltersProps {
   showJobContext?: boolean;
   showLocationFilter?: boolean;
   showStatusFilter?: boolean;
-  dateRange: DateRange | undefined;
-  setDateRange: (range: DateRange | undefined) => void;
+  dateRange: DateRange;
+  setDateRange: (range: DateRange) => void;
   hrDecisionFilter: string[];
   setHrDecisionFilter: (value: string[]) => void;
   resumeScreeningFilter: string[];

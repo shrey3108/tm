@@ -6,13 +6,14 @@ import { adminLocationService } from "@/apis/admin/location";
 import jobService from "@/apis/job";
 import { slugify } from "@/utils/slug";
 import { DEFAULT_PASSING_THRESHOLD } from "@/constants";
+import type { DateRange } from "react-day-picker";
 
 export interface CandidateActiveFilters {
   status: string[];
   city: string[];
   job: string[];
   hr_decision: string[];
-  dateRange?: { from?: Date; to?: Date };
+  dateRange?: DateRange | null;
   resumeScreening?: string[];
   stage?: string[];
   activity_session?: string[];
@@ -31,7 +32,7 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
   passingThreshold = DEFAULT_PASSING_THRESHOLD,
   stageOptionsProp?: string[],
   activitySessionsData?: [number, { start_date: string; end_date: string }][],
-  initialDateRange?: { from?: Date; to?: Date }
+  initialDateRange?: DateRange
 ) => {
   const [internalNameFilter, setInternalNameFilter] = useState("");
 
@@ -60,7 +61,7 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
   // jobFilter stores IDs internally for filtering and API calls
   const [jobFilter, setJobFilter] = useState<string[]>([]);
 
-  const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date } | undefined>(initialDateRange);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(initialDateRange);
 
   const [locationOptions, setLocationOptions] = useState<string[]>([]);
   const [locationSearch, setLocationSearch] = useState("");

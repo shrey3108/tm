@@ -148,7 +148,7 @@ export function JobCandidatesCharts({
   {
     title: CHART_TEXTS.screeningResults.label,
     description: selectedStage
-      ? `Screening results for "${selectedStage}" stage`
+      ? `AI results for "${selectedStage}" stage`
       : CHART_TEXTS.screeningResults.description,
     chart: <ResultPieChart passCount={activeScreening.passCount} failCount={activeScreening.failCount} />,
     action: StageSelector

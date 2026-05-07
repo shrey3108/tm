@@ -105,6 +105,18 @@ export function CandidateTimeline({
     return r.includes("fail") || r.includes("reject");
   });
 
+  const activeEventIndex = events.findIndex(e =>
+    (stageId && e.stage_id === stageId) || e.title === currentStage
+  );
+
+  const previousEvent = activeEventIndex > 0 ? events[activeEventIndex - 1] : null;
+  const isPreviousStagePending = previousEvent ? (() => {
+    const r = previousEvent.result?.toLowerCase() || "";
+    const isCompleted = previousEvent.result !== null && previousEvent.result !== "Ongoing" && !r.includes("pending");
+    const isOngoing = r.includes("ongoing") || (!previousEvent.result && !isCompleted);
+    return r.includes("pending") || isOngoing;
+  })() : false;
+
   return (
     <div className={cn("w-full py-2", className)}>
       <div className="px-4 mb-2 flex justify-between items-center">
@@ -125,7 +137,7 @@ export function CandidateTimeline({
               stageId={stageId}
               className="w-1/2 sm:max-w-xs"
               job={job!}
-              disabled={isPolling || currentStage === "Resume Screening"}
+              disabled={isPolling || currentStage === "Resume Screening" || isPreviousStagePending}
               onSuccess={() => {
                 setIsPolling(true);
                 fetchHistory();

@@ -14,6 +14,7 @@ import { useCandidateTableFilters, type CandidateActiveFilters } from "@/hooks/u
 import { useCandidateTableColumns } from "./CandidateTableColumns";
 import { CandidateTableFilters } from "./CandidateTableFilters";
 import type { UnifiedCandidate } from "@/types/candidate";
+import type { DateRange } from "react-day-picker";
 
 export interface CandidateTableProps<T extends UnifiedCandidate> {
   candidates: T[];
@@ -34,7 +35,7 @@ export interface CandidateTableProps<T extends UnifiedCandidate> {
   onFiltersChange?: (filters: CandidateActiveFilters) => void;
   stageOptions?: string[];
   activitySessions?: [number, { start_date: string; end_date: string }][];
-  initialDateRange?: { from?: Date; to?: Date };
+  initialDateRange?: DateRange | undefined;
 }
 
 export function CandidateTable<T extends UnifiedCandidate>({
@@ -114,7 +115,7 @@ export function CandidateTable<T extends UnifiedCandidate>({
         showJobContext={showJobContext}
         showLocationFilter={showLocationFilter}
         showStatusFilter={showStatusFilter}
-        dateRange={dateRange}
+        dateRange={dateRange!}
         setDateRange={setDateRange}
         hrDecisionFilter={hrDecisionFilter}
         setHrDecisionFilter={setHrDecisionFilter}
