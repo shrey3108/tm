@@ -545,10 +545,74 @@ async def delete_criterion(
     db: AsyncSession = Depends(get_db),
     admin: UserRead = Depends(check_permission("jobs:manage")),
 ):
-    """Delete an evaluation criterion."""
+    """Delete an evaluation criterion.
+    
+    Validation:
+    - Blocks deletion if assigned to a Stage Template.
+    - Blocks deletion if assigned to a Job Stage round.
+    """
+    print(f"\nDEBUG: === DELETE request for criterion: {criterion_id} ===")
     criterion = await db.get(Criterion, criterion_id)
     if not criterion:
+        print(f"DEBUG: Criterion {criterion_id} not found in DB")
         raise HTTPException(status_code=404, detail="Criterion not found")
+
+    from app.v1.db.models.stage_template_criteria import StageTemplateCriterion
+    from app.v1.db.models.job_stage_configs import JobStageConfig
+    from app.v1.db.models.stage_templates import StageTemplate
+    from sqlalchemy import exists, or_, cast, String
+
+    id_str = str(criterion_id)
+    id_nodash = id_str.replace("-", "")
+    c_name = criterion.name
+
+    # 1. Check StageTemplateCriterion Mapping Table
+    template_assoc = await db.scalar(
+        select(exists().where(StageTemplateCriterion.criterion_id == criterion_id))
+    )
+    if template_assoc:
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot delete criterion: It is assigned to one or more stage templates via the mapping table."
+        )
+
+    # 2. Check Job Stage Configs (Deep search for ID or Name)
+    job_assoc = await db.scalar(
+        select(exists().where(
+            or_(
+                JobStageConfig.config["active_criteria"].contains([{"id": id_str}]),
+                JobStageConfig.config["criteria_ids"].contains([id_str]),
+                JobStageConfig.config["evaluation_criteria"].contains([{"id": id_str}]),
+                cast(JobStageConfig.config, String).ilike(f"%{id_str}%"),
+                cast(JobStageConfig.config, String).ilike(f"%{id_nodash}%"),
+                cast(JobStageConfig.config, String).ilike(f"%{c_name}%")
+            )
+        ))
+    )
+    if job_assoc:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot delete criterion: It is actively being used in one or more job rounds (found ID or name '{c_name}')."
+        )
+
+    # 3. Check Stage Templates (Deep search for ID or Name)
+    template_config_assoc = await db.scalar(
+        select(exists().where(
+            or_(
+                StageTemplate.default_config["active_criteria"].contains([{"id": id_str}]),
+                StageTemplate.default_config["criteria_ids"].contains([id_str]),
+                StageTemplate.default_config["evaluation_criteria"].contains([{"id": id_str}]),
+                cast(StageTemplate.default_config, String).ilike(f"%{id_str}%"),
+                cast(StageTemplate.default_config, String).ilike(f"%{id_nodash}%"),
+                cast(StageTemplate.default_config, String).ilike(f"%{c_name}%")
+            )
+        ))
+    )
+    if template_config_assoc:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot delete criterion: It is defined by ID or name ('{c_name}') in the default configuration of a stage template."
+        )
 
     await db.delete(criterion)
     await db.commit()
