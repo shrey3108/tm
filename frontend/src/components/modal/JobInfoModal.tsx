@@ -16,6 +16,14 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { DateDisplay } from "@/components/shared/DateDisplay";
 import { Check } from "lucide-react";
+import { cn } from "@/lib/utils";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardAction,
+} from "@/components/ui/card"
 
 interface JobInfoModalProps {
   isOpen: boolean;
@@ -26,20 +34,29 @@ interface JobInfoModalProps {
 const InfoSection = ({
   title,
   children,
-  className = "space-y-3",
+  className = "",
   titleClassName = "",
+  action,
 }: {
   title: string;
   children: React.ReactNode;
   className?: string;
   titleClassName?: string;
+  action?: React.ReactNode;
 }) => (
-  <div className={className}>
-    <h3 className={`text-sm font-bold text-muted-foreground uppercase tracking-widest ${titleClassName}`}>
-      {title}
-    </h3>
-    {children}
-  </div>
+  <Card size="sm" className={cn("border-muted-foreground/10 bg-card/50 shadow-sm transition-all hover:shadow-md hover:border-primary/20", className)}>
+    <CardHeader className="pb-2">
+      <CardTitle className={cn("text-xs font-black text-muted-foreground ", titleClassName)}>
+        {title}
+      </CardTitle>
+      {action && <CardAction>{action}</CardAction>}
+    </CardHeader>
+    <CardContent className="pt-0">
+      <div className="text-sm font-medium">
+        {children}
+      </div>
+    </CardContent>
+  </Card>
 );
 
 export function JobInfoModal({ isOpen, onClose, job }: JobInfoModalProps) {
@@ -131,76 +148,72 @@ export function JobInfoModal({ isOpen, onClose, job }: JobInfoModalProps) {
           </div>
         </DialogHeader>
 
-        <div className="flex-1 p-2 overflow-y-auto overflow-x-hidden min-h-0">
-          <div className="space-y-1 pb-4">
-            {/* Job Description */}
-            <div>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">
-                  Job Description
-                </h3>
+        <div className="flex-1 p-4 overflow-y-auto overflow-x-hidden min-h-0 bg-muted/5">
+          <div className="space-y-4 pb-4">
+            {/* Job Description Card */}
+            <InfoSection
+              title="Job Description"
+              action={sortedVersions.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {sortedVersions.map((v) => {
+                    const isProcessing = job.processing_version === v.version_num;
+                    const button = (
+                      <Button
+                        key={v.id}
+                        variant={selectedVersionId === v.id ? "default" : "secondary"}
+                        size="sm"
+                        onClick={() => setSelectedVersionId(v.id)}
+                        className={cn(
+                          "rounded-full h-7 px-3 text-[10px] font-bold uppercase transition-all",
+                          selectedVersionId === v.id ? "border border-primary shadow-sm" : "opacity-70 hover:opacity-100"
+                        )}
+                      >
+                        V{v.version_num} {isProcessing && <Check className="w-2.5 h-2.5 ml-1" />}
+                      </Button>
+                    );
 
-                {sortedVersions.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mb-1.5">
-                    {sortedVersions.map((v) => {
-                      const isProcessing = job.processing_version === v.version_num;
-                      const button = (
-                        <Button
-                          key={v.id}
-                          variant={selectedVersionId === v.id ? "default" : "secondary"}
-                          size="sm"
-                          onClick={() => setSelectedVersionId(v.id)}
-                          className={`rounded-full h-9 px-4 text-xs font-bold uppercase transition-all ${selectedVersionId === v.id ? "border border-primary" : ""}`}
-                        >
-                          V{v.version_num} {isProcessing && <Check className="w-3 h-3 ml-1" />}
-                        </Button>
+                    if (isProcessing) {
+                      return (
+                        <HoverCard key={v.id}>
+                          <HoverCardTrigger>
+                            {button}
+                          </HoverCardTrigger>
+                          <HoverCardContent className="w-fit p-3 text-xs font-medium">
+                            This version is currently being processed.
+                          </HoverCardContent>
+                        </HoverCard>
                       );
+                    }
 
-                      if (isProcessing) {
-                        return (
-                          <HoverCard key={v.id}>
-                            <HoverCardTrigger>
-                              {button}
-                            </HoverCardTrigger>
-                            <HoverCardContent className="w-fit p-3 text-xs font-medium">
-                              This version is currently being processed.
-                            </HoverCardContent>
-                          </HoverCard>
-                        );
-                      }
-
-                      return button;
-                    })}
-                  </div>
-                )}
-              </div>
-
+                    return button;
+                  })}
+                </div>
+              )}
+            >
               {isLoadingVersion ? (
-                <div className="h-40 w-full rounded-2xl bg-muted/20 animate-pulse border border-muted-foreground/10 flex items-center justify-center">
+                <div className="h-40 w-full rounded-xl bg-muted/20 animate-pulse flex items-center justify-center">
                   <span className="text-xs font-medium text-muted-foreground">Loading specific version...</span>
                 </div>
               ) : (selectedVersion?.jd_text || job.jd_text) ? (
-                <div className="group relative">
-                  <div className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed bg-muted/20 p-2 rounded-2xl border border-muted-foreground/10 transition-colors group-hover:border-primary/20">
-                    {selectedVersion?.jd_text || job.jd_text}
-                  </div>
+                <div className="text-sm text-foreground/80 whitespace-pre-wrap leading-relaxed py-1">
+                  {selectedVersion?.jd_text || job.jd_text}
                 </div>
               ) : (
-                <div className="text-sm text-muted-foreground italic p-2 rounded-2xl bg-muted/10 border border-muted-foreground/5">
+                <div className="text-sm text-muted-foreground italic py-1">
                   No description provided.
                 </div>
               )}
-            </div>
+            </InfoSection>
 
-            {/* Required Skills */}
+            {/* Required Skills Card */}
             {job.skills && job.skills.length > 0 && (
               <InfoSection title="Required Skills">
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 py-1">
                   {job.skills.map((skill) => (
                     <Badge
                       key={skill.name}
                       variant="secondary"
-                      className="rounded-xl px-3 py-1 font-medium bg-secondary/50 hover:bg-secondary text-secondary-foreground border-muted-foreground/10 transition-colors"
+                      className="rounded-xl px-3 py-1 text-xs font-semibold bg-secondary/40 hover:bg-secondary text-secondary-foreground border-muted-foreground/5 transition-colors"
                       title={skill.description || undefined}
                     >
                       {skill.name}
@@ -210,56 +223,46 @@ export function JobInfoModal({ isOpen, onClose, job }: JobInfoModalProps) {
               </InfoSection>
             )}
 
-
-            {/* Passing Threshold */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            {/* Stats Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <InfoSection title="Passing Threshold">
-                <div className="flex flex-wrap gap-2">
-                  <Badge
-                    variant="secondary"
-                    className="rounded-xl px-3 py-1 font-medium bg-secondary/50 hover:bg-secondary text-secondary-foreground border-muted-foreground/10 transition-colors"
-                  >
-                    {job.passing_threshold}%
-                  </Badge>
-                </div>
+                <span className="text-lg font-black ">
+                  {job.passing_threshold}%
+                </span>
               </InfoSection>
 
               <InfoSection title="Vacancy">
-                <div className="flex flex-wrap gap-2">
-                  <Badge
-                    variant="secondary"
-                    className="rounded-xl px-3 py-1 font-medium bg-secondary/50 hover:bg-secondary text-secondary-foreground border-muted-foreground/10 transition-colors"
-                  >
-                    {job.vacancy}
-                  </Badge>
-                </div>
+                <span className="text-lg font-black ">
+                  {job.vacancy}
+                </span>
               </InfoSection>
 
               <InfoSection title="Position Level">
-                <div className="flex flex-wrap gap-2">
-                  <Badge
-                    variant="outline"
-                    className="rounded-xl px-3 py-1 font-medium bg-secondary/50 hover:bg-secondary text-secondary-foreground border-muted-foreground/10 transition-colors"
-                  >
-                    {job.position?.name}
-                  </Badge>
-                </div>
+                <span className="text-sm font-bold text-foreground/80">
+                  {job.position?.name || "N/A"}
+                </span>
               </InfoSection>
-              <div>
-                {/* job stategs */}
-              </div>
             </div>
-            <InfoSection title="Job Stages" className="mt-2">
-              <ul className="list-disc list-inside">
-                {job?.stages?.map((stage) => (
-                  <li key={stage.id} className="font-medium text-foreground/90">
-                    {stage.template?.name}
-                  </li>
+
+            {/* Job Stages Card */}
+            <InfoSection title="Job Stages">
+              <div className="flex flex-wrap gap-2 py-1 flex-col">
+                {job?.stages?.map((stage, idx) => (
+                  <div key={stage.id} className="flex items-center gap-2 ">
+                    <div className="flex  items-center justify-center w-6 h-6 rounded-full  text-sm font-bold">
+                      {idx + 1}
+                    </div>
+                    <span className="text-sm font-semibold text-foreground/80">
+                      {stage.template?.name}
+                    </span>
+                    {idx < (job.stages?.length || 0) - 1 && (
+                      <div className="h-px w-4 bg-muted-foreground/20 mx-1" />
+                    )}
+                  </div>
                 ))}
-              </ul>
+              </div>
             </InfoSection>
           </div>
-
         </div>
       </DialogContent>
     </Dialog>

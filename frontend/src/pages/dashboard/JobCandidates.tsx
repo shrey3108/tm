@@ -18,6 +18,7 @@ import type { PaginationState } from "@tanstack/react-table";
 import { cn } from "@/lib/utils";
 import type { CandidateActiveFilters } from "@/hooks/useCandidateTableFilters";
 import { slugify } from "@/utils/slug";
+import type { DateRange } from "react-day-picker";
 
 /**
  * Page component for managing job candidates with toggle between candidates list and analytics views.

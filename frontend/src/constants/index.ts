@@ -21,7 +21,7 @@ export const CHART_TEXTS = {
     description: "Shows distribution of HR decisions",
   },
   screeningResults: {
-    label: "Screening Results",
+    label: "AI Result",
     description: "Shows pass vs fail outcomes of candidates",
   },
   recruitmentStages: {

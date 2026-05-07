@@ -107,7 +107,7 @@ export function StageCentricChart({ data }: StageCentricChartProps) {
   }, [data]);
   // console.log(chartData);
 
-  // @ts-ignore
+
   const cleanData = useMemo(() => chartData.reduce<StageJob[]>((acc, jobData) => {
     // job with non zero candidates
     const validEnt = Object.entries(jobData).filter(
@@ -166,7 +166,7 @@ export function StageCentricChart({ data }: StageCentricChartProps) {
       <CardContent>
         <ChartContainer config={chartConfig} className="max-h-[350px] w-full">
           <BarChart
-            data={chartData}
+            data={cleanData}
             accessibilityLayer
             margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
           >
