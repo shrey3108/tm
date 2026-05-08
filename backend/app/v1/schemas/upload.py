@@ -47,7 +47,7 @@ class ResumeUploadResponse(BaseModel):
 
     message: str
     job_id: uuid.UUID
-    candidate_id: uuid.UUID
+    candidate_id: uuid.UUID | None = None
     file_id: uuid.UUID
     resume_id: uuid.UUID
     file_name: str
@@ -65,7 +65,7 @@ class ResumeStatusResponse(BaseModel):
     """Response containing the current status and analysis of a resume."""
 
     job_id: uuid.UUID
-    candidate_id: uuid.UUID
+    candidate_id: uuid.UUID | None = None
     file_id: uuid.UUID
     resume_id: uuid.UUID
     file_name: str
@@ -82,7 +82,7 @@ class JobResumeInfoResponse(BaseModel):
     """Detailed information about a resume associated with a job."""
 
     job_id: uuid.UUID
-    candidate_id: uuid.UUID
+    candidate_id: uuid.UUID | None = None
     candidate_first_name: str | None = None
     candidate_last_name: str | None = None
     candidate_email: str | None = None
@@ -153,7 +153,7 @@ class ResumeRead(BaseModel):
     """Schema for reading Resume data."""
 
     id: uuid.UUID
-    candidate_id: uuid.UUID
+    candidate_id: uuid.UUID | None = None
     file_id: uuid.UUID
     parsed: bool
     uploaded_at: datetime

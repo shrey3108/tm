@@ -69,8 +69,10 @@ async def get_job_stats(
 async def search_candidates(
     query: str | None = Query(None, description="General search query (name, email)"),
     job: str | None = Query(None, description="Job name or UUID"),
-    hr_decision: str | None = Query(None, description="Latest HR decision (approved, rejected, maybe)"),
-    city: str | None = Query(None, description="City/Location name"),
+    hr_decision: list[str] | None = Query(None, description="Latest HR decision (approved, rejected, maybe)"),
+    city: list[str] | None = Query(None, description="City/Location name(s)"),
+    result: list[str] | None = Query(None, description="AI screening result: 'passed', 'failed', or 'pending'"),
+    stage_id: list[str] | None = Query(None, description="Hiring pipeline stage name(s) or ID(s)"),
     db: AsyncSession = Depends(get_db),
     user: UserRead = Depends(check_permission("candidates:access")),
     start_date: datetime | None = Query(None),
@@ -85,6 +87,8 @@ async def search_candidates(
         job=job,
         hr_decision=hr_decision,
         city=city,
+        result=result,
+        stage_id=stage_id,
         start_date=start_date,
         end_date=end_date,
         skip=skip, 
@@ -100,12 +104,14 @@ async def get_job_candidates(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     query: str | None = Query(None, description="Search candidates by first name, last name, or email"),
-    hr_decision: str | None = Query(None, description="Filter by HR decision: 'approve', 'reject', or 'May Be'"),
-    jd_version: int | None = Query(None, description="Filter by original JD version number"),
+    hr_decision: list[str] | None = Query(None, description="Filter by HR decision: 'approve', 'reject', or 'May Be'"),
+    jd_version: list[int] | None = Query(None, description="Filter by original JD version number(s)"),
     start_date: datetime | None = Query(None),
     end_date: datetime | None = Query(None),
     candidate_id: uuid.UUID | None = Query(None, description="Filter by specific candidate ID"),
-    stage_id: uuid.UUID | None = Query(None, description="Filter by specific job stage config ID"),
+    stage_id: list[str] | None = Query(None, description="Filter by specific stage ID(s) or name(s)"),
+    city: list[str] | None = Query(None, description="Filter by candidate city/location(s)"),
+    result: list[str] | None = Query(None, description="AI result filter: 'passed', 'failed', 'pending'"),
 ) -> Any:
     """Get all candidates for a specific job, with optional searching and filtering."""
     return await admin_service.get_candidates_for_job(
@@ -120,6 +126,8 @@ async def get_job_candidates(
         end_date=end_date,
         candidate_id=candidate_id,
         stage_id=stage_id,
+        city=city,
+        result=result,
     )
 
 

@@ -65,6 +65,7 @@ class Candidate(Base):
     email: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
+        index=True,
     )
 
     phone: Mapped[str | None] = mapped_column(
