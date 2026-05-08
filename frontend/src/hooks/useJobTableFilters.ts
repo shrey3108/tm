@@ -1,8 +1,8 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { startOfDay, endOfDay } from "date-fns";
 import type { DateRange } from "react-day-picker";
 import type { Job } from "@/types/job";
-import { adminDepartmentService } from "@/apis/admin/department";
+import type { DepartmentRead } from "@/types/admin";
 
 export const useJobTableFilters = (jobs: Job[]) => {
   const [titleFilter, setTitleFilter] = useState("");
@@ -12,7 +12,6 @@ export const useJobTableFilters = (jobs: Job[]) => {
     from: undefined,
     to: undefined,
   });
-  const [departmentOptions, setDepartmentOptions] = useState<string[]>([]);
   const [departmentSearch, setDepartmentSearch] = useState("");
 
   const minDate = useMemo(() => {
@@ -21,39 +20,42 @@ export const useJobTableFilters = (jobs: Job[]) => {
     return new Date(Math.min(...dates));
   }, [jobs]);
 
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      const fetchDepartments = async () => {
-        try {
-          const response = await adminDepartmentService.getAllDepartments(0, 500, departmentSearch);
-          const names = response.data.map((dept) => dept.name.trim());
-          const uniqueNames = Array.from(new Set(names)).sort();
-          setDepartmentOptions(uniqueNames);
-        } catch (error) {
-          console.error("Failed to fetch departments for filter:", error);
+  const departmentOptions = useMemo(() => {
+    const uniqueDeptsMap = new Map<string, DepartmentRead>();
+    jobs.forEach((job) => {
+      if (job.department) {
+        const trimmedName = job.department.name.trim();
+        if (!uniqueDeptsMap.has(trimmedName)) {
+          uniqueDeptsMap.set(trimmedName, {
+            id: job.department.id,
+            name: trimmedName,
+            description: job.department.description,
+          } as DepartmentRead);
         }
-      };
-      fetchDepartments();
-    }, 300);
+      } else if (job.department_id && job.department_name) {
+        const trimmedName = job.department_name.trim();
+        if (!uniqueDeptsMap.has(trimmedName)) {
+          uniqueDeptsMap.set(trimmedName, {
+            id: job.department_id,
+            name: trimmedName,
+          } as DepartmentRead);
+        }
+      }
+    });
 
-    return () => clearTimeout(handler);
-  }, [departmentSearch]);
+    let opts = Array.from(uniqueDeptsMap.values())
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    if (departmentSearch) {
+      opts = opts.filter(d => d.name.toLowerCase().includes(departmentSearch.toLowerCase()));
+    }
+
+    return opts;
+  }, [jobs, departmentSearch]);
 
   const filteredJobs = useMemo(() => {
     return jobs.filter((j) => {
-      // Title search is handled server-side via the 'q' parameter.
-
-      // Status filter
-      if (statusFilter.length > 0) {
-        const jobStatus = j.is_active ? "active" : "inactive";
-        if (!statusFilter.includes(jobStatus)) return false;
-      }
-
-      // Department filter
-      if (departmentFilter.length > 0) {
-        const dept = j.department?.name || j.department_name || "";
-        if (!departmentFilter.includes(dept)) return false;
-      }
+      // Title, status, and department search are handled server-side.
 
       // Date range filter (created_at)
       if (j.created_at && (dateRange?.from || dateRange?.to)) {
@@ -64,7 +66,7 @@ export const useJobTableFilters = (jobs: Job[]) => {
 
       return true;
     });
-  }, [jobs, titleFilter, statusFilter, departmentFilter, dateRange]);
+  }, [jobs, dateRange]);
 
   const hasActiveFilters =
     !!titleFilter ||

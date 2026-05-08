@@ -19,9 +19,16 @@ const jobService = {
    * const jobs = await jobService.getJobs(0, 10);
    * ```
    */
-  getJobs: async (skip = 0, limit = 10, q?: string): Promise<JobsListResponse> => {
+  getJobs: async (skip = 0, limit = 10, filters?: {
+    q?: string,
+    status?: boolean | boolean[],
+    department_id?: string | string[],
+  }): Promise<JobsListResponse> => {
     const response = await client.get<JobsListResponse>("/jobs", {
-      params: { skip, limit, q: q ? q : undefined },
+      params: { skip, limit, ...filters },
+      paramsSerializer: {
+        indexes: null,
+      },
     });
     return response.data;
   },

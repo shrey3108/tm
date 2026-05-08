@@ -67,10 +67,10 @@ const AdminJobs = () => {
     return () => clearTimeout(timer);
   }, [titleFilter]);
 
-  // Reset to first page when search changes
+  // Reset to first page when search or filters change
   useEffect(() => {
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-  }, [debouncedTitle]);
+  }, [debouncedTitle, statusFilter, departmentFilter]);
 
   /** Fetches jobs using the admin service with current pagination. */
   const fetchJobs = useCallback(async () => {
@@ -78,7 +78,24 @@ const AdminJobs = () => {
     try {
       const skip = pagination.pageIndex * pagination.pageSize;
       const limit = pagination.pageSize;
-      const response = await adminJobService.getAllJobs(skip, limit, debouncedTitle);
+      
+      let statusParam: boolean | boolean[] | undefined = undefined;
+      if (statusFilter.length > 0) {
+        statusParam = statusFilter.map((s) => s === "active");
+      }
+
+      let departmentIdParam: string | string[] | undefined = undefined;
+      if (departmentFilter.length > 0) {
+        departmentIdParam = departmentFilter;
+      }
+      
+      const filters = {
+        q: debouncedTitle || undefined,
+        status: statusParam,
+        department_id: departmentIdParam,
+      };
+
+      const response = await adminJobService.getAllJobs(skip, limit, filters);
       setJobs(response.data as unknown as Job[]);
       setTotal(response.total);
     } catch (error) {
@@ -88,7 +105,7 @@ const AdminJobs = () => {
     } finally {
       setLoading(false);
     }
-  }, [pagination.pageIndex, pagination.pageSize, debouncedTitle]);
+  }, [pagination.pageIndex, pagination.pageSize, debouncedTitle, statusFilter, departmentFilter]);
 
   useEffect(() => {
     fetchJobs();

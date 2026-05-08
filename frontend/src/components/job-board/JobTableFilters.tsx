@@ -6,6 +6,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { cn, capitalize } from "@/lib/utils";
 import { format } from "date-fns";
 import type { DateRange } from "react-day-picker";
+import type { DepartmentRead } from "@/types/admin";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -33,7 +34,7 @@ interface JobTableFiltersProps {
   setDepartmentFilter: (value: string[]) => void;
   dateRange: DateRange | undefined;
   setDateRange: (range: DateRange | undefined) => void;
-  departmentOptions: string[];
+  departmentOptions: DepartmentRead[];
   departmentSearch: string;
   setDepartmentSearch: (value: string) => void;
   hasActiveFilters: boolean;
@@ -150,8 +151,8 @@ export const JobTableFilters = ({
                   {departmentFilter.length === 0
                     ? "Departments"
                     : departmentFilter.length <= FILTER_DISPLAY_LIMIT
-                      ? departmentFilter.join(", ")
-                      : `${departmentFilter.slice(0, FILTER_DISPLAY_LIMIT).join(", ")} and ${departmentFilter.length - FILTER_DISPLAY_LIMIT} more`}
+                      ? departmentFilter.map(id => departmentOptions.find(d => d.id === id)?.name || id).join(", ")
+                      : `${departmentFilter.slice(0, FILTER_DISPLAY_LIMIT).map(id => departmentOptions.find(d => d.id === id)?.name || id).join(", ")} and ${departmentFilter.length - FILTER_DISPLAY_LIMIT} more`}
                 </span>
                 <ChevronDown className="h-4 w-4 opacity-60 shrink-0" />
               </DropdownMenuTrigger>
@@ -178,19 +179,19 @@ export const JobTableFilters = ({
                       <>
                         {departmentOptions.slice(0, FILTER_DISPLAY_LIMIT).map((d) => (
                           <DropdownMenuCheckboxItem
-                            key={d}
-                            checked={departmentFilter.includes(d)}
+                            key={d.id}
+                            checked={departmentFilter.includes(d.id)}
                             onSelect={(e) => e.preventDefault()}
                             onClick={() =>
                               setDepartmentFilter(
-                                departmentFilter.includes(d)
-                                  ? departmentFilter.filter((v) => v !== d)
-                                  : [...departmentFilter, d]
+                                departmentFilter.includes(d.id)
+                                  ? departmentFilter.filter((v) => v !== d.id)
+                                  : [...departmentFilter, d.id]
                               )
                             }
                             className="rounded-lg my-0.5 capitalize"
                           >
-                            {d}
+                            {d.name}
                           </DropdownMenuCheckboxItem>
                         ))}
                         {departmentOptions.length > FILTER_DISPLAY_LIMIT && (
