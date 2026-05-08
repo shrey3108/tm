@@ -330,7 +330,9 @@ async def create_stage_template(
     template_in: StageTemplateCreate,
 ) -> Any:
     """Create a new stage template."""
-    return await stage_service.create_template(db=db, template_in=template_in)
+    return await stage_service.create_template(
+        db=db, admin_user_id=admin.id, template_in=template_in
+    )
 
 
 @router.patch("/stage-templates/{template_id}", response_model=StageTemplateRead)
@@ -343,7 +345,10 @@ async def update_stage_template(
 ) -> Any:
     """Update a stage template."""
     return await stage_service.update_template(
-        db=db, template_id=template_id, template_update=template_update
+        db=db,
+        admin_user_id=admin.id,
+        template_id=template_id,
+        template_update=template_update,
     )
 
 
@@ -354,7 +359,9 @@ async def delete_stage_template(
     admin: UserRead = Depends(check_permission("jobs:manage")),
 ) -> None:
     """Delete a stage template."""
-    await stage_service.delete_template(db=db, template_id=template_id)
+    await stage_service.delete_template(
+        db=db, admin_user_id=admin.id, template_id=template_id
+    )
 
 
 @router.get("/prompts", response_model=PaginatedData[PromptRead])

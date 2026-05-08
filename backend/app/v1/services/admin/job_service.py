@@ -16,6 +16,7 @@ from app.v1.schemas.job import (
     JobTitleRead,
     JobTitlesListRead,
 )
+from app.v1.repository.user_repository import user_repository
 from app.v1.services.admin.audit_service import audit_service
 from app.v1.services.admin.department_service import department_service
 from app.v1.services.admin.skill_service import skill_service
@@ -23,8 +24,14 @@ from app.v1.services.user_service import user_service
 from app.v1.services.admin.job_priority_service import job_priority_service
 from app.v1.services.stage.enrichment import enrich_stage_configs
 from fastapi import HTTPException, status
+from sqlalchemy import and_, desc, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.v1.core.cache import cache
+from app.v1.db.models.audit_logs import AuditLog
+from app.v1.db.models.candidates import Candidate
+from app.v1.db.models.cross_job_matches import CrossJobMatch
+from app.v1.db.models.hr_decisions import HrDecision
+from app.v1.db.models.resumes import Resume
 
 logger = logging.getLogger(__name__)
 
@@ -252,7 +259,18 @@ class JobAdminService:
             action="create_job",
             target_type="job",
             target_id=job.id,
-            details={"title": job.title},
+            details={
+                "job_id": str(job.id),
+                "title": job.title,
+                "jd_text": job.jd_text,
+                "department_id": str(job.department_id),
+                "priority_id": str(job.priority_id),
+                "position_id": str(job.position_id),
+                "skill_ids": [str(s.id) for s in job.skills],
+                "stage_ids": [str(s.id) for s in job.stages],
+                "is_active": job.is_active,
+                "created_at": job.created_at.isoformat() if job.created_at else None
+            },
         )
 
         # Trigger background task to match all existing resumes to this new job
@@ -358,10 +376,11 @@ class JobAdminService:
         
         # Log general update with values
         log_details = {
+            "job_id": str(job_id),
             "updated_fields": list(updated_fields_map.keys()),
         }
         # Add specific values for important fields to make audit logs readable
-        for field in ["priority_id", "title", "department_id", "is_active"]:
+        for field in ["priority_id", "title", "department_id", "position_id", "is_active"]:
             if field in updated_fields_map:
                 log_details[field] = str(updated_fields_map[field])
 
@@ -436,7 +455,10 @@ class JobAdminService:
             action="update_job_status",
             target_type="job",
             target_id=job_id,
-            details={"is_active": status_in.is_active},
+            details={
+                "job_id": str(job_id),
+                "is_active": status_in.is_active
+            },
         )
 
         # Invalidate job board and search caches
@@ -468,18 +490,34 @@ class JobAdminService:
                 detail="Please deactivate the job before deleting it.",
             )
 
+        # Capture details before deletion (while object is still in DB)
+        job_title = job.title
+        job_is_active = job.is_active
+        
+        # Get admin user role for context
+        admin_user = await user_repository.get_by_id(db, admin_user_id)
+        admin_role = admin_user.role_name if admin_user else "unknown"
+
+        # Now perform the actual deletion
         await job_repository.force_delete(db=db, id=job_id)
 
         # Invalidate job board and search caches
         from app.v1.core.cache import cache
         await cache.clear(pattern="jobs:list:*")
         await cache.clear(pattern="jobs:search:*")
+
         await audit_service.log_action(
             db=db,
             user_id=admin_user_id,
             action="force_delete_job",
             target_type="job",
             target_id=job_id,
+            details={
+                "job_id": str(job_id),
+                "title": job_title,
+                "is_active": job_is_active,
+                "deleted_by_role": admin_role
+            },
         )
 
 
@@ -522,11 +560,14 @@ class JobAdminService:
         # 2. Get total unique candidates for this job (Native OR Cross, deduplicated by email)
         total_unique_stmt = select(
             func.count(func.distinct(func.coalesce(Candidate.email, func.cast(Candidate.id, Text))))
-        ).where(
-            or_(
-                Candidate.applied_job_id == job_id,
-                Candidate.id.in_(
-                    select(CrossJobMatch.candidate_id).where(CrossJobMatch.matched_job_id == job_id)
+        ).join(Resume, Resume.candidate_id == Candidate.id).where(
+            and_(
+                Resume.parsed.is_(True),
+                or_(
+                    Candidate.applied_job_id == job_id,
+                    Candidate.id.in_(
+                        select(CrossJobMatch.candidate_id).where(CrossJobMatch.matched_job_id == job_id)
+                    )
                 )
             )
         )
@@ -599,19 +640,21 @@ class JobAdminService:
 
             # Build conditions dynamically to handle None end_dates
             # Note: We filter candidates who were created/matched during this session's window
-            session_candidate_ids_stmt = select(Candidate.id).where(
-                or_(
-                    and_(Candidate.applied_job_id == job_id, Candidate.created_at >= s["start_date"], Candidate.created_at <= (s["end_date"] if s["end_date"] else func.now())),
-                    Candidate.id.in_(
-                        select(CrossJobMatch.candidate_id).where(
-                            and_(CrossJobMatch.matched_job_id == job_id, CrossJobMatch.created_at >= s["start_date"], CrossJobMatch.created_at <= (s["end_date"] if s["end_date"] else func.now()))
+            session_candidate_ids_stmt = select(Candidate.id).join(Resume, Resume.candidate_id == Candidate.id).where(
+                and_(
+                    Resume.parsed.is_(True),
+                    or_(
+                        and_(Candidate.applied_job_id == job_id, Candidate.created_at >= s["start_date"], Candidate.created_at <= (s["end_date"] if s["end_date"] else func.now())),
+                        Candidate.id.in_(
+                            select(CrossJobMatch.candidate_id).where(
+                                and_(CrossJobMatch.matched_job_id == job_id, CrossJobMatch.created_at >= s["start_date"], CrossJobMatch.created_at <= (s["end_date"] if s["end_date"] else func.now()))
+                            )
                         )
                     )
                 )
             )
 
             # Get latest decision per unique person (deduplicated by email) for this job
-            from app.v1.db.models.hr_decisions import HrDecision
             subq = (
                 select(
                     func.coalesce(Candidate.email, func.cast(Candidate.id, Text)).label("person_id"),

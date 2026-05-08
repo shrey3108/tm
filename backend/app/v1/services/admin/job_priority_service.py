@@ -93,7 +93,11 @@ class JobPriorityService:
             action="create_priority",
             target_type="job_priority",
             target_id=db_obj.id,
-            details={"name": db_obj.name},
+            details={
+                "priority_id": str(db_obj.id),
+                "name": db_obj.name,
+                "duration_days": db_obj.duration_days
+            },
         )
         
         # Invalidate cache
@@ -127,7 +131,12 @@ class JobPriorityService:
             action="update_priority",
             target_type="job_priority",
             target_id=db_obj.id,
-            details={"updated_fields": list(update_data.keys())},
+            details={
+                "priority_id": str(db_obj.id),
+                "name": db_obj.name,
+                "duration_days": db_obj.duration_days,
+                "updated_fields": list(update_data.keys())
+            },
         )
         
         # Invalidate cache

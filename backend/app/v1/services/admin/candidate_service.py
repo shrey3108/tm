@@ -16,6 +16,7 @@ from app.v1.schemas.upload import CandidateResponse, ResumeMatchAnalysis
 from app.v1.schemas.response import PaginatedData
 from app.v1.schemas.candidate_stage import CandidateStageSummary
 from app.v1.core.cache import cache
+from app.v1.services.admin.audit_service import audit_service
 
 
 class CandidateAdminService:
@@ -727,7 +728,7 @@ class CandidateAdminService:
 
 
     async def delete_candidate_by_identifier(
-        self, db: AsyncSession, identifier: str
+        self, db: AsyncSession, admin_user_id: uuid.UUID, identifier: str
     ) -> bool:
         """
         Delete a candidate by ID or Email for testing purposes.
@@ -786,8 +787,27 @@ class CandidateAdminService:
                 {"ids": resume_ids}
             )
 
+        # Capture candidate info before deletion for audit trail
+        candidate_name = f"{candidate.get('first_name', '')} {candidate.get('last_name', '')}"
+        candidate_email = candidate.get('email')
+        applied_job_id = candidate.get('applied_job_id')
+
         await db.delete(candidate)
         await db.commit()
+
+        # Audit log for candidate deletion
+        await audit_service.log_action(
+            db=db,
+            user_id=admin_user_id,
+            action="delete_candidate",
+            target_type="candidate",
+            target_id=candidate_id,
+            details={
+                "name": candidate_name,
+                "email": candidate_email,
+                "job_id": str(applied_job_id) if applied_job_id else None
+            }
+        )
         return True
 
 

@@ -122,7 +122,10 @@ class DepartmentService:
             action="create_department",
             target_type="department",
             target_id=department.id,
-            details={"name": department.name},
+            details={
+                "department_id": str(department.id),
+                "name": department.name
+            },
         )
         # Invalidate cache
         await cache.clear(pattern="departments:list:*")
@@ -176,7 +179,11 @@ class DepartmentService:
             action="update_department",
             target_type="department",
             target_id=department_id,
-            details={"updated_fields": list(update_data.keys())},
+            details={
+                "department_id": str(department_id),
+                "name": updated.name,
+                "updated_fields": list(update_data.keys())
+            },
         )
         # Invalidate cache
         await cache.delete(f"department:{department_id}")
@@ -223,6 +230,10 @@ class DepartmentService:
             action="delete_department",
             target_type="department",
             target_id=department_id,
+            details={
+                "department_id": str(department_id),
+                "name": department.name
+            },
         )
         # Invalidate cache
         await cache.delete(f"department:{department_id}")

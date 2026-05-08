@@ -427,9 +427,11 @@ class AdminRepository:
         active_jobs = await db.scalar(select(func.count(Job.id)).where(Job.is_active)) or 0
         active_users = await db.scalar(select(func.count(User.id)).where(User.is_active)) or 0
 
-        # 1. Total Unique Candidates (Deduplicated by email)
+        # 1. Total Unique Candidates (Only those with at least one successfully parsed resume)
         total_candidates = await db.scalar(
             select(func.count(func.distinct(func.coalesce(Candidate.email, func.cast(Candidate.id, Text)))))
+            .join(Resume, Resume.candidate_id == Candidate.id)
+            .where(Resume.parsed.is_(True))
         ) or 0
         
         # 2. Screening Stats - Strict Deduplication by Unique Individual
@@ -579,14 +581,17 @@ class AdminRepository:
         for job in jobs:
             job_unique_stmt = select(
                 func.count(func.distinct(func.coalesce(Candidate.email, func.cast(Candidate.id, Text))))
-            ).where(
-                or_(
-                    Candidate.applied_job_id == job.id,
-                    Candidate.id.in_(
-                        select(CrossJobMatch.candidate_id).where(CrossJobMatch.matched_job_id == job.id)
-                    ),
-                    Candidate.id.in_(
-                        select(HrDecision.candidate_id).where(HrDecision.job_id == job.id)
+            ).join(Resume, Resume.candidate_id == Candidate.id).where(
+                and_(
+                    Resume.parsed.is_(True),
+                    or_(
+                        Candidate.applied_job_id == job.id,
+                        Candidate.id.in_(
+                            select(CrossJobMatch.candidate_id).where(CrossJobMatch.matched_job_id == job.id)
+                        ),
+                        Candidate.id.in_(
+                            select(HrDecision.candidate_id).where(HrDecision.job_id == job.id)
+                        )
                     )
                 )
             )
