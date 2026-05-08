@@ -16,7 +16,9 @@ class JobService:
         limit: int = 100, 
         query: str | None = None,
         status: bool | None = None,
-        department_id: uuid.UUID | None = None,
+        department_ids: list[uuid.UUID] | None = None,
+        priority_ids: list[uuid.UUID] | None = None,
+        position_ids: list[uuid.UUID] | None = None,
     ):
         """
         Retrieve a list of jobs with pagination and global summaries.
@@ -29,7 +31,9 @@ class JobService:
             limit=limit, 
             query=query, 
             status=status, 
-            department_id=department_id
+            department_ids=department_ids,
+            priority_ids=priority_ids,
+            position_ids=position_ids
         )
 
     async def get_job_titles(self, db: AsyncSession, query: str | None = None):

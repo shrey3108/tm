@@ -48,11 +48,13 @@ class JobAdminService:
         limit: int = 100, 
         query: str | None = None,
         status: bool | None = None,
-        department_id: uuid.UUID | None = None,
+        department_ids: list[uuid.UUID] | None = None,
+        priority_ids: list[uuid.UUID] | None = None,
+        position_ids: list[uuid.UUID] | None = None,
     ) -> JobsListRead:
         """Get all jobs with pagination and global dashboard summaries."""
         # 0. Cache lookup
-        cache_key = f"jobs:list:{skip}:{limit}:{query or 'none'}:{status}:{department_id or 'none'}"
+        cache_key = f"jobs:list:{skip}:{limit}:{query or 'none'}:{status}:{department_ids}:{priority_ids}:{position_ids}"
         cached = await cache.get(cache_key)
         if cached:
             try:
@@ -66,7 +68,9 @@ class JobAdminService:
             limit=limit, 
             query=query, 
             status=status, 
-            department_id=department_id
+            department_ids=department_ids,
+            priority_ids=priority_ids,
+            position_ids=position_ids
         )
 
         from app.v1.services.hr_decision_service import hr_decision_service

@@ -171,5 +171,8 @@ class AdminService:
     async def clear_cache(self, *args, **kwargs) -> bool:
         return await system_service.clear_cache(*args, **kwargs)
 
+    async def get_cache_info(self, *args, **kwargs) -> dict:
+        return await system_service.get_cache_info(*args, **kwargs)
+
 
 admin_service = AdminService()

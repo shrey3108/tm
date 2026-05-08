@@ -96,6 +96,20 @@ class RedisCache:
             _log.error("Redis clear failed: %s", exc)
             return False
 
+    async def keys(self, pattern: str = "*") -> list[str]:
+        """
+        List keys matching a pattern.
+        Returns a list of string keys.
+        """
+        client = self._get_client()
+        if client is None:
+            return []
+        try:
+            return [key async for key in client.scan_iter(match=pattern)]
+        except Exception as exc:  # noqa: BLE001
+            _log.error("Redis KEYS failed pattern=%s: %s", pattern, exc)
+            return []
+
     async def close(self) -> None:
         """Gracefully close the Redis connection."""
         if self._client is not None:

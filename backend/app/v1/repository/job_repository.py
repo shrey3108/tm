@@ -45,7 +45,9 @@ class JobRepository:
         limit: int = 100, 
         query: str | None = None,
         status: bool | None = None,
-        department_id: uuid.UUID | None = None,
+        department_ids: list[uuid.UUID] | None = None,
+        priority_ids: list[uuid.UUID] | None = None,
+        position_ids: list[uuid.UUID] | None = None,
     ):
         """
         Retrieve multiple job records with pagination and filters.
@@ -56,7 +58,9 @@ class JobRepository:
             limit (int): Maximum number of records to return.
             query (str | None): Optional search query for job title.
             status (bool | None): Filter by is_active status.
-            department_id (UUID | None): Filter by department.
+            department_ids (list[UUID] | None): Filter by department(s).
+            priority_ids (list[UUID] | None): Filter by priority(s).
+            position_ids (list[UUID] | None): Filter by position(s).
 
         Returns:
             dict[str, object]: A dictionary containing the jobs and total count.
@@ -66,8 +70,12 @@ class JobRepository:
             filters.append(Job.title.ilike(f"%{query}%"))
         if status is not None:
             filters.append(Job.is_active == status)
-        if department_id:
-            filters.append(Job.department_id == department_id)
+        if department_ids:
+            filters.append(Job.department_id.in_(department_ids))
+        if priority_ids:
+            filters.append(Job.priority_id.in_(priority_ids))
+        if position_ids:
+            filters.append(Job.position_id.in_(position_ids))
 
         # 1. Total Count Query
         total_stmt = select(func.count()).select_from(Job)
