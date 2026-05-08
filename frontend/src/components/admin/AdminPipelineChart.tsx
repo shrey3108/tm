@@ -44,15 +44,14 @@ interface CustomTooltipProps {
 const CustomTooltipContent = ({ active, payload, label, activeKey }: CustomTooltipProps) => {
   if (!active || !payload || payload.length === 0) return null;
 
-  // only show jobs with value > 0
-  const filteredPayload = payload.filter((entry) => entry.value > 0);
-  // const filteredPayload = payload
+  // only show jobs with value > 0 and reverse to match stacked bar order
+  const filteredPayload = [...payload].filter((entry) => entry.value > 0).reverse();
 
   // if no jobs with value > 0, return null
   if (filteredPayload.length === 0) return null;
 
   return (
-    <div className="bg-white dark:bg-card dark:border-border/50 p-3 rounded-xl shadow-md border border-border/50 ">
+    <div className="bg-white dark:bg-card dark:border-border/50 p-3 rounded-xl shadow-md border border-border/50 max-h-[380px] overflow-y-auto pointer-events-auto ">
       <p className="font-semibold mb-2 text-sm text-foreground dark:text-white">{label}</p>
 
       {filteredPayload.map((entry, index) => {
@@ -63,7 +62,7 @@ const CustomTooltipContent = ({ active, payload, label, activeKey }: CustomToolt
             key={index}
             className={cn(
               "flex justify-between items-center px-2 py-1.5 text-xs transition-colors gap-4",
-              isActive ? " font-bold " : ""
+              isActive ? " font-semibold " : ""
             )}
           >
             <div className="flex items-center gap-2">
@@ -228,7 +227,10 @@ export function StageCentricChart({ data }: StageCentricChartProps) {
             <ChartTooltip
               content={<CustomTooltipContent activeKey={activeKey} />}
               cursor={{ fill: "hsl(var(--muted)/0.2)" }}
-
+              position={{
+                y: -30,
+              }}
+              wrapperStyle={{ pointerEvents: "auto" }}
             />
 
             {/* <ChartLegend content={<ChartLegendContent />} /> */}
@@ -245,11 +247,6 @@ export function StageCentricChart({ data }: StageCentricChartProps) {
                   onMouseEnter={() => { setActiveKey(name) }}
                   onMouseLeave={() => setActiveKey(null)}
                 >
-                  {/* <LabelList
-                    dataKey={name}
-                    position="insideTop"
-                    className="fill-black text-xs font-bold"
-                  /> */}
                 </Bar>
               );
             })}
