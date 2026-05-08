@@ -6,7 +6,7 @@ import uuid
 import logging
 from typing import Any
 
-from sqlalchemy import delete, func, insert, select, text
+from sqlalchemy import and_, delete, func, insert, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -39,29 +39,43 @@ class JobRepository:
     """
 
     async def get_multi(
-        self, db: AsyncSession, skip: int = 0, limit: int = 100, query: str | None = None
+        self, 
+        db: AsyncSession, 
+        skip: int = 0, 
+        limit: int = 100, 
+        query: str | None = None,
+        status: bool | None = None,
+        department_id: uuid.UUID | None = None,
     ):
         """
-        Retrieve multiple job records with pagination.
+        Retrieve multiple job records with pagination and filters.
 
         Args:
             db (AsyncSession): Database session.
             skip (int): Number of records to skip.
             limit (int): Maximum number of records to return.
             query (str | None): Optional search query for job title.
+            status (bool | None): Filter by is_active status.
+            department_id (UUID | None): Filter by department.
 
         Returns:
             dict[str, object]: A dictionary containing the jobs and total count.
         """
-        search_filter = None
+        filters = []
         if query:
-            search_filter = Job.title.ilike(f"%{query}%")
+            filters.append(Job.title.ilike(f"%{query}%"))
+        if status is not None:
+            filters.append(Job.is_active == status)
+        if department_id:
+            filters.append(Job.department_id == department_id)
 
+        # 1. Total Count Query
         total_stmt = select(func.count()).select_from(Job)
-        if search_filter is not None:
-            total_stmt = total_stmt.where(search_filter)
+        if filters:
+            total_stmt = total_stmt.where(and_(*filters))
         total = await db.scalar(total_stmt)
 
+        # 2. Data Query
         stmt = (
             select(Job)
             .options(
@@ -71,9 +85,12 @@ class JobRepository:
                 selectinload(Job.versions),
             )
         )
-        stmt = stmt.where(search_filter) if search_filter is not None else stmt
+        if filters:
+            stmt = stmt.where(and_(*filters))
+            
         stmt = stmt.order_by(Job.created_at.desc()).offset(skip).limit(limit)
         result = await db.execute(stmt)
+        
         return {
             "data": list(result.scalars().unique().all()),
             "total": total or 0,

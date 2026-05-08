@@ -42,11 +42,17 @@ class JobAdminService:
     """
 
     async def get_all_jobs(
-        self, db: AsyncSession, skip: int = 0, limit: int = 100, query: str | None = None
+        self, 
+        db: AsyncSession, 
+        skip: int = 0, 
+        limit: int = 100, 
+        query: str | None = None,
+        status: bool | None = None,
+        department_id: uuid.UUID | None = None,
     ) -> JobsListRead:
         """Get all jobs with pagination and global dashboard summaries."""
         # 0. Cache lookup
-        cache_key = f"jobs:list:{skip}:{limit}:{query or 'none'}"
+        cache_key = f"jobs:list:{skip}:{limit}:{query or 'none'}:{status}:{department_id or 'none'}"
         cached = await cache.get(cache_key)
         if cached:
             try:
@@ -55,7 +61,12 @@ class JobAdminService:
                 pass
 
         result = await job_repository.get_multi(
-            db=db, skip=skip, limit=limit, query=query
+            db=db, 
+            skip=skip, 
+            limit=limit, 
+            query=query, 
+            status=status, 
+            department_id=department_id
         )
 
         from app.v1.services.hr_decision_service import hr_decision_service
