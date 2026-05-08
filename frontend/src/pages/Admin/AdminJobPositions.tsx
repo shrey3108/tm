@@ -219,8 +219,8 @@ const AdminJobPositions = () => {
         title="Job Position Management"
         actions={
           <PermissionGuard permissions={PERMISSIONS.ADMIN_ACCESS} hideWhenDenied>
-            <Button onClick={handleCreateClick} className="rounded-xl">
-              <Plus />
+            <Button onClick={handleCreateClick} className="gap-2">
+              <Plus className="h-4 w-4" />
               Create Position
             </Button>
           </PermissionGuard>

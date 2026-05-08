@@ -24,6 +24,8 @@ import {
   CardTitle,
   CardAction,
 } from "@/components/ui/card"
+import { InfoLabel } from "@/components/shared";
+import { Separator } from "../ui/separator";
 
 interface JobInfoModalProps {
   isOpen: boolean;
@@ -45,13 +47,13 @@ const InfoSection = ({
   action?: React.ReactNode;
 }) => (
   <Card size="sm" className={cn("border-muted-foreground/10 bg-card/50 shadow-sm transition-all hover:shadow-md hover:border-primary/20", className)}>
-    <CardHeader className="pb-2">
-      <CardTitle className={cn("text-xs font-black text-muted-foreground ", titleClassName)}>
+    <CardHeader>
+      <CardTitle className={cn("text-sm font-black text-muted-foreground ", titleClassName)}>
         {title}
       </CardTitle>
       {action && <CardAction>{action}</CardAction>}
     </CardHeader>
-    <CardContent className="pt-0">
+    <CardContent>
       <div className="text-sm font-medium">
         {children}
       </div>
@@ -223,27 +225,29 @@ export function JobInfoModal({ isOpen, onClose, job }: JobInfoModalProps) {
               </InfoSection>
             )}
 
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <InfoSection title="Passing Threshold">
-                <span className="text-lg font-black ">
-                  {job.passing_threshold}%
-                </span>
-              </InfoSection>
-
-              <InfoSection title="Vacancy">
-                <span className="text-lg font-black ">
-                  {job.vacancy}
-                </span>
-              </InfoSection>
-
-              <InfoSection title="Position Level">
-                <span className="text-sm font-bold text-foreground/80">
-                  {job.position?.name || "N/A"}
-                </span>
-              </InfoSection>
-            </div>
-
+            {/* Key Information Row */}
+            <Card className="border-muted-foreground/10 bg-card/50 shadow-sm transition-all hover:shadow-md hover:border-primary/20 p-1">
+              <div className="flex flex-wrap items-center gap-x-10 gap-y-4 px-2 py-1 ">
+                <InfoLabel
+                  label="Passing Threshold"
+                  value={`${job.passing_threshold}%`}
+                  valueClassName="text-base"
+                />
+                <Separator orientation="vertical" className="h-12 bg-gray-300" />
+                <InfoLabel
+                  label="Vacancy"
+                  value={job.vacancy}
+                  valueClassName="text-base"
+                />
+                <Separator orientation="vertical" className="h-12 bg-gray-300" />
+                <InfoLabel
+                  label="Position Level"
+                  value={job.position?.name || "N/A"}
+                  valueClassName="text-base"
+                />
+                <Separator orientation="vertical" className="h-12 bg-gray-300" />
+              </div>
+            </Card>
             {/* Job Stages Card */}
             <InfoSection title="Job Stages">
               <div className="flex flex-wrap gap-2 py-1 flex-col">

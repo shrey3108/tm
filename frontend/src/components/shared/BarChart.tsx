@@ -1,5 +1,6 @@
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Rectangle, ResponsiveContainer, Label } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig, } from "@/components/ui/chart"
+import { MAX_LOCATION_BAR_CHART_DISPLAY_LIMIT } from "@/constants";
 
 const chartConfig = {
   value: {
@@ -387,7 +388,18 @@ interface LocationBarChartProps {
 }
 
 export function LocationBarChart({ locations }: LocationBarChartProps) {
-  const data = Object.entries(locations).map(([name, value], index) => ({
+  const sortedEntries = Object.entries(locations).sort((a, b) => b[1] - a[1]);
+
+  let displayData: [string, number][];
+  if (sortedEntries.length > MAX_LOCATION_BAR_CHART_DISPLAY_LIMIT) {
+    const topX = sortedEntries.slice(0, MAX_LOCATION_BAR_CHART_DISPLAY_LIMIT);
+    const others = sortedEntries.slice(MAX_LOCATION_BAR_CHART_DISPLAY_LIMIT).reduce((acc, [_, val]) => acc + val, 0);
+    displayData = [...topX, ["Other", others]];
+  } else {
+    displayData = sortedEntries;
+  }
+
+  const data = displayData.map(([name, value], index) => ({
     name,
     value,
     gradientId: `gradientLocation-${index}`,

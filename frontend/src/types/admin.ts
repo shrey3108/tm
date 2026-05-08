@@ -339,6 +339,7 @@ export interface JobPriorityRead {
   duration_days: number;
   created_at: string;
   updated_at: string;
+  assigned_jobs_count: number
 }
 
 /**

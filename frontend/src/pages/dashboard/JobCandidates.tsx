@@ -232,7 +232,7 @@ export default function JobCandidates() {
                       total={totalCandidates}
                       activitySessions={activitySession}
                       onFiltersChange={handleFiltersChange}
-                      initialDateRange={activeFilters.dateRange}
+                      initialDateRange={activeFilters.dateRange as DateRange | undefined}
                       headerActions={
                         <PermissionGuard permissions={PERMISSIONS.JOBS_MANAGE} hideWhenDenied>
                           <Button

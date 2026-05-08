@@ -33,8 +33,7 @@ export function JobActivityModal({ isOpen, onOpenChange, job, onSessionClick }: 
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="flex w-[calc(100vw-1rem)] flex-col sm:w-[92vw] sm:max-w-[92vw] lg:max-w-150 max-h-[calc(100vh-1rem)] sm:max-h-[92vh] p-0 overflow-hidden rounded-[1.75rem] sm:rounded-3xl border-muted-foreground/10 bg-card/95 backdrop-blur-xl shadow-2xl h-[650px]
-      max-w-[900px]">
+      <DialogContent className="w-[60vw] max-w-[60vw] sm:max-w-3xl md:max-w-4xl lg:max-w-5xl max-h-[90vh] flex flex-col p-0 overflow-hidden bg-card/95 backdrop-blur-xl border-muted-foreground/20 shadow-2xl rounded-2xl h-[600px]">
         <div className="p-6 pb-2 shrink-0">
           <DialogHeader>
             <div className="flex items-center gap-2 mb-1">
@@ -100,12 +99,12 @@ export function JobActivityModal({ isOpen, onOpenChange, job, onSessionClick }: 
                       <div className="flex flex-col gap-0.5">
                         <div className="flex items-center gap-1.5 text-sm">
                           <span className="text-muted-foreground w-10">Start:</span>
-                          <DateDisplay date={session.start_date} />
+                          <DateDisplay date={session.start_date} showTime />
                         </div>
                         <div className="flex items-center gap-1.5 text-sm">
                           <span className="text-muted-foreground w-10">End:</span>
                           {session.end_date ? (
-                            <DateDisplay date={session.end_date} />
+                            <DateDisplay date={session.end_date} showTime />
                           ) : (
                             <span className="text-primary font-medium">Ongoing</span>
                           )}

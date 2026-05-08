@@ -12,7 +12,7 @@ import { DataTable } from "@/components/shared/DataTable";
 import ErrorDisplay from "@/components/shared/ErrorDisplay";
 import { CreateJobPriorityModal, DeleteModal } from "@/components/modal";
 import { useAdminData } from "@/hooks";
-import { Edit2, Trash2Icon, ArrowUpDown, Clock, AlertCircle } from "lucide-react";
+import { Edit2, Trash2Icon, ArrowUpDown, Clock, AlertCircle, Plus } from "lucide-react";
 import { extractErrorMessage } from "@/utils/error";
 import type { ColumnDef, PaginationState } from "@tanstack/react-table";
 import { Button } from "@/components";
@@ -228,9 +228,36 @@ const AdminJobPriorities = () => {
       </div>,
     },
     {
-      id: "actions",
+      accessorKey: "assigned_jobs_count",
+      header: ({ column }) => (
+        <div className="flex justify-center">
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="hover:bg-transparent p-0 font-semibold"
+          >
+            Assigned Jobs Count
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        </div>
+      ),
       cell: ({ row }) => (
-        <div className="flex gap-2 justify-end">
+        <div className="text-center ">
+          {row.original.assigned_jobs_count}
+        </div>
+      ),
+    },
+    {
+      id: "actions",
+      header: () => (
+        <div className="flex justify-center">
+          <span className="hover:bg-transparent p-0 font-semibold text-center">
+            Actions
+          </span>
+        </div>
+      ),
+      cell: ({ row }) => (
+        <div className="flex gap-2 justify-center">
           <PermissionGuard permissions={PERMISSIONS.ADMIN_ACCESS} hideWhenDenied>
             <HoverCard>
               <HoverCardTrigger
@@ -241,6 +268,7 @@ const AdminJobPriorities = () => {
                     size="icon"
                     onClick={() => handleEditClick(row.original)}
                     className="h-9 w-9 p-0 rounded-xl hover:bg-primary/10 hover:text-primary transition-colors flex items-center justify-center shrink-0"
+                    disabled={row.original.assigned_jobs_count > 0}
                   >
                     <Edit2 className="h-4 w-4 shrink-0" />
                   </Button>
@@ -261,6 +289,7 @@ const AdminJobPriorities = () => {
                     size="icon"
                     onClick={() => handleDeleteClick(row.original)}
                     className="h-9 w-9 p-0 rounded-xl hover:bg-destructive/10 hover:text-destructive transition-colors flex items-center justify-center shrink-0"
+                    disabled={row.original.assigned_jobs_count > 0}
                   >
                     <Trash2Icon className="h-4 w-4 shrink-0" />
                   </Button>
@@ -283,7 +312,8 @@ const AdminJobPriorities = () => {
         subtitle="Manage job priorities and their durations for the hiring platform."
         actions={
           <PermissionGuard permissions={PERMISSIONS.ADMIN_ACCESS} hideWhenDenied>
-            <Button onClick={handleCreateClick} className="rounded-xl px-6">
+            <Button onClick={handleCreateClick} className="gap-2">
+              <Plus className="h-4 w-4" />
               Create Priority
             </Button>
           </PermissionGuard>

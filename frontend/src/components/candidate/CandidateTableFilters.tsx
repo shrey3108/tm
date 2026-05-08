@@ -507,7 +507,7 @@ export const CandidateTableFilters = ({
               >
                 <span className="truncate">
                   {activitySession.length === 0
-                    ? "Hiring Activity"
+                    ? "Hiring Cycle"
                     : activitySession.length === 1
                       ? `Activity ${activitySession[0]}`
                       : `${activitySession.length} Activities`}

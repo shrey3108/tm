@@ -12,7 +12,7 @@ import { DataTable } from "@/components/shared/DataTable";
 import ErrorDisplay from "@/components/shared/ErrorDisplay";
 import { CreateDepartmentModal, DeleteModal } from "@/components/modal";
 import { useAdminData, useDebouncedValue } from "@/hooks";
-import { Edit2, Trash2Icon, ArrowUpDown, AlertCircle } from "lucide-react";
+import { Edit2, Trash2Icon, ArrowUpDown, AlertCircle, Plus } from "lucide-react";
 import { extractErrorMessage } from "@/utils/error";
 import type { ColumnDef, PaginationState } from "@tanstack/react-table";
 import { Button } from "@/components";
@@ -236,7 +236,8 @@ const AdminDepartments = () => {
 
         actions={
           <PermissionGuard permissions={PERMISSIONS.DEPARTMENTS_MANAGE} hideWhenDenied>
-            <Button onClick={handleCreateClick} className="rounded-xl px-6">
+            <Button onClick={handleCreateClick} className="gap-2">
+              <Plus className="h-4 w-4" />
               Create Department
             </Button>
           </PermissionGuard>
