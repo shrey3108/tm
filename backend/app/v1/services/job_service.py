@@ -1,7 +1,4 @@
-"""
-Service layer for job-related business logic.
-"""
-
+import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.v1.repository.job_repository import job_repository
@@ -13,7 +10,13 @@ class JobService:
     """
 
     async def get_jobs(
-        self, db: AsyncSession, skip: int = 0, limit: int = 100, query: str | None = None
+        self, 
+        db: AsyncSession, 
+        skip: int = 0, 
+        limit: int = 100, 
+        query: str | None = None,
+        status: bool | None = None,
+        department_id: uuid.UUID | None = None,
     ):
         """
         Retrieve a list of jobs with pagination and global summaries.
@@ -21,7 +24,12 @@ class JobService:
         from app.v1.services.admin.job_service import job_admin_service
 
         return await job_admin_service.get_all_jobs(
-            db=db, skip=skip, limit=limit, query=query
+            db=db, 
+            skip=skip, 
+            limit=limit, 
+            query=query, 
+            status=status, 
+            department_id=department_id
         )
 
     async def get_job_titles(self, db: AsyncSession, query: str | None = None):

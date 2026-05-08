@@ -45,19 +45,31 @@ async def read_jobs(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     q: str | None = Query(None),
+    status: bool | None = Query(None, description="Filter by active status"),
+    department_id: uuid.UUID | None = Query(None, description="Filter by department ID"),
 ) -> Any:
     """
-    Retrieve a list of jobs with pagination.
+    Retrieve a list of jobs with pagination and filters.
 
     Args:
         db (AsyncSession): Database session.
         skip (int): Number of records to skip.
         limit (int): Maximum number of records to return.
+        q (str): General search query for title.
+        status (bool): Filter by is_active status.
+        department_id (UUID): Filter by department.
 
     Returns:
         Any: A list of jobs.
     """
-    return await job_service.get_jobs(db=db, skip=skip, limit=limit, query=q)
+    return await job_service.get_jobs(
+        db=db, 
+        skip=skip, 
+        limit=limit, 
+        query=q, 
+        status=status, 
+        department_id=department_id
+    )
 
 
 @router.get("/search", response_model=JobsListRead)
