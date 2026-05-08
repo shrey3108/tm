@@ -7,6 +7,7 @@ import jobService from "@/apis/job";
 import { slugify } from "@/utils/slug";
 import { DEFAULT_PASSING_THRESHOLD } from "@/constants";
 import type { DateRange } from "react-day-picker";
+import { useDebouncedValue } from "./useDebounced";
 
 export interface CandidateActiveFilters {
   status: string[];
@@ -44,15 +45,8 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
     // URL sync removed
   }, []); // Only once on mount
 
-  // Debounced name filter for URL syncing and filtering
-  const [debouncedNameFilter, setDebouncedNameFilter] = useState(nameFilter);
 
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedNameFilter(nameFilter);
-    }, 500);
-    return () => clearTimeout(handler);
-  }, [nameFilter]);
+  const debouncedNameFilter = useDebouncedValue(nameFilter);
 
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [locationFilter, setLocationFilter] = useState<string[]>([]);

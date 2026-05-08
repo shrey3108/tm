@@ -172,21 +172,28 @@ const AdminSkills = () => {
       // header: "Description",
       header: () => {
         return (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2  max-w-[800px]">
             <span className="font-semibold">Description</span>
           </div>
         )
       },
       cell: ({ row }) => (
-        <div className="flex items-center gap-2 max-w-[300px]">
+        <div className="flex items-center gap-2 max-w-[800px] truncate ">
           {row.original.description || "No description provided"}
         </div>
       ),
     },
     {
       id: "actions",
+      header: () => {
+        return (
+          <div className="flex justify-center gap-2 ">
+            <span className="font-semibold">Action</span>
+          </div>
+        )
+      },
       cell: ({ row }) => (
-        <div className="flex gap-2 justify-end">
+        <div className="flex gap-2 justify-center">
           <PermissionGuard permissions={PERMISSIONS.SKILLS_MANAGE} hideWhenDenied>
             <HoverCard>
               <HoverCardTrigger

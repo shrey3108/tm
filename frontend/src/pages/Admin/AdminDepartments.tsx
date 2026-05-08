@@ -181,8 +181,15 @@ const AdminDepartments = () => {
     },
     {
       id: "actions",
+      header: () => {
+        return (
+          <div className="flex justify-center gap-2 ">
+            <span className="font-semibold">Action</span>
+          </div>
+        )
+      },
       cell: ({ row }) => (
-        <div className="flex gap-2 justify-end">
+        <div className="flex gap-2 justify-center">
           <PermissionGuard permissions={PERMISSIONS.DEPARTMENTS_MANAGE} hideWhenDenied>
             <HoverCard>
               <HoverCardTrigger

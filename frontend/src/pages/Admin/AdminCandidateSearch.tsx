@@ -69,10 +69,10 @@ const AdminCandidateSearch = () => {
       total: 0,
     };
 
-    const currentSearchQuery = filters.q || "";
+    const currentSearchQuery = filters.q || undefined;
 
     if (jobId) {
-      if (currentSearchQuery.trim()) {
+      if (currentSearchQuery?.trim()) {
         result = await adminCandidateService.searchJobCandidates(
           jobId,
           currentSearchQuery,
@@ -106,10 +106,10 @@ const AdminCandidateSearch = () => {
     } else {
       // Global search - optional query to show all candidates by default
       result = await adminCandidateService.searchCandidates(
-        currentSearchQuery.trim() || undefined,
+        currentSearchQuery?.trim() || undefined,
         skip,
         limit,
-        filters
+        filters,
       );
     }
     return result;

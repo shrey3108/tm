@@ -290,7 +290,7 @@ export const useJobCandidates = (
     jdVersion,
     setJdVersion,
     stats: {
-      totalCandidates: totalCandidates || jobStats?.hr_decisions.total_candidates || candidates.length,
+      totalCandidates: (jobStats?.hr_decisions.total_candidates || totalCandidates || candidates.length) ?? 0,
       approveCount: jobStats?.hr_decisions.approved ?? 0,
       rejectCount: jobStats?.hr_decisions.rejected ?? 0,
       maybeCount: jobStats?.hr_decisions.maybe ?? 0,

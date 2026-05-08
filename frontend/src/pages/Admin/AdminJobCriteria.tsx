@@ -289,28 +289,28 @@ const AdminJobCriteria = () => {
                     </PermissionGuard>
                 }
             />
-            <div className="mt-6">
-                {error && !criteriaData ? <ErrorDisplay message={error} onRetry={fetchCriteria} /> :
-                    <DataTable
-                        columns={columns}
-                        data={criteriaData}
-                        loading={loading}
-                        searchKey="name"
-                        searchPlaceholder="Search criteria..."
-                        searchValue={search}
-                        onSearchChange={setSearch}
-                        initialSorting={[{ id: "created_at", desc: true }]}
-                        isServerSide={true}
-                        pageIndex={pageIndex}
-                        pageSize={pageSize}
-                        pageCount={Math.ceil(total / pageSize)}
-                        onPaginationChange={setPagination}
-                        totalRecords={total}
-                        totalCount={overallTotal}
-                        resultCount={criteriaData.length}
-                        entityName="Criteria"
-                    />}
-            </div>
+
+            {error && !criteriaData ? <ErrorDisplay message={error} onRetry={fetchCriteria} /> :
+                <DataTable
+                    columns={columns}
+                    data={criteriaData}
+                    loading={loading}
+                    searchKey="name"
+                    searchPlaceholder="Search criteria..."
+                    searchValue={search}
+                    onSearchChange={setSearch}
+                    initialSorting={[{ id: "created_at", desc: true }]}
+                    isServerSide={true}
+                    pageIndex={pageIndex}
+                    pageSize={pageSize}
+                    pageCount={Math.ceil(total / pageSize)}
+                    onPaginationChange={setPagination}
+                    totalRecords={total}
+                    totalCount={overallTotal}
+                    resultCount={criteriaData.length}
+                    entityName="Criteria"
+                />}
+
 
             <CriteriaInfoModal
                 criterion={selectedCriterion}

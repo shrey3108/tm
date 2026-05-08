@@ -215,26 +215,26 @@ const AdminJobStages = () => {
           </Button>
         }
       />
-      <div className="mt-8">
-        <DataTable
-          columns={columns}
-          data={data}
-          loading={loading}
-          searchKey="name"
-          searchValue={search}
-          onSearchChange={setSearch}
-          searchPlaceholder="Search templates..."
-          isServerSide={true}
-          pageIndex={pageIndex}
-          pageSize={pageSize}
-          pageCount={Math.ceil(total / pageSize)}
-          onPaginationChange={setPagination}
-          totalRecords={total}
-          totalCount={overallTotal}
-          resultCount={data.length}
-          entityName="Templates"
-        />
-      </div>
+
+      <DataTable
+        columns={columns}
+        data={data}
+        loading={loading}
+        searchKey="name"
+        searchValue={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search templates..."
+        isServerSide={true}
+        pageIndex={pageIndex}
+        pageSize={pageSize}
+        pageCount={Math.ceil(total / pageSize)}
+        onPaginationChange={setPagination}
+        totalRecords={total}
+        totalCount={overallTotal}
+        resultCount={data.length}
+        entityName="Templates"
+      />
+
 
       <StageDetailDialog
         isOpen={isDetailOpen}
