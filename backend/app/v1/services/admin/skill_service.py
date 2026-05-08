@@ -117,7 +117,10 @@ class SkillService:
             action="create_skill",
             target_type="skill",
             target_id=skill.id,
-            details={"name": skill.name},
+            details={
+                "skill_id": str(skill.id),
+                "name": skill.name
+            },
         )
         # Invalidate cache
         await cache.clear(pattern="skills:list:*")
@@ -172,7 +175,10 @@ class SkillService:
             action="update_skill",
             target_type="skill",
             target_id=skill_id,
-            details={"updated_fields": list(update_data.keys())},
+            details={
+                "skill_id": str(skill_id),
+                "updated_fields": list(update_data.keys())
+            },
         )
         # Invalidate cache
         await cache.delete(f"skill:{skill_id}")
@@ -227,7 +233,10 @@ class SkillService:
             action="delete_skill",
             target_type="skill",
             target_id=skill_id,
-            details={"name": skill_name}
+            details={
+                "skill_id": str(skill_id),
+                "name": skill_name
+            }
         )
         # Invalidate cache
         await cache.delete(f"skill:{skill_id}")

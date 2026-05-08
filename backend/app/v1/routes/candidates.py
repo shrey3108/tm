@@ -252,7 +252,7 @@ async def delete_candidate_test(
     """
     [FOR TESTING ONLY] Delete a candidate and all related records by ID or email.
     """
-    success = await admin_service.delete_candidate(db=db, identifier=identifier)
+    success = await admin_service.delete_candidate(db=db, admin_user_id=user.id, identifier=identifier)
     if not success:
         raise HTTPException(status_code=404, detail="Candidate not found")
     return {"message": "Candidate and all related records deleted successfully"}
