@@ -41,6 +41,9 @@ class CandidateAdminService:
         result: list[str] | None = None,
     ) -> PaginatedData[CandidateResponse]:
         from app.v1.db.models.cross_job_matches import CrossJobMatch
+        from app.v1.db.models.candidate_stages import CandidateStage
+        from app.v1.db.models.job_stage_configs import JobStageConfig
+        from app.v1.db.models.stage_templates import StageTemplate
 
         # 0. Cache lookup
         cache_key = f"candidates:for_job:{job_id}:{skip}:{limit}"
@@ -82,7 +85,6 @@ class CandidateAdminService:
             dir_filter = and_(dir_filter, Candidate.id == candidate_id)
 
         if stage_id:
-            from app.v1.db.models.stage_templates import StageTemplate
             stage_ids = []
             stage_names = []
             for s in stage_id:
@@ -99,15 +101,17 @@ class CandidateAdminService:
 
             dir_filter = and_(
                 dir_filter,
-                exists().where(
+                select(1).join(
+                    JobStageConfig, CandidateStage.job_stage_id == JobStageConfig.id
+                ).join(
+                    StageTemplate, JobStageConfig.template_id == StageTemplate.id
+                ).where(
                     and_(
                         CandidateStage.candidate_id == Candidate.id,
-                        CandidateStage.status.in_(["active", "completed", "pending", "failed"])
+                        CandidateStage.status.in_(["active", "completed", "pending", "failed"]),
+                        stage_filter
                     )
-                ).join(JobStageConfig, CandidateStage.job_stage_id == JobStageConfig.id)
-                .join(StageTemplate, JobStageConfig.template_id == StageTemplate.id)
-                .where(stage_filter)
-                .correlate(Candidate)
+                ).exists()
             )
 
         if city:
@@ -361,6 +365,10 @@ class CandidateAdminService:
             exists().where(CrossJobMatch.candidate_id == Candidate.id)
         )
 
+        from app.v1.db.models.stage_templates import StageTemplate
+        from app.v1.db.models.job_stage_configs import JobStageConfig
+        from app.v1.db.models.candidate_stages import CandidateStage
+
         stmt = select(Candidate).join(Resume, Resume.candidate_id == Candidate.id).where(base_filter)
         total_stmt = select(func.count(func.distinct(Candidate.id))).select_from(Candidate).join(Resume, Resume.candidate_id == Candidate.id).where(base_filter)
 
@@ -440,10 +448,6 @@ class CandidateAdminService:
 
         # 6. Stages filter
         if stage_id:
-            from app.v1.db.models.stage_templates import StageTemplate
-            from app.v1.db.models.job_stage_configs import JobStageConfig
-            from app.v1.db.models.candidate_stages import CandidateStage
-            
             stage_ids = []
             stage_names = []
             for s in stage_id:
@@ -458,12 +462,17 @@ class CandidateAdminService:
             if stage_names:
                 stage_filter = or_(stage_filter, func.lower(StageTemplate.name).in_(stage_names))
 
-            stage_exists_stmt = exists().where(
+            stage_exists_stmt = select(1).join(
+                JobStageConfig, CandidateStage.job_stage_id == JobStageConfig.id
+            ).join(
+                StageTemplate, JobStageConfig.template_id == StageTemplate.id
+            ).where(
                 and_(
                     CandidateStage.candidate_id == Candidate.id,
-                    CandidateStage.status.in_(["active", "completed", "pending", "failed"])
+                    CandidateStage.status.in_(["active", "completed", "pending", "failed"]),
+                    stage_filter
                 )
-            ).join(JobStageConfig, CandidateStage.job_stage_id == JobStageConfig.id).join(StageTemplate, JobStageConfig.template_id == StageTemplate.id).where(stage_filter).correlate(Candidate)
+            ).exists()
             
             stmt = stmt.where(stage_exists_stmt)
             total_stmt = total_stmt.where(stage_exists_stmt)
