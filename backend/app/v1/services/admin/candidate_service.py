@@ -244,6 +244,9 @@ class CandidateAdminService:
         # 4. Sort entirely by created_at (most recent first)
         responses.sort(key=lambda x: x.created_at, reverse=True)
 
+        # 4.1 Filter out failed processing (Hide candidates that failed to parse)
+        responses = [r for r in responses if r.processing_status != "failed"]
+
         # 5. Paginate
         total = len(responses)
         paginated_responses = responses[skip : skip + limit]
@@ -380,9 +383,14 @@ class CandidateAdminService:
         result = await db.execute(stmt)
         candidates = list(result.scalars().unique().all())
 
+        mapped_responses = [self._map_candidate_to_response(c) for c in candidates]
+        
+        # Filter out failed processing
+        mapped_responses = [r for r in mapped_responses if r.processing_status != "failed"]
+
         return PaginatedData[CandidateResponse](
-            data=[self._map_candidate_to_response(c) for c in candidates],
-            total=total or 0,
+            data=mapped_responses,
+            total=len(mapped_responses),
         )
 
     def _map_candidate_to_response(

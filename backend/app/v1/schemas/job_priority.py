@@ -18,6 +18,7 @@ class JobPriorityUpdate(BaseModel):
 class JobPriorityRead(JobPriorityBase):
     id: uuid.UUID
     name: str
+    assigned_jobs_count: int = 0
     created_at: datetime
     updated_at: datetime
 

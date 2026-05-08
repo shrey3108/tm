@@ -31,14 +31,29 @@ class JobPriorityService:
         count_stmt = select(func.count()).select_from(stmt.subquery())
         total = await db.scalar(count_stmt) or 0
 
-        # Get paginated data
-        stmt = stmt.order_by(JobPriority.name).offset(skip).limit(limit)
+        # Get paginated data with job counts
+        stmt = (
+            select(JobPriority, func.count(Job.id).label("job_count"))
+            .outerjoin(Job, Job.priority_id == JobPriority.id)
+            .group_by(JobPriority.id)
+            .order_by(JobPriority.name)
+            .offset(skip)
+            .limit(limit)
+        )
         result = await db.execute(stmt)
-        priorities = list(result.scalars().all())
+        rows = result.all()
         
         from app.v1.schemas.job_priority import JobPriorityRead
+        data = []
+        for p_obj, j_count in rows:
+            # model_validate works on the ORM object
+            p_read = JobPriorityRead.model_validate(p_obj)
+            p_dict = p_read.model_dump()
+            p_dict["assigned_jobs_count"] = j_count
+            data.append(p_dict)
+
         res = {
-            "data": [JobPriorityRead.model_validate(p).model_dump() for p in priorities],
+            "data": data,
             "total": total
         }
         await cache.set(cache_key, res, ttl=3600)
