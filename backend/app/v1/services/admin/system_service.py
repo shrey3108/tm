@@ -5,6 +5,7 @@ Handles system-wide administrative tasks like cache management.
 """
 
 import logging
+import uuid
 from app.v1.core.cache import cache
 
 _log = logging.getLogger(__name__)
@@ -12,11 +13,18 @@ _log = logging.getLogger(__name__)
 class SystemService:
     """Service for system-wide administrative operations."""
 
-    async def clear_cache(self) -> bool:
+    async def clear_cache(self, pattern: str | None = None) -> bool:
         """
         Clear application-specific cache keys (selective delete).
-        This avoids deleting internal Celery/Broker keys.
+        If pattern is provided, clear only that specific pattern.
         """
+        if pattern:
+            _log.info("Targeted cache clear for pattern: %s", pattern)
+            # Ensure the pattern has a wildcard if it doesn't already
+            if "*" not in pattern:
+                pattern = f"{pattern}*"
+            return await cache.clear(pattern=pattern)
+
         _log.info("Comprehensive selective cache clear started")
         
         patterns = [
@@ -42,6 +50,22 @@ class SystemService:
         
         _log.info("Comprehensive selective cache clear completed. Success: %s", success)
         return success
+
+    async def get_cache_info(self, pattern: str | None = None) -> dict:
+        """
+        Get information about current cache keys.
+        """
+        search_pattern = pattern if pattern else "*"
+        if search_pattern != "*" and "*" not in search_pattern:
+            search_pattern = f"{search_pattern}*"
+            
+        keys = await cache.keys(pattern=search_pattern)
+        
+        return {
+            "total_count": len(keys),
+            "keys": sorted(keys),
+            "pattern_used": search_pattern
+        }
 
     async def invalidate_job_cache(self, job_id: str | uuid.UUID) -> None:
         """

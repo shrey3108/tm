@@ -143,9 +143,12 @@ class JobStatsService:
             .outerjoin(Resume, Resume.candidate_id == Candidate.id)
             .outerjoin(CrossJobMatch, CrossJobMatch.candidate_id == Candidate.id)
             .where(
-                or_(
-                    native_filter,
-                    cross_filter
+                and_(
+                    or_(
+                        native_filter,
+                        cross_filter
+                    ),
+                    Resume.parsed.is_(True)
                 )
             )
             # Order by is_native to ensure DISTINCT picks native record if available
@@ -339,12 +342,15 @@ class JobStatsService:
         # Total unique candidates in pool (deduplicated by email)
         total_unique_stmt = select(
             func.count(func.distinct(func.coalesce(Candidate.email, func.cast(Candidate.id, Text))))
-        ).where(
-            or_(
-                native_filter,
-                Candidate.id.in_(
-                    select(CrossJobMatch.candidate_id).where(cross_filter)
-                )
+        ).join(Resume, Resume.candidate_id == Candidate.id).where(
+            and_(
+                or_(
+                    native_filter,
+                    Candidate.id.in_(
+                        select(CrossJobMatch.candidate_id).where(cross_filter)
+                    )
+                ),
+                Resume.parsed.is_(True)
             )
         )
         total_candidates = await db.scalar(total_unique_stmt) or 0

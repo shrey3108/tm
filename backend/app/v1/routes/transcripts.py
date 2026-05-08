@@ -3,7 +3,7 @@ import uuid
 from typing import Any
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
-from sqlalchemy import select
+from sqlalchemy import select, delete
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -198,3 +198,73 @@ async def test_transcript_cleaning(
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Cleaning failed: {str(e)}")
+
+@router.delete("/{transcript_id}")
+async def delete_transcript(
+    transcript_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Delete a transcript and all its related AI evaluation data.
+    Prevents deletion if the candidate has already been approved.
+    """
+    from app.v1.db.models.hr_decisions import HrDecision
+    
+    # 1. Fetch transcript with interview
+    query = select(Transcript).options(selectinload(Transcript.interview)).where(Transcript.id == transcript_id)
+    result = await db.execute(query)
+    transcript = result.scalar_one_or_none()
+    
+    if not transcript:
+        raise HTTPException(status_code=404, detail="Transcript not found")
+        
+    interview = transcript.interview
+    if not interview:
+        raise HTTPException(status_code=404, detail="Associated interview not found")
+        
+    # 2. Find candidate stage to check stage-specific approval
+    eval_query = select(Evaluation.candidate_stage_id).where(Evaluation.transcript_id == transcript.id).limit(1)
+    eval_result = await db.execute(eval_query)
+    candidate_stage_id = eval_result.scalar_one_or_none()
+    
+    if candidate_stage_id:
+        stage = await db.get(CandidateStage, candidate_stage_id)
+        if stage:
+            # Check if this specific stage is approved
+            decision_query = (
+                select(HrDecision)
+                .where(
+                    HrDecision.candidate_id == interview.candidate_id,
+                    HrDecision.stage_config_id == stage.job_stage_id,
+                    HrDecision.decision.in_(["approve", "proceed", "approved"])
+                )
+                .limit(1)
+            )
+            decision_result = await db.execute(decision_query)
+            if decision_result.scalar_one_or_none():
+                raise HTTPException(status_code=400, detail="Cannot delete transcript because the candidate is already approved for this stage.")
+    
+    
+    # 4. Delete related records
+    # Delete Evaluation
+    await db.execute(delete(Evaluation).where(Evaluation.transcript_id == transcript.id))
+    # Delete Chunks
+    await db.execute(delete(TranscriptChunk).where(TranscriptChunk.transcript_id == transcript.id))
+    # Delete Transcript
+    await db.delete(transcript)
+    # Delete Interview
+    await db.delete(interview)
+    
+    # Delete associated file
+    if transcript.file_id:
+        await db.execute(delete(DBFile).where(DBFile.id == transcript.file_id))
+        
+    # 5. Reset candidate stage status if found
+    if candidate_stage_id:
+        stage = await db.get(CandidateStage, candidate_stage_id)
+        if stage:
+            stage.status = "pending"
+            
+    await db.commit()
+    
+    return {"message": "Transcript and related evaluation data deleted successfully."}

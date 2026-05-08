@@ -13,6 +13,10 @@ from app.v1.utils.uuid import UUIDHelper
 from fastapi import HTTPException, UploadFile, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.v1.db.models.candidates import Candidate
+from app.v1.db.models.cross_job_matches import CrossJobMatch
+from app.v1.db.models.resumes import Resume
+from app.v1.db.models.hr_decisions import HrDecision
 
 from app.v1.core.config import settings
 from app.v1.core.storage import resolve_storage_path, to_storage_relative_path
@@ -129,21 +133,19 @@ class ResumeUploadService:
         
         candidate = None
         existing_resume_id = None
-        if existing_global_file:
+        if existing_global_file and existing_global_file.candidate_id:
             # Re-use existing candidate
-            from app.v1.db.models.candidates import Candidate
             candidate = await db.get(Candidate, existing_global_file.candidate_id)
-            _log.info(f"Re-using existing candidate {candidate.id} for global hash match {content_hash}")
+            if candidate:
+                _log.info(f"Re-using existing candidate {candidate.id} for global hash match {content_hash}")
+                
+                # Check if they are already in THIS job pool (Applied or Matched)
+                if candidate.applied_job_id == job_id:
+                    raise HTTPException(
+                        status_code=status.HTTP_409_CONFLICT,
+                        detail="This resume has already been uploaded for this job.",
+                    )
             
-            # Check if they are already in THIS job pool (Applied or Matched)
-            if candidate.applied_job_id == job_id:
-                raise HTTPException(
-                    status_code=status.HTTP_409_CONFLICT,
-                    detail="This resume has already been uploaded for this job.",
-                )
-            
-            from app.v1.db.models.cross_job_matches import CrossJobMatch
-            from app.v1.db.models.resumes import Resume
             existing_xm = await db.execute(
                 select(CrossJobMatch.id).where(
                     CrossJobMatch.candidate_id == candidate.id,
@@ -171,7 +173,6 @@ class ResumeUploadService:
             db.add(new_xm)
 
             # Check if this candidate is already APPROVED for any other job
-            from app.v1.db.models.hr_decisions import HrDecision
             approval_stmt = select(HrDecision.id).where(
                 HrDecision.candidate_id == candidate.id,
                 HrDecision.decision.ilike("approve")
@@ -194,22 +195,22 @@ class ResumeUploadService:
             
             await db.flush()
         else:
-            # 2. Create new candidate if no global match found
-            candidate = await resume_upload_repository.create_candidate(
-                db,
-                job_id=job_id,
-                email=None,
+            candidate = Candidate(
                 first_name="Parsing...",
                 last_name="",
+                applied_job_id=job_id,
+                applied_version_number=job.version,
+                email=f"pending_{UUIDHelper.generate_uuid7()}@processing.local",
+                info={},
             )
-            # Initialize hiring pipeline stages
-            await candidate_stage_service.initiate_candidate_pipeline(db, candidate.id, job_id)
+            db.add(candidate)
+            await db.flush()
 
         log_stage(
             stage="upload_ensure_candidate",
             started_at=stage_started_at,
             job_id=job_id,
-            candidate_id=candidate.id,
+            candidate_id=candidate.id if candidate else None,
         )
 
         upload_root = resolve_storage_path(settings.RESUME_UPLOAD_DIR)
@@ -227,7 +228,7 @@ class ResumeUploadService:
             stage="upload_store_file",
             started_at=stage_started_at,
             job_id=job_id,
-            candidate_id=candidate.id,
+            candidate_id=candidate.id if candidate else None,
             path=stored_file_path,
         )
 
@@ -235,7 +236,7 @@ class ResumeUploadService:
         file_record = await resume_upload_repository.create_file_record(
             db,
             owner_id=current_user.id,
-            candidate_id=candidate.id,
+            candidate_id=candidate.id if candidate else None,
             file_name=resume.filename,
             file_type=extension,
             source_url=stored_file_path,
@@ -246,20 +247,16 @@ class ResumeUploadService:
             stage="upload_create_file_record",
             started_at=stage_started_at,
             job_id=job_id,
-            candidate_id=candidate.id,
+            candidate_id=candidate.id if candidate else None,
             file_id=file_record.id,
         )
 
-        queued_summary = merge_processing_info(
-            None,
-            status_value="queued",
-        )
         stage_started_at = time.perf_counter()
         resume_record = await resume_upload_repository.create_resume_record(
             db,
-            candidate_id=candidate.id,
+            candidate_id=candidate.id if candidate else None,
             file_id=file_record.id,
-            parse_summary=queued_summary,
+            parse_summary=merge_processing_info(None, status_value="processing"),
             parsed=False,
             resume_score=None,
             pass_fail=None,
@@ -268,12 +265,23 @@ class ResumeUploadService:
             stage="upload_create_resume_record",
             started_at=stage_started_at,
             job_id=job_id,
-            candidate_id=candidate.id,
+            candidate_id=candidate.id if candidate else None,
             resume_id=resume_record.id,
         )
 
         stage_started_at = time.perf_counter()
         await resume_upload_repository.commit(db)
+        
+        # Clear cache immediately so 'Parsing...' placeholder shows up without delay
+        try:
+            from app.v1.core.cache import cache
+            jid_str = str(job_id)
+            await cache.clear(pattern=f"candidates:for_job:{jid_str}*")
+            await cache.delete(f"job_stats:{jid_str}")
+            _log.info(f"Cleared cache for job {jid_str} after upload")
+        except Exception as cache_err:
+            _log.error(f"Cache clear failed after upload: {cache_err}")
+
         await resume_upload_repository.refresh_file_and_resume(
             db,
             file_record=file_record,
@@ -283,7 +291,7 @@ class ResumeUploadService:
             stage="upload_commit_and_refresh",
             started_at=stage_started_at,
             job_id=job_id,
-            candidate_id=candidate.id,
+            candidate_id=candidate.id if candidate else None,
             resume_id=resume_record.id,
         )
 
@@ -297,13 +305,13 @@ class ResumeUploadService:
             stage="upload_total",
             started_at=total_started_at,
             job_id=job_id,
-            candidate_id=candidate.id,
+            candidate_id=candidate.id if candidate else None,
             resume_id=resume_record.id,
         )
 
         return upload_response_from_records(
             job_id=job_id,
-            candidate_id=candidate.id,
+            candidate_id=candidate.id if candidate else None,
             file_record=file_record,
             resume_record=resume_record,
         )

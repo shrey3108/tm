@@ -31,24 +31,28 @@ class CandidateAdminService:
         skip: int = 0,
         limit: int = 100,
         query: str | None = None,
-        hr_decision: str | None = None,
-        jd_version: int | None = None,
+        hr_decision: list[str] | None = None,
+        jd_version: list[int] | None = None,
         start_date: datetime | None = None,
         end_date: datetime | None = None,
         candidate_id: uuid.UUID | None = None,
-        stage_id: uuid.UUID | None = None,
+        stage_id: list[str] | None = None,
+        city: list[str] | None = None,
+        result: list[str] | None = None,
     ) -> PaginatedData[CandidateResponse]:
         from app.v1.db.models.cross_job_matches import CrossJobMatch
 
         # 0. Cache lookup
         cache_key = f"candidates:for_job:{job_id}:{skip}:{limit}"
         if query: cache_key += f":q_{query}"
-        if hr_decision: cache_key += f":hr_{hr_decision}"
-        if jd_version is not None: cache_key += f":v_{jd_version}"
+        if hr_decision: cache_key += f":hr_{sorted(hr_decision)}"
+        if jd_version: cache_key += f":v_{sorted(jd_version)}"
         if start_date: cache_key += f":sd_{start_date.isoformat()}"
         if end_date: cache_key += f":ed_{end_date.isoformat()}"
         if candidate_id: cache_key += f":c_{candidate_id}"
         if stage_id: cache_key += f":s_{stage_id}"
+        if city: cache_key += f":city_{city}"
+        if result: cache_key += f":res_{result}"
 
         cached = await cache.get(cache_key)
         if cached:
@@ -78,22 +82,52 @@ class CandidateAdminService:
             dir_filter = and_(dir_filter, Candidate.id == candidate_id)
 
         if stage_id:
+            from app.v1.db.models.stage_templates import StageTemplate
+            stage_ids = []
+            stage_names = []
+            for s in stage_id:
+                try:
+                    stage_ids.append(uuid.UUID(s))
+                except ValueError:
+                    stage_names.append(s.lower())
+            
+            stage_filter = or_()
+            if stage_ids:
+                stage_filter = or_(stage_filter, CandidateStage.id.in_(stage_ids), CandidateStage.job_stage_id.in_(stage_ids))
+            if stage_names:
+                stage_filter = or_(stage_filter, func.lower(StageTemplate.name).in_(stage_names))
+
             dir_filter = and_(
                 dir_filter,
                 exists().where(
                     and_(
                         CandidateStage.candidate_id == Candidate.id,
-                        or_(
-                            CandidateStage.id == stage_id,
-                            CandidateStage.job_stage_id == stage_id
-                        ),
                         CandidateStage.status.in_(["active", "completed", "pending", "failed"])
+                    )
+                ).join(JobStageConfig, CandidateStage.job_stage_id == JobStageConfig.id)
+                .join(StageTemplate, JobStageConfig.template_id == StageTemplate.id)
+                .where(stage_filter)
+                .correlate(Candidate)
+            )
+
+        if city:
+            from app.v1.db.models.locations import Location
+            city_lower = [c.lower() for c in city]
+            dir_filter = and_(
+                dir_filter,
+                exists().where(
+                    and_(
+                        Candidate.location_id == Location.id,
+                        func.lower(Location.name).in_(city_lower)
                     )
                 ).correlate(Candidate)
             )
 
+        if result:
+            dir_filter = and_(dir_filter, Resume.pass_fail.in_(result))
+
         dir_stmt = select(Candidate).join(Resume, Resume.candidate_id == Candidate.id).where(
-            and_(dir_filter, Resume.parsed.is_(True))
+            dir_filter
         )
 
         search_filter = None
@@ -106,17 +140,36 @@ class CandidateAdminService:
             dir_stmt = dir_stmt.where(search_filter)
 
         if hr_decision:
+            decision_map = {
+                "approved": "approve",
+                "proceed": "approve",
+                "rejected": "reject",
+                "maybe": "may be",
+                "pending": "pending"
+            }
+            hr_decision = [decision_map.get(d.lower(), d.lower()) for d in hr_decision]
+                
             latest_decision_subq = (
-                select(HrDecision.decision)
+                select(func.lower(HrDecision.decision))
                 .where(HrDecision.candidate_id == Candidate.id)
                 .order_by(HrDecision.decided_at.desc())
                 .limit(1)
                 .scalar_subquery()
             )
-            dir_stmt = dir_stmt.where(latest_decision_subq == hr_decision)
+            
+            if "pending" in hr_decision:
+                # Include candidates where the latest decision is 'pending' OR no decision exists at all
+                dir_stmt = dir_stmt.where(
+                    or_(
+                        latest_decision_subq.in_(hr_decision),
+                        latest_decision_subq.is_(None)
+                    )
+                )
+            else:
+                dir_stmt = dir_stmt.where(latest_decision_subq.in_(hr_decision))
 
-        if jd_version is not None:
-            dir_stmt = dir_stmt.where(Candidate.applied_version_number == jd_version)
+        if jd_version:
+            dir_stmt = dir_stmt.where(Candidate.applied_version_number.in_(jd_version))
 
         dir_stmt = dir_stmt.options(
             selectinload(Candidate.resumes).selectinload(Resume.version_results).selectinload(ResumeVersionResult.job),
@@ -207,7 +260,14 @@ class CandidateAdminService:
 
             # Apply hr_decision filter in-memory for cross-matches if needed
             if hr_decision:
-                if resp.hr_decision != hr_decision:
+                # Case-insensitive check
+                current_dec = resp.hr_decision.lower() if resp.hr_decision else "pending"
+                if current_dec not in [d.lower() for d in hr_decision]:
+                    continue
+            
+            # Apply result (AI pass_fail) filter in-memory for cross-matches
+            if result:
+                if resp.pass_fail not in result:
                     continue
 
             # Retrieve match analysis as object (OVERRIDE)
@@ -277,8 +337,10 @@ class CandidateAdminService:
         db: AsyncSession,
         query: str | None = None,
         job: str | None = None,
-        hr_decision: str | None = None,
-        city: str | None = None,
+        hr_decision: list[str] | None = None,
+        city: list[str] | None = None,
+        result: list[str] | None = None,
+        stage_id: list[str] | None = None,
         start_date: datetime | None = None,
         end_date: datetime | None = None,
         skip: int = 0,
@@ -294,12 +356,9 @@ class CandidateAdminService:
 
         # Base filter: Candidate must have a primary job OR at least one cross-match entry
         # AND must have a successfully parsed resume
-        base_filter = and_(
-            Resume.parsed.is_(True),
-            or_(
-                Candidate.applied_job_id.is_not(None),
-                exists().where(CrossJobMatch.candidate_id == Candidate.id)
-            )
+        base_filter = or_(
+            Candidate.applied_job_id.is_not(None),
+            exists().where(CrossJobMatch.candidate_id == Candidate.id)
         )
 
         stmt = select(Candidate).join(Resume, Resume.candidate_id == Candidate.id).where(base_filter)
@@ -341,29 +400,73 @@ class CandidateAdminService:
 
         # 3. City filter
         if city:
-            stmt = stmt.join(Location, Candidate.location_id == Location.id).where(Location.name.ilike(f"%{city}%"))
-            total_stmt = total_stmt.join(Location, Candidate.location_id == Location.id).where(Location.name.ilike(f"%{city}%"))
+            city_lower = [c.lower() for c in city]
+            stmt = stmt.join(Location, Candidate.location_id == Location.id).where(func.lower(Location.name).in_(city_lower))
+            total_stmt = total_stmt.join(Location, Candidate.location_id == Location.id).where(func.lower(Location.name).in_(city_lower))
 
         # 4. HR Decision filter
         if hr_decision:
+            if isinstance(hr_decision, str):
+                hr_decision = [hr_decision]
+                
             # Map user-friendly labels to database values
             decision_map = {
                 "approved": "approve",
                 "proceed": "approve",
                 "rejected": "reject",
-                "maybe": "May Be"
+                "maybe": "may be"
             }
-            mapped_decision = decision_map.get(hr_decision.lower(), hr_decision)
-
+            hr_decision = [decision_map.get(d.lower(), d.lower()) for d in hr_decision]
+            
             latest_decision_subq = (
-                select(HrDecision.decision)
+                select(func.lower(HrDecision.decision))
                 .where(HrDecision.candidate_id == Candidate.id)
                 .order_by(HrDecision.decided_at.desc())
                 .limit(1)
                 .scalar_subquery()
             )
-            stmt = stmt.where(latest_decision_subq == mapped_decision)
-            total_stmt = total_stmt.where(latest_decision_subq == mapped_decision)
+            
+            if "pending" in hr_decision:
+                stmt = stmt.where(or_(latest_decision_subq.in_(hr_decision), latest_decision_subq.is_(None)))
+                total_stmt = total_stmt.where(or_(latest_decision_subq.in_(hr_decision), latest_decision_subq.is_(None)))
+            else:
+                stmt = stmt.where(latest_decision_subq.in_(hr_decision))
+                total_stmt = total_stmt.where(latest_decision_subq.in_(hr_decision))
+
+        # 5. AI Result filter
+        if result:
+            stmt = stmt.where(Resume.pass_fail.in_(result))
+            total_stmt = total_stmt.where(Resume.pass_fail.in_(result))
+
+        # 6. Stages filter
+        if stage_id:
+            from app.v1.db.models.stage_templates import StageTemplate
+            from app.v1.db.models.job_stage_configs import JobStageConfig
+            from app.v1.db.models.candidate_stages import CandidateStage
+            
+            stage_ids = []
+            stage_names = []
+            for s in stage_id:
+                try:
+                    stage_ids.append(uuid.UUID(s))
+                except ValueError:
+                    stage_names.append(s.lower())
+            
+            stage_filter = or_()
+            if stage_ids:
+                stage_filter = or_(stage_filter, CandidateStage.id.in_(stage_ids), CandidateStage.job_stage_id.in_(stage_ids))
+            if stage_names:
+                stage_filter = or_(stage_filter, func.lower(StageTemplate.name).in_(stage_names))
+
+            stage_exists_stmt = exists().where(
+                and_(
+                    CandidateStage.candidate_id == Candidate.id,
+                    CandidateStage.status.in_(["active", "completed", "pending", "failed"])
+                )
+            ).join(JobStageConfig, CandidateStage.job_stage_id == JobStageConfig.id).join(StageTemplate, JobStageConfig.template_id == StageTemplate.id).where(stage_filter).correlate(Candidate)
+            
+            stmt = stmt.where(stage_exists_stmt)
+            total_stmt = total_stmt.where(stage_exists_stmt)
 
         # 5. Date filters
         if start_date:
@@ -796,9 +899,9 @@ class CandidateAdminService:
             )
 
         # Capture candidate info before deletion for audit trail
-        candidate_name = f"{candidate.get('first_name', '')} {candidate.get('last_name', '')}"
-        candidate_email = candidate.get('email')
-        applied_job_id = candidate.get('applied_job_id')
+        candidate_name = f"{candidate.first_name or ''} {candidate.last_name or ''}"
+        candidate_email = candidate.email
+        applied_job_id = candidate.applied_job_id
 
         await db.delete(candidate)
         await db.commit()

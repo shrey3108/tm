@@ -85,9 +85,26 @@ class EvaluationAgent:
 
             raw_content = response.choices[0].message.content or "{}"
             logger.info(f"LLM Synthesis Raw Output: {raw_content}")
-            return json.loads(raw_content)
+            
+            # Robust JSON cleaning
+            clean_content = raw_content.strip()
+            if clean_content.startswith("```json"):
+                clean_content = clean_content.split("```json", 1)[1]
+            if "```" in clean_content:
+                clean_content = clean_content.split("```", 1)[0]
+            clean_content = clean_content.strip()
+            
+            try:
+                return json.loads(clean_content)
+            except json.JSONDecodeError as je:
+                logger.warning(f"Initial JSON parse failed: {je}. Attempting basic repair...")
+                # Basic repair: remove trailing commas before closing braces/brackets
+                import re
+                repaired = re.sub(r',\s*([\]}])', r'\1', clean_content)
+                return json.loads(repaired)
+                
         except Exception as e:
             logger.error(f"LLM Synthesis failed: {e}")
-            return {"error": str(e)}
+            return {"error": f"AI Synthesis Error: {str(e)}"}
 
 evaluation_agent = EvaluationAgent()

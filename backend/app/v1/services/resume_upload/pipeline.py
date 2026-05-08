@@ -8,10 +8,13 @@ import uuid
 from typing import Awaitable, Callable, Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, delete, func
 from sqlalchemy.orm import selectinload
 from app.v1.db.models.job_versions import JobVersion
 from app.v1.db.models.resumes import Resume
+from app.v1.db.models.candidates import Candidate
+from app.v1.db.models.cross_job_matches import CrossJobMatch
+from app.v1.db.models.files import File
 
 
 
@@ -277,6 +280,7 @@ async def run_resume_processing_pipeline(
                         normalized["links"] = [{"text": link, "attributes": {}} for link in h_info["links"]]
                 
                 first_name, last_name = split_name(parsed_name)
+
                 parsed_summary = {
                     "name": parsed_name,
                     "email": parsed_email,
@@ -306,10 +310,80 @@ async def run_resume_processing_pipeline(
                 parsed_summary.pop("analysis", None)
                 parsed_summary.pop("processing", None)
                 
+                parsed_email = parsed_summary.get("email")
+                parsed_name = parsed_summary.get("name", "Candidate")
+                parsed_phone = parsed_summary.get("phone")
+                first_name, last_name = split_name(parsed_name)
+                
                 extracted_skill_names_list = parsed_summary.get("skills", [])
                 # If skills are stored as objects, extract names
                 if extracted_skill_names_list and isinstance(extracted_skill_names_list[0], dict):
                     extracted_skill_names_list = [s.get("text", "") for s in extracted_skill_names_list]
+
+            # ---- Silent Parsing & Candidate Creation / Merge Logic (RUNS FOR BOTH PATHS) ----
+            existing_candidate = None
+            if parsed_email:
+                # Check for existing candidate with same email
+                existing_cand_stmt = select(Candidate).where(func.lower(Candidate.email) == parsed_email.lower()).limit(1)
+                existing_candidate = await db.scalar(existing_cand_stmt)
+                
+            if existing_candidate:
+                logger.info(f"[PIPELINE] EMAIL DEDUPLICATION: Merging upload for {parsed_email} into existing candidate {existing_candidate.id}")
+                
+                resume_record.candidate_id = existing_candidate.id
+                if resume_record.file:
+                    resume_record.file.candidate_id = existing_candidate.id
+                
+                if existing_candidate.applied_job_id == job_id:
+                    pass
+                else:
+                    xm_exists = await db.scalar(
+                        select(CrossJobMatch.id).where(
+                            CrossJobMatch.candidate_id == existing_candidate.id,
+                            CrossJobMatch.matched_job_id == job_id
+                        )
+                    )
+                    if not xm_exists:
+                        new_xm = CrossJobMatch(
+                            candidate_id=existing_candidate.id,
+                            matched_job_id=job_id,
+                            resume_id=resume_id,
+                            match_score=0.0,
+                            match_analysis={}
+                        )
+                        db.add(new_xm)
+                        
+                # Clean up the placeholder candidate
+                if candidate and candidate.id != existing_candidate.id:
+                    placeholder_id = candidate.id
+                    from app.v1.db.models.candidate_stages import CandidateStage
+                    await db.execute(delete(CandidateStage).where(CandidateStage.candidate_id == placeholder_id))
+                    await db.execute(delete(Candidate).where(Candidate.id == placeholder_id))
+                        
+                candidate = existing_candidate
+                resume_record.candidate = existing_candidate
+            else:
+                if not candidate:
+                    logger.info(f"[PIPELINE] Creating new candidate {parsed_email}")
+                    new_candidate = Candidate(
+                        applied_job_id=job_id,
+                        first_name=first_name,
+                        last_name=last_name,
+                        email=parsed_email,
+                        phone=parsed_phone,
+                        location_id=None,
+                        info={},
+                        applied_version_number=job.version,
+                    )
+                    db.add(new_candidate)
+                    await db.flush()
+                    
+                    candidate = new_candidate
+                    resume_record.candidate_id = candidate.id
+                    resume_record.candidate = candidate
+                    if resume_record.file:
+                        resume_record.file.candidate_id = candidate.id
+            # ---------------------------------------------------------------------------------
 
             job_skills = await resume_upload_repository.get_job_skills(
                 db,
