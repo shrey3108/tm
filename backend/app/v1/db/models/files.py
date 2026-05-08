@@ -48,10 +48,10 @@ class File(Base):
         nullable=True,
     )
 
-    candidate_id: Mapped[uuid.UUID] = mapped_column(
+    candidate_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("candidates.id"),
-        nullable=False,
+        nullable=True,
     )
 
     # FILE FIELDS
@@ -92,7 +92,7 @@ class File(Base):
     owner: Mapped["User"] = relationship(
         "User", back_populates="files", foreign_keys=[owner_id]
     )
-    candidate: Mapped["Candidate"] = relationship(
+    candidate: Mapped["Candidate | None"] = relationship(
         "Candidate", back_populates="files", foreign_keys=[candidate_id]
     )
 

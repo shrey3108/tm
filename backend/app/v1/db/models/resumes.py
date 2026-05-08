@@ -51,10 +51,10 @@ class Resume(Base):
     )
 
     # FOREIGN KEYS
-    candidate_id: Mapped[uuid.UUID] = mapped_column(
+    candidate_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("candidates.id"),
-        nullable=False,
+        nullable=True,
     )
 
     file_id: Mapped[uuid.UUID] = mapped_column(
@@ -105,7 +105,7 @@ class Resume(Base):
     )
 
     # RELATIONSHIPS
-    candidate: Mapped["Candidate"] = relationship(
+    candidate: Mapped["Candidate | None"] = relationship(
         "Candidate", back_populates="resumes", foreign_keys=[candidate_id]
     )
     file: Mapped["File"] = relationship("File", foreign_keys=[file_id])
