@@ -92,7 +92,9 @@ class CandidateAdminService:
                 ).correlate(Candidate)
             )
 
-        dir_stmt = select(Candidate).where(dir_filter)
+        dir_stmt = select(Candidate).join(Resume, Resume.candidate_id == Candidate.id).where(
+            and_(dir_filter, Resume.parsed.is_(True))
+        )
 
         search_filter = None
         if query:
@@ -153,7 +155,11 @@ class CandidateAdminService:
 
         xm_stmt = (
             select(CrossJobMatch)
-            .where(xm_filter)
+            .join(Candidate, CrossJobMatch.candidate_id == Candidate.id)
+            .join(Resume, Resume.candidate_id == Candidate.id)
+            .where(
+                and_(xm_filter, Resume.parsed.is_(True))
+            )
             .options(
                 selectinload(CrossJobMatch.candidate).selectinload(Candidate.resumes).selectinload(Resume.version_results).selectinload(ResumeVersionResult.job),
                 selectinload(CrossJobMatch.candidate).selectinload(Candidate.hr_decisions),
@@ -163,9 +169,7 @@ class CandidateAdminService:
             )
         )
         if search_filter is not None:
-            xm_stmt = xm_stmt.join(
-                Candidate, CrossJobMatch.candidate_id == Candidate.id
-            ).where(search_filter)
+            xm_stmt = xm_stmt.where(search_filter)
 
         xm_result = await db.execute(xm_stmt)
         cross_matches = list(xm_result.scalars().unique().all())
@@ -289,13 +293,17 @@ class CandidateAdminService:
         from sqlalchemy import exists
 
         # Base filter: Candidate must have a primary job OR at least one cross-match entry
-        base_filter = or_(
-            Candidate.applied_job_id.is_not(None),
-            exists().where(CrossJobMatch.candidate_id == Candidate.id)
+        # AND must have a successfully parsed resume
+        base_filter = and_(
+            Resume.parsed.is_(True),
+            or_(
+                Candidate.applied_job_id.is_not(None),
+                exists().where(CrossJobMatch.candidate_id == Candidate.id)
+            )
         )
 
-        stmt = select(Candidate).where(base_filter)
-        total_stmt = select(func.count()).select_from(Candidate).where(base_filter)
+        stmt = select(Candidate).join(Resume, Resume.candidate_id == Candidate.id).where(base_filter)
+        total_stmt = select(func.count(func.distinct(Candidate.id))).select_from(Candidate).join(Resume, Resume.candidate_id == Candidate.id).where(base_filter)
 
         # 1. Base query filter
         if query:
@@ -391,7 +399,7 @@ class CandidateAdminService:
 
         return PaginatedData[CandidateResponse](
             data=mapped_responses,
-            total=len(mapped_responses),
+            total=total,
         )
 
     def _map_candidate_to_response(
