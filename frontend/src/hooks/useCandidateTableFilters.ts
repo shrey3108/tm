@@ -219,13 +219,15 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
 
         // Resume Screening (Result) filter (multi-select)
         if (resumeScreeningFilter.length > 0) {
-          let candidateScreening = "fail";
+          let candidateScreening = "failed";
           if (
             c.pass_fail === true ||
             String(c.pass_fail).toLowerCase() === "pass" ||
             (c.resume_score ?? 0) >= passingThreshold
           ) {
-            candidateScreening = "pass";
+            candidateScreening = "passed";
+          } else if (c.processing_status === "processing" || c.processing_status === "queued" || !c.is_parsed) {
+            candidateScreening = "pending";
           }
           if (!resumeScreeningFilter.includes(candidateScreening)) return false;
         }
@@ -277,19 +279,21 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
 
       // HR Decision filter (multi-select)
       if (hrDecisionFilter.length > 0) {
-        const decision = c.hr_decision?.toLowerCase() || "pending";
-        if (!hrDecisionFilter.includes(decision)) {
+        const decision = c.hr_decision || "pending";
+        if (!hrDecisionFilter.some(d => d.toLowerCase() === decision.toLowerCase())) {
           return false;
         }
       }
       if (resumeScreeningFilter.length > 0) {
-        let candidateScreening = "fail";
+        let candidateScreening = "failed";
         if (
           c.pass_fail === true ||
           String(c.pass_fail).toLowerCase() === "pass" ||
           (c.resume_score ?? 0) >= passingThreshold
         ) {
-          candidateScreening = "pass";
+          candidateScreening = "passed";
+        } else if (c.processing_status === "processing" || c.processing_status === "queued" || !c.is_parsed) {
+          candidateScreening = "pending";
         }
 
         if (!resumeScreeningFilter.includes(candidateScreening)) {

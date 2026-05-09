@@ -38,37 +38,13 @@ import {
   Settings
 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { adminSystemService } from "@/apis/admin/admin-system"
-import { toast } from "sonner"
+import { ClearCacheDialog } from "./clear-cache-dialog"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const navigate = useNavigate();
   const user = useAppSelector(selectCurrentUser)
   const userPermissions = user?.permissions ?? []
   const [isClearCacheDialogOpen, setIsClearCacheDialogOpen] = React.useState(false)
-  const [isClearingCache, setIsClearingCache] = React.useState(false)
-
-  const handleClearCache = async () => {
-    setIsClearingCache(true)
-    try {
-      await adminSystemService.clearCache()
-      toast.success("System cache cleared successfully")
-      setIsClearCacheDialogOpen(false)
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to clear system cache")
-    } finally {
-      setIsClearingCache(false)
-    }
-  }
 
   const canSeeAdminNav = hasAnyPermission(userPermissions, [
     PERMISSIONS.ADMIN_ACCESS,
@@ -291,24 +267,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarFooter>
       <SidebarRail />
 
-      <Dialog open={isClearCacheDialogOpen} onOpenChange={setIsClearCacheDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Clear System Cache</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to clear the system cache? This will clear all cached data.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsClearCacheDialogOpen(false)} disabled={isClearingCache}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={handleClearCache} isLoading={isClearingCache}>
-              Clear Cache
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ClearCacheDialog
+        open={isClearCacheDialogOpen}
+        onOpenChange={setIsClearCacheDialogOpen}
+      />
     </Sidebar>
   )
 }

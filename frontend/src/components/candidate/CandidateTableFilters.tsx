@@ -327,7 +327,7 @@ export const CandidateTableFilters = ({
                 {hrDecisionFilter.length === 0
                   ? "Decisions"
                   : hrDecisionFilter.length === 1
-                    ? [{ v: "approve", l: "Approve" }, { v: "may be", l: "May be" }, { v: "reject", l: "Reject" }, { v: "pending", l: "Pending" }].find((d) => d.v === hrDecisionFilter[0])?.l
+                    ? [{ v: "approve", l: "Approve" }, { v: "May Be", l: "May be" }, { v: "reject", l: "Reject" }, { v: "pending", l: "Pending" }].find((d) => d.v === hrDecisionFilter[0])?.l
                     : `${hrDecisionFilter.length} Decisions`}
               </span>
               <ChevronDown className="h-3.5 w-3.5 opacity-60 shrink-0" />
@@ -337,7 +337,7 @@ export const CandidateTableFilters = ({
                 <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground px-2 py-1.5">HR Decision</DropdownMenuLabel>
                 {[
                   { value: "approve", label: "Approve" },
-                  { value: "may be", label: "May be" },
+                  { value: "May Be", label: "May be" },
                   { value: "reject", label: "Reject" },
                   { value: "pending", label: "Pending" },
                 ].map((d) => (
@@ -387,7 +387,7 @@ export const CandidateTableFilters = ({
                 {resumeScreeningFilter.length === 0
                   ? "Result"
                   : resumeScreeningFilter.length === 1
-                    ? [{ v: "pass", l: "Pass" }, { v: "fail", l: "Fail" }].find((d) => d.v === resumeScreeningFilter[0])?.l
+                    ? [{ v: "passed", l: "Pass" }, { v: "failed", l: "Fail" }, { v: "pending", l: "Pending" }].find((d) => d.v === resumeScreeningFilter[0])?.l
                     : `${resumeScreeningFilter.length} Results`}
               </span>
               <ChevronDown className="h-3.5 w-3.5 opacity-60 shrink-0" />
@@ -396,8 +396,9 @@ export const CandidateTableFilters = ({
               <DropdownMenuGroup>
                 <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground px-2 py-1.5">Result</DropdownMenuLabel>
                 {[
-                  { value: "pass", label: "Pass" },
-                  { value: "fail", label: "Fail" },
+                  { value: "passed", label: "Pass" },
+                  { value: "failed", label: "Fail" },
+                  // { value: "pending", label: "Pending" },
                 ].map((d) => (
                   <DropdownMenuCheckboxItem
                     key={d.value}
@@ -614,6 +615,7 @@ export const CandidateTableFilters = ({
                 align="start"
               >
                 <Calendar
+                  required
                   autoFocus
                   mode="range"
                   defaultMonth={dateRange?.from}

@@ -296,7 +296,7 @@ export const useJobCandidates = (
       maybeCount: jobStats?.hr_decisions.maybe ?? 0,
       undecidedCount: jobStats?.hr_decisions.pending ?? 0,
     },
-    totalCandidates,
+    totalCandidates: (jobStats?.hr_decisions.total_candidates || totalCandidates || candidates.length) ?? 0,
     minDate,
     showDeleteModal,
     handleDeleteClick,

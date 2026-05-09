@@ -57,4 +57,18 @@ export const transcriptService = {
     );
     return response.data;
   },
+
+  /**
+   * Delete a transcript and its related data.
+   * @param transcriptId - UUID of the transcript to delete.
+   * @returns Success message.
+   */
+  deleteTranscript: async (
+    transcriptId: string,
+  ): Promise<{ message: string }> => {
+    const response = await apiClient.delete<{ message: string }>(
+      `/transcripts/${transcriptId}`,
+    );
+    return response.data;
+  },
 };
