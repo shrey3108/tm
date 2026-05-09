@@ -89,6 +89,8 @@ export function CandidateTable<T extends UnifiedCandidate>({
     stageFilter,
     setStageFilter,
     stageOptions,
+    hrDecisionOptions,
+    resumeScreeningOptions,
     activitySession,
     setActivitySession,
     activitySearch,
@@ -131,6 +133,8 @@ export function CandidateTable<T extends UnifiedCandidate>({
         stageFilter={stageFilter}
         setStageFilter={setStageFilter}
         stageOptions={stageOptions}
+        hrDecisionOptions={hrDecisionOptions}
+        resumeScreeningOptions={resumeScreeningOptions}
         activitySession={activitySession}
         setActivitySession={setActivitySession}
         activitySearch={activitySearch}

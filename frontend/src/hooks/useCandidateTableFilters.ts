@@ -159,6 +159,142 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
   }, [locationSearch]);
 
 
+  // --- Cross-filter helper: applies all filters EXCEPT the one named by `skip` ---
+  const crossFilteredCandidates = (skip: string) => {
+    return candidates.filter((c) => {
+      // Name / email filter
+      if (skip !== 'name' && debouncedNameFilter) {
+        const fullName = `${c.first_name || ''} ${c.last_name || ''}`.toLowerCase().trim();
+        const email = (c.email || '').toLowerCase();
+        if (!fullName.includes(debouncedNameFilter.toLowerCase()) && !email.includes(debouncedNameFilter.toLowerCase())) return false;
+      }
+      // Status filter
+      if (skip !== 'status' && statusFilter.length > 0) {
+        const candidateStatus = c.processing_status || c.current_status || '';
+        if (!statusFilter.includes(candidateStatus)) return false;
+      }
+      // Location filter
+      if (skip !== 'location' && locationFilter.length > 0) {
+        const candidateLocation = (c.location || '').trim().toLowerCase();
+        if (!locationFilter.some(f => f.toLowerCase() === candidateLocation)) return false;
+      }
+      // Job filter
+      if (skip !== 'job' && jobFilter.length > 0) {
+        if (!jobFilter.includes(c.applied_job_id || '')) return false;
+      }
+      // Date range filter
+      if (skip !== 'date') {
+        const rawDate = c.applied_at || c.created_at;
+        if (rawDate && (dateRange?.from || dateRange?.to)) {
+          const d = new Date(rawDate);
+          if (dateRange.from && d < startOfDay(dateRange.from)) return false;
+          if (dateRange.to && d > endOfDay(dateRange.to)) return false;
+        }
+      }
+      // HR Decision filter
+      if (skip !== 'hrDecision' && hrDecisionFilter.length > 0) {
+        const decision = c.hr_decision || 'pending';
+        if (!hrDecisionFilter.some(d => d.toLowerCase() === decision.toLowerCase())) return false;
+      }
+      // Resume Screening filter
+      if (skip !== 'resumeScreening' && resumeScreeningFilter.length > 0) {
+        let candidateScreening = 'failed';
+        if (c.pass_fail === true || String(c.pass_fail).toLowerCase() === 'pass' || (c.resume_score ?? 0) >= passingThreshold) {
+          candidateScreening = 'passed';
+        } else if (c.processing_status === 'processing' || c.processing_status === 'queued' || !c.is_parsed) {
+          candidateScreening = 'pending';
+        }
+        if (!resumeScreeningFilter.includes(candidateScreening)) return false;
+      }
+      // Stage filter
+      if (skip !== 'stage' && stageFilter.length > 0) {
+        const candidateStage = c.current_stage?.template_name || '';
+        if (!stageFilter.includes(candidateStage)) return false;
+      }
+      // Activity session filter
+      if (skip !== 'activity' && activitySessionFilter.length > 0) {
+        const candidateSessionId = String((c as any).activity_session_id || '');
+        if (!activitySessionFilter.includes(candidateSessionId)) return false;
+      }
+      return true;
+    });
+  };
+
+  // Full static option sets — shown on initial load when no cross-filtering is needed
+
+  const ALL_HR_DECISION_OPTIONS = [
+    { value: 'approve', label: 'Approve' },
+    { value: 'May Be', label: 'May be' },
+    { value: 'reject', label: 'Reject' },
+    { value: 'pending', label: 'Pending' },
+  ];
+
+  const ALL_RESUME_SCREENING_OPTIONS = [
+    { value: 'passed', label: 'Pass' },
+    { value: 'failed', label: 'Fail' }
+  ];
+
+  const HR_DECISION_LABEL_MAP: Record<string, string> = {
+    approve: 'Approve',
+    'may be': 'May be',
+    reject: 'Reject',
+    pending: 'Pending',
+  };
+
+  const RESUME_SCREENING_LABEL_MAP: Record<string, string> = {
+    passed: 'Pass',
+    failed: 'Fail',
+    pending: 'Pending',
+  };
+
+  /** True when any filter OTHER than the given one is active */
+  const hasOtherFilters = (skip: string) => {
+    if (skip !== 'name' && !!debouncedNameFilter) return true;
+    if (skip !== 'status' && statusFilter.length > 0) return true;
+    if (skip !== 'location' && locationFilter.length > 0) return true;
+    if (skip !== 'job' && jobFilter.length > 0) return true;
+    if (skip !== 'date' && (dateRange?.from || dateRange?.to)) return true;
+    if (skip !== 'hrDecision' && hrDecisionFilter.length > 0) return true;
+    if (skip !== 'resumeScreening' && resumeScreeningFilter.length > 0) return true;
+    if (skip !== 'stage' && stageFilter.length > 0) return true;
+    if (skip !== 'activity' && activitySessionFilter.length > 0) return true;
+    return false;
+  };
+
+  // --- Dynamic option sets: full static set on initial load, cross-filtered after ---
+  const hrDecisionOptions = useMemo(() => {
+    if (!hasOtherFilters('hrDecision')) return ALL_HR_DECISION_OPTIONS;
+    const subset = crossFilteredCandidates('hrDecision');
+    const set = new Set<string>();
+    subset.forEach(c => {
+      const d = (c.hr_decision || 'pending').toLowerCase();
+      set.add(d);
+    });
+    return Array.from(set).sort().map(v => ({
+      value: v === 'may be' ? 'May Be' : v,
+      label: HR_DECISION_LABEL_MAP[v] || v,
+    }));
+  }, [candidates, debouncedNameFilter, statusFilter, locationFilter, jobFilter, dateRange, resumeScreeningFilter, stageFilter, activitySessionFilter, passingThreshold]);
+
+  const resumeScreeningOptions = useMemo(() => {
+    if (!hasOtherFilters('resumeScreening')) return ALL_RESUME_SCREENING_OPTIONS;
+    const subset = crossFilteredCandidates('resumeScreening');
+    const set = new Set<string>();
+    subset.forEach(c => {
+      let screening = 'failed';
+      if (c.pass_fail === true || String(c.pass_fail).toLowerCase() === 'pass' || (c.resume_score ?? 0) >= passingThreshold) {
+        screening = 'passed';
+      } else if (c.processing_status === 'processing' || c.processing_status === 'queued' || !c.is_parsed) {
+        screening = 'pending';
+      }
+      set.add(screening);
+    });
+    return Array.from(set).sort().map(v => ({
+      value: v,
+      label: RESUME_SCREENING_LABEL_MAP[v] || v,
+    }));
+  }, [candidates, debouncedNameFilter, statusFilter, locationFilter, jobFilter, dateRange, hrDecisionFilter, stageFilter, activitySessionFilter, passingThreshold]);
+
   const statusOptions = useMemo(() => {
     const set = new Set<string>();
     candidates.forEach((c) => {
@@ -170,13 +306,23 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
 
   const stageOptions = useMemo(() => {
     if (stageOptionsProp && stageOptionsProp.length > 0) return stageOptionsProp;
+    if (!hasOtherFilters('stage')) {
+      // No other filters active — show all stages from full candidate set
+      const set = new Set<string>();
+      candidates.forEach((c) => {
+        const s = c.current_stage?.template_name;
+        if (s) set.add(s);
+      });
+      return Array.from(set).sort();
+    }
+    const subset = crossFilteredCandidates('stage');
     const set = new Set<string>();
-    candidates.forEach((c) => {
+    subset.forEach((c) => {
       const s = c.current_stage?.template_name;
       if (s) set.add(s);
     });
     return Array.from(set).sort();
-  }, [candidates, stageOptionsProp]);
+  }, [candidates, stageOptionsProp, debouncedNameFilter, statusFilter, locationFilter, jobFilter, dateRange, hrDecisionFilter, resumeScreeningFilter, activitySessionFilter, passingThreshold]);
 
   const minDate = useMemo(() => {
     if (candidates.length === 0) return new Date();
@@ -371,6 +517,8 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
     stageFilter,
     setStageFilter,
     stageOptions,
+    hrDecisionOptions,
+    resumeScreeningOptions,
     minDate,
     filteredCandidates,
     hasActiveFilters,
