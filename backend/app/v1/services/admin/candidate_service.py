@@ -67,6 +67,23 @@ class CandidateAdminService:
             except Exception:
                 pass
 
+        # 0.1 Stage filter processing
+        stage_ids = []
+        stage_names = []
+        stage_filter = None
+        if stage_id:
+            for s in stage_id:
+                try:
+                    stage_ids.append(uuid.UUID(s))
+                except ValueError:
+                    stage_names.append(s.lower())
+            
+            stage_filter = or_()
+            if stage_ids:
+                stage_filter = or_(stage_filter, CandidateStage.id.in_(stage_ids), CandidateStage.job_stage_id.in_(stage_ids))
+            if stage_names:
+                stage_filter = or_(stage_filter, func.lower(StageTemplate.name).in_(stage_names))
+
         # 1. Fetch direct candidates
         dir_filter = or_(
             Candidate.applied_job_id == job_id,
@@ -85,23 +102,10 @@ class CandidateAdminService:
             dir_filter = and_(dir_filter, Candidate.id == candidate_id)
 
         if stage_id:
-            stage_ids = []
-            stage_names = []
-            for s in stage_id:
-                try:
-                    stage_ids.append(uuid.UUID(s))
-                except ValueError:
-                    stage_names.append(s.lower())
-            
-            stage_filter = or_()
-            if stage_ids:
-                stage_filter = or_(stage_filter, CandidateStage.id.in_(stage_ids), CandidateStage.job_stage_id.in_(stage_ids))
-            if stage_names:
-                stage_filter = or_(stage_filter, func.lower(StageTemplate.name).in_(stage_names))
 
             dir_filter = and_(
                 dir_filter,
-                select(1).join(
+                select(1).select_from(CandidateStage).join(
                     JobStageConfig, CandidateStage.job_stage_id == JobStageConfig.id
                 ).join(
                     StageTemplate, JobStageConfig.template_id == StageTemplate.id
@@ -198,16 +202,17 @@ class CandidateAdminService:
         if stage_id:
             xm_filter = and_(
                 xm_filter,
-                exists().where(
+                select(1).select_from(CandidateStage).join(
+                    JobStageConfig, CandidateStage.job_stage_id == JobStageConfig.id
+                ).join(
+                    StageTemplate, JobStageConfig.template_id == StageTemplate.id
+                ).where(
                     and_(
                         CandidateStage.candidate_id == CrossJobMatch.candidate_id,
-                        or_(
-                            CandidateStage.id == stage_id,
-                            CandidateStage.job_stage_id == stage_id
-                        ),
-                        CandidateStage.status.in_(["active", "completed", "pending", "failed"])
+                        CandidateStage.status.in_(["active", "completed", "pending", "failed"]),
+                        stage_filter
                     )
-                ).correlate(CrossJobMatch)
+                ).exists()
             )
 
         xm_stmt = (
@@ -462,7 +467,7 @@ class CandidateAdminService:
             if stage_names:
                 stage_filter = or_(stage_filter, func.lower(StageTemplate.name).in_(stage_names))
 
-            stage_exists_stmt = select(1).join(
+            stage_exists_stmt = select(1).select_from(CandidateStage).join(
                 JobStageConfig, CandidateStage.job_stage_id == JobStageConfig.id
             ).join(
                 StageTemplate, JobStageConfig.template_id == StageTemplate.id
@@ -963,8 +968,14 @@ class CandidateAdminService:
         events_map = {} # Keyed by (event_type, stage_id) or unique string
 
         # 1. Fetch Stages
-        stmt = select(CandidateStage).join(JobStageConfig).where(CandidateStage.candidate_id == candidate_id).options(
-            selectinload(CandidateStage.job_stage).selectinload(JobStageConfig.template)
+        stmt = (
+            select(CandidateStage)
+            .select_from(CandidateStage)
+            .join(JobStageConfig, CandidateStage.job_stage_id == JobStageConfig.id)
+            .where(CandidateStage.candidate_id == candidate_id)
+            .options(
+                selectinload(CandidateStage.job_stage).selectinload(JobStageConfig.template)
+            )
         )
         if job_id:
             stmt = stmt.where(JobStageConfig.job_id == job_id)

@@ -47,14 +47,14 @@ class JobAdminService:
         skip: int = 0, 
         limit: int = 100, 
         query: str | None = None,
-        status: bool | None = None,
+        status: list[bool] | None = None,
         department_ids: list[uuid.UUID] | None = None,
         priority_ids: list[uuid.UUID] | None = None,
         position_ids: list[uuid.UUID] | None = None,
     ) -> JobsListRead:
         """Get all jobs with pagination and global dashboard summaries."""
         # 0. Cache lookup
-        cache_key = f"jobs:list:{skip}:{limit}:{query or 'none'}:{status}:{department_ids}:{priority_ids}:{position_ids}"
+        cache_key = f"jobs:list:{skip}:{limit}:{query or 'none'}:{sorted(status) if status else 'all'}:{department_ids}:{priority_ids}:{position_ids}"
         cached = await cache.get(cache_key)
         if cached:
             try:

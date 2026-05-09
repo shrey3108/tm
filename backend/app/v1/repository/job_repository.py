@@ -44,7 +44,7 @@ class JobRepository:
         skip: int = 0, 
         limit: int = 100, 
         query: str | None = None,
-        status: bool | None = None,
+        status: list[bool] | None = None,
         department_ids: list[uuid.UUID] | None = None,
         priority_ids: list[uuid.UUID] | None = None,
         position_ids: list[uuid.UUID] | None = None,
@@ -57,7 +57,7 @@ class JobRepository:
             skip (int): Number of records to skip.
             limit (int): Maximum number of records to return.
             query (str | None): Optional search query for job title.
-            status (bool | None): Filter by is_active status.
+            status (list[bool] | None): Filter by is_active status(es).
             department_ids (list[UUID] | None): Filter by department(s).
             priority_ids (list[UUID] | None): Filter by priority(s).
             position_ids (list[UUID] | None): Filter by position(s).
@@ -68,8 +68,8 @@ class JobRepository:
         filters = []
         if query:
             filters.append(Job.title.ilike(f"%{query}%"))
-        if status is not None:
-            filters.append(Job.is_active == status)
+        if status:
+            filters.append(Job.is_active.in_(status))
         if department_ids:
             filters.append(Job.department_id.in_(department_ids))
         if priority_ids:

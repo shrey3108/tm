@@ -45,7 +45,7 @@ async def read_jobs(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     q: str | None = Query(None, description="General search query for title"),
-    status: bool | None = Query(None, description="Filter by active status"),
+    status: list[bool] | None = Query(None, description="Filter by active status(es)"),
     department_ids: list[uuid.UUID] | None = Query(None, alias="department_id", description="Filter by one or more department IDs"),
     priority_ids: list[uuid.UUID] | None = Query(None, alias="priority_id", description="Filter by one or more priority IDs"),
     position_ids: list[uuid.UUID] | None = Query(None, alias="position_id", description="Filter by one or more position IDs"),
@@ -58,7 +58,7 @@ async def read_jobs(
         skip (int): Number of records to skip.
         limit (int): Maximum number of records to return.
         q (str): General search query for title.
-        status (bool): Filter by is_active status.
+        status (list[bool]): Filter by is_active status(es).
         department_id (list[UUID]): List of department IDs.
         priority_id (list[UUID]): List of priority IDs.
         position_id (list[UUID]): List of position IDs.
