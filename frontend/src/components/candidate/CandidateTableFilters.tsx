@@ -53,6 +53,8 @@ interface CandidateTableFiltersProps {
   stageFilter: string[];
   setStageFilter: (value: string[]) => void;
   stageOptions: string[];
+  hrDecisionOptions: { value: string; label: string }[];
+  resumeScreeningOptions: { value: string; label: string }[];
   hasActiveFilters: boolean;
   clearFilters: () => void;
   resultCount: number;
@@ -93,6 +95,8 @@ export const CandidateTableFilters = ({
   stageFilter,
   setStageFilter,
   stageOptions,
+  hrDecisionOptions,
+  resumeScreeningOptions,
   hasActiveFilters,
   clearFilters,
   resultCount,
@@ -327,7 +331,7 @@ export const CandidateTableFilters = ({
                 {hrDecisionFilter.length === 0
                   ? "Decisions"
                   : hrDecisionFilter.length === 1
-                    ? [{ v: "approve", l: "Approve" }, { v: "May Be", l: "May be" }, { v: "reject", l: "Reject" }, { v: "pending", l: "Pending" }].find((d) => d.v === hrDecisionFilter[0])?.l
+                    ? hrDecisionOptions.find((d) => d.value === hrDecisionFilter[0])?.label ?? hrDecisionFilter[0]
                     : `${hrDecisionFilter.length} Decisions`}
               </span>
               <ChevronDown className="h-3.5 w-3.5 opacity-60 shrink-0" />
@@ -335,12 +339,11 @@ export const CandidateTableFilters = ({
             <DropdownMenuContent align="start" className="min-w-[160px] rounded-xl shadow-lg p-1">
               <DropdownMenuGroup>
                 <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground px-2 py-1.5">HR Decision</DropdownMenuLabel>
-                {[
-                  { value: "approve", label: "Approve" },
-                  { value: "May Be", label: "May be" },
-                  { value: "reject", label: "Reject" },
-                  { value: "pending", label: "Pending" },
-                ].map((d) => (
+                {hrDecisionOptions.length === 0 ? (
+                  <div className="px-2 py-4 text-xs text-center text-muted-foreground">
+                    No decisions in current data
+                  </div>
+                ) : hrDecisionOptions.map((d) => (
                   <DropdownMenuCheckboxItem
                     key={d.value}
                     checked={hrDecisionFilter.includes(d.value)}
@@ -387,7 +390,7 @@ export const CandidateTableFilters = ({
                 {resumeScreeningFilter.length === 0
                   ? "Result"
                   : resumeScreeningFilter.length === 1
-                    ? [{ v: "passed", l: "Pass" }, { v: "failed", l: "Fail" }, { v: "pending", l: "Pending" }].find((d) => d.v === resumeScreeningFilter[0])?.l
+                    ? resumeScreeningOptions.find((d) => d.value === resumeScreeningFilter[0])?.label ?? resumeScreeningFilter[0]
                     : `${resumeScreeningFilter.length} Results`}
               </span>
               <ChevronDown className="h-3.5 w-3.5 opacity-60 shrink-0" />
@@ -395,11 +398,11 @@ export const CandidateTableFilters = ({
             <DropdownMenuContent align="start" className="min-w-[160px] rounded-xl shadow-lg p-1">
               <DropdownMenuGroup>
                 <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground px-2 py-1.5">Result</DropdownMenuLabel>
-                {[
-                  { value: "passed", label: "Pass" },
-                  { value: "failed", label: "Fail" },
-                  // { value: "pending", label: "Pending" },
-                ].map((d) => (
+                {resumeScreeningOptions.length === 0 ? (
+                  <div className="px-2 py-4 text-xs text-center text-muted-foreground">
+                    No results in current data
+                  </div>
+                ) : resumeScreeningOptions.map((d) => (
                   <DropdownMenuCheckboxItem
                     key={d.value}
                     checked={resumeScreeningFilter.includes(d.value)}
