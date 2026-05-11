@@ -31,6 +31,17 @@ services:
     restart: always
     ports:
       - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  redisinsight:
+    image: redis/redisinsight:latest
+    container_name: redisinsight
+    restart: always
+    ports:
+      - "5540:5540"
+    depends_on:
+      - redis
 
   api:
     build: .
@@ -69,3 +80,4 @@ services:
 
 volumes:
   postgres_data:
+  redis_data:
