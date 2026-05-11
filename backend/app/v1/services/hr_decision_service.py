@@ -236,7 +236,12 @@ class HRDecisionService:
                     
                     # Ensure candidate status reflects "Active"
                     from app.v1.db.models.stage_templates import StageTemplate
-                    st_stmt = select(StageTemplate.name).join(JobStageConfig, JobStageConfig.template_id == StageTemplate.id).where(JobStageConfig.id == cs_to_advance.job_stage_id)
+                    st_stmt = (
+                        select(StageTemplate.name)
+                        .select_from(JobStageConfig)
+                        .join(StageTemplate, JobStageConfig.template_id == StageTemplate.id)
+                        .where(JobStageConfig.id == cs_to_advance.job_stage_id)
+                    )
                     st_name = (await db.execute(st_stmt)).scalar()
                     if candidate and st_name:
                          candidate.current_status = f"{st_name} (Active)"
@@ -250,7 +255,12 @@ class HRDecisionService:
 
             elif decision_data.decision.lower() == "approve":
                 # Only initiate pipeline if NO stages exist at all for this job
-                existing_stages_stmt = select(CandidateStage).join(JobStageConfig).where(JobStageConfig.job_id == actual_job_id, CandidateStage.candidate_id == candidate_id)
+                existing_stages_stmt = (
+                    select(CandidateStage)
+                    .select_from(CandidateStage)
+                    .join(JobStageConfig, CandidateStage.job_stage_id == JobStageConfig.id)
+                    .where(JobStageConfig.job_id == actual_job_id, CandidateStage.candidate_id == candidate_id)
+                )
                 existing_stages = (await db.execute(existing_stages_stmt)).scalars().all()
                 
                 if not existing_stages:
@@ -259,7 +269,15 @@ class HRDecisionService:
                     
                     # NEW: Since Resume Screening is now Stage 0, approving it should COMPLETE it 
                     # and advance to the next stage (Stage 1 - HR Round)
-                    first_stage_stmt = select(CandidateStage).join(JobStageConfig).options(selectinload(CandidateStage.job_stage)).where(JobStageConfig.job_id == actual_job_id, CandidateStage.candidate_id == candidate_id).order_by(JobStageConfig.stage_order.asc()).limit(1)
+                    first_stage_stmt = (
+                        select(CandidateStage)
+                        .select_from(CandidateStage)
+                        .join(JobStageConfig, CandidateStage.job_stage_id == JobStageConfig.id)
+                        .options(selectinload(CandidateStage.job_stage))
+                        .where(JobStageConfig.job_id == actual_job_id, CandidateStage.candidate_id == candidate_id)
+                        .order_by(JobStageConfig.stage_order.asc())
+                        .limit(1)
+                    )
                     first_stage = (await db.execute(first_stage_stmt)).scalar_one_or_none()
                     if first_stage:
                         # Advance from Stage 0 to Stage 1 immediately
@@ -846,6 +864,7 @@ class HRDecisionService:
             # Advance/Fail candidate stage for this job if there is an active one
             cs_stmt = (
                 select(CandidateStage)
+                .select_from(CandidateStage)
                 .join(JobStageConfig, CandidateStage.job_stage_id == JobStageConfig.id)
                 .where(
                     CandidateStage.candidate_id == candidate_id,

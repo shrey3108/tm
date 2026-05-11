@@ -606,7 +606,12 @@ async def run_resume_processing_pipeline(
             from app.v1.services.candidate_stage_service import candidate_stage_service
             
             # 1. Ensure pipeline exists
-            existing_stages_stmt = select(CandidateStage).join(JobStageConfig).where(JobStageConfig.job_id == job_id, CandidateStage.candidate_id == candidate.id)
+            existing_stages_stmt = (
+                select(CandidateStage)
+                .select_from(CandidateStage)
+                .join(JobStageConfig, CandidateStage.job_stage_id == JobStageConfig.id)
+                .where(JobStageConfig.job_id == job_id, CandidateStage.candidate_id == candidate.id)
+            )
             existing_stages = (await db.execute(existing_stages_stmt)).scalars().all()
             
             if not existing_stages:

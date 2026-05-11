@@ -269,9 +269,9 @@ class JobStatsService:
                             else_=None,
                         )
                     ),
-                    func.min(JobStageConfig.stage_order),
                 ).label("best_order"),
             )
+            .select_from(CandidateStage)
             .join(JobStageConfig, CandidateStage.job_stage_id == JobStageConfig.id)
             .where(JobStageConfig.job_id == job_id)
             .where(CandidateStage.candidate_id.in_(select(unique_candidates_subq.c.representative_candidate_id)))
@@ -282,7 +282,7 @@ class JobStatsService:
         # 2. Fetch the stage records
         stmt = (
             select(StageTemplate.name, CandidateStage.status)
-            .distinct(CandidateStage.candidate_id)
+            .select_from(CandidateStage)
             .join(JobStageConfig, CandidateStage.job_stage_id == JobStageConfig.id)
             .join(StageTemplate, JobStageConfig.template_id == StageTemplate.id)
             .join(
@@ -302,7 +302,8 @@ class JobStatsService:
         # Initialize all stages with 0 for both active and completed
         all_stages_res = await db.execute(
             select(StageTemplate.name)
-            .join(JobStageConfig, JobStageConfig.template_id == StageTemplate.id)
+            .select_from(JobStageConfig)
+            .join(StageTemplate, JobStageConfig.template_id == StageTemplate.id)
             .where(JobStageConfig.job_id == job_id)
             .order_by(JobStageConfig.stage_order)
         )
@@ -490,6 +491,7 @@ class JobStatsService:
         # 1. Fetch all stages for this job
         stage_configs_res = await db.execute(
             select(JobStageConfig)
+            .select_from(JobStageConfig)
             .join(StageTemplate, JobStageConfig.template_id == StageTemplate.id)
             .where(JobStageConfig.job_id == job_id)
             .options(selectinload(JobStageConfig.template))

@@ -15,7 +15,7 @@ class JobService:
         skip: int = 0, 
         limit: int = 100, 
         query: str | None = None,
-        status: bool | None = None,
+        status: list[bool] | None = None,
         department_ids: list[uuid.UUID] | None = None,
         priority_ids: list[uuid.UUID] | None = None,
         position_ids: list[uuid.UUID] | None = None,
