@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label"
 import { adminSystemService } from "@/apis/admin/admin-system"
 import { toast } from "sonner"
 import { Loader2, Search } from "lucide-react"
+import { extractErrorMessage } from "@/utils/error"
 
 interface ClearCacheDialogProps {
   open: boolean
@@ -98,7 +99,9 @@ export function ClearCacheDialog({ open, onOpenChange }: ClearCacheDialogProps) 
       }
       onOpenChange(false)
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to clear cache")
+      const errorMessage = extractErrorMessage(error);
+
+      toast.error(errorMessage || "Failed to clear cache")
     } finally {
       setIsClearing(false)
     }
@@ -114,7 +117,7 @@ export function ClearCacheDialog({ open, onOpenChange }: ClearCacheDialogProps) 
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-col gap-4 py-4 px-4 flex-1 overflow-hidden">
+        <div className="flex flex-col gap-4 py-2 px-4 flex-1 overflow-hidden">
           <div className="relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
@@ -132,7 +135,7 @@ export function ClearCacheDialog({ open, onOpenChange }: ClearCacheDialogProps) 
                 checked={filteredKeys.length > 0 && selectedKeys.size === filteredKeys.length}
                 onCheckedChange={toggleSelectAll}
               />
-              <Label htmlFor="select-all" className="text-sm font-medium cursor-pointer">
+              <Label htmlFor="select-all" className="text-xs font-medium cursor-pointer">
                 Select All ({filteredKeys.length})
               </Label>
             </div>
@@ -143,15 +146,15 @@ export function ClearCacheDialog({ open, onOpenChange }: ClearCacheDialogProps) 
             )}
           </div>
 
-          <ScrollArea className="flex-1 rounded-xl border border-muted-foreground/10 bg-muted/5 p-4 shadow-inner">
+          <ScrollArea className="flex-1 rounded-xl border border-muted-foreground/10 bg-muted/20 p-2 shadow-inner overflow-hidden">
             {isLoadingKeys ? (
-              <div className="flex h-full min-h-[300px] items-center justify-center">
+              <div className="flex h-full  items-center justify-center">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
             ) : filteredKeys.length > 0 ? (
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-2 pb-8">
                 {filteredKeys.map((key) => (
-                  <div key={key} className="flex items-center gap-3 p-2 rounded-lg hover:bg-background/50 transition-colors group">
+                  <div key={key} className="flex items-center gap-3 p-2 rounded-lg hover:bg-background transition-colors ">
                     <Checkbox
                       id={`key-${key}`}
                       checked={selectedKeys.has(key)}
@@ -160,7 +163,7 @@ export function ClearCacheDialog({ open, onOpenChange }: ClearCacheDialogProps) 
                     />
                     <Label
                       htmlFor={`key-${key}`}
-                      className="text-sm font-medium break-all cursor-pointer flex-1 group-hover:text-primary transition-colors"
+                      className="text-sm font-medium break-all cursor-pointer flex-1"
                     >
                       {key}
                     </Label>
@@ -185,12 +188,12 @@ export function ClearCacheDialog({ open, onOpenChange }: ClearCacheDialogProps) 
           </ScrollArea>
         </div>
 
-        <DialogFooter className="p-4 bg-muted/20 border-t border-muted-foreground/10">
+        <DialogFooter className="p-2 bg-muted/20 border-t border-muted-foreground/10">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
             disabled={isClearing}
-            className="rounded-xl font-bold"
+            className="rounded-xl"
           >
             Cancel
           </Button>
@@ -198,9 +201,9 @@ export function ClearCacheDialog({ open, onOpenChange }: ClearCacheDialogProps) 
             variant="destructive"
             onClick={handleClear}
             isLoading={isClearing}
-            className="rounded-xl font-bold px-6 shadow-destructive/20"
+            className="rounded-xl  px-6 shadow-destructive/20"
           >
-            {selectedKeys.size > 0 ? `Clear Selected (${selectedKeys.size})` : "Clear Everything"}
+            {filteredKeys.length == selectedKeys.size ? "Clear Everything" : `Clear Selected (${selectedKeys.size})`}
           </Button>
         </DialogFooter>
       </DialogContent>

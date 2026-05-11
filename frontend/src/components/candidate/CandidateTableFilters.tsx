@@ -198,13 +198,13 @@ export const CandidateTableFilters = ({
                             <HoverCard>
                               <HoverCardTrigger delay={10} closeDelay={10}>
                                 <div className="truncate w-full max-w-40 ">
-                                  <span className="">
+                                  <span className="capitalize">
                                     {j.title}
                                   </span>
                                 </div>
                               </HoverCardTrigger>
                               <HoverCardContent className="w-64 p-2 rounded-lg" side="right" sideOffset={40}>
-                                <div className="text-sm font-medium mb-0.5">{j.title}</div>
+                                <div className="text-sm font-medium mb-0.5 capitalize">{j.title}</div>
                               </HoverCardContent>
                             </HoverCard>
                           </DropdownMenuCheckboxItem>

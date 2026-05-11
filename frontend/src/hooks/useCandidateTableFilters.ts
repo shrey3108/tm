@@ -92,14 +92,7 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
 
 
 
-  // Memoized job options filtered by search query
-  const jobOptions = useMemo(() => {
-    if (!jobSearch.trim()) return availableJobs;
-    const query = jobSearch.toLowerCase();
-    return availableJobs.filter(j =>
-      j.title.toLowerCase().includes(query)
-    );
-  }, [availableJobs, jobSearch]);
+
 
   // Fetch all job titles once on mount — only when the job-filter column is visible.
   useEffect(() => {
@@ -274,6 +267,28 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
     if (skip !== 'activity' && activitySessionFilter.length > 0) return true;
     return false;
   };
+
+  // Memoized job options: show all initially, then narrow by cross-filtering when filters are active
+  const jobOptions = useMemo(() => {
+    let baseOptions = availableJobs;
+
+    if (isAnyFilterActive) {
+      const subset = crossFilteredCandidates('job');
+      const set = new Set<string>();
+      subset.forEach((c) => {
+        if (c.applied_job_id) set.add(c.applied_job_id);
+      });
+      // Filter availableJobs to only include those that have candidates in the current subset
+      baseOptions = availableJobs.filter(j => set.has(j.id));
+    }
+
+    if (!jobSearch.trim()) return baseOptions;
+    const query = jobSearch.toLowerCase();
+    return baseOptions.filter(j =>
+      j.title.toLowerCase().includes(query)
+    );
+  }, [availableJobs, jobSearch, isAnyFilterActive, candidates, debouncedNameFilter, statusFilter, locationFilter, hrDecisionFilter, dateRange, resumeScreeningFilter, stageFilter, activitySessionFilter, passingThreshold]);
+
 
   // --- Dynamic option sets: full static set on initial load, cross-filtered after ---
   const hrDecisionOptions = useMemo(() => {

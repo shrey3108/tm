@@ -23,8 +23,7 @@ export const adminSystemService = {
      */
     getAllKeys: async (pattern?: string): Promise<AdminCacheKeysResponse> => {
         const params = pattern ? { pattern } : undefined;
-        const res = await apiClient.get(`${ADMIN_PATH}/cache`, { params });
-        console.log(res)
+        const res = await apiClient.get<AdminCacheKeysResponse>(`${ADMIN_PATH}/cache`, { params });
         return res.data;
     }
 };
