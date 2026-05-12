@@ -104,12 +104,12 @@ export function TranscriptUpload({
           <DialogTrigger>
             <Button variant="outline" className="rounded-xl border border-muted-foreground/10 px-5 font-semibold text-center" disabled={disabled} size="sm">
               <Upload className="mr-2 h-4 w-4" />
-              Upload Transcript
+              Transcript
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Upload Transcript</DialogTitle>
+              <DialogTitle>Transcript Path</DialogTitle>
               <DialogDescription>
                 Enter the full path of the transcript file to upload.
               </DialogDescription>

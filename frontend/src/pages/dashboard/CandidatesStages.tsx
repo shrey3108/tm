@@ -34,6 +34,7 @@ import { DecisionHistory } from "@/components/modal/candidate-details/DecisionHi
 import jobService from "@/apis/job";
 import { CandidateDetailsModal } from "@/components/modal/CandidateDetailsModal";
 import { HrDecision } from "@/components/modal/candidate-details/HrDecision";
+import { Badge } from "@/components";
 
 
 export default function CandidatesStages() {
@@ -296,15 +297,7 @@ export default function CandidatesStages() {
       toast.error("Candidate information missing");
       return;
     }
-
     setIsSubmitting(true);
-    // console.log("before submitDecision", {
-    //   candidate_id: candidate.id,
-    //   decision: data.decision,
-    //   note: data.note,
-    //   stage_config_id: currentStage === "Resume Screening" ? undefined : configId,
-    //   job_id: job.id
-    // })
 
     try {
       // @ts-ignore
@@ -471,15 +464,24 @@ export default function CandidatesStages() {
               </div>
             ) : evaluation ? (
               <>
-                <div className="flex justify-end px-4 mb-2 gap-2">
+                <div className="flex items-center justify-end px-4 mb-2 gap-3">
+                  <Button
+                    variant={"outline"}
+                    onClick={() => window.scroll({
+                      top: document.body.scrollHeight,
+                      behavior: "smooth",
+                    })}>Take Decision</Button>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => setIsHistoryModalOpen(true)}
-                    className="rounded-xl border-primary/20 hover:bg-primary/5 font-bold"
+                    className="rounded-xl border-primary/20 hover:bg-primary/5 font-bold shadow-sm transition-all active:scale-95"
                   >
-                    <History className="h-4 w-4 mr-2" />
-                    Evaluation History ({evaluationHistory.length})
+                    <History className="h-4 w-4 mr-2 text-primary" />
+                    Evaluation History
+                    <Badge variant="outline"> V{evaluationHistory.length - Math.max(0, evaluationHistory.findIndex(h => h.id === evaluation.id))}
+                      {/* {evaluationHistory[0]?.id === evaluation.id && " (Latest)"} */}
+                    </Badge>
                   </Button>
                 </div>
                 <EvaluationGrid
