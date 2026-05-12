@@ -7,7 +7,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class DialogueTurn(BaseModel):
@@ -57,3 +57,13 @@ class TranscriptUpdate(BaseModel):
     """Payload for updating an existing transcript."""
 
     transcript_text: str
+
+
+class TranscriptPathUpload(BaseModel):
+    """Payload for processing a transcript from a local file path."""
+
+    file_path: str = Field(
+        ...,
+        description="Full local path to the transcript file. Note: Use double backslashes (\\\\) for Windows paths in JSON.",
+        examples=[r"C:\OneDriveTemp\Desktop\New folder (3)\August Infotech _ Heer Patel _ AI_ML Engineer (1).docx"]
+    )

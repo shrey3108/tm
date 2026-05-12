@@ -14,7 +14,7 @@ from app.v1.db.models.files import File as DBFile
 from app.v1.db.models.interviews import Interview
 from app.v1.db.models.transcript_chunks import TranscriptChunk
 from app.v1.db.models.transcripts import Transcript
-from app.v1.schemas.transcript import TranscriptUpdate
+from app.v1.schemas.transcript import TranscriptUpdate, TranscriptPathUpload
 from app.v1.db.models.evaluations import Evaluation
 from app.v1.utils.transcript_parser import process_transcript_file
 from app.v1.core.storage import resolve_storage_path
@@ -71,22 +71,30 @@ async def update_transcript(
 @router.post("/upload/{candidate_stage_id}")
 async def upload_transcript(
     candidate_stage_id: uuid.UUID,
-    file: UploadFile = File(...),
+    payload: TranscriptPathUpload,
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Upload an interview transcript (.docx, .pdf) for a candidate stage.
+    Process an interview transcript from a local file path (.docx, .pdf, .txt).
     
-    Takes the candidate_stage_id directly, looks up the candidate and stage,
-    processes the file (cleans, chunks, embeds), and triggers AI evaluation.
+    Takes the candidate_stage_id and the local file_path, validates the path,
+    and triggers asynchronous processing.
     """
-    # 1. Validate File Ext
-    if not file.filename:
-        raise HTTPException(status_code=400, detail="No file provided")
+    file_path_str = payload.file_path
     
-    ext = ""
-    if "." in file.filename:
-        ext = f".{file.filename.split('.')[-1].lower()}"
+    # 1. Validate File Path and Extension
+    import os
+    from pathlib import Path
+    
+    path_obj = Path(file_path_str)
+    if not path_obj.exists():
+        raise HTTPException(status_code=400, detail=f"File path does not exist: {file_path_str}")
+    
+    if not path_obj.is_file():
+        raise HTTPException(status_code=400, detail=f"Path is not a file: {file_path_str}")
+
+    filename = path_obj.name
+    ext = path_obj.suffix.lower()
         
     if ext not in {".docx", ".pdf", ".txt"}:
         raise HTTPException(status_code=400, detail="Only .docx, .pdf, and .txt files are allowed for transcripts.")
@@ -96,46 +104,26 @@ async def upload_transcript(
     if not current_stage:
         raise HTTPException(status_code=404, detail="Candidate stage not found")
 
-    candidate_id = current_stage.candidate_id
-
-    # 3. Fetch Candidate
-    candidate = await db.get(Candidate, candidate_id)
-    if not candidate:
-        raise HTTPException(status_code=404, detail="Candidate not found")
-
-    # 4. Save File to Disk
-    content = await file.read()
-    
-    import os
-    filename = f"{uuid.uuid4()}_{file.filename}"
-    storage_path = f"uploads/transcripts/{filename}"
-    abs_path = resolve_storage_path(storage_path)
-    
-    # Ensure directory exists
-    abs_path.parent.mkdir(parents=True, exist_ok=True)
-    
-    try:
-        with open(abs_path, "wb") as f:
-            f.write(content)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to save file: {str(e)}")
-
-    # 5. Update Candidate Stage Status to Processing
+    # 3. Update Candidate Stage Status to Processing
     current_stage.status = "processing"
     await db.commit()
     
-    # 6. Trigger Celery Task for Asynchronous Processing
+    # 4. Trigger Celery Task for Asynchronous Processing
     from app.v1.services.transcript_tasks import process_transcript_task
-    print(f"DEBUG: Triggering Transcript Processing task for candidate_stage {current_stage.id}")
+    print(f"DEBUG: Triggering Transcript Processing task for path: {file_path_str}")
     try:
-        task = process_transcript_task.delay(str(current_stage.id), storage_path, file.filename)
+        # We pass the absolute path directly. process_transcript_task uses resolve_storage_path 
+        # which handles absolute paths correctly.
+        task = process_transcript_task.delay(str(current_stage.id), file_path_str, filename)
         print(f"DEBUG: Task successfully sent to Redis. Task ID: {task.id}")
     except Exception as celery_err:
         print(f"ERROR: Failed to send task to Celery: {celery_err}")
+        raise HTTPException(status_code=500, detail="Failed to trigger processing task.")
 
     return {
-        "message": "Transcript uploaded successfully. Processing has started in the background.",
+        "message": "Transcript path received successfully. Processing has started in the background.",
         "candidate_stage_id": current_stage.id,
+        "file_path": file_path_str,
         "next_step": "Transcript parsing and AI Evaluation are running in the background."
     }
 
