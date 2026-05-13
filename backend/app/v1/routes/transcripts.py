@@ -100,14 +100,18 @@ async def upload_transcript_path(
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Process an interview transcript from a local file path.
+    Ingest a transcript by providing its local file path or just the filename.
+    If just a filename is provided, it resolves against the system-configured default directory.
     """
-    file_path_str = payload.file_path
-    
-    # 1. Resolve and Validate File Path
+    from app.v1.db.models.candidate_stages import CandidateStage
+    from app.v1.db.models.job_stage_configs import JobStageConfig
+    from app.v1.services.transcript_tasks import process_transcript_task
     from pathlib import Path
+
+    file_path_str = payload.file_path
     path_obj = Path(file_path_str)
-    
+
+    # 1. Resolve relative path against default directory if not absolute
     if not path_obj.is_absolute():
         db_path = await system_setting_repository.get_value(db, "transcript_default_dir")
         default_dir_str = db_path or "C:/OneDriveTemp/Desktop/hirego/transcripts"
@@ -115,19 +119,25 @@ async def upload_transcript_path(
         file_path_str = str(path_obj)
 
     if not path_obj.exists():
-        raise HTTPException(status_code=400, detail=f"File path does not exist: {file_path_str}")
-    
-    filename = path_obj.name
-    
-    # Fetch Stage
-    current_stage = await db.get(CandidateStage, candidate_stage_id)
+        raise HTTPException(
+            status_code=404,
+            detail=f"Transcript file not found at path: {file_path_str}",
+        )
+
+    # 2. Fetch the candidate stage context
+    stmt = (
+        select(CandidateStage)
+        .options(selectinload(CandidateStage.job_stage).selectinload(JobStageConfig.job))
+        .where(CandidateStage.id == candidate_stage_id)
+    )
+    res = await db.execute(stmt)
+    current_stage = res.scalar_one_or_none()
     if not current_stage:
         raise HTTPException(status_code=404, detail="Candidate stage not found")
 
-    current_stage.status = "processing"
-    await db.commit()
-    
-    from app.v1.services.transcript_tasks import process_transcript_task
+    filename = path_obj.name
+
+    # 3. Trigger background processing
     process_transcript_task.delay(str(current_stage.id), file_path_str, filename)
 
     return {

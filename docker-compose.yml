@@ -57,6 +57,7 @@ services:
     environment:
       POSTGRES_SERVER: db
       REDIS_URL: redis://redis:6379/0
+      PHOENIX_COLLECTOR_ENDPOINT: http://phoenix:4317
     depends_on:
       - db
       - redis
@@ -73,10 +74,22 @@ services:
     environment:
       POSTGRES_SERVER: db
       REDIS_URL: redis://redis:6379/0
+      PHOENIX_COLLECTOR_ENDPOINT: http://phoenix:4317
     command: celery -A app.v1.core.celery_app worker --loglevel=info --pool=solo
     depends_on:
       - db
       - redis
+
+  phoenix:
+    image: arizephoenix/phoenix:latest
+    container_name: phoenix_observability
+    restart: always
+    ports:
+      - "6006:6006" # Dashboard UI
+      - "4317:4317" # OTLP gRPC collector
+      - "4318:4318" # OTLP HTTP collector
+    environment:
+      PHOENIX_COLLECTOR_ENDPOINT: http://localhost:4317
 
 volumes:
   postgres_data:
