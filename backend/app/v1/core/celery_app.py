@@ -9,6 +9,7 @@ from celery import Celery
 from celery.signals import worker_process_init
 
 from app.v1.core.config import settings
+from app.v1.core.observability import setup_phoenix_tracing
 
 celery_app = Celery(
     "worker",
@@ -29,6 +30,9 @@ def init_worker(**kwargs):
     """
     from app.v1.core.embeddings import preload_embedding_model
     preload_embedding_model()
+    
+    # Initialize Phoenix Tracing for the worker
+    setup_phoenix_tracing(project_name="hirego-ai")
 
 celery_app.conf.update(
     task_serializer="json",

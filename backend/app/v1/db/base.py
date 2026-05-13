@@ -24,3 +24,4 @@ from app.v1.db.models.evaluations import Evaluation  # noqa: F401
 from app.v1.db.models.transcript_chunks import TranscriptChunk  # noqa: F401
 from app.v1.db.models.job_priorities import JobPriority  # noqa: F401
 from app.v1.db.models.job_positions import JobPosition  # noqa: F401
+from app.v1.db.models.system_settings import SystemSetting  # noqa: F401
