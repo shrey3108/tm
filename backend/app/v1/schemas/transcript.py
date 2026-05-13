@@ -67,3 +67,7 @@ class TranscriptPathUpload(BaseModel):
         description="Full local path to the transcript file. Note: Use double backslashes (\\\\) for Windows paths in JSON.",
         examples=[r"C:\OneDriveTemp\Desktop\New folder (3)\August Infotech _ Heer Patel _ AI_ML Engineer (1).docx"]
     )
+
+class TranscriptPathUpdate(BaseModel):
+    """Payload for updating system settings like default path."""
+    path: str = Field(..., description="The new system path")

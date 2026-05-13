@@ -15,6 +15,9 @@ from app.v1.prompts import (
     RESUME_INSTRUCTION,
     SKILL_INSTRUCTION,
 )
+from app.v1.core.observability import get_tracer
+
+tracer = get_tracer("hirego.embeddings")
 
 
 @lru_cache(maxsize=1)
@@ -107,12 +110,19 @@ class EmbeddingService:
         payload = (
             instruction + normalized_text if self.use_instructions else normalized_text
         )
-        vector = self.model.encode(
-            payload,
-            normalize_embeddings=True,
-            truncate_dim=self.truncate_dim,
-        )
-        return self._fit_vector_dim(vector.tolist())
+        with tracer.start_as_current_span("encode-text") as span:
+            span.set_attribute("text_length", len(payload))
+            span.set_attribute("instruction", instruction)
+            
+            vector = self.model.encode(
+                payload,
+                normalize_embeddings=True,
+                truncate_dim=self.truncate_dim,
+            )
+            
+            res_vector = self._fit_vector_dim(vector.tolist())
+            span.set_attribute("vector_dim", len(res_vector))
+            return res_vector
 
     def encode_resume(self, text: str) -> list[float]:
         """Encode resume text into a vector embedding.

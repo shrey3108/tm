@@ -25,6 +25,11 @@ from app.v1.prompts import (
     RESUME_EXTRACTION_EXAMPLES,
     RESUME_EXTRACTION_PROMPT,
 )
+from opentelemetry import trace
+from openinference.semconv.trace import SpanAttributes, OpenInferenceSpanKindValues
+from app.v1.core.observability import get_tracer
+
+tracer = get_tracer("hirego.extractor")
 
 print("[LOADED] extractor.py")
 
@@ -123,13 +128,27 @@ class ResumeLLMExtractor:
             raise ValueError("No text provided for extraction.")
 
         try:
-            return extract(
-                text_or_documents=text,
-                model=self.model,
-                prompt_description=RESUME_EXTRACTION_PROMPT,
-                examples=RESUME_EXTRACTION_EXAMPLES,
-                debug=settings.DEBUG,
-            )
+            with tracer.start_as_current_span("extract-resume-info") as span:
+                span.set_attribute(SpanAttributes.OPENINFERENCE_SPAN_KIND, OpenInferenceSpanKindValues.LLM.value)
+                span.set_attribute(SpanAttributes.INPUT_VALUE, text)
+                span.set_attribute(SpanAttributes.LLM_PROMPT_TEMPLATE, RESUME_EXTRACTION_PROMPT)
+                span.set_attribute("text_length", len(text))
+                
+                result = extract(
+                    text_or_documents=text,
+                    model=self.model,
+                    prompt_description=RESUME_EXTRACTION_PROMPT,
+                    examples=RESUME_EXTRACTION_EXAMPLES,
+                    debug=settings.DEBUG,
+                )
+                
+                # Success and Result Capture
+                span.set_attribute("extraction_success", True)
+                if result:
+                    # Convert result to string/json for visibility
+                    span.set_attribute(SpanAttributes.OUTPUT_VALUE, str(result))
+                
+                return result
         except Exception as e:
             print(f"Error during LLM extraction: {e}")
             raise e

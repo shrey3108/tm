@@ -19,8 +19,10 @@ from app.v1.db.models.interviews import Interview
 from app.v1.services.evaluation.engine import evaluation_engine
 from app.v1.services.evaluation.agent import evaluation_agent
 from app.v1.core.config import settings
+from app.v1.core.observability import get_tracer
 
 logger = logging.getLogger(__name__)
+tracer = get_tracer("hirego.evaluation")
 
 
 class EvaluationService:
@@ -33,7 +35,16 @@ class EvaluationService:
     ) -> Dict[str, Any]:
         """
         Runs the full hybrid evaluation pipeline.
+        Traced in Phoenix as 'hirego.evaluate-candidate-stage'.
         """
+        with tracer.start_as_current_span("evaluate-candidate-stage") as span:
+            span.set_attribute("candidate_stage_id", str(candidate_stage_id))
+            return await self._run_evaluation(db, candidate_stage_id, span)
+
+    async def _run_evaluation(
+        self, db: AsyncSession, candidate_stage_id: uuid.UUID, span=None
+    ) -> Dict[str, Any]:
+        """Internal evaluation logic — called from traced wrapper above."""
         from app.v1.db.models.job_stage_configs import JobStageConfig
 
         # 1. FETCH CONTEXT
@@ -55,6 +66,14 @@ class EvaluationService:
 
         candidate = cs.candidate
         job = cs.job_stage.job
+
+        # Phoenix span mein candidate/job context add karo
+        if span:
+            span.set_attribute("candidate_id", str(candidate.id))
+            candidate_full_name = f"{candidate.first_name} {candidate.last_name}" if candidate else "unknown"
+            span.set_attribute("candidate_name", candidate_full_name)
+            span.set_attribute("job_id", str(job.id))
+            span.set_attribute("job_title", job.title or "unknown")
 
         # Load Transcript
         interview_stmt = select(Interview).where(
@@ -312,6 +331,15 @@ class EvaluationService:
         }
 
         await db.commit()
+
+        # Phoenix span mein final result record karo
+        if span:
+            span.set_attribute("overall_score", avg_score)
+            span.set_attribute("result", result_status)
+            span.set_attribute("is_passed", is_passed)
+            span.set_attribute("criteria_count", len(structured_evaluation_data))
+            span.set_attribute("profile_fit_signal", signals.get("profile_fit", 0))
+            span.set_attribute("tech_alignment_signal", signals.get("tech_alignment", 0))
 
         # Construct final response object matching user format
         response_obj = {

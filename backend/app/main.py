@@ -25,6 +25,10 @@ from app.v1.db.session import init_db
 setup_logging(debug=settings.DEBUG)
 logger = get_logger(__name__)
 
+# Arize Phoenix — AI Observability (optional, gracefully disabled if not installed)
+from app.v1.core.observability import setup_phoenix_tracing
+setup_phoenix_tracing(project_name="hirego-ai")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

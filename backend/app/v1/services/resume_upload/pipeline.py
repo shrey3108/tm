@@ -28,8 +28,10 @@ from app.v1.utils.resume_upload import extract_skill_names, split_name
 from .converters import build_processing_info, merge_processing_info
 from .logging import log_event, log_stage
 from .processor import ResumeProcessor
+from app.v1.core.observability import get_tracer
 
 logger = get_logger(__name__)
+tracer = get_tracer("hirego.pipeline")
 
 async def run_resume_processing_pipeline(
     *,
@@ -53,6 +55,36 @@ async def run_resume_processing_pipeline(
         file_path: Path to the stored resume file.
         reanalyze: If True, skips extraction and uses stored data.
     """
+    with tracer.start_as_current_span("resume-processing-pipeline") as span:
+        span.set_attribute("job_id", str(job_id))
+        span.set_attribute("resume_id", str(resume_id))
+        span.set_attribute("reanalyze", reanalyze)
+        
+        return await _run_resume_pipeline(
+            job_id=job_id,
+            resume_id=resume_id,
+            file_path=file_path,
+            processor=processor,
+            mark_failed_cb=mark_failed_cb,
+            reanalyze=reanalyze,
+            existing_resume_id=existing_resume_id,
+            override_version=override_version,
+            span=span
+        )
+
+async def _run_resume_pipeline(
+    *,
+    job_id: uuid.UUID,
+    resume_id: uuid.UUID,
+    file_path: str,
+    processor: ResumeProcessor,
+    mark_failed_cb: Callable[[AsyncSession, uuid.UUID, dict | None, str], Awaitable[None]],
+    reanalyze: bool = False,
+    existing_resume_id: uuid.UUID | None = None,
+    override_version: int | None = None,
+    span=None
+) -> None:
+    """Internal pipeline logic."""
     total_started_at = time.perf_counter()
     log_event(
         event="background_started" if not reanalyze else "reanalyze_started",
@@ -509,6 +541,16 @@ async def run_resume_processing_pipeline(
             resume_record.resume_score = analysis.match_percentage
             resume_record.pass_fail = "passed" if float(resume_record.resume_score or 0) >= (target_job.passing_threshold or 70.0) else "failed"
             resume_record.text_hash = text_hash
+
+            # Phoenix span mein detailed info add karo
+            if span:
+                span.set_attribute("candidate_name", parsed_name or "unknown")
+                span.set_attribute("job_title", getattr(target_job, "title", "unknown"))
+                span.set_attribute("resume_score", float(resume_record.resume_score or 0))
+                span.set_attribute("pass_fail", resume_record.pass_fail)
+                span.set_attribute("skills_count", len(parsed_summary.get("skills", [])))
+                if custom_extractions:
+                    span.set_attribute("custom_fields_extracted", len(custom_extractions))
 
             # --- Save versioned result ---
             from app.v1.db.models.resume_version_results import ResumeVersionResult
