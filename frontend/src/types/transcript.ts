@@ -49,3 +49,15 @@ export interface TranscriptUploadResponse {
 export type TranscriptStatus = "uploaded" | "processing" | "completed" | "failed";
 
 export type TranscriptList = Transcript[];
+
+
+
+export interface GetDefaultTranscriptResponse {
+  default_path: string,
+  source: string
+}
+
+export interface UpdateDefaultTranscriptPathResponse {
+  message: string;
+  new_path: string
+}

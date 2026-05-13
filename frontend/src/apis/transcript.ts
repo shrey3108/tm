@@ -1,7 +1,9 @@
 import apiClient from "@/apis/client";
 import type {
+  GetDefaultTranscriptResponse,
   Transcript,
   TranscriptUploadResponse,
+  UpdateDefaultTranscriptPathResponse,
 } from "@/types/transcript";
 
 /**
@@ -20,7 +22,7 @@ export const transcriptService = {
     filePath: string,
   ): Promise<TranscriptUploadResponse> => {
     const response = await apiClient.post<TranscriptUploadResponse>(
-      `/transcripts/upload/${candidateStageId}`,
+      `/transcripts/upload-path/${candidateStageId}`,
       { file_path: filePath },
     );
     return response.data;
@@ -60,6 +62,33 @@ export const transcriptService = {
   ): Promise<{ message: string }> => {
     const response = await apiClient.delete<{ message: string }>(
       `/transcripts/${transcriptId}`,
+    );
+    return response.data;
+  },
+
+  /**
+   * Retrieve default transcript path.
+   * @returns The default transcript path object.
+   */
+  getDefaultTranscriptPath: async (
+  ): Promise<GetDefaultTranscriptResponse> => {
+    const response = await apiClient.get<GetDefaultTranscriptResponse>(
+      `/transcripts/settings/default-path`,
+    );
+    return response.data;
+  },
+
+  /**
+   * Update default transcript path.
+   * @param path - Path to the transcript file (.docx, .pdf, .txt).
+   * @returns The updated transcript object.
+   */
+  updateDefaultTranscriptPath: async (
+    path: string,
+  ): Promise<UpdateDefaultTranscriptPathResponse> => {
+    const response = await apiClient.put<UpdateDefaultTranscriptPathResponse>(
+      `/transcripts/settings/default-path`,
+      { path },
     );
     return response.data;
   },
