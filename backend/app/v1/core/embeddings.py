@@ -110,10 +110,7 @@ class EmbeddingService:
         payload = (
             instruction + normalized_text if self.use_instructions else normalized_text
         )
-        with tracer.start_as_current_span("encode-text") as span:
-            span.set_attribute("text_length", len(payload))
-            span.set_attribute("instruction", instruction)
-            
+        with tracer.start_as_current_span("encode-text", attributes={"text_length": len(payload), "instruction": instruction}) as span:
             vector = self.model.encode(
                 payload,
                 normalize_embeddings=True,
@@ -135,6 +132,17 @@ class EmbeddingService:
         """
         return self._encode_text(text, RESUME_INSTRUCTION)
 
+    def encode_resume_batch(self, texts: list[str]) -> list[list[float]]:
+        """Encode a list of resume chunks into vector embeddings in a batch.
+
+        Args:
+            texts: List of resume texts.
+
+        Returns:
+            List of embedding vectors.
+        """
+        return self._encode_text_batch(texts, RESUME_INSTRUCTION)
+
     def encode_jd(self, text: str) -> list[float]:
         """Encode job description text into a vector embedding.
 
@@ -155,8 +163,18 @@ class EmbeddingService:
         Returns:
             Embedding vector.
         """
-        # Using a default instruction for transcript chunks
         return self._encode_text(text, "Represent this interview transcript chunk for retrieval: ")
+
+    def encode_transcript_batch(self, texts: list[str]) -> list[list[float]]:
+        """Encode a list of transcript chunks into vector embeddings in a batch.
+
+        Args:
+            texts: List of transcript texts.
+
+        Returns:
+            List of embedding vectors.
+        """
+        return self._encode_text_batch(texts, "Represent this interview transcript chunk for retrieval: ")
 
     def encode_skill(self, text: str) -> list[float]:
         """Encode skill name/description into a vector embedding.
@@ -190,12 +208,13 @@ class EmbeddingService:
             else:
                 payloads.append(normalized_text)
         
-        vectors = self.model.encode(
-            payloads,
-            normalize_embeddings=True,
-            truncate_dim=self.truncate_dim,
-        )
-        return [self._fit_vector_dim(vector.tolist()) for vector in vectors]
+        with tracer.start_as_current_span("encode-text-batch", attributes={"batch_size": len(texts), "instruction": instruction}):
+            vectors = self.model.encode(
+                payloads,
+                normalize_embeddings=True,
+                truncate_dim=self.truncate_dim,
+            )
+            return [self._fit_vector_dim(vector.tolist()) for vector in vectors]
 
     def encode_skills_batch(self, texts: list[str]) -> list[list[float]]:
         """Encode a list of skill names/descriptions into vector embeddings in a batch.

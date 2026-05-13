@@ -152,10 +152,35 @@ class EvaluationService:
             else ""
         )
 
+        # Optimization: Pre-split transcript for both signals and evidence
+        t_sentences = evaluation_engine.split_into_sentences(transcript.clean_transcript_text)
+        from app.v1.core.embeddings import embedding_service
+        
+        # We can run transcript sentence embedding and JD/Resume embedding in parallel
+        import asyncio
+        import numpy as np
+        
+        # Start sentence embedding
+        t_vectors_task = asyncio.to_thread(embedding_service.encode_transcript_batch, t_sentences) if t_sentences else asyncio.sleep(0, [])
+        
+        # For signals, we need a single vector for the transcript. 
+        # Instead of encoding the whole transcript again, we'll wait for sentences and mean-pool them.
+        t_vectors = await t_vectors_task
+        if isinstance(t_vectors, asyncio.Task): # Handle the case if it's still a task
+            t_vectors = await t_vectors
+
+        # Calculate mean vector for the transcript signal
+        if t_vectors:
+            mean_vec_transcript = np.mean(t_vectors, axis=0).tolist()
+        else:
+            mean_vec_transcript = None
+
+        # Now get signals using the precalculated transcript vector
         signals = await evaluation_engine.get_signals(
             jd_text=job.jd_text or "",
             resume_text=resume_summary,
             transcript_text=transcript.clean_transcript_text,
+            precalculated_transcript_vec=mean_vec_transcript
         )
 
         logger.info(f"Active criteria count: {len(active_criteria_configs)}")
@@ -173,7 +198,10 @@ class EvaluationService:
             if criterion:
                 criteria_objs[criterion_id] = criterion
                 snippets = await evaluation_engine.extract_evidence(
-                    transcript.clean_transcript_text, criterion.prompt_text
+                    transcript.clean_transcript_text, 
+                    criterion.prompt_text,
+                    precalculated_sentences=t_sentences,
+                    precalculated_vectors=t_vectors
                 )
                 evidence_snippets[criterion.name] = snippets
             else:

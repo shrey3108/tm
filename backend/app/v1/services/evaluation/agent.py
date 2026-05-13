@@ -66,7 +66,7 @@ class EvaluationAgent:
             resume_text=resume_text if resume_text else "Not provided",
             calculated_scores=json.dumps(calculated_scores, indent=2),
             evidence_context=evidence_context,
-            transcript_text=transcript_text[:4000]
+            transcript_text=transcript_text[:3000]
         )
 
         logger.info(f"LLM SYSTEM PROMPT: {system_prompt}")

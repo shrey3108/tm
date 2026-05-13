@@ -102,137 +102,90 @@ class ResumeProcessor:
 
         job_version = getattr(job, "version", 1)
 
-        # ---- Redis Cache for Job Embedding ----
-        job_embedding = None
-        if job_id:
-            cache_key = f"job_embedding:{job_id}_v{job_version}"
-            job_embedding = await cache.get(cache_key)
-            if job_embedding:
-                log_event(
-                    event="job_embedding_cache_hit",
-                    job_id=job_id,
-                )
+        import asyncio
+        
+        # 1. Parallelize Job and Candidate Embeddings
+        async def get_job_embedding():
+            # ---- Redis Cache for Job Embedding ----
+            nonlocal job_embedding
+            if job_id:
+                cache_key = f"job_embedding:{job_id}_v{job_version}"
+                job_embedding = await cache.get(cache_key)
+                if job_embedding:
+                    log_event(event="job_embedding_cache_hit", job_id=job_id)
 
-        if job_embedding is None:
-            stage_started_at = time.perf_counter()
-            job_embedding = embedding_service.encode_jd(job_text) if job_text else None
-            log_stage(
-                stage="job_embedding_generated",
-                started_at=stage_started_at,
-                job_chars=len(job_text) if job_text else 0,
-            )
-            if job_id and job_embedding:
-                await cache.set(f"job_embedding:{job_id}_v{job_version}", job_embedding)
-        elif len(job_embedding) != embedding_service.target_dim:
-            # Handle dimension mismatch from cache (e.g. model changed from 1024 to 384)
-            log_event(
-                event="job_embedding_dim_mismatch",
-                job_id=job_id,
-                cache_dim=len(job_embedding),
-                target_dim=embedding_service.target_dim,
-            )
-            stage_started_at = time.perf_counter()
-            job_embedding = embedding_service.encode_jd(job_text) if job_text else None
-            log_stage(
-                stage="job_embedding_refreshed_dim_mismatch",
-                started_at=stage_started_at,
-                job_chars=len(job_text) if job_text else 0,
-            )
-            if job_id and job_embedding:
-                await cache.set(f"job_embedding:{job_id}_v{job_version}", job_embedding)
-        # ---------------------------------------
+            if job_embedding is None or len(job_embedding) != embedding_service.target_dim:
+                if job_embedding:
+                    log_event(event="job_embedding_dim_mismatch", job_id=job_id, cache_dim=len(job_embedding), target_dim=embedding_service.target_dim)
+                
+                stage_started_at = time.perf_counter()
+                job_embedding = await asyncio.to_thread(embedding_service.encode_jd, job_text) if job_text else None
+                log_stage(stage="job_embedding_generated", started_at=stage_started_at, job_chars=len(job_text) if job_text else 0)
+                if job_id and job_embedding:
+                    await cache.set(f"job_embedding:{job_id}_v{job_version}", job_embedding)
+            return job_embedding
 
-        logger.info("[INSIGHTS] Starting Candidate Embedding for resume_id=%s", getattr(job, "id", "unknown"))
-        stage_started_at = time.perf_counter()
-        candidate_embedding = (
-            embedding_service.encode_resume(candidate_text) if candidate_text else None
-        )
-        logger.info("[INSIGHTS] Candidate Embedding complete for resume_id=%s in %.2fs", getattr(job, "id", "unknown"), time.perf_counter() - stage_started_at)
-        log_stage(
-            stage="candidate_embedding",
-            started_at=stage_started_at,
-            resume_chars=len(candidate_text),
-        )
-
-        raw_chunks = split_into_chunks(raw_text) or [candidate_text]
-        logger.info("[INSIGHTS] Starting Chunk Embeddings (count=%d) for resume_id=%s", len(raw_chunks), getattr(job, "id", "unknown"))
-        stage_started_at = time.perf_counter()
-        chunk_embeddings = []
-        for i, chunk_txt in enumerate(raw_chunks):
-            chunk_embeddings.append(
-                {
-                    "text": chunk_txt,
-                    "embedding": embedding_service.encode_resume(chunk_txt),
-                }
-            )
-        logger.info("[INSIGHTS] Chunk Embeddings complete for resume_id=%s in %.2fs", getattr(job, "id", "unknown"), time.perf_counter() - stage_started_at)
-
-        log_stage(
-            stage="multi_chunk_embedding",
-            started_at=stage_started_at,
-            chunks=len(chunk_embeddings),
-            raw_chars=len(raw_text),
-        )
-
-        skill_embeddings: dict[uuid.UUID, list[float]] = {}
-        stage_started_at = time.perf_counter()
-        skills_to_encode = []
-        skill_ids = []
-        for skill in job_skills:
-            if getattr(skill, "skill_embedding", None) is not None:
-                continue
-            skill_text = build_skill_text(skill)
-            if skill_text:
-                skills_to_encode.append(skill_text)
-                skill_ids.append(skill.id)
-
-        if skills_to_encode:
-            encoded_vectors = embedding_service.encode_skills_batch(skills_to_encode)
-            for sid, vec in zip(skill_ids, encoded_vectors):
-                skill_embeddings[sid] = vec
-
-        log_stage(
-            stage="job_skill_embeddings",
-            started_at=stage_started_at,
-            generated=len(skill_embeddings),
-            total_skills=len(job_skills),
-        )
-
-        stage_started_at = time.perf_counter()
+        logger.info("[INSIGHTS] Parallelizing Initial Embeddings for resume_id=%s", getattr(job, "id", "unknown"))
+        
+        # Run JD and Candidate embedding in parallel
+        job_emb_task = get_job_embedding()
+        cand_emb_task = asyncio.to_thread(embedding_service.encode_resume, candidate_text) if candidate_text else asyncio.sleep(0, None)
+        
+        job_embedding, candidate_embedding = await asyncio.gather(job_emb_task, cand_emb_task)
+        
+        # 2. Semantic Score (Needed for LLM)
         semantic_score = embedding_service.get_semantic_score_from_embeddings(
             candidate_embedding or [],
             job_embedding or [],
         )
-        log_stage(
-            stage="semantic_score",
-            started_at=stage_started_at,
-            semantic_score=semantic_score,
-        )
 
-        logger.info("[INSIGHTS] Starting LLM Analyzer for resume_id=%s", getattr(job, "id", "unknown"))
-        stage_started_at = time.perf_counter()
-        analysis = self.analyzer.analyze(
-            raw_text=raw_text,
-            candidate_info=parsed_summary,
-            job_title=getattr(job, "title", "Job Description")[:150],
-            job_skills=[skill.name for skill in job_skills],
-            job_description=getattr(job, "jd_text", None),
-            candidate_skills=candidate_skills,
-            semantic_score=semantic_score,
-        )
-        logger.info("[INSIGHTS] LLM Analyzer complete for resume_id=%s in %.2fs", getattr(job, "id", "unknown"), time.perf_counter() - stage_started_at)
-        log_stage(
-            stage="llm_resume_analysis",
-            started_at=stage_started_at,
-            candidate_skills=len(candidate_skills),
-            job_skills=len(job_skills),
+        # 3. Parallelize Chunk Embeddings, Skill Embeddings, and LLM Analysis
+        async def get_chunk_embeddings():
+            raw_chunks = split_into_chunks(raw_text) or [candidate_text]
+            chunk_texts = [chunk_txt for chunk_txt in raw_chunks]
+            chunk_vectors = await asyncio.to_thread(embedding_service.encode_resume_batch, chunk_texts) if chunk_texts else []
+            return [{"text": txt, "embedding": vec} for txt, vec in zip(chunk_texts, chunk_vectors)]
+
+        async def get_skill_embeddings():
+            skills_to_encode = []
+            skill_ids = []
+            for skill in job_skills:
+                if getattr(skill, "skill_embedding", None) is not None: continue
+                skill_text = build_skill_text(skill)
+                if skill_text:
+                    skills_to_encode.append(skill_text)
+                    skill_ids.append(skill.id)
+            if not skills_to_encode: return {}
+            encoded_vectors = await asyncio.to_thread(embedding_service.encode_skills_batch, skills_to_encode)
+            return {sid: vec for sid, vec in zip(skill_ids, encoded_vectors)}
+
+        async def get_llm_analysis():
+            return await asyncio.to_thread(
+                self.analyzer.analyze,
+                raw_text=raw_text,
+                candidate_info=parsed_summary,
+                job_title=getattr(job, "title", "Job Description")[:150],
+                job_skills=[skill.name for skill in job_skills],
+                job_description=getattr(job, "jd_text", None),
+                candidate_skills=candidate_skills,
+                semantic_score=semantic_score,
+            )
+
+        logger.info("[INSIGHTS] Parallelizing Analysis and Final Embeddings for resume_id=%s", getattr(job, "id", "unknown"))
+        
+        chunk_task = get_chunk_embeddings()
+        skill_task = get_skill_embeddings()
+        analysis_task = get_llm_analysis()
+        
+        chunk_embeddings, extra_skill_embeddings, analysis = await asyncio.gather(
+            chunk_task, skill_task, analysis_task
         )
 
         return {
             "job_embedding": job_embedding,
             "candidate_embedding": candidate_embedding,
             "chunk_embeddings": chunk_embeddings,
-            "skill_embeddings": skill_embeddings,
+            "skill_embeddings": extra_skill_embeddings,
             "analysis": analysis,
         }
 

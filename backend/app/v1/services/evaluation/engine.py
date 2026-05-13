@@ -41,13 +41,31 @@ class EvaluationEngine:
         sentences = re.split(r'(?<=[.!?])\s+|\n+', text)
         return [s.strip() for s in sentences if len(s.strip()) > 10]
 
-    async def get_signals(self, jd_text: str, resume_text: str, transcript_text: str) -> Dict[str, float]:
+    async def get_signals(
+        self, 
+        jd_text: str, 
+        resume_text: str, 
+        transcript_text: str,
+        precalculated_transcript_vec: List[float] = None
+    ) -> Dict[str, float]:
         """
         EMBEDDING PHASE: Generate semantic signals between JD, Resume, and Transcript.
         """
-        vec_jd = embedding_service.encode_jd(jd_text)
-        vec_resume = embedding_service.encode_resume(resume_text)
-        vec_transcript = embedding_service.encode_transcript(transcript_text)
+        import asyncio
+        
+        # JD and Resume are small, but we can still parallelize them
+        tasks = [
+            asyncio.to_thread(embedding_service.encode_jd, jd_text),
+            asyncio.to_thread(embedding_service.encode_resume, resume_text)
+        ]
+        
+        # Use precalculated vector for transcript if available, otherwise encode
+        if precalculated_transcript_vec is not None:
+            vec_jd, vec_resume = await asyncio.gather(*tasks)
+            vec_transcript = precalculated_transcript_vec
+        else:
+            tasks.append(asyncio.to_thread(embedding_service.encode_transcript, transcript_text))
+            vec_jd, vec_resume, vec_transcript = await asyncio.gather(*tasks)
 
         return {
             "profile_fit": self.calculate_cosine_similarity(vec_jd, vec_resume),
@@ -55,21 +73,32 @@ class EvaluationEngine:
             "consistency": self.calculate_cosine_similarity(vec_resume, vec_transcript)
         }
 
-    async def extract_evidence(self, transcript_text: str, criterion_query: str, top_k: int = 3) -> List[str]:
+    async def extract_evidence(
+        self, 
+        transcript_text: str, 
+        criterion_query: str, 
+        top_k: int = 3, 
+        precalculated_sentences: List[str] = None,
+        precalculated_vectors: List[List[float]] = None
+    ) -> List[str]:
         """
         RERANKER PHASE: Extract top-N evidence snippets for a criterion.
         """
-        sentences = self.split_into_sentences(transcript_text)
+        sentences = precalculated_sentences if precalculated_sentences is not None else self.split_into_sentences(transcript_text)
         if not sentences:
             return []
 
-        # 1. Embed all sentences
-        # For efficiency in a real system, we'd use a batch encoder
+        # 1. Embed query
         query_vec = embedding_service.encode_transcript(criterion_query)
         
+        # 2. Use precalculated vectors or embed in batch
+        if precalculated_vectors is not None:
+            sentence_vectors = precalculated_vectors
+        else:
+            sentence_vectors = embedding_service.encode_transcript_batch(sentences)
+        
         sentence_scores: List[Tuple[str, float]] = []
-        for sentence in sentences:
-            s_vec = embedding_service.encode_transcript(sentence)
+        for sentence, s_vec in zip(sentences, sentence_vectors):
             score = self.calculate_cosine_similarity(query_vec, s_vec)
             sentence_scores.append((sentence, score))
 
