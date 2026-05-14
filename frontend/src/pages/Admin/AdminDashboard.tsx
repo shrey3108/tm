@@ -72,6 +72,7 @@ const AdminDashboard = () => {
 
   const {
     departments,
+    stages: filteredStages,
     filteredReport,
     filteredJobs,
     filters,
@@ -80,7 +81,7 @@ const AdminDashboard = () => {
     toggleFilter,
     clearFilter,
     hasActiveFilters,
-  } = useAdminDashboardFilters(report, jobs);
+  } = useAdminDashboardFilters(report, jobs, stages);
 
 
   const jobColumns: Column<any>[] = [
@@ -162,7 +163,7 @@ const AdminDashboard = () => {
             jobs={jobs}
             filteredJobs={filteredJobs}
             selectedStageNames={filters.stages}
-            stages={stages}
+            stages={filteredStages}
             setFilter={setFilter}
             resetFilters={resetFilters}
             toggleFilter={toggleFilter}

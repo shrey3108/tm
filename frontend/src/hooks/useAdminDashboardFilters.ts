@@ -70,20 +70,27 @@ const extractDepartments = (candidates: HiringReport["candidates_by_job"]): stri
  */
 export const useAdminDashboardFilters = (
   report: HiringReport | undefined,
-  jobs: JobTitle[]
+  jobs: JobTitle[],
+  stages: { name: string }[]
 ) => {
 
   const [filters, setFilters] = useState<FilterState>(INITIAL_FILTERS);
 
   // Lookup maps
   const jobTitleToId = useMemo(() => buildLookupMap(jobs), [jobs]);
+  const jobIdToTitle = useMemo(() => {
+    const map: Record<string, string> = {};
+    jobs.forEach(j => map[j.id] = j.title);
+    return map;
+  }, [jobs]);
+
   const jobToDept = useMemo(
     () => (report ? buildDeptMap(report.candidates_by_job) : {}),
     [report]
   );
 
-  // departments
-  const departments = useMemo(
+  // All unique departments from report
+  const allDepartments = useMemo(
     () => (report ? extractDepartments(report.candidates_by_job) : []),
     [report]
   );
@@ -116,6 +123,64 @@ export const useAdminDashboardFilters = (
     // Filter jobs based on the valid job names
     return jobsWithCounts.filter((j) => validTitles.has(j.title));
   }, [jobsWithCounts, filters.departments, report]);
+
+  // Filter departments based on selected jobs
+  const filteredDepartments = useMemo(() => {
+    if (!report || filters.jobIds.length === 0) return allDepartments;
+
+    const selectedJobTitles = new Set(
+      filters.jobIds
+        .map(id => jobIdToTitle[id])
+        .filter((title): title is string => !!title)
+    );
+    const depts = new Set<string>();
+
+    report.candidates_by_job.forEach(c => {
+      if (c.job_title && selectedJobTitles.has(c.job_title) && c.department) {
+        depts.add(c.department);
+      }
+    });
+
+    return Array.from(depts).sort();
+  }, [report, filters.jobIds, jobIdToTitle, allDepartments]);
+
+  // Filter stages based on selected jobs and departments
+  const filteredStages = useMemo(() => {
+    if (!report) return stages;
+
+    // If no job or department filters, show all stages that have data
+    // Or just all stages from the template? 
+    // Usually we want to show stages that are relevant to the selection.
+    if (filters.jobIds.length === 0 && filters.departments.length === 0) return stages;
+
+    let targetJobTitles: Set<string>;
+    if (filters.jobIds.length > 0) {
+      targetJobTitles = new Set(
+        filters.jobIds
+          .map(id => jobIdToTitle[id])
+          .filter((title): title is string => !!title)
+      );
+    } else {
+      const deptSet = new Set(filters.departments);
+      targetJobTitles = new Set(
+        report.candidates_by_job
+          .filter(c => c.department && deptSet.has(c.department) && c.job_title)
+          .map(c => c.job_title!)
+      );
+    }
+
+    const activeStages = new Set<string>();
+    report.job_pipeline_stats.forEach(item => {
+      if (item.stage) {
+        const hasData = Array.from(targetJobTitles).some(title => (item[title] ?? 0) > 0);
+        if (hasData) activeStages.add(item.stage);
+      }
+    });
+
+    // If activeStages is empty (e.g. no data for selection), we might want to show all or none.
+    // Showing none might be better for "dynamic" feel.
+    return stages.filter(s => activeStages.has(s.name));
+  }, [report, filters.jobIds, filters.departments, jobIdToTitle, stages]);
 
   // Derived: filtered report
   const filteredReport = useMemo(() => {
@@ -249,7 +314,8 @@ export const useAdminDashboardFilters = (
 
   return {
     filters,
-    departments,
+    departments: filteredDepartments,
+    stages: filteredStages,
     filteredJobs,
     filteredReport,
     hasActiveFilters,
