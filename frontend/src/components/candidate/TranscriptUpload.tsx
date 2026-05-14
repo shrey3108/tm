@@ -3,7 +3,7 @@ import { Field } from "@/components/ui/field";
 import { toast } from "sonner";
 import { extractErrorMessage } from "@/utils/error";
 import { transcriptService } from "@/apis/transcript";
-// import { Input } from "@/components/ui/input";
+import { Input } from "@/components/ui/input";
 import type { Job } from "@/types/job";
 import { cn } from "@/lib/utils";
 import { PERMISSIONS } from "@/lib/permissions";
@@ -19,14 +19,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-  InputGroupText
-} from "@/components/ui/input-group"
-
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -76,6 +68,21 @@ export function TranscriptUpload({
     mode: "onChange",
   });
 
+  const filePath = form.watch("filePath");
+
+  const getFullPath = (path: string) => {
+    if (!path) return defaultPath;
+    const separator = defaultPath.includes('/') ? '/' : '\\';
+    const cleanFilePath = path.startsWith(separator) ? path.substring(1) : path;
+    return defaultPath
+      ? (defaultPath.endsWith(separator)
+        ? `${defaultPath}${cleanFilePath}`
+        : `${defaultPath}${separator}${cleanFilePath}`)
+      : path;
+  };
+
+  const fullPathPreview = getFullPath(filePath);
+
   useEffect(() => {
     if (open) {
       const fetchDefaultPath = async () => {
@@ -85,7 +92,8 @@ export function TranscriptUpload({
           // form.reset({ filePath: response.default_path || "" })
           setDefaultPath(response.default_path || "")
         } catch (error: any) {
-          toast.error("Failed to fetch default path")
+          const errorMessage = extractErrorMessage(error);
+          toast.error(errorMessage || "Failed to fetch default path")
         } finally {
           setIsLoading(false)
         }
@@ -107,14 +115,7 @@ export function TranscriptUpload({
 
     setIsUploading(true);
     try {
-      // Construct the full path
-      const separator = defaultPath.includes('/') ? '/' : '\\';
-      const cleanFilePath = values.filePath.startsWith(separator) ? values.filePath.substring(1) : values.filePath;
-      const fullPath = defaultPath
-        ? (defaultPath.endsWith(separator)
-          ? `${defaultPath}${cleanFilePath}`
-          : `${defaultPath}${separator}${cleanFilePath}`)
-        : values.filePath;
+      const fullPath = getFullPath(values.filePath);
 
       // Final validation of the constructed full path
       const validationResult = TranscriptFilePathSchema.safeParse({ filePath: fullPath });
@@ -163,52 +164,59 @@ export function TranscriptUpload({
             ) : (
               <>
                 <DialogHeader>
-                  <DialogTitle>Transcript Path</DialogTitle>
-                  <DialogDescription>
-                    {defaultPath
-                      ? "Enter the filename and extension of the transcript file."
-                      : "Enter the full path of the transcript file to upload."}
+                  <DialogTitle className="text-xl font-bold">Transcript Path</DialogTitle>
+                  <DialogDescription className="text-muted-foreground/80">
+                    {defaultPath && "Enter the filename and extension of the transcript file."}
                   </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                    <div className="grid gap-4 py-4">
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                    <div className="space-y-4 py-2">
+                      {/* Read Only Base Path */}
+                      <div className="space-y-2">
+                        <Input
+                          readOnly
+                          value={defaultPath}
+                          className="rounded-2xl bg-muted/50 border-muted-foreground/30 font-medium h-12"
+                        />
+                      </div>
+
+                      {/* File Name Input */}
                       <FormField
                         control={form.control}
                         name="filePath"
                         render={({ field }) => (
                           <FormItem>
                             <FormControl>
-                              {/* <Input
-                                placeholder="C:\path\to\transcript.txt or /path/to/transcript.txt"
+                              <Input
+                                placeholder="Enter filename (e.g., interview.pdf)"
                                 disabled={isUploading}
-                                className={cn(form.formState.errors.filePath ? "border-destructive" : "")}
-                                {...field}
-                              /> */}
-                              <InputGroup>
-                                <InputGroupInput placeholder={defaultPath ? "path" : "C:\\path\\to\\transcript.txt"}
-                                  disabled={isUploading}
-                                  className={cn(form.formState.errors.filePath ? "border-destructive" : "")}
-                                  {...field}
-                                />
-                                {defaultPath && (
-                                  <InputGroupAddon align="inline-start" className="">
-                                    <InputGroupText>{defaultPath}</InputGroupText>
-                                  </InputGroupAddon>
+                                className={cn(
+                                  "rounded-2xl h-12 border-muted-foreground/30 ",
+                                  form.formState.errors.filePath ? "border-destructive" : ""
                                 )}
-                              </InputGroup>
+                                {...field}
+                              />
                             </FormControl>
-                            <FormMessage />
+                            <FormMessage className="text-xs ml-2" />
                           </FormItem>
                         )}
                       />
+                      {!form.formState.errors.filePath && form.formState.isValid && <span className="text-muted-foreground/70 flex items-center ml-1">{fullPathPreview}</span>}
                     </div>
                     <DialogFooter>
                       <Button
                         type="submit"
                         disabled={isUploading || !form.formState.isValid}
                       >
-                        {isUploading ? "Submitting..." : "Submit Path"}
+                        {isUploading ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Submitting...
+                          </>
+                        ) : (
+                          "Submit Path"
+                        )}
                       </Button>
                     </DialogFooter>
                   </form>
