@@ -10,7 +10,7 @@ import { adminStageTemplateService } from "@/apis/admin/stageTemplate";
 import { useToast } from "@/components/shared";
 import { StageDeleteDialog } from "@/components/admin/StageDeleteDialog";
 import { StageDetailDialog } from "@/components/admin/StageDetailDialog";
-import { useAdminData } from "@/hooks";
+import { useAdminData, useDebouncedValue } from "@/hooks";
 import { useNavigate } from "react-router-dom";
 import { slugify } from "@/utils/slug";
 import type { PaginationState } from "@tanstack/react-table";
@@ -33,16 +33,8 @@ const AdminJobStages = () => {
     pageSize: 10,
   });
   const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
 
-  // Debounce search input
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(search);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [search]);
-
+  const debouncedSearch = useDebouncedValue(search, 500);
   // Reset to first page when search changes
   useEffect(() => {
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));

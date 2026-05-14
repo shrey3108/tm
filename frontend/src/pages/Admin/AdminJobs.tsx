@@ -16,6 +16,7 @@ import { getJobColumns } from "@/components/job-board/JobColumns";
 import { JobTableFilters } from "@/components/job-board/JobTableFilters";
 import { useJobTableFilters } from "@/hooks/useJobTableFilters";
 import { JobActivityModal } from "@/components/job-board/JobActivityModal";
+import { useDebouncedValue } from "@/hooks";
 
 /**
  * AdminJobs page component.
@@ -56,16 +57,7 @@ const AdminJobs = () => {
     minDate
   } = useJobTableFilters(jobs);
 
-  const [debouncedTitle, setDebouncedTitle] = useState(titleFilter);
-
-  // Debounce title filter changes
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedTitle(titleFilter);
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [titleFilter]);
+  const debouncedTitle = useDebouncedValue(titleFilter, 500);
 
   // Reset to first page when search or filters change
   useEffect(() => {
@@ -78,7 +70,7 @@ const AdminJobs = () => {
     try {
       const skip = pagination.pageIndex * pagination.pageSize;
       const limit = pagination.pageSize;
-      
+
       let statusParam: boolean | boolean[] | undefined = undefined;
       if (statusFilter.length > 0) {
         statusParam = statusFilter.map((s) => s === "active");
@@ -88,7 +80,7 @@ const AdminJobs = () => {
       if (departmentFilter.length > 0) {
         departmentIdParam = departmentFilter;
       }
-      
+
       const filters = {
         q: debouncedTitle || undefined,
         status: statusParam,
@@ -223,20 +215,23 @@ const AdminJobs = () => {
             hasActiveFilters={hasActiveFilters}
             clearFilters={clearFilters}
             resultCount={filteredJobs.length}
-            totalCount={jobs.length}
+            totalCount={total}
             minDate={minDate}
+
           />
           <DataTable
             columns={columns}
             data={filteredJobs}
-            pageSize={pagination.pageSize}
             pageCount={Math.ceil(total / pagination.pageSize)}
             onPaginationChange={setPagination}
-            totalRecords={total}
             loading={loading}
             isServerSide={true}
             emptyMessage="No Jobs found"
-
+            pageIndex={pagination.pageIndex}
+            pageSize={pagination.pageSize}
+            totalCount={total}
+            entityName="Jobs"
+            totalRecords={total}
           />
         </div>
 

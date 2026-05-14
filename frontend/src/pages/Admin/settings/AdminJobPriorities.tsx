@@ -11,7 +11,7 @@ import { useToast } from "@/components/shared/ToastProvider";
 import { DataTable } from "@/components/shared/DataTable";
 import ErrorDisplay from "@/components/shared/ErrorDisplay";
 import { CreateJobPriorityModal, DeleteModal } from "@/components/modal";
-import { useAdminData } from "@/hooks";
+import { useAdminData, useDebouncedValue } from "@/hooks";
 import { Edit2, Trash2Icon, ArrowUpDown, Clock, AlertCircle, Plus } from "lucide-react";
 import { extractErrorMessage } from "@/utils/error";
 import type { ColumnDef, PaginationState } from "@tanstack/react-table";
@@ -31,16 +31,8 @@ const AdminJobPriorities = () => {
     pageSize: 10,
   });
   const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
 
-  // Debounce search input
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(search);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [search]);
-
+  const debouncedSearch = useDebouncedValue(search, 500);
   // Reset to first page when search changes
   useEffect(() => {
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
