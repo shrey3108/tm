@@ -216,6 +216,21 @@ class Settings(BaseSettings):
         default=300, description="Time-to-live for cached items in seconds"
     )
 
+    ENABLE_OBSERVABILITY: bool = Field(
+        default=True,
+        description="Whether to enable OpenTelemetry tracing",
+    )
+    PHOENIX_PROJECT_NAME: str = Field(
+        default="hirego-ai", description="Project name for Arize Phoenix"
+    )
+    PHOENIX_COLLECTOR_ENDPOINT: str = Field(
+        default="http://localhost:4317",
+        description="OTLP collector endpoint for Phoenix",
+    )
+    PHOENIX_SERVICE_NAME: str = Field(
+        default="hirego-backend", description="Service name for tracing"
+    )
+
     SKIP_RESUME_CONTEXT: bool = Field(
         default=False, 
         description="Whether to skip sending resume context to LLM during evaluation"

@@ -21,13 +21,10 @@ from app.v1.core.resume_executor import (
     shutdown_resume_executor,
 )
 from app.v1.db.session import init_db
+from app.v1.core.observability import setup_phoenix_tracing
 
 setup_logging(debug=settings.DEBUG)
 logger = get_logger(__name__)
-
-# Arize Phoenix — AI Observability (optional, gracefully disabled if not installed)
-from app.v1.core.observability import setup_phoenix_tracing
-setup_phoenix_tracing(project_name="hirego-ai")
 
 
 @asynccontextmanager
@@ -43,6 +40,10 @@ async def lifespan(app: FastAPI):
         f"Starting {settings.PROJECT_NAME} in {settings.ENVIRONMENT} mode"
     )
     await init_db()
+    
+    # Arize Phoenix — AI Observability
+    setup_phoenix_tracing(project_name=settings.PHOENIX_PROJECT_NAME)
+    
     initialize_resume_executor()
     logger.info("Database initialized successfully")
     yield
