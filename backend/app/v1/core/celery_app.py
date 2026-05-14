@@ -32,7 +32,7 @@ def init_worker(**kwargs):
     preload_embedding_model()
     
     # Initialize Phoenix Tracing for the worker
-    setup_phoenix_tracing(project_name="hirego-ai")
+    setup_phoenix_tracing(project_name=settings.PHOENIX_PROJECT_NAME)
 
 celery_app.conf.update(
     task_serializer="json",
