@@ -145,7 +145,7 @@ export function CandidateTimeline({
             >
               JD
             </Button>
-            {<TranscriptUpload
+            {currentStage !== "Resume Screening" && <TranscriptUpload
               stageId={stageId}
               className="w-1/2 sm:max-w-xs"
               job={job!}

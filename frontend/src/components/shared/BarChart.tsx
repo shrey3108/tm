@@ -54,7 +54,7 @@ export function CandidatesDistributionChart({ stats }: CandidatesDistributionCha
 
   return (
     <div className="w-full animate-in fade-in zoom-in-95 duration-700">
-      <ChartContainer config={chartConfig} className="w-full min-h-[100px]">
+      <ChartContainer config={chartConfig} className="w-full min-h-[100px] max-h-[300px]">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={data}

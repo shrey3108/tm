@@ -1,5 +1,4 @@
 import type { PriorityTimeline } from "@/types/admin";
-// import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, Timer, AlertCircle } from "lucide-react";
 import DateDisplay from "@/components/shared/DateDisplay";
 import { cn } from "@/lib/utils";
@@ -39,20 +38,11 @@ export function ProgressBarChart({ priorityTimeline }: ProgressBarChartProps) {
     return (
         <div className="md:w-full h-auto flex flex-col justify-between p-1 sm:w-full">
             {/* Header Info */}
-            <div className="flex items-center md:justify-between mb-1">
-                <div className="space-y-1">
+            <div className="flex items-center md:justify-between mb-1 gap-6">
+                <div className="space-y-1 shrink-0">
                     <h5 className="text-lg font-bold flex items-center gap-2">
                         <Timer className="w-5 h-5 text-primary" />
                         {priorityTimeline.name}
-                        {/* <Badge
-                            variant={priorityTimeline.status === 'active' ? 'default' : 'secondary'}
-                            className={cn(
-                                "capitalize text-sm tracking-widest border-none shadow-sm",
-                                priorityTimeline.status === 'active' ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                            )}
-                        >
-                            {priorityTimeline.status}
-                        </Badge> */}
                     </h5>
                     <div className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
                         <span className="flex items-center gap-1.5 bg-muted/40 px-2 py-0.5 rounded-md">
@@ -66,7 +56,24 @@ export function ProgressBarChart({ priorityTimeline }: ProgressBarChartProps) {
                         </span>
                     </div>
                 </div>
-                <div className="flex items-center  gap-2 sm:flex-col md:flex-row">
+
+                {/* Progress Bar Container - Moved here */}
+                <div className="flex-1 px-4 relative group">
+                    <div className="flex justify-between items-end mb-2">
+                        <span className="text-xs font-medium text-primary ">Hiring Timeline:</span>
+                    </div>
+                    <div className="h-4 w-full bg-muted rounded-full overflow-hidden relative shadow-inner">
+                        <div
+                            className={cn(`
+                  ${getColor(priorityTimeline.progress_pct)} h-full transition-all duration-1000 ease-out relative`)}
+                            style={{ width: `${safeProgress}%` }}
+                        >
+                            <div className="absolute inset-0 bg-linear-to-r from-white/20 to-transparent" />
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-2 sm:flex-col md:flex-row shrink-0">
                     <div className="rounded-2xl p-0.5 text-center space-y-0.5 border w-25 ">
                         <div className="flex items-baseline justify-center gap-0.5">
                             <p className="text-xl font-black text-foreground">{priorityTimeline.days_total}</p>
@@ -100,23 +107,6 @@ export function ProgressBarChart({ priorityTimeline }: ProgressBarChartProps) {
                 </div>
             </div>
 
-            {/* Progress Bar Container */}
-            <div className="relative group">
-                <div className="flex justify-between items-end mb-2">
-                    <span className="text-xs font-medium text-primary ">Hiring Timeline:</span>
-                </div>
-                <div className="h-4 w-full bg-muted rounded-full overflow-hidden relative shadow-inner">
-                    <div
-                        className={cn(`
-              ${getColor(priorityTimeline.progress_pct)
-                            // getColor(tempP)
-                            } h-full transition-all duration-1000 ease-out relative`)}
-                        style={{ width: `${safeProgress}%` }}
-                    >
-                        <div className="absolute inset-0 bg-linear-to-r from-white/20 to-transparent" />
-                    </div>
-                </div>
-            </div>
 
             {/* Stats Footer */}
 

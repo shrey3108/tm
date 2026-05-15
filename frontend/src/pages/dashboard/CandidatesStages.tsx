@@ -470,7 +470,7 @@ export default function CandidatesStages() {
                     onClick={() => window.scroll({
                       top: document.body.scrollHeight,
                       behavior: "smooth",
-                    })}>Take Decision</Button>
+                    })}>Go to Actions</Button>
                   <Button
                     variant="outline"
                     size="sm"
