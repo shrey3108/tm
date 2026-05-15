@@ -2,6 +2,9 @@ import json
 import logging
 import openai
 from typing import Any, Dict, List, Optional
+from opentelemetry import trace
+from opentelemetry.trace import StatusCode
+from openinference.semconv.trace import SpanAttributes
 from app.v1.core.config import settings
 
 from app.v1.prompts import EVALUATION_SYSTEM_PROMPT, EVALUATION_USER_PROMPT_TEMPLATE
@@ -45,23 +48,36 @@ class EvaluationAgent:
 
         # Prepare evidence context
         evidence_context = ""
-        for criterion, snippets in evidence_snippets.items():
-            evidence_context += f"\n### Criterion: {criterion}\n"
-            for s in snippets:
-                evidence_context += f"- \"{s}\"\n"
+        if evidence_snippets:
+            for criterion, snippets in evidence_snippets.items():
+                evidence_context += f"\n### Criterion: {criterion}\n"
+                if snippets:
+                    for s in snippets:
+                        evidence_context += f"- \"{s}\"\n"
+                else:
+                    evidence_context += "- [No specific evidence snippets extracted for this criterion]\n"
+        else:
+            evidence_context = "[No relevant evidence snippets extracted from the transcript across all criteria]"
 
         # Prepare dynamic JSON schema based on active criteria
         schema_parts = []
         allowed_keys = []
         target_criteria = criteria_names if criteria_names else list(evidence_snippets.keys())
-        for criterion in target_criteria:
-            key = criterion.lower().replace(" ", "_")
-            allowed_keys.append(key)
-            schema_parts.append(f'    "{key}": {{ "score": int, "reasoning": "...", "confidence": float }}')
-        json_schema = ",\n".join(schema_parts)
+        
+        if not target_criteria:
+            logger.warning("No target criteria found for evaluation synthesis. Prompt will be under-specified.")
+            criteria_list_str = "[ERROR: NO CRITERIA CONFIGURED]"
+        else:
+            for criterion in target_criteria:
+                key = criterion.lower().replace(" ", "_")
+                allowed_keys.append(key)
+                schema_parts.append(f'    "{key}": {{ "score": int, "reasoning": "...", "confidence": float }}')
+            criteria_list_str = ', '.join(allowed_keys)
+
+        json_schema = ",\n".join(schema_parts) if schema_parts else '"criterion_key": { "score": int, "reasoning": "...", "confidence": float }'
 
         user_prompt = EVALUATION_USER_PROMPT_TEMPLATE.format(
-            criteria_list=', '.join(allowed_keys),
+            criteria_list=criteria_list_str,
             jd_text=jd_text[:3000],
             resume_text=resume_text if resume_text else "Not provided",
             calculated_scores=json.dumps(calculated_scores, indent=2),
@@ -95,7 +111,18 @@ class EvaluationAgent:
             clean_content = clean_content.strip()
             
             try:
-                return json.loads(clean_content)
+                data = json.loads(clean_content)
+                
+                # Manually set token usage attributes for Phoenix "Tokens" column
+                span = trace.get_current_span()
+                if span:
+                    if hasattr(response, "usage") and response.usage:
+                        span.set_attribute(SpanAttributes.LLM_TOKEN_COUNT_PROMPT, response.usage.prompt_tokens)
+                        span.set_attribute(SpanAttributes.LLM_TOKEN_COUNT_COMPLETION, response.usage.completion_tokens)
+                        span.set_attribute(SpanAttributes.LLM_TOKEN_COUNT_TOTAL, response.usage.total_tokens)
+                    span.set_status(StatusCode.OK)
+                
+                return data
             except json.JSONDecodeError as je:
                 logger.warning(f"Initial JSON parse failed: {je}. Attempting basic repair...")
                 # Basic repair: remove trailing commas before closing braces/brackets

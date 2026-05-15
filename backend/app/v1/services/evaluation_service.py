@@ -20,9 +20,10 @@ from app.v1.services.evaluation.engine import evaluation_engine
 from app.v1.services.evaluation.agent import evaluation_agent
 from app.v1.core.config import settings
 from app.v1.core.observability import get_tracer
+from opentelemetry.trace import StatusCode
 
 logger = logging.getLogger(__name__)
-tracer = get_tracer("hirego.evaluation")
+tracer = get_tracer("hiring-platform.evaluation")
 
 
 class EvaluationService:
@@ -35,11 +36,18 @@ class EvaluationService:
     ) -> Dict[str, Any]:
         """
         Runs the full hybrid evaluation pipeline.
-        Traced in Phoenix as 'hirego.evaluate-candidate-stage'.
+        Traced in Phoenix as 'hiring-platform.evaluate-candidate-stage'.
         """
         with tracer.start_as_current_span("evaluate-candidate-stage") as span:
             span.set_attribute("candidate_stage_id", str(candidate_stage_id))
-            return await self._run_evaluation(db, candidate_stage_id, span)
+            try:
+                result = await self._run_evaluation(db, candidate_stage_id, span)
+                span.set_status(StatusCode.OK)
+                return result
+            except Exception as e:
+                span.set_status(StatusCode.ERROR, str(e))
+                span.record_exception(e)
+                raise e
 
     async def _run_evaluation(
         self, db: AsyncSession, candidate_stage_id: uuid.UUID, span=None

@@ -29,9 +29,10 @@ from .converters import build_processing_info, merge_processing_info
 from .logging import log_event, log_stage
 from .processor import ResumeProcessor
 from app.v1.core.observability import get_tracer
+from opentelemetry.trace import StatusCode
 
 logger = get_logger(__name__)
-tracer = get_tracer("hirego.pipeline")
+tracer = get_tracer("hiring-platform.pipeline")
 
 async def run_resume_processing_pipeline(
     *,
@@ -60,17 +61,24 @@ async def run_resume_processing_pipeline(
         span.set_attribute("resume_id", str(resume_id))
         span.set_attribute("reanalyze", reanalyze)
         
-        return await _run_resume_pipeline(
-            job_id=job_id,
-            resume_id=resume_id,
-            file_path=file_path,
-            processor=processor,
-            mark_failed_cb=mark_failed_cb,
-            reanalyze=reanalyze,
-            existing_resume_id=existing_resume_id,
-            override_version=override_version,
-            span=span
-        )
+        try:
+            result = await _run_resume_pipeline(
+                job_id=job_id,
+                resume_id=resume_id,
+                file_path=file_path,
+                processor=processor,
+                mark_failed_cb=mark_failed_cb,
+                reanalyze=reanalyze,
+                existing_resume_id=existing_resume_id,
+                override_version=override_version,
+                span=span
+            )
+            span.set_status(StatusCode.OK)
+            return result
+        except Exception as e:
+            span.set_status(StatusCode.ERROR, str(e))
+            span.record_exception(e)
+            raise e
 
 async def _run_resume_pipeline(
     *,
