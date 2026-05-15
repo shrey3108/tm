@@ -177,7 +177,7 @@ export function TranscriptUpload({
                         <Input
                           readOnly
                           value={defaultPath}
-                          className="rounded-2xl bg-muted/50 border-muted-foreground/30 font-medium h-12"
+                          className="rounded-2xl bg-muted/50 border-muted-foreground/30 font-medium h-12 text-muted-foreground focus:outline-none focus-visible:outline-none focus-visible:ring-0"
                         />
                       </div>
 

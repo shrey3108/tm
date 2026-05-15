@@ -87,17 +87,6 @@ export function CandidateTimeline({
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className={cn("w-full py-6 flex flex-col items-center justify-center min-h-[150px] gap-3", className)}>
-        <Loader2 className="h-6 w-6 animate-spin text-primary/60" />
-        <span className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground animate-pulse">
-          Synchronizing Timeline...
-        </span>
-      </div>
-    );
-  }
-
   if (events.length === 0) return null;
 
   const firstRejectedIndex = events.findIndex(e => {
@@ -111,23 +100,34 @@ export function CandidateTimeline({
 
   const previousEvent = activeEventIndex > 0 ? events[activeEventIndex - 1] : null;
   const isPreviousStagePending = previousEvent ? (() => {
-    const r = previousEvent.result?.toLowerCase() || "";
-    const isCompleted = previousEvent.result !== null && previousEvent.result !== "Ongoing" && !r.includes("pending");
-    const isFailed = previousEvent.result !== null && previousEvent.result !== "Ongoing" && r.includes("fail");
-    const isOngoing = r.includes("ongoing") || (!previousEvent.result && !isCompleted && !isFailed);
+    const r = previousEvent.hr_decision?.toLowerCase() || "";
+    const isCompleted = previousEvent.hr_decision !== null && previousEvent.hr_decision !== "Ongoing" && !r.includes("pending");
+    const isFailed = previousEvent.hr_decision !== null && previousEvent.hr_decision !== "Ongoing" && (r.includes("fail") || r.includes("rejected") || r.includes("reject"));
+    const isOngoing = r.includes("ongoing") || (!previousEvent.hr_decision && !isCompleted && !isFailed);
+    return r.includes("pending") || isOngoing;
+  })() : false;
+  console.log(firstRejectedIndex);
+  const resumeEvent = events.find(e => e.title === "Resume Screening");
+  const isResumePending = resumeEvent ? (() => {
+    const r = resumeEvent.hr_decision?.toLowerCase() || "";
+    const isCompleted = resumeEvent.hr_decision !== null && resumeEvent.hr_decision !== "Ongoing" && !r.includes("pending");
+    const isFailed = r === "failed" || r === "fail" || r === "rejected" || r === "reject";
+    const isOngoing = r.includes("ongoing") || (!resumeEvent.hr_decision && !isCompleted && !isFailed);
     return r.includes("pending") || isOngoing;
   })() : false;
 
-  const resumeEvent = events.find(e => e.title === "Resume Screening");
-  const isResumePending = resumeEvent ? (() => {
-    const r = resumeEvent.result?.toLowerCase() || "";
-    console.log(r);
-    const isCompleted = resumeEvent.result !== null && resumeEvent.result !== "Ongoing" && !r.includes("pending");
-    const isFailed = r === "failed" || r === "fail" || r === "rejected" || r === "reject";
-    const isOngoing = r.includes("ongoing") || (!resumeEvent.result && !isCompleted && !isFailed);
-    return r.includes("pending") || isOngoing;
-  })() : false;
-  // console.log({ isPreviousStagePending, isResumePending });
+
+  if (isLoading) {
+    return (
+      <div className={cn("w-full py-6 flex flex-col items-center justify-center min-h-[150px] gap-3", className)}>
+        <Loader2 className="h-6 w-6 animate-spin text-primary/60" />
+        <span className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground animate-pulse">
+          Synchronizing Timeline...
+        </span>
+      </div>
+    );
+  }
+
   return (
     <div className={cn("w-full py-2", className)}>
       <div className="px-4 mb-2 flex justify-between items-center">
@@ -148,7 +148,7 @@ export function CandidateTimeline({
               stageId={stageId}
               className="w-1/2 sm:max-w-xs"
               job={job!}
-              disabled={isPolling || currentStage === "Resume Screening" || isPreviousStagePending || isResumePending}
+              disabled={isPolling || currentStage === "Resume Screening" || isPreviousStagePending || isResumePending || firstRejectedIndex !== -1}
               onSuccess={() => {
                 setIsPolling(true);
                 fetchHistory();
