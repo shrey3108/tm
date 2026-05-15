@@ -100,9 +100,9 @@ export function CandidateTimeline({
 
   const isPreviousStagePending = useMemo(() => previousEvent ? (() => {
     const r = previousEvent.hr_decision?.toLowerCase() || "";
-    const isCompleted = previousEvent.hr_decision !== null && previousEvent.hr_decision !== "Ongoing" && !r.includes("pending");
+    const isCompleted = previousEvent.hr_decision !== null && previousEvent.hr_decision !== "Ongoing" && !r.includes("pending") && !r.includes("may be");
     const isFailed = previousEvent.hr_decision !== null && previousEvent.hr_decision !== "Ongoing" && (r.includes("fail") || r.includes("rejected") || r.includes("reject"));
-    const isOngoing = r.includes("ongoing") || (!previousEvent.hr_decision && !isCompleted && !isFailed);
+    const isOngoing = r.includes("ongoing") || r.includes("may be") || (!previousEvent.hr_decision && !isCompleted && !isFailed);
     return r.includes("pending") || isOngoing;
   })() : false, [previousEvent]);
 
@@ -110,9 +110,9 @@ export function CandidateTimeline({
 
   const isResumePending = useMemo(() => resumeEvent ? (() => {
     const r = resumeEvent.hr_decision?.toLowerCase() || "";
-    const isCompleted = resumeEvent.hr_decision !== null && resumeEvent.hr_decision !== "Ongoing" && !r.includes("pending");
+    const isCompleted = resumeEvent.hr_decision !== null && resumeEvent.hr_decision !== "Ongoing" && !r.includes("pending") && !r.includes("may be");
     const isFailed = r === "failed" || r === "fail" || r === "rejected" || r === "reject";
-    const isOngoing = r.includes("ongoing") || (!resumeEvent.hr_decision && !isCompleted && !isFailed);
+    const isOngoing = r.includes("ongoing") || r.includes("may be") || (!resumeEvent.hr_decision && !isCompleted && !isFailed);
     return r.includes("pending") || isOngoing;
   })() : false, [resumeEvent]);
 
