@@ -1,14 +1,9 @@
 import { HrDecision } from "@/components/modal/candidate-details/HrDecision";
 import { DateDisplay } from "@/components/shared/DateDisplay";
-import {
-  FileText,
-  History,
-
-} from "lucide-react";
+import { FileText, History } from "lucide-react";
 import type { HrDecisionHistoryItem } from "@/apis/candidateDecision";
 import type { Transcript } from "@/types/transcript";
-import { Button } from "../ui/button";
-
+import { Button } from "@/components/ui/button";
 
 interface CandidateHistoryGridProps {
   /** Array of HR decisions to display */
@@ -37,16 +32,16 @@ export function CandidateHistoryGrid({
     <div className="h-full">
       {/* HR Decision History Column */}
       {hrDecisionHistory.length > 0 && (
-        <section className="space-y-4">
-          <div className="flex items-center gap-3 px-2">
-            <div className="h-8 w-8 rounded-xl bg-primary/10 flex items-center justify-center">
+        <section className="space-y-2">
+          <div className="flex items-center gap-2 px-2">
+            <div className="h-6 w-6 rounded-xl bg-primary/10 flex items-center justify-center">
               <History className="h-4 w-4 text-primary" />
             </div>
-            <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">
+            <span className="text-sm font-black  text-muted-foreground">
               Decision History
             </span>
           </div>
-          <div className="space-y-4 h-full">
+          <div className="space-y-2 h-full">
             {hrDecisionHistory.map((decision) => (
               <HrDecision key={decision.id} decision={decision} />
             ))}
@@ -56,12 +51,12 @@ export function CandidateHistoryGrid({
 
       {/* Transcript History Column */}
       {transcriptHistory.length > 0 && (
-        <section className="space-y-4">
-          <div className="flex items-center gap-3 px-2">
-            <div className="h-8 w-8 rounded-xl bg-blue-500/10 flex items-center justify-center">
+        <section className="space-y-2 py-2">
+          <div className="flex items-center gap-2 px-2 ">
+            <div className="h-6 w-6 rounded-xl bg-primary/10 flex items-center justify-center">
               <FileText className="h-4 w-4 " />
             </div>
-            <span className="text-xs font-black  text-muted-foreground">
+            <span className="text-sm font-black  text-muted-foreground">
               Recent Transcripts
             </span>
           </div>

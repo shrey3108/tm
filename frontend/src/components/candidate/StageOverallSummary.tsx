@@ -1,6 +1,10 @@
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-
+import {
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+  Accordion
+} from "@/components/ui/accordion"
 export interface OverallSummaryData {
   /** Numeric score for this stage (0-5) */
   stage_score: number;
@@ -29,50 +33,52 @@ interface StageOverallSummaryProps {
  */
 export function StageOverallSummary({ data }: StageOverallSummaryProps) {
   return (
-    <Card className="border-2 border-primary/10 rounded-3xl overflow-hidden shadow-xl">
-      <div className="bg-primary/5 px-8 py-6 border-b border-primary/10 flex flex-wrap gap-4 items-center justify-between">
-        <h2 className="text-lg font-black tracking-tight text-primary">Overall Summary</h2>
-        <div className="flex gap-3">
-          <Badge className="px-4 h-10" variant="outline">
-            <span className="font-semibold">{data.percentage}%</span>
-            <span className="ml-1 text-muted-foreground">Overall</span>
-          </Badge>
-          <Badge className="px-4 h-10" variant="outline">
-            <span>
-              Stage Score <span className="font-semibold">{data.stage_score.toFixed(2)}</span>
-              <span className="text-muted-foreground">/5.0</span>
-            </span>
-          </Badge>
-        </div>
-      </div>
-      <CardContent className="p-8 space-y-8">
-        <div className="space-y-6">
-          <div>
-            <span className="text-xs font-black text-muted-foreground tracking-wide block mb-1 uppercase">Summary</span>
-            <p className="text-base font-medium leading-relaxed">{data.overall_summary}</p>
+    <Accordion>
+      <AccordionItem>
+        <AccordionTrigger className={"hover:no-underline text-black px-8 py-6"}> <div className=" flex flex-wrap gap-4 items-center justify-between">
+          <h2 className="text-sm font-black tracking-tight">Overall Summary</h2>
+          <div className="flex gap-3">
+            <Badge className="px-4 h-10" variant="outline">
+              <span className="font-semibold">{data.percentage}%</span>
+              <span className="ml-1 text-muted-foreground">Overall</span>
+            </Badge>
+            <Badge className="px-4 h-10" variant="outline">
+              <span>
+                Stage Score <span className="font-semibold">{data.stage_score.toFixed(2)}</span>
+                <span className="text-muted-foreground">/5.0</span>
+              </span>
+            </Badge>
+          </div>
+        </div></AccordionTrigger>
+        <AccordionContent>
+          <div className="space-y-6">
+            <div>
+              <span className="text-xs font-black text-muted-foreground tracking-wide block mb-1 uppercase">Summary</span>
+              <p className="text-base font-medium leading-relaxed">{data.overall_summary}</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <SummaryList
+                title="Strengths"
+                items={data.strength_summary}
+                titleColor="text-green-600"
+              />
+              <SummaryList
+                title="Weaknesses"
+                items={data.weakness_summary}
+                titleColor="text-red-600"
+              />
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <SummaryList
-              title="Strengths"
-              items={data.strength_summary}
-              titleColor="text-green-600"
-            />
-            <SummaryList
-              title="Weaknesses"
-              items={data.weakness_summary}
-              titleColor="text-red-600"
-            />
-          </div>
-        </div>
-
-        <SummaryList
-          title="Suggest Followups"
-          items={data.followups}
-          className="pt-6 border-t border-primary/10"
-        />
-      </CardContent>
-    </Card>
+          <SummaryList
+            title="Suggest Followups"
+            items={data.followups}
+            className="pt-6 border-t border-primary/10"
+          />
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
   );
 }
 

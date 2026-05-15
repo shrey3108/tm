@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-// import { StageControls } from "@/components/candidate/StageControls";
 import { EvaluationGrid } from "@/components/candidate/EvaluationGrid";
 import { StageOverallSummary } from "@/components/candidate/StageOverallSummary";
 import { useForm } from "react-hook-form";
@@ -476,15 +475,12 @@ export default function CandidatesStages() {
                   data={evaluation?.evaluation_data}
                 />
 
-                <div className="mx-auto space-y-2 ">
+                <div className="mx-auto space-y-1">
                   {/* Section 1: Overall Summary */}
                   {transformedOverall && <StageOverallSummary data={transformedOverall} />}
 
                   {/* Section 2: Histories Grid */}
-                  {/* <DecisionHistory decisions={hrDecisionHistory} /> */}
-                  {/* {latestDecision && latestDecision.decision.toLowerCase() !== "may be" && (
-                    <HrDecision decision={latestDecision} />
-                  )} */}
+
                   <CandidateHistoryGrid
                     hrDecisionHistory={hrDecisionHistory}
                     transcriptHistory={transcriptHistory}
@@ -493,23 +489,6 @@ export default function CandidatesStages() {
                       relative: "path"
                     })}
                   />
-
-                  {/* Section 3: Full Transcript Button */}
-                  {/* {evaluation.transcript_id && (
-                    <div className="flex justify-center pt-2">
-                      <Button
-                        variant="outline"
-                        size="lg"
-                        className="rounded-xl border-primary/20 hover:bg-primary/5 flex items-center gap-2 font-bold h-12 px-8"
-                        onClick={() => navigate(`/dashboard/transcripts/${slugify(candidateName)}`, {
-                          state: { transcriptId: evaluation.transcript_id, candidateName }
-                        })}
-                      >
-                        <FileText className="h-4 w-4" />
-                        View Full Interview Transcript
-                      </Button>
-                    </div>
-                  )} */}
                 </div>
               </>
             ) : (

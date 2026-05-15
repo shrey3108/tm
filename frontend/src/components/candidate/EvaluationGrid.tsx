@@ -22,17 +22,18 @@ interface EvaluationGridProps {
  */
 export function EvaluationGrid({ data }: EvaluationGridProps) {
   return (
-    // If want to hide opend accordion then remove multiple or set to false multiple={false}
-    <Accordion className="w-full" multiple>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
       {Object.entries(data).map(([key, item]) => (
-        <EvaluationCard
-          key={key}
-          title={key}
-          reasoning={item.reasoning}
-          score={item.score}
-          confidence={item.confidence}
-        />
+        <Accordion key={key} className="w-full" multiple>
+          <EvaluationCard
+            key={key}
+            title={key}
+            reasoning={item.reasoning}
+            score={item.score}
+            confidence={item.confidence}
+          />
+        </Accordion>
       ))}
-    </Accordion>
+    </div>
   );
 }
