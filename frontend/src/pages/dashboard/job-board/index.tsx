@@ -63,10 +63,27 @@ export default function JobBoard() {
 
   const debouncedTitle = useDebouncedValue(titleFilter, 500);
 
-  // Reset to first page when search or filters change
-  useEffect(() => {
+  // Wrappers for setters that also reset pagination
+  const handleSetTitleFilter = (val: string) => {
+    setTitleFilter(val);
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-  }, [debouncedTitle, statusFilter, departmentFilter]);
+  };
+
+  const handleSetStatusFilter = (val: string[]) => {
+    setStatusFilter(val);
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  };
+
+  const handleSetDepartmentFilter = (val: string[]) => {
+    setDepartmentFilter(val);
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  };
+
+  const handleClearFilters = () => {
+    clearFilters();
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  };
+
   /** Fetches all jobs from the API and replaces the local job list. Shows a toast on failure. */
   const fetchJobs = useCallback(async () => {
     setLoading(true);
@@ -205,18 +222,18 @@ export default function JobBoard() {
         <div className="space-y-4">
           <JobTableFilters
             titleFilter={titleFilter}
-            setTitleFilter={setTitleFilter}
+            setTitleFilter={handleSetTitleFilter}
             statusFilter={statusFilter}
-            setStatusFilter={setStatusFilter}
+            setStatusFilter={handleSetStatusFilter}
             departmentFilter={departmentFilter}
-            setDepartmentFilter={setDepartmentFilter}
+            setDepartmentFilter={handleSetDepartmentFilter}
             dateRange={dateRange}
             setDateRange={setDateRange}
             departmentOptions={departmentOptions}
             departmentSearch={departmentSearch}
             setDepartmentSearch={setDepartmentSearch}
             hasActiveFilters={hasActiveFilters}
-            clearFilters={clearFilters}
+            clearFilters={handleClearFilters}
             resultCount={filteredJobs.length}
             totalCount={total}
             minDate={minDate}

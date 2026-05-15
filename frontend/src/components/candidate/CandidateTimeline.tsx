@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
@@ -87,35 +87,36 @@ export function CandidateTimeline({
     }
   };
 
-  if (events.length === 0) return null;
-
-  const firstRejectedIndex = events.findIndex(e => {
+  const firstRejectedIndex = useMemo(() => events.findIndex(e => {
     const r = e.result?.toLowerCase() || "";
     return r.includes("fail") || r.includes("failed") || r.includes("rejected") || r.includes("reject");
-  });
+  }), [events]);
 
-  const activeEventIndex = events.findIndex(e =>
+  const activeEventIndex = useMemo(() => events.findIndex(e =>
     (stageId && e.stage_id === stageId) || e.title === currentStage
-  );
+  ), [events, stageId, currentStage]);
 
-  const previousEvent = activeEventIndex > 0 ? events[activeEventIndex - 1] : null;
-  const isPreviousStagePending = previousEvent ? (() => {
+  const previousEvent = useMemo(() => activeEventIndex > 0 ? events[activeEventIndex - 1] : null, [events, activeEventIndex]);
+
+  const isPreviousStagePending = useMemo(() => previousEvent ? (() => {
     const r = previousEvent.hr_decision?.toLowerCase() || "";
     const isCompleted = previousEvent.hr_decision !== null && previousEvent.hr_decision !== "Ongoing" && !r.includes("pending");
     const isFailed = previousEvent.hr_decision !== null && previousEvent.hr_decision !== "Ongoing" && (r.includes("fail") || r.includes("rejected") || r.includes("reject"));
     const isOngoing = r.includes("ongoing") || (!previousEvent.hr_decision && !isCompleted && !isFailed);
     return r.includes("pending") || isOngoing;
-  })() : false;
-  console.log(firstRejectedIndex);
-  const resumeEvent = events.find(e => e.title === "Resume Screening");
-  const isResumePending = resumeEvent ? (() => {
+  })() : false, [previousEvent]);
+
+  const resumeEvent = useMemo(() => events.find(e => e.title === "Resume Screening"), [events]);
+
+  const isResumePending = useMemo(() => resumeEvent ? (() => {
     const r = resumeEvent.hr_decision?.toLowerCase() || "";
     const isCompleted = resumeEvent.hr_decision !== null && resumeEvent.hr_decision !== "Ongoing" && !r.includes("pending");
     const isFailed = r === "failed" || r === "fail" || r === "rejected" || r === "reject";
     const isOngoing = r.includes("ongoing") || (!resumeEvent.hr_decision && !isCompleted && !isFailed);
     return r.includes("pending") || isOngoing;
-  })() : false;
+  })() : false, [resumeEvent]);
 
+  if (events.length === 0) return null;
 
   if (isLoading) {
     return (
@@ -160,7 +161,7 @@ export function CandidateTimeline({
       <ScrollArea className="w-full whitespace-nowrap rounded-md border-0">
         <div className="flex w-max space-x-1 p-1">
           {events.map((event, index) => {
-            // @ts-ignore
+            // @ts-expect-error - event_type might not be in all events
             const _isDecision = event.event_type === "decision";
             const resultLower = event.result?.toLowerCase() || "";
 

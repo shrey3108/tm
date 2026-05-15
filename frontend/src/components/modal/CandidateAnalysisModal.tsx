@@ -77,9 +77,9 @@ const CandidateAnalysisModal = ({
             </div>
           )}
 
-          {error && <ErrorDisplay message={error} onRetry={fetchData} />}
+          {error ? <ErrorDisplay message={error} onRetry={fetchData} /> : null}
 
-          {!loading && !error && data && (
+          {!loading && !error && data ? (
             <div className="candidate-analysis-details">
               <div className="flex justify-between items-center mb-4 p-3 bg-muted rounded-lg border">
                 <div>
@@ -160,7 +160,7 @@ const CandidateAnalysisModal = ({
                 </div>
               </section>
             </div>
-          )}
+          ) : null}
         </div>
         <DialogFooter className="border-t-0 pt-0">
           <Button variant="outline" onClick={onHide}>

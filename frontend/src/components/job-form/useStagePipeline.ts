@@ -54,7 +54,7 @@ export const useStagePipeline = ({ jobId, onChange }: UseStagePipelineOptions) =
   useEffect(() => {
     const init = async () => {
       setIsLoading(true);
-      const [_, fetchedTemplates] = await Promise.all([fetchStages(), fetchTemplates()]);
+      const [, fetchedTemplates] = await Promise.all([fetchStages(), fetchTemplates()]);
 
       // Auto-populate default stages in create mode if stages are empty
       if (!jobId && stages.length === 0 && fetchedTemplates.length > 0) {
@@ -117,15 +117,16 @@ export const useStagePipeline = ({ jobId, onChange }: UseStagePipelineOptions) =
 
     setIsAdding(true);
     try {
-      // Add stages sequentially to maintain order
-      for (let i = 0; i < selectedTemplates.length; i++) {
-        const template = selectedTemplates[i];
-        await adminJobService.addStageToJob(jobId, {
-          template_id: template.id,
-          stage_order: stages.length + i + 1,
-          is_mandatory: true,
-        });
-      }
+      // Add stages in parallel since explicit
+      await Promise.all(
+        selectedTemplates.map((template, i) =>
+          adminJobService.addStageToJob(jobId, {
+            template_id: template.id,
+            stage_order: stages.length + i + 1,
+            is_mandatory: true,
+          }),
+        ),
+      );
 
       toast.success(`${selectedTemplates.length} stage(s) added to pipeline`);
       setSelectedTemplateIds([]);
@@ -173,11 +174,9 @@ export const useStagePipeline = ({ jobId, onChange }: UseStagePipelineOptions) =
 
     setIsSettingDefaults(true);
     try {
-      // Remove all existing stages first to ensure a clean default setup
+      // Remove all existing stages in parallel first to ensure a clean default setup
       if (stages.length > 0) {
-        for (const s of stages) {
-          await adminJobService.removeStageFromJob(jobId, s.id);
-        }
+        await Promise.all(stages.map((s) => adminJobService.removeStageFromJob(jobId, s.id)));
       }
 
       await jobStageService.setupDefaultStages(jobId);

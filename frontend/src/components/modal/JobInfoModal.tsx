@@ -51,7 +51,7 @@ const InfoSection = ({
       <CardTitle className={cn("text-sm font-black text-muted-foreground ", titleClassName)}>
         {title}
       </CardTitle>
-      {action && <CardAction>{action}</CardAction>}
+      {action ? <CardAction>{action}</CardAction> : null}
     </CardHeader>
     <CardContent>
       <div className="text-sm font-medium">
@@ -208,7 +208,7 @@ export function JobInfoModal({ isOpen, onClose, job }: JobInfoModalProps) {
             </InfoSection>
 
             {/* Required Skills Card */}
-            {job.skills && job.skills.length > 0 && (
+            {job.skills && job.skills.length > 0 ? (
               <InfoSection title="Required Skills">
                 <div className="flex flex-wrap gap-2 py-1">
                   {job.skills.map((skill) => (
@@ -223,7 +223,7 @@ export function JobInfoModal({ isOpen, onClose, job }: JobInfoModalProps) {
                   ))}
                 </div>
               </InfoSection>
-            )}
+            ) : null}
 
             {/* Key Information Row */}
             <Card className="border-muted-foreground/10 bg-card/50 shadow-sm transition-all hover:shadow-md hover:border-primary/20 p-1">
