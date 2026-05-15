@@ -1,5 +1,10 @@
-import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+
+import {
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
 
 interface EvaluationCardProps {
   /** Title of the evaluation category */
@@ -29,38 +34,29 @@ export function EvaluationCard({
   className,
 }: EvaluationCardProps) {
   return (
-    <Card className={cn("border border-primary/20 bg-background/50 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-300 rounded-2xl overflow-hidden w-full p-1 pt-2", className)}>
-      <CardContent className="p-4">
-        <div className="flex flex-col gap-2">
-          <h3 className="text-lg font-bold capitalize text-primary tracking-tight">
+    <AccordionItem value={title} className={cn(className)}>
+      <AccordionTrigger className={"hover:no-underline text-black"}>
+        <div className="flex justify-start gap-4 items-center">
+          <h3 className="text-lg font-bold capitalize tracking-tight">
             {title.replace(/_/g, " ")}
           </h3>
-
-          <div className="space-y-1">
-            <p>
-              <span className="text-sm font-bold capitalize text-muted-foreground ">Reasoning:</span>
-              <span className="text-sm text-foreground/80 leading-relaxed font-medium ">
-                {" "} {reasoning}
-              </span>
-            </p>
-          </div>
-
-          <div className="flex items-center gap-8 mt-2 pt- border-t border-primary/10">
-            <div className="flex flex-col">
-              <span className="font-bold capitalize text-muted-foreground">Score</span>
-              <span className="text-sm font-black text-primary">
-                {score}/{maxScore}
-              </span>
-            </div>
-            {/* <div className="flex flex-col">
-              <span className="font-bold uppercase text-muted-foreground tracking-tighter">Confidence</span>
-              <span className="text-sm font-black text-primary">
-                {confidence}
-              </span>
-            </div> */}
+          <div className="flex gap-0.5">
+            <span className="font-bold capitalize">Score</span>
+            <span className="text-sm font-semibold">({score}/{maxScore})</span>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </AccordionTrigger>
+      <AccordionContent>
+        <div className="space-y-1">
+          <p>
+            <span className="text-sm font-bold capitalize text-muted-foreground ">Reasoning:</span>
+            <span className="text-sm text-foreground/80 leading-relaxed font-medium ">
+              {" "} {reasoning}
+            </span>
+          </p>
+        </div>
+      </AccordionContent>
+    </AccordionItem>
+
   );
 }

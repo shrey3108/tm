@@ -1,5 +1,7 @@
 import { EvaluationCard } from "./EvaluationCard";
-
+import {
+  Accordion,
+} from "@/components/ui/accordion"
 export interface EvaluationData {
   /** AI reasoning for this evaluation */
   reasoning: string;
@@ -20,7 +22,8 @@ interface EvaluationGridProps {
  */
 export function EvaluationGrid({ data }: EvaluationGridProps) {
   return (
-    <div className="flex flex-col gap-2">
+    // If want to hide opend accordion then remove multiple or set to false multiple={false}
+    <Accordion className="w-full" multiple>
       {Object.entries(data).map(([key, item]) => (
         <EvaluationCard
           key={key}
@@ -30,6 +33,6 @@ export function EvaluationGrid({ data }: EvaluationGridProps) {
           confidence={item.confidence}
         />
       ))}
-    </div>
+    </Accordion>
   );
 }
