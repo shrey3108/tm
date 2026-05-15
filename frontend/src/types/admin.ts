@@ -416,6 +416,7 @@ export interface StageTemplateUpdate {
   name?: string;
   description?: string;
   default_config?: Record<string, any>;
+  is_default: boolean
 }
 
 /**

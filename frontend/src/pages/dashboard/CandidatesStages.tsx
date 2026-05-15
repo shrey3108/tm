@@ -308,7 +308,6 @@ export default function CandidatesStages() {
         stage_config_id: currentStage === "Resume Screening" ? undefined : configId as string,
         job_id: job.id
       });
-      // console.log({ message: "after submitDecision", res })
       form.setValue("note", "");
       toast.success("Decision submitted successfully");
       setShowFeedbackModal(false);
@@ -336,25 +335,14 @@ export default function CandidatesStages() {
     percentage: Math.round((evaluation.overall_score || 0) * 20)
   } : null;
 
-  // TODO: remove after backend solve the inconsistency response format
-  // @ts-ignore
-  const _evaluation_data = {
-    communication: evaluation?.evaluation_data.communication,
-    confidence: evaluation?.evaluation_data.confidence,
-    cultural_fit: evaluation?.evaluation_data.cultural_fit,
-    profile_understanding: evaluation?.evaluation_data.profile_understanding,
-    salary_alignment: evaluation?.evaluation_data.salary_alignment,
-    tech_stack: evaluation?.evaluation_data.tech_stack,
-  }
 
-  const latestDecision = hrDecisionHistory[0];
-
-  const canTakeDecision = !latestDecision || latestDecision.decision.toLowerCase() === "may be";
   const isResumeScreening = currentStage === "Resume Screening";
-
   const filteredHistory = isResumeScreening
     ? hrDecisionHistory?.filter((item) => item.stage_config_id == null || item?.stage_name === "Resume Screening")
     : hrDecisionHistory?.filter((item) => item.stage_config_id !== null && item.stage_config_id === configId);
+
+  const latestDecision = filteredHistory ? filteredHistory[0] : hrDecisionHistory[0];
+  const canTakeDecision = !latestDecision || latestDecision.decision.toLowerCase() === "may be";
 
   // console.log({ isResumeScreening, hrDecisionHistory, configId, filteredHistory });
 

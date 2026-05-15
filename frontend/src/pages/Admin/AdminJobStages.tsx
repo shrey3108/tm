@@ -19,7 +19,8 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
-
+import { Switch } from "@/components/ui/switch"
+import { extractErrorMessage } from "@/utils/error";
 
 /**
  * Admin page for managing job stage templates.
@@ -50,6 +51,8 @@ const AdminJobStages = () => {
     total,
     loading,
     fetchData: fetchTemplates,
+    setData,
+    setTotal,
   } = useAdminData<StageTemplate>(
     () => adminStageTemplateService.getAllTemplates(pageIndex * pageSize, pageSize, debouncedSearch),
     { fetchOnMount: false }
@@ -79,6 +82,27 @@ const AdminJobStages = () => {
     });
   };
 
+  const handleDefaultToggle = async (template: StageTemplate, isChecked: boolean) => {
+    const previousData = [...data];
+
+    // Optimistic update
+    setData(prev => prev.map(t =>
+      t.id === template.id ? { ...t, is_default: isChecked } : t
+    ));
+
+    try {
+      await adminStageTemplateService.updateTemplate(template.id, { is_default: isChecked });
+      toast.success("Stage template updated successfully");
+
+      // fetchTemplates(); 
+    } catch (error) {
+      // Revert on error
+      const errorMessage = extractErrorMessage(error)
+      setData(previousData);
+      toast.error(errorMessage || "Failed to update stage template");
+    }
+  };
+
   const handleDeleteClick = (template: StageTemplate) => {
     setSelectedTemplate(template);
     setIsDeleteOpen(true);
@@ -87,12 +111,23 @@ const AdminJobStages = () => {
   const confirmDelete = async () => {
     if (!selectedTemplate) return;
 
+    const previousData = [...data];
+    const previousTotal = total;
+
+    // Optimistic update
+    setData(prev => prev.filter(t => t.id !== selectedTemplate.id));
+    setTotal(prev => prev - 1);
+
     try {
       await adminStageTemplateService.deleteTemplate(selectedTemplate.id);
       toast.success("Stage template deleted successfully");
-      fetchTemplates();
+      // fetchTemplates(); 
     } catch (error) {
-      toast.error("Failed to delete stage template");
+      // Revert on error
+      const errorMessage = extractErrorMessage(error)
+      setData(previousData);
+      setTotal(previousTotal);
+      toast.error(errorMessage || "Failed to delete stage template");
     } finally {
       setIsDeleteOpen(false);
       setSelectedTemplate(null);
@@ -113,7 +148,7 @@ const AdminJobStages = () => {
         </Button>
       ),
       cell: ({ row }) => (
-        <span className="font-medium text-foreground">{row.original.name}</span>
+        <span className="font-medium text-foreground capitalize">{row.original.name}</span>
       ),
     },
     {
@@ -124,9 +159,27 @@ const AdminJobStages = () => {
         </div>
       },
       cell: ({ row }) => (
-        <span className="text-muted-foreground truncate line-clamp-1 max-w-md">
+        <span className="text-muted-foreground truncate line-clamp-1 max-w-md capitalize">
           {row.original.description || "No description"}
         </span>
+      ),
+    },
+    {
+      accessorKey: "is_default",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="hover:bg-transparent p-0 font-semibold"
+        >
+          Default Stage
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => (
+        <div className="flex items-center justify-center gap-2">
+          <Switch checked={row.original.is_default ?? false} onCheckedChange={(isChecked) => handleDefaultToggle(row.original, isChecked)} />
+        </div>
       ),
     },
     {
