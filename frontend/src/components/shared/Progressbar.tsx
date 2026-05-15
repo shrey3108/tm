@@ -14,14 +14,9 @@ interface ProgressBarChartProps {
 export function ProgressBarChart({ priorityTimeline }: ProgressBarChartProps) {
     if (!priorityTimeline) {
         return (
-            <div className="w-full h-full flex flex-col items-center justify-center border-2 border-dashed border-muted rounded-3xl p-6 text-center space-y-3 bg-muted/5">
-                <div className="p-3 bg-muted/20 rounded-full">
-                    <AlertCircle className="w-6 h-6 text-muted-foreground" />
-                </div>
-                <div className="space-y-1">
-                    <p className="text-muted-foreground font-semibold italic">No Priority Timeline</p>
-                    <p className="text-xs text-muted-foreground/60 max-w-[200px]">Assign a priority to this job to track its progress timeline.</p>
-                </div>
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/20 rounded-xl border border-dashed border-muted-foreground/20 text-muted-foreground">
+                <AlertCircle className="w-4 h-4 opacity-70" />
+                <span className="text-xs font-semibold italic">No Priority Timeline</span>
             </div>
         );
     }
@@ -36,31 +31,31 @@ export function ProgressBarChart({ priorityTimeline }: ProgressBarChartProps) {
     const safeProgress = Math.min(Math.max(priorityTimeline.progress_pct, 0), 100);
 
     return (
-        <div className="md:w-full h-auto flex flex-col justify-between p-1 sm:w-full">
+        <div className="md:w-full h-auto flex flex-col justify-between p-0 sm:w-full">
             {/* Header Info */}
-            <div className="flex items-center md:justify-between mb-1 gap-6">
+            <div className="flex items-center md:justify-between mb-0 gap-4">
                 <div className="space-y-1 shrink-0">
-                    <h5 className="text-lg font-bold flex items-center gap-2">
+                    <div className="flex items-center gap-2">
                         <Timer className="w-5 h-5 text-primary" />
                         {priorityTimeline.name}
-                    </h5>
-                    <div className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1.5 bg-muted/40 px-2 py-0.5 rounded-md">
-                            <Calendar className="w-3.5 h-3.5 text-primary/60" />
-                            <DateDisplay date={priorityTimeline.start_date} />
-                        </span>
-                        <span className="text-muted-foreground font-light">to</span>
-                        <span className="flex items-center gap-1.5 bg-muted/40 px-2 py-0.5 rounded-md">
-                            <Clock className="w-3.5 h-3.5 text-orange-500/60" />
-                            <DateDisplay date={priorityTimeline.due_date} />
-                        </span>
+                        <div className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1.5 bg-muted/40 px-2 py-0.5 rounded-md">
+                                <Calendar className="w-3.5 h-3.5 text-primary/60" />
+                                <DateDisplay date={priorityTimeline.start_date} />
+                            </span>
+                            <span className="text-muted-foreground font-light">to</span>
+                            <span className="flex items-center gap-1.5 bg-muted/40 px-2 py-0.5 rounded-md">
+                                <Clock className="w-3.5 h-3.5 text-orange-500/60" />
+                                <DateDisplay date={priorityTimeline.due_date} />
+                            </span>
+                        </div>
                     </div>
                 </div>
 
                 {/* Progress Bar Container - Moved here */}
-                <div className="flex-1 px-4 relative group">
-                    <div className="flex justify-between items-end mb-2">
-                        <span className="text-xs font-medium text-primary ">Hiring Timeline:</span>
+                <div className="flex-1 px-2 relative group">
+                    <div className="flex justify-between items-end mb-1">
+                        <span className="text-xs font-medium text-primary/80">Hiring Timeline:</span>
                     </div>
                     <div className="h-4 w-full bg-muted rounded-full overflow-hidden relative shadow-inner">
                         <div
@@ -74,32 +69,32 @@ export function ProgressBarChart({ priorityTimeline }: ProgressBarChartProps) {
                 </div>
 
                 <div className="flex items-center gap-2 sm:flex-col md:flex-row shrink-0">
-                    <div className="rounded-2xl p-0.5 text-center space-y-0.5 border w-25 ">
+                    <div className="rounded-2xl p-0.5 text-center space-y-0 border w-24">
                         <div className="flex items-baseline justify-center gap-0.5">
-                            <p className="text-xl font-black text-foreground">{priorityTimeline.days_total}</p>
+                            <p className="text-lg font-black text-foreground">{priorityTimeline.days_total}</p>
                         </div>
-                        <div className="min-h-10 flex items-center justify-center mt-1">
-                            <span className="text-xs leading-tight font-bold text-muted-foreground px-1">
+                        <div className="flex items-center justify-center">
+                            <span className="text-[10px] leading-tight font-bold text-muted-foreground px-1 uppercase tracking-tighter">
                                 Total Days
                             </span>
                         </div>
                     </div>
-                    <div className="rounded-2xl p-0.5 text-center space-y-0.5 border w-25">
+                    <div className="rounded-2xl p-0.5 text-center space-y-0 border w-24">
                         <div className="flex items-baseline justify-center gap-0.5">
-                            <p className="text-xl font-black ">{priorityTimeline.days_elapsed}</p>
+                            <p className="text-lg font-black ">{priorityTimeline.days_elapsed}</p>
                         </div>
-                        <div className="min-h-10 flex items-center justify-center mt-1">
-                            <span className="text-xs leading-tight font-bold text-muted-foreground px-1">
+                        <div className="flex items-center justify-center">
+                            <span className="text-[10px] leading-tight font-bold text-muted-foreground px-1 uppercase tracking-tighter">
                                 Days Passed
                             </span>
                         </div>
                     </div>
-                    <div className="rounded-2xl p-0.5 text-center space-y-0.5 border w-25">
+                    <div className="rounded-2xl p-0.5 text-center space-y-0 border w-24">
                         <div className="flex items-baseline justify-center gap-0.5">
-                            <p className="text-xl font-black ">{priorityTimeline.days_remaining}</p>
+                            <p className="text-lg font-black ">{priorityTimeline.days_remaining}</p>
                         </div>
-                        <div className="min-h-10 flex items-center justify-center mt-1">
-                            <span className="text-xs leading-tight font-bold text-muted-foreground px-1">
+                        <div className="flex items-center justify-center">
+                            <span className="text-[10px] leading-tight font-bold text-muted-foreground px-1 uppercase tracking-tighter">
                                 Remaining Days
                             </span>
                         </div>

@@ -131,46 +131,53 @@ export function JobCandidatesCharts({
     chart: React.JSX.Element,
     takeFullSpace?: boolean;
     action?: React.ReactNode
-  }[] = [{
-    title: CHART_TEXTS.priorityTimeline.label,
-    description: CHART_TEXTS.priorityTimeline.description,
-    chart: <ProgressBarChart priorityTimeline={jobStats?.priority_timeline || null} />,
-    takeFullSpace: true
-  },
-  {
-    title: CHART_TEXTS.hrDecision.label,
-    description: selectedStage
-      ? `HR decisions for "${selectedStage}" stage`
-      : CHART_TEXTS.hrDecision.description,
-    chart: <CandidatesDistributionChart stats={activeHrStats} />,
-    action: StageSelector
-  },
-  {
-    title: CHART_TEXTS.screeningResults.label,
-    description: selectedStage
-      ? `AI results for "${selectedStage}" stage`
-      : CHART_TEXTS.screeningResults.description,
-    chart: <ResultPieChart passCount={activeScreening.passCount} failCount={activeScreening.failCount} />,
-    action: StageSelector
-  },
-  {
-    title: CHART_TEXTS.recruitmentStages.label,
-    description: CHART_TEXTS.recruitmentStages.description,
-    chart: <StagesBarChart
-      stages={jobStats?.stages || {}}
-      onStageClick={handleStageClick}
-      selectedStage={selectedStage}
-    />,
-    takeFullSpace: true
-  },
-  {
-    title: CHART_TEXTS.locations.label,
-    description: CHART_TEXTS.locations.description,
-    chart: <LocationBarChart locations={jobStats?.location || {}} />,
-    takeFullSpace: true
-  },
+  }[] = [
+      {
+        title: CHART_TEXTS.hrDecision.label,
+        description: selectedStage
+          ? `HR decisions for "${selectedStage}" stage`
+          : CHART_TEXTS.hrDecision.description,
+        chart: <CandidatesDistributionChart stats={activeHrStats} />,
+        action: StageSelector
+      },
+      {
+        title: CHART_TEXTS.screeningResults.label,
+        description: selectedStage
+          ? `AI results for "${selectedStage}" stage`
+          : CHART_TEXTS.screeningResults.description,
+        chart: <ResultPieChart passCount={activeScreening.passCount} failCount={activeScreening.failCount} />,
+        action: StageSelector
+      },
+      {
+        title: CHART_TEXTS.recruitmentStages.label,
+        description: CHART_TEXTS.recruitmentStages.description,
+        chart: <StagesBarChart
+          stages={jobStats?.stages || {}}
+          onStageClick={handleStageClick}
+          selectedStage={selectedStage}
+        />,
+        takeFullSpace: true
+      },
+      {
+        title: CHART_TEXTS.locations.label,
+        description: CHART_TEXTS.locations.description,
+        chart: <LocationBarChart locations={jobStats?.location || {}} />,
+        takeFullSpace: true
+      },
 
     ];
+
+
+  // TODO: Used when breadcrum won't able to fix !!
+  // useEffect(() => {
+  //   if (!loading && jobStats) {
+  //     window.scrollBy({
+  //       top: 200,
+  //       behavior: 'smooth'
+  //     });
+  //   }
+  // }, [loading, jobStats]); // Only runs when loading status or data changes
+
   return (
     <div className={cn(
       "grid grid-cols-1 sm:grid-cols-2 gap-8 mt-4 animate-in fade-in slide-in-from-bottom-4 duration-700 p-0.5",
@@ -192,6 +199,15 @@ export function JobCandidatesCharts({
           </div>
         </div>
       )}
+      {/* Priority Timeline Section */}
+      <div className="md:col-span-2 w-full animate-in fade-in slide-in-from-top-4 duration-1000">
+        <div className="flex items-center justify-between gap-6 mb-2 border-b border-muted-foreground/10 pb-4">
+          <h4 className="font-black text-xl text-foreground tracking-tight uppercase">{CHART_TEXTS.priorityTimeline.label}</h4>
+          <div className="flex-1 flex items-center justify-end animate-in fade-in slide-in-from-right-2 duration-500">
+            <ProgressBarChart priorityTimeline={jobStats?.priority_timeline || null} />
+          </div>
+        </div>
+      </div>
       {
         obj.map(({ chart, title, description, takeFullSpace, action }) => (
           <div className={cn("group overflow-hidden relative w-full", takeFullSpace && "md:col-span-2 w-full")} key={title}>
