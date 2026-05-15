@@ -94,6 +94,9 @@ class JobStageConfigBase(BaseModel):
     is_mandatory: bool = Field(
         True, description="Whether this stage is required"
     )
+    is_default: bool = Field(
+        False, description="Whether this stage is the default starting point for new candidates"
+    )
 
 
 class JobStageConfigCreate(JobStageConfigBase):
@@ -116,6 +119,7 @@ class JobStageConfigUpdate(BaseModel):
     stage_order: int | None = Field(None, ge=0)
     config: dict[str, Any] | None = None
     is_mandatory: bool | None = None
+    is_default: bool | None = None
 
 
 class JobStageConfigRead(JobStageConfigBase):

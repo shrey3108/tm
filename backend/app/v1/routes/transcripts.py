@@ -100,7 +100,8 @@ async def upload_transcript_path(
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Ingest a transcript by providing its local file path or just the filename.
+    Ingest transcripts by providing local file paths or filenames.
+    Supports single 'file_path' or multiple 'file_paths'.
     If just a filename is provided, it resolves against the system-configured default directory.
     """
     from app.v1.db.models.candidate_stages import CandidateStage
@@ -108,23 +109,20 @@ async def upload_transcript_path(
     from app.v1.services.transcript_tasks import process_transcript_task
     from pathlib import Path
 
-    file_path_str = payload.file_path
-    path_obj = Path(file_path_str)
+    # 1. Gather all paths
+    input_paths = []
+    if payload.file_paths:
+        input_paths.extend(payload.file_paths)
+    if payload.file_path:
+        input_paths.append(payload.file_path)
 
-    # 1. Resolve relative path against default directory if not absolute
-    if not path_obj.is_absolute():
-        db_path = await system_setting_repository.get_value(db, "transcript_default_dir")
-        default_dir_str = db_path or "C:/OneDriveTemp/Desktop/hirego/transcripts"
-        path_obj = Path(default_dir_str) / file_path_str
-        file_path_str = str(path_obj)
-
-    if not path_obj.exists():
+    if not input_paths:
         raise HTTPException(
-            status_code=404,
-            detail=f"Transcript file not found at path: {file_path_str}",
+            status_code=400,
+            detail="Either 'file_path' or 'file_paths' must be provided."
         )
 
-    # 2. Fetch the candidate stage context
+    # 2. Fetch the candidate stage context once
     stmt = (
         select(CandidateStage)
         .options(selectinload(CandidateStage.job_stage).selectinload(JobStageConfig.job))
@@ -135,14 +133,36 @@ async def upload_transcript_path(
     if not current_stage:
         raise HTTPException(status_code=404, detail="Candidate stage not found")
 
-    filename = path_obj.name
+    resolved_paths = []
+    db_path = await system_setting_repository.get_value(db, "transcript_default_dir")
+    default_dir_str = db_path or "C:/OneDriveTemp/Desktop/hirego/transcripts"
 
-    # 3. Trigger background processing
-    process_transcript_task.delay(str(current_stage.id), file_path_str, filename)
+    # 3. Process each path
+    for path_str in input_paths:
+        path_obj = Path(path_str)
+
+        # Resolve relative path against default directory if not absolute
+        if not path_obj.is_absolute():
+            path_obj = Path(default_dir_str) / path_str
+            path_str = str(path_obj)
+
+        if not path_obj.exists():
+            # If any file is missing, we could fail fast or skip.
+            # Choosing fail fast for data integrity.
+            raise HTTPException(
+                status_code=404,
+                detail=f"Transcript file not found at path: {path_str}",
+            )
+        
+        filename = path_obj.name
+        resolved_paths.append(path_str)
+
+        # Trigger background processing
+        process_transcript_task.delay(str(current_stage.id), path_str, filename)
 
     return {
-        "message": "Transcript processing started.",
-        "file_path": file_path_str
+        "message": f"Processing started for {len(resolved_paths)} transcripts.",
+        "resolved_paths": resolved_paths
     }
 
 

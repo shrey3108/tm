@@ -61,6 +61,19 @@ class RedisCache:
         except Exception as exc:  # noqa: BLE001
             _log.debug("Redis SET failed key=%s: %s", key, exc)
 
+    async def set_nx(self, key: str, value: Any, ttl: int) -> bool:
+        """Serialize and store a value only if it doesn't exist (NX). Returns True if set."""
+        client = self._get_client()
+        if client is None:
+            return True  # Fallback to True if Redis is down
+        try:
+            raw = json.dumps(value, default=str)
+            result = await client.set(key, raw, ex=ttl, nx=True)
+            return bool(result)
+        except Exception as exc:  # noqa: BLE001
+            _log.debug("Redis SETNX failed key=%s: %s", key, exc)
+            return True
+
     async def delete(self, key: str) -> None:
         """Remove a value from the cache."""
         client = self._get_client()

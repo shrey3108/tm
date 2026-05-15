@@ -44,12 +44,22 @@ class JobStageService:
         config = stage_in.config or template.default_config
         config = prepare_config_for_save(config)
 
+        # If this is set as default, clear other defaults for this job
+        if stage_in.is_default:
+            from sqlalchemy import update
+            await db.execute(
+                update(JobStageConfig)
+                .where(JobStageConfig.job_id == job_id)
+                .values(is_default=False)
+            )
+
         stage_config = JobStageConfig(
             job_id=job_id,
             template_id=stage_in.template_id,
             stage_order=stage_in.stage_order,
             config=config,
             is_mandatory=stage_in.is_mandatory,
+            is_default=stage_in.is_default,
         )
         created_stage = await stage_repository.create_job_stage(db, stage_config)
         await enrich_stage_configs(db, created_stage)
@@ -75,6 +85,15 @@ class JobStageService:
         if "config" in update_data:
             update_data["config"] = prepare_config_for_save(update_data["config"])
             
+        # If setting as default, clear others
+        if update_data.get("is_default"):
+            from sqlalchemy import update
+            await db.execute(
+                update(JobStageConfig)
+                .where(JobStageConfig.job_id == stage_config.job_id)
+                .values(is_default=False)
+            )
+
         updated_stage = await stage_repository.update_job_stage(
             db, stage_config, update_data
         )
@@ -182,6 +201,7 @@ class JobStageService:
                 existing_stage = existing_map[s_in.template_id]
                 existing_stage.stage_order = s_in.stage_order or index
                 existing_stage.is_mandatory = s_in.is_mandatory
+                existing_stage.is_default = s_in.is_default
                 if s_in.config is not None:
                     existing_stage.config = prepare_config_for_save(s_in.config)
                 
@@ -194,7 +214,8 @@ class JobStageService:
                     template_id=s_in.template_id,
                     stage_order=s_in.stage_order or index,
                     config=prepare_config_for_save(s_in.config or template.default_config),
-                    is_mandatory=s_in.is_mandatory
+                    is_mandatory=s_in.is_mandatory,
+                    is_default=s_in.is_default
                 )
                 db.add(new_stage)
                 final_configs.append(new_stage)
