@@ -42,4 +42,4 @@ api_router.include_router(transcripts_router)
 api_router.include_router(job_stages_router, tags=["job-stages"])
 api_router.include_router(candidate_stages_router, tags=["candidate-stages"])
 api_router.include_router(job_positions_router, prefix="/job-positions", tags=["job-positions"])
-
+

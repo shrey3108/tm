@@ -17,7 +17,7 @@ from app.v1.prompts import (
 )
 from app.v1.core.observability import get_tracer
 
-tracer = get_tracer("hirego.embeddings")
+tracer = get_tracer("hiring-platform.embeddings")
 
 
 @lru_cache(maxsize=1)
@@ -110,16 +110,14 @@ class EmbeddingService:
         payload = (
             instruction + normalized_text if self.use_instructions else normalized_text
         )
-        with tracer.start_as_current_span("encode-text", attributes={"text_length": len(payload), "instruction": instruction}) as span:
-            vector = self.model.encode(
-                payload,
-                normalize_embeddings=True,
-                truncate_dim=self.truncate_dim,
-            )
-            
-            res_vector = self._fit_vector_dim(vector.tolist())
-            span.set_attribute("vector_dim", len(res_vector))
-            return res_vector
+        vector = self.model.encode(
+            payload,
+            normalize_embeddings=True,
+            truncate_dim=self.truncate_dim,
+        )
+        
+        res_vector = self._fit_vector_dim(vector.tolist())
+        return res_vector
 
     def encode_resume(self, text: str) -> list[float]:
         """Encode resume text into a vector embedding.
@@ -208,13 +206,12 @@ class EmbeddingService:
             else:
                 payloads.append(normalized_text)
         
-        with tracer.start_as_current_span("encode-text-batch", attributes={"batch_size": len(texts), "instruction": instruction}):
-            vectors = self.model.encode(
-                payloads,
-                normalize_embeddings=True,
-                truncate_dim=self.truncate_dim,
-            )
-            return [self._fit_vector_dim(vector.tolist()) for vector in vectors]
+        vectors = self.model.encode(
+            payloads,
+            normalize_embeddings=True,
+            truncate_dim=self.truncate_dim,
+        )
+        return [self._fit_vector_dim(vector.tolist()) for vector in vectors]
 
     def encode_skills_batch(self, texts: list[str]) -> list[list[float]]:
         """Encode a list of skill names/descriptions into vector embeddings in a batch.

@@ -63,7 +63,7 @@ class Settings(BaseSettings):
     )
 
     PROJECT_NAME: str = Field(
-        default="HR Platform", description="The name of the project"
+        default="Hiring Platform", description="The name of the project"
     )
     ENVIRONMENT: str = Field(
         default="development",
@@ -221,14 +221,14 @@ class Settings(BaseSettings):
         description="Whether to enable OpenTelemetry tracing",
     )
     PHOENIX_PROJECT_NAME: str = Field(
-        default="hirego-ai", description="Project name for Arize Phoenix"
+        default="hiring-platform", description="Project name for Arize Phoenix"
     )
     PHOENIX_COLLECTOR_ENDPOINT: str = Field(
         default="http://localhost:4317",
         description="OTLP collector endpoint for Phoenix",
     )
     PHOENIX_SERVICE_NAME: str = Field(
-        default="hirego-backend", description="Service name for tracing"
+        default="hiring-platform-backend", description="Service name for tracing"
     )
 
     SKIP_RESUME_CONTEXT: bool = Field(
