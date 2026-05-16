@@ -88,6 +88,7 @@ export default function CandidatesStages() {
   const [evaluationHistory, setEvaluationHistory] = useState<EvaluationHistoryRead[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [isTranscriptDisabled, setIsTranscriptDisabled] = useState(true);
 
 
   useEffect(() => {
@@ -352,7 +353,7 @@ export default function CandidatesStages() {
         candidateName={candidateName}
         onBack={() => navigate(-1)}
         onInfoClick={() => setIsJobModalOpen(true)}
-        isUploaded={isPolling}
+        isUploaded={isTranscriptDisabled}
         onSuccess={() => {
           setIsPolling(true);
           fetchHistory();
@@ -379,6 +380,7 @@ export default function CandidatesStages() {
             fetchHistory={fetchHistory}
             setIsPolling={setIsPolling}
             setIsJobModalOpen={setIsJobModalOpen}
+            onTranscriptDisableChange={setIsTranscriptDisabled}
           />
           {/* <StageControls
             stages={stages}

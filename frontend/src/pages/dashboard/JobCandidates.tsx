@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button, Input } from "@/components/";
-import { RotateCw, Users, BarChart3, Layers, Upload } from "lucide-react";
+import { RotateCw, Layers } from "lucide-react";
 import { CandidateDetailsModal, JobInfoModal, DeleteModal } from "@/components/modal";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import CandidateTable from "@/components/candidate/CandidateTable";
@@ -15,7 +15,6 @@ import type { CandidateAnalysis } from "@/types/admin";
 import AppPageShell from "@/components/shared/AppPageShell";
 import { PERMISSIONS } from "@/lib/permissions";
 import type { PaginationState } from "@tanstack/react-table";
-import { cn } from "@/lib/utils";
 import type { CandidateActiveFilters } from "@/hooks/useCandidateTableFilters";
 import { slugify } from "@/utils/slug";
 import type { DateRange } from "react-day-picker";
@@ -119,59 +118,12 @@ export default function JobCandidates() {
         isUploading={isUploading}
         jdVersion={jdVersion}
         setJdVersion={setJdVersion}
+        viewMode={viewMode}
+        setViewMode={setViewMode}
       />
 
-      {/* View Switcher Controls */}
-      <div className="flex">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-2 w-full">
-          <div className="bg-muted px-1.5 py-1.5 rounded-2xl flex items-center shadow-inner border border-muted-foreground/5">
-            <button
-              onClick={() => setViewMode("candidates")}
-              className={cn(
-                "flex items-center gap-2 px-6 py-2 rounded-xl text-sm font-bold transition-all duration-300",
-                viewMode === "candidates"
-                  ? "bg-background text-primary shadow-lg ring-1 ring-primary/10"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              <Users className="h-4 w-4" />
-              Candidates
-            </button>
-            <button
-              onClick={() => setViewMode("analytics")}
-              className={cn(
-                "flex items-center gap-2 px-6 py-2 rounded-xl text-sm font-bold transition-all duration-300",
-                viewMode === "analytics"
-                  ? "bg-background text-primary shadow-lg ring-1 ring-primary/10"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              <BarChart3 className="h-4 w-4" />
-              Analytics
-            </button>
-          </div>
-          <div className="flex flex-row items-center gap-2 ">
-            <Button
-              variant="secondary"
-              className="rounded-xl border border-muted-foreground/10 px-5 font-semibold"
-              onClick={() => setIsJobModalOpen(true)}
-            >
-              JD
-            </Button>
-            <PermissionGuard permissions={PERMISSIONS.CANDIDATES_ACCESS} hideWhenDenied>
-              <Button
-                variant="outline"
-                onClick={handleUploadClick}
-                disabled={isUploading || !job?.is_active}
-                title={!job?.is_active ? "Resume upload is disabled for inactive jobs" : undefined}
-              >
-                <Upload className="mr-2 h-4 w-4" />
-                {isUploading ? "Uploading..." : "Upload Resumes"}
-              </Button>
-            </PermissionGuard>
-          </div>
-        </div>
-      </div>
+
+
 
       <div className="relative min-h-[400px]">
         {viewMode === "analytics" ? (

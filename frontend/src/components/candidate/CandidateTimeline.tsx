@@ -9,8 +9,6 @@ import { TimelineEventDetailModal } from "./TimelineEventDetailModal";
 import { CandidateStatusBadge, DateDisplay } from "@/components/shared";
 import { useNavigate } from "react-router-dom";
 import { slugify } from "@/utils/slug";
-import { Button } from "@/components/ui/button";
-import { TranscriptUpload } from "./TranscriptUpload";
 
 
 interface CandidateTimelineProps {
@@ -27,7 +25,8 @@ interface CandidateTimelineProps {
   isPolling: boolean,
   fetchHistory: () => void,
   setIsPolling: (value: boolean) => void
-  setIsJobModalOpen: (value: boolean) => void
+  setIsJobModalOpen: (value: boolean) => void;
+  onTranscriptDisableChange?: (disabled: boolean) => void;
 }
 
 export function CandidateTimeline({
@@ -42,9 +41,10 @@ export function CandidateTimeline({
   currentStage,
   stageId,
   isPolling,
-  fetchHistory,
-  setIsPolling,
-  setIsJobModalOpen
+  // fetchHistory,
+  // setIsPolling,
+  // setIsJobModalOpen,
+  onTranscriptDisableChange
 }: CandidateTimelineProps) {
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -116,6 +116,16 @@ export function CandidateTimeline({
     return r.includes("pending") || isOngoing;
   })() : false, [resumeEvent]);
 
+  useEffect(() => {
+    onTranscriptDisableChange?.(
+      isPolling ||
+      currentStage === "Resume Screening" ||
+      isPreviousStagePending ||
+      isResumePending ||
+      firstRejectedIndex !== -1
+    );
+  }, [isPolling, currentStage, isPreviousStagePending, isResumePending, firstRejectedIndex, onTranscriptDisableChange]);
+
   if (events.length === 0) return null;
 
   if (isLoading) {
@@ -136,7 +146,7 @@ export function CandidateTimeline({
           <Clock className="h-3 w-3" />
           Hiring Journey Timeline
         </h3>
-        <div className="w-full flex items-end justify-end px-4 py-2">
+        {/* <div className="w-full flex items-end justify-end px-4 py-2">
           <div className="flex items-center justify-end gap-2">
             <Button
               variant="secondary"
@@ -156,7 +166,7 @@ export function CandidateTimeline({
               }}
             />}
           </div>
-        </div>
+        </div> */}
       </div>
       <ScrollArea className="w-full whitespace-nowrap rounded-md border-0">
         <div className="flex w-max space-x-1 p-1">

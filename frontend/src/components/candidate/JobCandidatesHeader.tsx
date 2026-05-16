@@ -4,6 +4,8 @@ import PermissionGuard from "@/components/auth/PermissionGuard";
 import type { Job } from "@/types/job";
 import { cn } from "@/lib/utils";
 import { PERMISSIONS } from "@/lib/permissions";
+import { Button } from "@/components/ui/button";
+import { BarChart3, Upload, Users } from "lucide-react";
 
 interface JobCandidatesHeaderProps {
   job: Job | null;
@@ -14,16 +16,19 @@ interface JobCandidatesHeaderProps {
   onToggleStatus: () => void;
   jdVersion?: number;
   setJdVersion: (version: number | undefined) => void;
+  viewMode: "candidates" | "analytics";
+  setViewMode: (viewMode: "candidates" | "analytics") => void;
 }
 
 export const JobCandidatesHeader = ({
   job,
   onBack,
-  // onInfoClick,
-  // onUploadClick,
-  // isUploading,
+  onInfoClick,
+  onUploadClick,
+  isUploading,
   onToggleStatus,
-
+  viewMode,
+  setViewMode,
 }: JobCandidatesHeaderProps) => {
   return (
     <AppPageHeader
@@ -67,29 +72,59 @@ export const JobCandidatesHeader = ({
           ) : null}
 
         </>
+
       }
-    /*actions={
-      <>
-        <Button 
-          variant="secondary"
-          className="rounded-xl border border-muted-foreground/10 px-5 font-semibold"
-          onClick={onInfoClick}
-        >
-          JD
-        </Button>
-        <PermissionGuard permissions={PERMISSIONS.CANDIDATES_ACCESS} hideWhenDenied>
+      breadcrumbActions={
+        <>
+          <div className="bg-muted/50 p-1 rounded-xl flex items-center border border-border shrink-0">
+            <button
+              onClick={() => setViewMode("candidates")}
+              className={cn(
+                "flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-200",
+                viewMode === "candidates"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Users className="h-4 w-4" />
+              Candidates
+            </button>
+            <button
+              onClick={() => setViewMode("analytics")}
+              className={cn(
+                "flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-200",
+                viewMode === "analytics"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <BarChart3 className="h-4 w-4" />
+              Analytics
+            </button>
+          </div>
           <Button
-            variant="outline"
-            onClick={onUploadClick}
-            disabled={isUploading || !job?.is_active}
-            title={!job?.is_active ? "Resume upload is disabled for inactive jobs" : undefined}
+            variant="secondary"
+            size="sm"
+            className="h-9 rounded-xl border border-muted-foreground/10 px-4 shrink-0"
+            onClick={onInfoClick}
           >
-            <Upload className="mr-2 h-4 w-4" />
-            {isUploading ? "Uploading..." : "Upload Resumes"}
+            JD
           </Button>
-        </PermissionGuard>
-      </>
-    }*/
+          <PermissionGuard permissions={PERMISSIONS.CANDIDATES_ACCESS} hideWhenDenied>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 rounded-xl shrink-0"
+              onClick={onUploadClick}
+              disabled={isUploading || !job?.is_active}
+              title={!job?.is_active ? "Resume upload is disabled for inactive jobs" : undefined}
+            >
+              <Upload className="mr-2 h-4 w-4" />
+              {isUploading ? "Uploading..." : "Upload Resumes"}
+            </Button>
+          </PermissionGuard>
+        </>
+      }
     />
   );
 };

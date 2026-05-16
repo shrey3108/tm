@@ -9,6 +9,7 @@ interface PageHeaderProps {
   className?: string;
   breadcrumbs?: ReactNode;
   meta?: ReactNode;
+  breadcrumbActions?: ReactNode;
 }
 
 const PageHeader = ({
@@ -18,6 +19,7 @@ const PageHeader = ({
   className = "",
   breadcrumbs,
   meta,
+  breadcrumbActions,
 }: PageHeaderProps) => {
   return (
     <AppPageHeader
@@ -26,6 +28,7 @@ const PageHeader = ({
       actions={actions}
       breadcrumbs={breadcrumbs}
       meta={meta}
+      breadcrumbActions={breadcrumbActions}
       className={className}
       headingClassName="text-2xl sm:text-4xl capitalize"
     />

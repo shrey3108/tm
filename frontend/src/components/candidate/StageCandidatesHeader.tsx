@@ -1,7 +1,7 @@
-// import { Button } from "@/components/";
+import { Button } from "@/components/ui/button";
 import AppPageHeader from "@/components/shared/AppPageHeader";
 import type { Job } from "@/types/job";
-// import { TranscriptUpload } from "./TranscriptUpload";
+import { TranscriptUpload } from "./TranscriptUpload";
 
 interface StageCandidatesHeaderProps {
   /** Associated job for the candidate stage view */
@@ -29,11 +29,11 @@ export const StageCandidatesHeader = ({
   job,
   candidateName,
   onBack,
-  // onInfoClick,
-  // onSuccess,
-  // stageId,
-  // isUploaded,
-  // stageName
+  onInfoClick,
+  onSuccess,
+  stageId,
+  isUploaded,
+  stageName
 }: StageCandidatesHeaderProps) => {
 
   return (
@@ -50,26 +50,28 @@ export const StageCandidatesHeader = ({
           </span>
         </div>
       }
-    /* actions={
-       <>
+      breadcrumbActions={
+        <>
+          <Button
+            variant="secondary"
+            size="sm"
+            className="h-9 rounded-xl border border-muted-foreground/10 px-4 shrink-0"
+            onClick={onInfoClick}
+          >
+            JD
+          </Button>
 
-         <Button
-           variant="secondary"
-           className="rounded-xl border border-muted-foreground/10 px-5 font-semibold"
-           onClick={onInfoClick}
-         >
-           Info
-         </Button>
-
-         {stageName !== "Resume Screening" && <TranscriptUpload
-           stageId={stageId}
-           className="w-full sm:max-w-xs"
-           job={job!}
-           disabled={isUploaded}
-           onSuccess={onSuccess}
-         />}
-       </>
-     }*/
+          {stageName !== "Resume Screening" && (
+            <TranscriptUpload
+              stageId={stageId}
+              className="w-auto m-0 shrink-0"
+              job={job!}
+              disabled={isUploaded}
+              onSuccess={onSuccess}
+            />
+          )}
+        </>
+      }
     />
   );
 };

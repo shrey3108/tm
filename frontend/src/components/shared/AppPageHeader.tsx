@@ -17,6 +17,7 @@ interface AppPageHeaderProps {
   className?: string;
   contentClassName?: string;
   headingClassName?: string;
+  breadcrumbActions?: ReactNode;
 }
 
 export default function AppPageHeader({
@@ -28,6 +29,7 @@ export default function AppPageHeader({
   className,
   contentClassName,
   headingClassName,
+  breadcrumbActions,
 }: AppPageHeaderProps) {
   return (
     <>
@@ -81,11 +83,16 @@ export default function AppPageHeader({
       </header>
 
       {/* Breadcrumbs Label Row */}
-      {breadcrumbs && (
-        <div className="px-1.5 py-1 border-b border-border/40 bg-muted/5 mb-0.5">
-          <div className="hidden sm:block overflow-hidden">
+      {(breadcrumbs || breadcrumbActions) && (
+        <div className="px-1.5 py-1 border-b border-border/40 bg-muted/5 mb-0.5 flex items-center justify-between gap-4">
+          <div className="hidden sm:block overflow-hidden flex-1 max-w-fit">
             {breadcrumbs}
           </div>
+          {breadcrumbActions && (
+            <div className="flex shrink-0 items-center gap-2">
+              {breadcrumbActions}
+            </div>
+          )}
         </div>
       )}
     </>

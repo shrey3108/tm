@@ -94,33 +94,35 @@ const AdminDashboard = () => {
     <AppPageShell width="wide">
       <PageHeader
         title="Admin Dashboard"
+        breadcrumbActions={
+          <div className="flex items-center justify-end gap-1.5 bg-muted/30 p-1 rounded-xl border border-border/40">
+            <Button
+              variant={viewMode === "report" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("report")}
+              className={cn(
+                "h-8 rounded-lg px-3 transition-all duration-200",
+                viewMode === "report" ? "shadow-sm bg-background text-foreground" : "text-muted-foreground"
+              )}
+            >
+              <FileText className="h-3.5 w-3.5 mr-2" />
+              Report
+            </Button>
+            <Button
+              variant={viewMode === "chart" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("chart")}
+              className={cn(
+                "h-8 rounded-lg px-3 transition-all duration-200",
+                viewMode === "chart" ? "shadow-sm bg-background text-foreground" : "text-muted-foreground"
+              )}
+            >
+              <BarChart3 className="h-3.5 w-3.5 mr-2" />
+              Chart
+            </Button>
+          </div>
+        }
       />
-      <div className="flex items-center justify-end gap-1.5 bg-muted/30 p-1 rounded-xl border border-border/40">
-        <Button
-          variant={viewMode === "report" ? "secondary" : "ghost"}
-          size="sm"
-          onClick={() => setViewMode("report")}
-          className={cn(
-            "h-8 rounded-lg px-3 transition-all duration-200",
-            viewMode === "report" ? "shadow-sm bg-background text-foreground" : "text-muted-foreground"
-          )}
-        >
-          <FileText className="h-3.5 w-3.5 mr-2" />
-          Report
-        </Button>
-        <Button
-          variant={viewMode === "chart" ? "secondary" : "ghost"}
-          size="sm"
-          onClick={() => setViewMode("chart")}
-          className={cn(
-            "h-8 rounded-lg px-3 transition-all duration-200",
-            viewMode === "chart" ? "shadow-sm bg-background text-foreground" : "text-muted-foreground"
-          )}
-        >
-          <BarChart3 className="h-3.5 w-3.5 mr-2" />
-          Chart
-        </Button>
-      </div>
       {viewMode === "report" && (
         <div className="flex flex-col md:flex-row gap-6 items-stretch mb-1 animate-in fade-in slide-in-from-top-2 duration-500">
           <div className="flex-1 mb-2 space-y-2">
