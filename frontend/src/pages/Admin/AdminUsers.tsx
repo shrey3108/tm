@@ -97,10 +97,12 @@ const AdminUsers = () => {
     itemTitle: (user) => `user "${user.full_name || user.email}"`,
   });
 
+  /*
   const handleCreateClick = () => {
     setSelectedUser(null);
     setShowModal(true);
   };
+  */
 
   const handleEditClick = (user: UserAdminRead) => {
     setSelectedUser(user);
@@ -235,11 +237,11 @@ const AdminUsers = () => {
     <AppPageShell width="wide">
       <PageHeader
         title="User Management"
-        actions={
-          <PermissionGuard permissions={PERMISSIONS.USERS_MANAGE} hideWhenDenied>
-            <Button onClick={handleCreateClick}>Create User</Button>
-          </PermissionGuard>
-        }
+      // breadcrumbActions={
+      //   <PermissionGuard permissions={PERMISSIONS.USERS_MANAGE} hideWhenDenied>
+      //     <Button onClick={handleCreateClick} size={"sm"}>Create User</Button>
+      //   </PermissionGuard>
+      // }
       />
 
       {error && !users.length ? (

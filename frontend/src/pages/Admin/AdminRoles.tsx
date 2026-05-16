@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import PermissionGuard from "@/components/auth/PermissionGuard";
 import { PERMISSIONS } from "@/lib/permissions";
 import { useAuth } from "@/store/hooks";
+import { Plus } from "lucide-react";
 
 const AdminRoles = () => {
   const [showPermissionModal, setShowPermissionModal] = useState(false);
@@ -148,7 +149,7 @@ const AdminRoles = () => {
       <PageHeader
         title="Role & Permission Management"
 
-        actions={
+        breadcrumbActions={
           <>
             {/* <PermissionGuard permissions={PERMISSIONS.PERMISSIONS_MANAGE} hideWhenDenied>
             <Button variant="outline" onClick={() => setShowPermissionModal(true)}>
@@ -156,7 +157,9 @@ const AdminRoles = () => {
             </Button>
           </PermissionGuard> */}
             <PermissionGuard permissions={PERMISSIONS.ROLES_MANAGE} hideWhenDenied>
-              <Button onClick={handleCreateRole}>Create Role</Button>
+              <Button onClick={handleCreateRole} size={"sm"} className="gap-2">
+                <Plus className="h-4 w-4" />
+                Create Role</Button>
             </PermissionGuard>
           </>
         }

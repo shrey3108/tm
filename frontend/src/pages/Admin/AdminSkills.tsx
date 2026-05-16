@@ -244,9 +244,9 @@ const AdminSkills = () => {
     <AppPageShell width="wide">
       <PageHeader
         title="Skill Management"
-        actions={
+        breadcrumbActions={
           <PermissionGuard permissions={PERMISSIONS.SKILLS_MANAGE} hideWhenDenied>
-            <Button onClick={handleCreateClick} className="gap-2">
+            <Button onClick={handleCreateClick} size={"sm"} className="gap-2">
               <Plus className="h-4 w-4" />
               Create Skill
             </Button>

@@ -1,5 +1,3 @@
-"use client"
-
 import * as React from "react"
 import { useAppSelector } from "@/store/hooks"
 import { selectCurrentUser } from "@/store/slices/authSlice"
@@ -39,14 +37,14 @@ import {
 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { ClearCacheDialog } from "./clear-cache-dialog"
-import { DefaultPathDialog } from "./default-path-dialog"
+// import { DefaultPathDialog } from "./default-path-dialog"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const navigate = useNavigate();
   const user = useAppSelector(selectCurrentUser)
   const userPermissions = user?.permissions ?? []
   const [isClearCacheDialogOpen, setIsClearCacheDialogOpen] = React.useState(false)
-  const [isDefaultPathDialogOpen, setIsDefaultPathDialogOpen] = React.useState(false)
+  // const [isDefaultPathDialogOpen, setIsDefaultPathDialogOpen] = React.useState(false)
 
   const canSeeAdminNav = hasAnyPermission(userPermissions, [
     PERMISSIONS.ADMIN_ACCESS,
@@ -193,11 +191,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           title: "Prompts",
           url: "/dashboard/admin/settings/prompts",
           permission: [PERMISSIONS.ADMIN_ACCESS, PERMISSIONS.ANALYTICS_READ], // TODO: adjust as per backend API
-        }, {
-          title: "Extraction Path",
-          onClick: () => setIsDefaultPathDialogOpen(true),
-          permission: PERMISSIONS.ADMIN_ACCESS,
-        }, {
+        },
+        // {
+        //   title: "Extraction Path",
+        //   onClick: () => setIsDefaultPathDialogOpen(true),
+        //   permission: PERMISSIONS.ADMIN_ACCESS,
+        // },
+        {
           title: "Clear Cache",
           onClick: () => setIsClearCacheDialogOpen(true),
           permission: PERMISSIONS.SYSTEM_MANAGE,
@@ -277,10 +277,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         open={isClearCacheDialogOpen}
         onOpenChange={setIsClearCacheDialogOpen}
       />
-      <DefaultPathDialog
+      {/* <DefaultPathDialog
         open={isDefaultPathDialogOpen}
         onOpenChange={setIsDefaultPathDialogOpen}
-      />
+      /> */}
     </Sidebar>
   )
 }

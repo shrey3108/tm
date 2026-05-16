@@ -277,11 +277,12 @@ const AdminJobCriteria = () => {
         <AppPageShell width="wide">
             <PageHeader
                 title="Job Criteria Configuration"
-                actions={
+                breadcrumbActions={
                     <PermissionGuard permissions={PERMISSIONS.JOBS_MANAGE} hideWhenDenied>
                         <Button
                             onClick={() => navigate("/dashboard/admin/criteria-stages/criteria/new")}
-                            className="gap-2"
+                            // className="gap-2"
+                            size={"sm"}
                         >
                             <Plus className="h-4 w-4" />
                             Add Criteria
