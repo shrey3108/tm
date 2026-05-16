@@ -178,7 +178,11 @@ const AdminJobStages = () => {
       ),
       cell: ({ row }) => (
         <div className="flex items-center justify-center gap-2">
-          <Switch checked={row.original.is_default ?? false} onCheckedChange={(isChecked) => handleDefaultToggle(row.original, isChecked)} />
+          <Switch 
+            checked={row.original.is_default ?? false} 
+            onCheckedChange={(isChecked) => handleDefaultToggle(row.original, isChecked)} 
+            size="sm"
+          />
         </div>
       ),
     },

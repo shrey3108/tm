@@ -33,27 +33,27 @@ export function ProgressBarChart({ priorityTimeline }: ProgressBarChartProps) {
     return (
         <div className="md:w-full h-auto flex flex-col justify-between p-0 sm:w-full">
             {/* Header Info */}
-            <div className="flex items-center md:justify-between mb-0 gap-4">
+            <div className="flex items-center flex-col md:flex-row  md:justify-between mb-0 gap-4">
                 <div className="space-y-1 shrink-0">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                         <Timer className="w-5 h-5 text-primary" />
                         {priorityTimeline.name}
-                        <div className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
-                            <span className="flex items-center gap-1.5 bg-muted/40 px-2 py-0.5 rounded-md">
+                        <div className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground md:text-sm">
+                            <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-md">
                                 <Calendar className="w-3.5 h-3.5 text-primary/60" />
-                                <DateDisplay date={priorityTimeline.start_date} />
+                                <DateDisplay date={priorityTimeline.start_date} className="text-xs md:text-sm" />
                             </span>
                             <span className="text-muted-foreground font-light">to</span>
-                            <span className="flex items-center gap-1.5 bg-muted/40 px-2 py-0.5 rounded-md">
+                            <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-md">
                                 <Clock className="w-3.5 h-3.5 text-orange-500/60" />
-                                <DateDisplay date={priorityTimeline.due_date} />
+                                <DateDisplay date={priorityTimeline.due_date} className="text-xs md:text-sm" />
                             </span>
                         </div>
                     </div>
                 </div>
 
                 {/* Progress Bar Container - Moved here */}
-                <div className="flex-1 px-2 relative group">
+                <div className="flex-1 px-2 relative group md:w-full w-full">
                     <div className="flex justify-between items-end mb-1">
                         <span className="text-xs font-medium text-primary/80">Hiring Timeline:</span>
                     </div>
