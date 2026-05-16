@@ -241,9 +241,9 @@ const AdminDepartments = () => {
       <PageHeader
         title="Department Management"
 
-        actions={
+        breadcrumbActions={
           <PermissionGuard permissions={PERMISSIONS.DEPARTMENTS_MANAGE} hideWhenDenied>
-            <Button onClick={handleCreateClick} className="gap-2">
+            <Button onClick={handleCreateClick} size={"sm"} className="gap-2">
               <Plus className="h-4 w-4" />
               Create Department
             </Button>

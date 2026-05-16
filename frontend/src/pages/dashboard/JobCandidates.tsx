@@ -138,7 +138,7 @@ export default function JobCandidates() {
           </div>
         ) : (
           /* Candidates View: Stats Cards + Table */
-          <div className="space-y-8 animate-in fade-in slide-in-from-left-4 duration-500">
+          <div className="space-y-4 animate-in fade-in slide-in-from-left-4 duration-500">
             {/* Stats Section */}
             <div className="animate-in fade-in duration-700">
               {loading ? (
@@ -159,8 +159,8 @@ export default function JobCandidates() {
             </div>
 
             {/* Candidate List Section */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between px-2">
+            <div className="space-y-1">
+              <div className="flex items-center justify-between px-1">
                 <h2 className="text-xl font-bold text-foreground">Candidate Pool</h2>
               </div>
               <div className=" p-0 overflow-hidden border-muted-foreground/10 ">

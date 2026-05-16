@@ -76,7 +76,7 @@ export const JobCandidatesHeader = ({
       }
       breadcrumbActions={
         <>
-          <div className="bg-muted/50 p-1 rounded-xl flex items-center border border-border shrink-0">
+          <div className="bg-muted/50 p-1 rounded-xl flex items-center border border-border shrink-0 h-9">
             <button
               onClick={() => setViewMode("candidates")}
               className={cn(

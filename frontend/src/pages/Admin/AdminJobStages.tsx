@@ -178,7 +178,11 @@ const AdminJobStages = () => {
       ),
       cell: ({ row }) => (
         <div className="flex items-center justify-center gap-2">
-          <Switch checked={row.original.is_default ?? false} onCheckedChange={(isChecked) => handleDefaultToggle(row.original, isChecked)} />
+          <Switch
+            checked={row.original.is_default ?? false}
+            onCheckedChange={(isChecked) => handleDefaultToggle(row.original, isChecked)}
+            size="sm"
+          />
         </div>
       ),
     },
@@ -250,9 +254,10 @@ const AdminJobStages = () => {
     <AppPageShell width="wide">
       <PageHeader
         title="Job Stages Configuration"
-        actions={
+        breadcrumbActions={
           <Button
             onClick={() => navigate("/dashboard/admin/criteria-stages/stages/new")}
+            size={"sm"}
             className="gap-2"
           >
             <Plus className="h-4 w-4" />

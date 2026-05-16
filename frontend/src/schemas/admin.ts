@@ -201,6 +201,10 @@ const stageTemplateBaseSchema = z.object({
   description: z.string().trim().optional().nullable(),
   /** Default configuration object for the stage */
   default_config: z.record(z.string().trim(), z.any()),
+  /** Whether this stage is automatically assigned to new jobs */
+  is_default: z.boolean().default(false),
+  /** The default position of this stage in a new pipeline */
+  default_order: z.coerce.number().int().min(0, "Order must be a non-negative integer").optional().nullable(),
 });
 
 /**

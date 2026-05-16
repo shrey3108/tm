@@ -41,7 +41,7 @@ export default function AppPageHeader({
           className
         )}
       >
-        <div className={cn("px-1 py-3 flex flex-col gap-3", contentClassName)}>
+        <div className={cn("px-1 py-2 flex flex-col gap-2", contentClassName)}>
           {/* Navbar Layer: Title and Actions */}
           <div className="flex items-center justify-between gap-4 flex-col sm:flex-row">
             <div className="flex items-center gap-2 overflow-hidden">

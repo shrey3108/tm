@@ -217,9 +217,9 @@ const AdminJobPositions = () => {
     <AppPageShell width="wide">
       <PageHeader
         title="Job Position Management"
-        actions={
+        breadcrumbActions={
           <PermissionGuard permissions={PERMISSIONS.ADMIN_ACCESS} hideWhenDenied>
-            <Button onClick={handleCreateClick} className="gap-2">
+            <Button onClick={handleCreateClick} className="gap-2" size={"sm"}>
               <Plus className="h-4 w-4" />
               Create Position
             </Button>
