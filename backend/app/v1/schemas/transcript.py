@@ -62,10 +62,15 @@ class TranscriptUpdate(BaseModel):
 class TranscriptPathUpload(BaseModel):
     """Payload for processing a transcript from a local file path."""
 
-    file_path: str = Field(
-        ...,
+    file_path: str | None = Field(
+        None,
         description="Full local path to the transcript file. Note: Use double backslashes (\\\\) for Windows paths in JSON.",
         examples=[r"C:\OneDriveTemp\Desktop\New folder (3)\August Infotech _ Heer Patel _ AI_ML Engineer (1).docx"]
+    )
+    file_paths: list[str] | None = Field(
+        None,
+        description="List of full local paths to transcript files.",
+        examples=[[r"C:\path\to\part1.docx", r"C:\path\to\part2.docx"]]
     )
 
 class TranscriptPathUpdate(BaseModel):

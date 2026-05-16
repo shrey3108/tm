@@ -55,7 +55,11 @@ class CandidateStageService:
 
         # 3. Create CandidateStage entries
         new_stages = []
+        default_stage_idx = 0
         for i, js in enumerate(job_stages):
+            if js.is_default:
+                default_stage_idx = i
+            
             cs = CandidateStage(
                 candidate_id=candidate_id,
                 job_stage_id=js.id,
@@ -65,11 +69,15 @@ class CandidateStageService:
             db.add(cs)
             new_stages.append(cs)
 
-        # 3. Update candidate's current_status to the first stage template name
+        # 4. Activate the default stage (or first stage if none marked)
+        new_stages[default_stage_idx].status = "active"
+        new_stages[default_stage_idx].started_at = datetime.utcnow()
+
+        # 5. Update candidate's current_status to the active stage template name
         await db.execute(
             update(Candidate)
             .where(Candidate.id == candidate_id)
-            .values(current_status=job_stages[0].template.name if job_stages[0].template else "Initial Screening")
+            .values(current_status=job_stages[default_stage_idx].template.name if job_stages[default_stage_idx].template else "Initial Screening")
         )
 
         await db.flush()

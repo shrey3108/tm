@@ -693,12 +693,22 @@ class CandidateAdminService:
         # Create a lookup for decisions by stage_config_id
         decisions_by_stage = {}
         for d in hr_decisions:
+            # Map by stage_config_id if present
             if d.stage_config_id:
-                # Keep the latest decision for each stage
                 if d.stage_config_id not in decisions_by_stage or (
                     d.decided_at > decisions_by_stage[d.stage_config_id].decided_at
                 ):
                     decisions_by_stage[d.stage_config_id] = d
+            else:
+                # If no stage_config_id, it's a "Resume Screening" decision.
+                # Map it to the stage with order 0 if it exists.
+                for cs in candidate_stages:
+                    if cs.job_stage and cs.job_stage.stage_order == 0:
+                        if cs.job_stage_id not in decisions_by_stage or (
+                            d.decided_at > decisions_by_stage[cs.job_stage_id].decided_at
+                        ):
+                            decisions_by_stage[cs.job_stage_id] = d
+                        break
         
         def _map_stage(cs) -> CandidateStageSummary:
             is_finished = cs.status in ["completed", "failed", "skipped"]
@@ -1132,7 +1142,17 @@ class CandidateAdminService:
             
             # Search for best match
             for ev in events_map.values():
-                if str(ev.get("job_id")) == dec_job_id_str and ev.get("stage_order") == dec_order:
+                ev_job_id = ev.get("job_id")
+                # Handle potential mismatch in string/UUID types and None values
+                job_matches = False
+                if dec.job_id and ev_job_id:
+                    job_matches = str(dec.job_id).lower() == str(ev_job_id).lower()
+                elif not dec.job_id:
+                    # If decision has no job_id, it might be global or for the applied job
+                    # Assume it matches if order is correct (fallback)
+                    job_matches = True
+                
+                if job_matches and ev.get("stage_order") == dec_order:
                     # If we found a direct stage match, take it and stop searching
                     if ev.get("stage_id"):
                         target_ev = ev

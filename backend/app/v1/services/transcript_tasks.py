@@ -99,15 +99,25 @@ def process_transcript_task(candidate_stage_id_str: str, file_path_str: str, ori
                 db.add(db_file)
                 await db.flush()
 
-                # b. Interview session
-                interview = Interview(
-                    candidate_id=candidate_id,
-                    job_id=current_stage.job_stage.job_id,
-                    interviewer_id=first_user.id,
-                    stage=current_stage.job_stage.stage_order,
-                    status="completed"
-                )
-                db.add(interview)
+                # b. Interview session (Reuse existing if it matches candidate, job, and stage)
+                interview_stmt = select(Interview).where(
+                    Interview.candidate_id == candidate_id,
+                    Interview.job_id == current_stage.job_stage.job_id,
+                    Interview.stage == current_stage.job_stage.stage_order
+                ).limit(1)
+                existing_interview_res = await db.execute(interview_stmt)
+                interview = existing_interview_res.scalar_one_or_none()
+
+                if not interview:
+                    interview = Interview(
+                        candidate_id=candidate_id,
+                        job_id=current_stage.job_stage.job_id,
+                        interviewer_id=first_user.id,
+                        stage=current_stage.job_stage.stage_order,
+                        status="completed"
+                    )
+                    db.add(interview)
+                
                 await db.flush()
 
                 # c. Transcript

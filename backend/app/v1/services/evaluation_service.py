@@ -84,37 +84,60 @@ class EvaluationService:
             span.set_attribute("job_title", job.title or "unknown")
 
         # Load Transcript
+        # Load all interviews for this stage
         interview_stmt = select(Interview).where(
             Interview.candidate_id == candidate.id,
             Interview.job_id == job.id,
             Interview.stage == cs.job_stage.stage_order,
         )
         interview_res = await db.execute(interview_stmt)
-        interview = interview_res.scalars().first()
+        interviews = list(interview_res.scalars().all())
 
-        if not interview:
-            logger.warning(f"No exact interview found for Candidate {candidate.id}, Job {job.id}, Stage {cs.job_stage.stage_order}. Attempting fallback...")
-            # Fallback
-            interview_stmt = (
-                select(Interview).where(Interview.candidate_id == candidate.id).limit(1)
+        if not interviews:
+            logger.warning(f"No exact interviews found for Candidate {candidate.id}, Job {job.id}, Stage {cs.job_stage.stage_order}. Attempting fallback...")
+            # Fallback: Just any interview for this candidate
+            fallback_stmt = (
+                select(Interview).where(Interview.candidate_id == candidate.id).limit(5)
             )
-            interview_res = await db.execute(interview_stmt)
-            interview = interview_res.scalars().first()
-            if interview:
-                logger.info(f"Fallback interview found: {interview.id} (Job: {interview.job_id}, Stage: {interview.stage})")
-            else:
+            fallback_res = await db.execute(fallback_stmt)
+            interviews = list(fallback_res.scalars().all())
+            
+            if not interviews:
                 logger.error(f"No interviews found for candidate {candidate.id} even in fallback.")
                 raise ValueError("No interview found")
+            logger.info(f"Fallback: Found {len(interviews)} interview(s)")
         else:
-            logger.info(f"Primary interview found: {interview.id}")
+            logger.info(f"Primary: Found {len(interviews)} interview(s) for the current stage")
 
+        # Load ALL transcripts for these interviews
+        interview_ids = [i.id for i in interviews]
         transcript_stmt = select(Transcript).where(
-            Transcript.interview_id == interview.id
+            Transcript.interview_id.in_(interview_ids)
         )
         transcript_res = await db.execute(transcript_stmt)
-        transcript = transcript_res.scalar_one_or_none()
-        if not transcript:
-            raise ValueError("No transcript found")
+        transcripts = list(transcript_res.scalars().all())
+        
+        if not transcripts:
+            raise ValueError("No transcripts found for associated interviews")
+
+        # Combine all transcript text for evaluation
+        # We join them with clear separators to help the LLM distinguish sessions if needed
+        combined_transcript_text = "\n\n--- Next Session ---\n\n".join(
+            [t.clean_transcript_text for t in transcripts if t.clean_transcript_text]
+        )
+        
+        if not combined_transcript_text.strip():
+             raise ValueError("Transcripts exist but contain no text content")
+
+        # Create a dummy transcript object or just use the first one as a reference for metadata
+        # Most evaluation logic uses transcript.clean_transcript_text
+        # We'll override the clean_transcript_text in our logic below
+        main_transcript = transcripts[0]
+        main_transcript.clean_transcript_text = combined_transcript_text
+        transcript = main_transcript
+        
+        # Define interview as the primary context for the evaluation record
+        interview = interviews[0]
 
         # 2. LOAD CONFIG (Criteria + Weights)
         # Check for per-candidate override first

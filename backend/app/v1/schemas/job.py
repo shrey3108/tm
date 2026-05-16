@@ -41,6 +41,7 @@ class StageInput(BaseModel):
     template_id: uuid.UUID
     stage_order: int
     is_mandatory: bool = True
+    is_default: bool = False
     config: dict[str, Any] | None = None
 
 

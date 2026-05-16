@@ -71,6 +71,12 @@ class JobStageConfig(Base):
         nullable=False,
     )
 
+    is_default: Mapped[bool] = mapped_column(
+        Boolean(),
+        default=False,
+        nullable=False,
+    )
+
     # TIMESTAMPS
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
