@@ -48,4 +48,6 @@ export interface TimelineEvent {
 export interface HiringTimelineResponse {
   candidate_id: string;
   events: TimelineEvent[];
+  latest_decision: string;
+  current_stage: string
 }

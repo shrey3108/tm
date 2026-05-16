@@ -4,11 +4,13 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { Clock, Loader2, ChevronRight, Calendar } from "lucide-react";
 import { adminCandidateService } from "@/apis/admin/candidate";
-import type { TimelineEvent } from "@/types/candidate";
+import type { HiringTimelineResponse, TimelineEvent } from "@/types/candidate";
 import { TimelineEventDetailModal } from "./TimelineEventDetailModal";
 import { CandidateStatusBadge, DateDisplay } from "@/components/shared";
 import { useNavigate } from "react-router-dom";
 import { slugify } from "@/utils/slug";
+import { Badge } from "@/components";
+
 
 
 interface CandidateTimelineProps {
@@ -46,7 +48,7 @@ export function CandidateTimeline({
   // setIsJobModalOpen,
   onTranscriptDisableChange
 }: CandidateTimelineProps) {
-  const [events, setEvents] = useState<TimelineEvent[]>([]);
+  const [events, setEvents] = useState<HiringTimelineResponse>();
   const [isLoading, setIsLoading] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<TimelineEvent | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -59,11 +61,11 @@ export function CandidateTimeline({
       setIsLoading(true);
       try {
         const response = await adminCandidateService.getCandidateTimeline(candidateId, jobId);
-        const sortedEvents = [...response.events]
+        // const sortedEvents = [...response.events]
         // .sort(
         //   (a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime()
         // );
-        setEvents(sortedEvents);
+        setEvents(response);
       } catch (error) {
         console.error("Failed to fetch timeline:", error);
       } finally {
@@ -87,16 +89,16 @@ export function CandidateTimeline({
     }
   };
 
-  const firstRejectedIndex = useMemo(() => events.findIndex(e => {
+  const firstRejectedIndex = useMemo(() => events?.events.findIndex(e => {
     const r = e.result?.toLowerCase() || "";
     return r.includes("fail") || r.includes("failed") || r.includes("rejected") || r.includes("reject");
   }), [events]);
 
-  const activeEventIndex = useMemo(() => events.findIndex(e =>
+  const activeEventIndex = useMemo(() => events?.events.findIndex(e =>
     (stageId && e.stage_id === stageId) || e.title === currentStage
   ), [events, stageId, currentStage]);
 
-  const previousEvent = useMemo(() => activeEventIndex > 0 ? events[activeEventIndex - 1] : null, [events, activeEventIndex]);
+  const previousEvent = useMemo(() => activeEventIndex && activeEventIndex > 0 ? events?.events[activeEventIndex - 1] : null, [events, activeEventIndex]);
 
   const isPreviousStagePending = useMemo(() => previousEvent ? (() => {
     const r = previousEvent.hr_decision?.toLowerCase() || "";
@@ -106,7 +108,7 @@ export function CandidateTimeline({
     return r.includes("pending") || isOngoing;
   })() : false, [previousEvent]);
 
-  const resumeEvent = useMemo(() => events.find(e => e.title === "Resume Screening"), [events]);
+  const resumeEvent = useMemo(() => events?.events.find(e => e.title === "Resume Screening"), [events]);
 
   const isResumePending = useMemo(() => resumeEvent ? (() => {
     const r = resumeEvent.hr_decision?.toLowerCase() || "";
@@ -126,7 +128,7 @@ export function CandidateTimeline({
     );
   }, [isPolling, currentStage, isPreviousStagePending, isResumePending, firstRejectedIndex, onTranscriptDisableChange]);
 
-  if (events.length === 0) return null;
+  if (events?.events.length === 0) return null;
 
   if (isLoading) {
     return (
@@ -170,7 +172,7 @@ export function CandidateTimeline({
       </div>
       <ScrollArea className="w-full whitespace-nowrap rounded-md border-0">
         <div className="flex w-max space-x-1 p-1">
-          {events.map((event, index) => {
+          {events?.events.map((event, index) => {
             // @ts-expect-error - event_type might not be in all events
             const _isDecision = event.event_type === "decision";
             const resultLower = event.result?.toLowerCase() || "";
@@ -179,7 +181,8 @@ export function CandidateTimeline({
             const isOngoing = resultLower.includes("ongoing") || (!event.result && !isCompleted);
             const isPending = resultLower.includes("pending") || isOngoing;
             const isSelected = event.title === selectedStage;
-            const isAfterRejection = firstRejectedIndex !== -1 && index > firstRejectedIndex;
+            const isAfterRejection = firstRejectedIndex !== -1 && index > (firstRejectedIndex ?? 0);
+            const isActuallyActive = events?.current_stage ? event.title === events.current_stage : isOngoing;
 
             return (
               <React.Fragment key={index}>
@@ -203,13 +206,20 @@ export function CandidateTimeline({
                     isAfterRejection && "opacity-40 grayscale-[0.5]"
                   )}
                 >
-                  <div className="space-y-0.5 min-h-[38px]">
-                    <h4 className={cn(
-                      "font-black text-xs text-wrap line-clamp-1",
-                      isSelected ? "text-black font-bold dark:text-white" : isPending ? "text-foreground" : "text-foreground/90"
-                    )} title={event.title}>
-                      {event.title}
-                    </h4>
+                  <div className="space-y-1 min-h-[38px]">
+                    <div className="flex items-center justify-between gap-2">
+                      <h4 className={cn(
+                        "font-black text-xs text-wrap line-clamp-1",
+                        isSelected ? "text-black font-bold dark:text-white" : isPending ? "text-foreground" : "text-foreground/90"
+                      )} title={event.title}>
+                        {event.title}
+                      </h4>
+                      {isActuallyActive && (
+                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 bg-primary/20 text-primary border-primary/30 font-black uppercase tracking-tighter whitespace-nowrap">
+                          Current
+                        </Badge>
+                      )}
+                    </div>
                     <p className={cn(
                       "text-xs font-bold uppercase tracking-tighter flex items-center gap-1",
                       isPending ? "text-foreground/70" : "text-muted-foreground"
@@ -243,7 +253,7 @@ export function CandidateTimeline({
                   </div>
                 </Card>
 
-                {index < events.length - 1 && (
+                {index < events.events.length - 1 && (
                   <div className="flex items-center justify-center shrink-0 self-center">
                     <ChevronRight className="h-4 w-4 text-muted-foreground/30" />
                   </div>
