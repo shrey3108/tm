@@ -14,16 +14,19 @@ export const transcriptService = {
   /**
    * Upload a transcript file for a specific candidate stage.
    * @param candidateStageId - UUID of the candidate stage to upload transcript for.
-   * @param filePath - Path to the transcript file (.docx, .pdf, .txt).
+   * @param files - Array of transcript files to upload.
    * @returns Upload response with success message and stage ID.
    */
   uploadTranscript: async (
     candidateStageId: string,
-    filePath: string,
+    files: File[],
   ): Promise<TranscriptUploadResponse> => {
+    const formData = new FormData();
+    files.forEach(file => formData.append('files', file));
+    // TODO: change API when backend update the code for transcript file upload
     const response = await apiClient.post<TranscriptUploadResponse>(
       `/transcripts/upload-path/${candidateStageId}`,
-      { file_path: filePath },
+      formData
     );
     return response.data;
   },

@@ -60,13 +60,13 @@ export function CandidateHistoryGrid({
               Recent Transcripts
             </span>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-1">
             {transcriptHistory.map((t, index) => (
               <Button
                 key={t.id}
                 onClick={() => onTranscriptClick(t.id)}
                 variant="outline"
-                className="w-full h-auto flex flex-col items-start p-3 rounded-lg hover:bg-accent transition-colors text-left"
+                className="w-full h-auto flex flex-col items-start p-2 rounded-lg hover:bg-accent transition-colors text-left"
               >
                 <div className="flex flex-col items-start gap-1">
                   <span className="text-[10px] font-black text-muted-foreground leading-none">

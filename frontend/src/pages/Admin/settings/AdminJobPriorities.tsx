@@ -301,7 +301,7 @@ const AdminJobPriorities = () => {
     <AppPageShell width="wide">
       <PageHeader
         title="Job Priorities"
-        subtitle="Manage job priorities and their durations for the hiring platform."
+        // subtitle="Manage job priorities and their durations for the hiring platform."
         breadcrumbActions={
           <PermissionGuard permissions={PERMISSIONS.ADMIN_ACCESS} hideWhenDenied>
             <Button onClick={handleCreateClick} size={"sm"} className="gap-2">

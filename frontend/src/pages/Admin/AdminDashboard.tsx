@@ -95,7 +95,7 @@ const AdminDashboard = () => {
       <PageHeader
         title="Admin Dashboard"
         breadcrumbActions={
-          <div className="flex items-center justify-end gap-1.5 bg-muted/30 p-1 rounded-xl border border-border/40">
+          <div className="flex items-center justify-end gap-1.5 bg-muted/30 p-1 rounded-xl border border-border/40 h-9">
             <Button
               variant={viewMode === "report" ? "secondary" : "ghost"}
               size="sm"

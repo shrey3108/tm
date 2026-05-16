@@ -22,7 +22,7 @@ interface EvaluationGridProps {
  */
 export function EvaluationGrid({ data }: EvaluationGridProps) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 items-start">
       {Object.entries(data).map(([key, item]) => (
         <Accordion key={key} className="w-full" multiple>
           <EvaluationCard

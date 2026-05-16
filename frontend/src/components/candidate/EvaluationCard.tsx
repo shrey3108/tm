@@ -35,7 +35,7 @@ export function EvaluationCard({
 }: EvaluationCardProps) {
   return (
     <AccordionItem value={title} className={cn(className)}>
-      <AccordionTrigger className={"hover:no-underline text-black"}>
+      <AccordionTrigger className={"hover:no-underline text-black px-2 py-2"}>
         <div className="flex items-center gap-3 flex-wrap">
           <h3 className="text-sm font-bold capitalize tracking-tight">
             {title.replace(/_/g, " ")}

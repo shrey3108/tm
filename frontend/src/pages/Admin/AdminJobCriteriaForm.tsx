@@ -114,13 +114,13 @@ export default function AdminJobCriteriaForm() {
         <AppPageShell width="wide" className="animate-in fade-in duration-500">
             <PageHeader
                 title={isEditMode ? "Edit Job Criteria" : "Create Job Criteria"}
-                subtitle={isEditMode ? "Update the configuration for this evaluation criterion." : "Define a new criterion for candidate evaluation."}
-                actions={
+                // subtitle={isEditMode ? "Update the configuration for this evaluation criterion." : "Define a new criterion for candidate evaluation."}
+                breadcrumbActions={
                     <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => navigate("/dashboard/admin/criteria-stages/criteria")}
-                        className="gap-2"
+                        className="gap-2 h-9"
                     >
                         <ArrowLeft className="h-4 w-4" />
                         Go Back

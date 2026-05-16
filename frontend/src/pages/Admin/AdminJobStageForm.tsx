@@ -56,6 +56,8 @@ export default function AdminJobStageForm() {
                 criteria_ids: [],
                 is_active: true
             },
+            is_default: false,
+            default_order: 0,
         },
     });
 
@@ -87,14 +89,16 @@ export default function AdminJobStageForm() {
         const stateData = location.state as any;
 
         const initializeForm = (template: StageTemplate) => {
-            const { name, description, config } = template;
+            const { name, description, config, is_default, default_order } = template;
             form.reset({
                 name,
                 description: description || "",
                 default_config: {
                     criteria_ids: config?.evaluation_criteria.map(({ id }) => id) || [],
                     // is_active: config?.evaluation_criteria.is_active ?? true
-                }
+                },
+                is_default: is_default || false,
+                default_order: default_order ?? 0,
             });
         };
 
@@ -180,13 +184,14 @@ export default function AdminJobStageForm() {
         <AppPageShell width="wide" className="animate-in fade-in duration-500">
             <PageHeader
                 title={isEditMode ? "Edit Job Stage" : "Create Job Stage"}
-                subtitle={isEditMode ? "Update the configuration for this recruitment stage." : "Define a new recruitment stage template."}
-                actions={
+                // subtitle={isEditMode ? "Update the configuration for this recruitment stage." : "Define a new recruitment stage template."}
+                breadcrumbActions={
                     <Button
                         variant="outline"
                         size="sm"
                         onClick={() => navigate("/dashboard/admin/criteria-stages/stages")}
-                        className="gap-2"
+
+                        className="gap-2 h-9"
                     >
                         <ArrowLeft className="h-4 w-4" />
                         Go Back
@@ -260,6 +265,51 @@ export default function AdminJobStageForm() {
                                                 onCheckedChange={field.onChange}
                                             />
                                         </FormControl>
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={form.control}
+                                name="is_default"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm">
+                                        <div className="space-y-0.5">
+                                            <FormLabel className="text-base font-bold">Default Stage</FormLabel>
+                                            <FormDescription>
+                                                Indicate if this stage should be automatically added to new jobs.
+                                            </FormDescription>
+                                        </div>
+                                        <FormControl>
+                                            <Switch
+                                                checked={field.value}
+                                                onCheckedChange={field.onChange}
+                                            />
+                                        </FormControl>
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={form.control}
+                                name="default_order"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Default Order</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type="number"
+                                                min={0}
+                                                placeholder="e.g. 0"
+                                                {...field}
+                                                value={field.value ?? ""}
+                                                onChange={(e) => field.onChange(e.target.value === "" ? null : parseInt(e.target.value, 10))}
+                                            />
+                                        </FormControl>
+                                        <FormDescription>
+                                            The default position of this stage in a new pipeline.
+                                        </FormDescription>
+                                        <FormMessage />
                                     </FormItem>
                                 )}
                             />

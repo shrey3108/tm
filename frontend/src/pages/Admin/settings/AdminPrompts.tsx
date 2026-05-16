@@ -183,7 +183,7 @@ const AdminPrompts = () => {
             <PermissionGuard permissions={[PERMISSIONS.ANALYTICS_READ, PERMISSIONS.ADMIN_ACCESS]}>
                 <PageHeader
                     title="AI Prompts"
-                    subtitle="View the AI prompts used for candidate analysis and resume screening."
+                // subtitle="View the AI prompts used for candidate analysis and resume screening."
                 />
 
 

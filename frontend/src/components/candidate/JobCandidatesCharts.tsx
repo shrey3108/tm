@@ -180,7 +180,7 @@ export function JobCandidatesCharts({
 
   return (
     <div className={cn(
-      "grid grid-cols-1 sm:grid-cols-2 gap-8 mt-4 animate-in fade-in slide-in-from-bottom-4 duration-700 p-0.5",
+      "grid grid-cols-1 sm:grid-cols-2 gap-2 animate-in fade-in slide-in-from-bottom-4 duration-700",
       isRefreshing && "opacity-60 transition-opacity duration-300"
     )}>
       {/* Stage filter indicator */}

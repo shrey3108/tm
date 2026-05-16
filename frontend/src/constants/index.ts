@@ -5,6 +5,8 @@ export const INFO = {
   copyright: `Copyright © ${new Date().getFullYear()} August Infotech Canada and India. All Rights Reserved`,
 } as const;
 
+export const ALLOWED_TRANSCRIPT_FILE_TYPES = [".docx", ".pdf", ".txt"];
+
 export const RESUME_SCREENING_RESULT = {
   PASS: "pass",
   FAIL: "fail",
