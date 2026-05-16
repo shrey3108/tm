@@ -15,7 +15,7 @@ from app.v1.db.models.interviews import Interview
 from app.v1.db.models.transcript_chunks import TranscriptChunk
 from app.v1.db.models.transcripts import Transcript
 from app.v1.db.models.user import User
-from app.v1.utils.transcript_parser import process_transcript_file
+from app.v1.utils.transcript_parser import process_transcript_file, chunk_dialogues
 from app.v1.core.embeddings import EmbeddingService
 from app.v1.services.evaluation_tasks import evaluate_candidate_transcript_task
 from app.v1.core.storage import resolve_storage_path
@@ -23,18 +23,16 @@ from app.v1.core.storage import resolve_storage_path
 logger = logging.getLogger(__name__)
 
 @celery_app.task(name="process_transcript_task")
-def process_transcript_task(candidate_stage_id_str: str, file_path_str: str, original_filename: str):
+def process_transcript_task(candidate_stage_id_str: str, file_infos: list[dict]):
     """
-    Celery task to process an uploaded transcript file.
-    1. Reads the file from disk.
-    2. Parses and chunks the text.
-    3. Generates embeddings.
-    4. Saves to database.
+    Celery task to process one or more uploaded transcript files.
+    1. Reads each file from disk.
+    2. Parses dialogues from each file.
+    3. Merges all dialogues into a single sequence.
+    4. Saves to database as a single Transcript.
     5. Triggers the AI evaluation task.
     """
     candidate_stage_id = uuid.UUID(candidate_stage_id_str)
-    file_path = resolve_storage_path(file_path_str)
-    ext = os.path.splitext(original_filename)[1].lower()
 
     # Async loop setup for Celery
     try:
@@ -42,32 +40,11 @@ def process_transcript_task(candidate_stage_id_str: str, file_path_str: str, ori
     except RuntimeError:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-    
-    if loop.is_running():
-        import nest_asyncio
-        nest_asyncio.apply()
 
     async def run_processing():
         async with async_session_maker() as db:
             try:
-                # 1. Read file
-                if not file_path.exists():
-                    logger.error(f"File not found: {file_path}")
-                    return
-                
-                with open(file_path, "rb") as f:
-                    content = f.read()
-
-                # 2. Parse and Process
-                processed_data = process_transcript_file(content, ext)
-                clean_text = processed_data["raw_clean_text"]
-                
-                # Hash for duplicates
-                import time
-                salt_text = clean_text + f"\n\n[Test Salt: {time.time()}]"
-                transcript_hash = hashlib.sha256(salt_text.encode('utf-8')).hexdigest()
-
-                # 3. Fetch Context
+                # 0. Fetch Context
                 current_stage = await db.get(
                     CandidateStage, 
                     candidate_stage_id, 
@@ -86,20 +63,59 @@ def process_transcript_task(candidate_stage_id_str: str, file_path_str: str, ori
                     logger.error("No users found to assign as file owner")
                     return
 
-                # 4. DB Insertions
-                # a. File entry
-                db_file = DBFile(
-                    owner_id=first_user.id,
-                    candidate_id=candidate_id,
-                    file_name=original_filename,
-                    file_type=ext.replace('.', ''),
-                    size=len(content),
-                    source_url=file_path_str
-                )
-                db.add(db_file)
-                await db.flush()
+                all_dialogues = []
+                primary_file_id = None
+                
+                # 1. Process each file
+                for idx, info in enumerate(file_infos):
+                    file_path_str = info["path"]
+                    original_filename = info["filename"]
+                    
+                    file_path = resolve_storage_path(file_path_str)
+                    ext = os.path.splitext(original_filename)[1].lower()
 
-                # b. Interview session (Reuse existing if it matches candidate, job, and stage)
+                    if not file_path.exists():
+                        logger.error(f"File not found: {file_path}")
+                        continue
+                    
+                    with open(file_path, "rb") as f:
+                        content = f.read()
+
+                    # 2. Parse
+                    processed_data = process_transcript_file(content, ext)
+                    all_dialogues.extend(processed_data.get("dialogues", []))
+
+                    # 3. Save File entry
+                    db_file = DBFile(
+                        owner_id=first_user.id,
+                        candidate_id=candidate_id,
+                        file_name=original_filename,
+                        file_type=ext.replace('.', ''),
+                        size=len(content),
+                        source_url=file_path_str
+                    )
+                    db.add(db_file)
+                    await db.flush()
+                    
+                    # Track the first file as the primary one for the Transcript
+                    if idx == 0:
+                        primary_file_id = db_file.id
+
+                if not all_dialogues:
+                    logger.error("No dialogues extracted from any of the provided files.")
+                    return
+
+                # 4. Merge and finalize
+                # Reconstruct clean text from merged dialogues
+                clean_text = "\n\n".join([d["text"] for d in all_dialogues])
+                
+                # Hash for duplicates
+                import time
+                salt_text = clean_text + f"\n\n[Merge Salt: {time.time()}]"
+                transcript_hash = hashlib.sha256(salt_text.encode('utf-8')).hexdigest()
+
+                # 5. DB Insertions
+                # a. Interview session (Reuse existing if it matches candidate, job, and stage)
                 interview_stmt = select(Interview).where(
                     Interview.candidate_id == candidate_id,
                     Interview.job_id == current_stage.job_stage.job_id,
@@ -120,20 +136,20 @@ def process_transcript_task(candidate_stage_id_str: str, file_path_str: str, ori
                 
                 await db.flush()
 
-                # c. Transcript
+                # b. Transcript
                 transcript = Transcript(
                     interview_id=interview.id,
-                    file_id=db_file.id,
+                    file_id=primary_file_id,
                     clean_transcript_text=clean_text,
                     transcript_hash=transcript_hash,
-                    segments={"dialogues": processed_data["dialogues"]}
+                    segments={"dialogues": all_dialogues}
                 )
                 db.add(transcript)
                 await db.flush()
 
-                # d. Embeddings & Chunks
+                # c. Embeddings & Chunks
                 embedding_service = EmbeddingService()
-                chunks_text = processed_data.get("chunks", [])
+                chunks_text = chunk_dialogues(all_dialogues, chunk_size_turns=10, overlap_turns=2)
                 db_chunks = []
                 
                 for idx, chunk_text in enumerate(chunks_text):
@@ -148,17 +164,16 @@ def process_transcript_task(candidate_stage_id_str: str, file_path_str: str, ori
                     
                 db.add_all(db_chunks)
                 
-                # 5. Commit
+                # 6. Commit
                 await db.commit()
-                logger.info(f"Successfully processed transcript for stage {candidate_stage_id}")
+                logger.info(f"Successfully processed merged transcript for stage {candidate_stage_id} with {len(file_infos)} files.")
 
-                # 6. Trigger AI Evaluation
+                # 7. Trigger AI Evaluation
                 evaluate_candidate_transcript_task.delay(str(candidate_stage_id))
 
             except Exception as e:
                 logger.error(f"Transcript processing failed: {e}")
-                # Set status back or log error
-                # await db.rollback()
+                await db.rollback()
                 raise
 
     return loop.run_until_complete(run_processing())

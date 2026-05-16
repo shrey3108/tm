@@ -183,6 +183,10 @@ class Settings(BaseSettings):
         default="uploads/resumes",
         description="Directory where uploaded resumes are stored",
     )
+    TRANSCRIPT_UPLOAD_DIR: str = Field(
+        default="uploads/transcripts",
+        description="Directory where uploaded interview transcripts are stored",
+    )
     ALLOWED_RESUME_EXTENSIONS: list[str] = Field(
         default=["pdf", "docx"],
         description="List of allowed file extensions for resumes",

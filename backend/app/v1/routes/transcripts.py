@@ -1,6 +1,6 @@
 import hashlib
 import uuid
-from typing import Any
+from typing import Any, List, Annotated
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy import select, delete
@@ -14,7 +14,7 @@ from app.v1.db.models.files import File as DBFile
 from app.v1.db.models.interviews import Interview
 from app.v1.db.models.transcript_chunks import TranscriptChunk
 from app.v1.db.models.transcripts import Transcript
-from app.v1.schemas.transcript import TranscriptUpdate, TranscriptPathUpload, TranscriptPathUpdate
+from app.v1.schemas.transcript import TranscriptUpdate, TranscriptPathUpdate
 from app.v1.db.models.evaluations import Evaluation
 from app.v1.utils.transcript_parser import process_transcript_file
 from app.v1.core.storage import resolve_storage_path
@@ -96,36 +96,21 @@ async def upload_transcript(
 @router.post("/upload-path/{candidate_stage_id}")
 async def upload_transcript_path(
     candidate_stage_id: uuid.UUID,
-    payload: TranscriptPathUpload,
+    files: List[UploadFile] = File(...),
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Ingest transcripts by providing local file paths or filenames.
-    Supports single 'file_path' or multiple 'file_paths'.
-    If just a filename is provided, it resolves against the system-configured default directory.
+    Upload one or more transcript files (docx, pdf, txt) for a specific candidate stage.
+    If multiple files are uploaded, they are merged into a single transcript.
     """
-    from app.v1.db.models.candidate_stages import CandidateStage
-    from app.v1.db.models.job_stage_configs import JobStageConfig
     from app.v1.services.transcript_tasks import process_transcript_task
-    from pathlib import Path
+    
+    if not files:
+        raise HTTPException(status_code=400, detail="No files provided")
 
-    # 1. Gather all paths
-    input_paths = []
-    if payload.file_paths:
-        input_paths.extend(payload.file_paths)
-    if payload.file_path:
-        input_paths.append(payload.file_path)
-
-    if not input_paths:
-        raise HTTPException(
-            status_code=400,
-            detail="Either 'file_path' or 'file_paths' must be provided."
-        )
-
-    # 2. Fetch the candidate stage context once
+    # 1. Fetch the candidate stage context once to verify it exists
     stmt = (
         select(CandidateStage)
-        .options(selectinload(CandidateStage.job_stage).selectinload(JobStageConfig.job))
         .where(CandidateStage.id == candidate_stage_id)
     )
     res = await db.execute(stmt)
@@ -133,36 +118,39 @@ async def upload_transcript_path(
     if not current_stage:
         raise HTTPException(status_code=404, detail="Candidate stage not found")
 
-    resolved_paths = []
-    db_path = await system_setting_repository.get_value(db, "transcript_default_dir")
-    default_dir_str = db_path or "C:/OneDriveTemp/Desktop/hirego/transcripts"
+    # 2. Ensure upload directory exists
+    upload_dir = resolve_storage_path(settings.TRANSCRIPT_UPLOAD_DIR)
+    upload_dir.mkdir(parents=True, exist_ok=True)
 
-    # 3. Process each path
-    for path_str in input_paths:
-        path_obj = Path(path_str)
+    file_infos = []
 
-        # Resolve relative path against default directory if not absolute
-        if not path_obj.is_absolute():
-            path_obj = Path(default_dir_str) / path_str
-            path_str = str(path_obj)
-
-        if not path_obj.exists():
-            # If any file is missing, we could fail fast or skip.
-            # Choosing fail fast for data integrity.
-            raise HTTPException(
-                status_code=404,
-                detail=f"Transcript file not found at path: {path_str}",
-            )
+    # 3. Save each file
+    for f in files:
+        if not f.filename:
+            continue
+            
+        # Create a unique filename to avoid collisions
+        unique_filename = f"{uuid.uuid4()}_{f.filename}"
+        file_path = upload_dir / unique_filename
         
-        filename = path_obj.name
-        resolved_paths.append(path_str)
+        content = await f.read()
+        with open(file_path, "wb") as wb_file:
+            wb_file.write(content)
+            
+        file_infos.append({
+            "path": f"{settings.TRANSCRIPT_UPLOAD_DIR}/{unique_filename}",
+            "filename": f.filename
+        })
 
-        # Trigger background processing
-        process_transcript_task.delay(str(current_stage.id), path_str, filename)
+    if not file_infos:
+        raise HTTPException(status_code=400, detail="No valid files uploaded")
+
+    # 4. Trigger merged background processing
+    process_transcript_task.delay(str(candidate_stage_id), file_infos)
 
     return {
-        "message": f"Processing started for {len(resolved_paths)} transcripts.",
-        "resolved_paths": resolved_paths
+        "message": f"Processing started for {len(file_infos)} files. They will be merged into a single transcript.",
+        "candidate_stage_id": candidate_stage_id
     }
 
 
