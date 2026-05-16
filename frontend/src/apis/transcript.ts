@@ -23,10 +23,14 @@ export const transcriptService = {
   ): Promise<TranscriptUploadResponse> => {
     const formData = new FormData();
     files.forEach(file => formData.append('files', file));
-    // TODO: change API when backend update the code for transcript file upload
     const response = await apiClient.post<TranscriptUploadResponse>(
       `/transcripts/upload-path/${candidateStageId}`,
-      formData
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        }
+      }
     );
     return response.data;
   },
