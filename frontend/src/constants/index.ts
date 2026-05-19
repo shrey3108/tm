@@ -13,9 +13,8 @@ export const RESUME_SCREENING_RESULT = {
 } as const;
 
 export const CROSS_JOB_MATCH = {
-  name: "Cross Job Match"
+  name: "Cross Job Match",
 } as const;
-
 
 export const CHART_TEXTS = {
   hrDecision: {
@@ -46,3 +45,9 @@ export const DEFAULT_PASSING_THRESHOLD = 70.0;
 
 // Max number of bars displayed in location bar chart before showing "...and X more"
 export const MAX_LOCATION_BAR_CHART_DISPLAY_LIMIT = 7;
+
+export const PRIORITY_TIMELINE_COLOR = [
+  { min: 0, max: 50, color: "bg-green-500" },
+  { min: 51, max: 75, color: "bg-yellow-500" },
+  { min: 76, max: 100, color: "bg-red-500" },
+] as const;

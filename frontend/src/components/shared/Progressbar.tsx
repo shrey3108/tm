@@ -2,6 +2,7 @@ import type { PriorityTimeline } from "@/types/admin";
 import { Calendar, Clock, Timer, AlertCircle } from "lucide-react";
 import DateDisplay from "@/components/shared/DateDisplay";
 import { cn } from "@/lib/utils";
+import { PRIORITY_TIMELINE_COLOR } from "@/constants";
 
 interface ProgressBarChartProps {
     priorityTimeline?: PriorityTimeline | null
@@ -20,13 +21,13 @@ export function ProgressBarChart({ priorityTimeline }: ProgressBarChartProps) {
             </div>
         );
     }
-    const getColor = (p: number) => {
-        if (p <= 10) return "bg-green-500";
-        if (p <= 30) return "bg-blue-500";
-        if (p < 50) return "bg-yellow-500";
-        if (p < 70) return "bg-orange-500";
-        return "bg-red-500";
-    };
+    const getPriorityTimelineColor = (progress_pct: number) => {
+        const color = PRIORITY_TIMELINE_COLOR.find(
+            (c) => progress_pct <= c.max && progress_pct >= c.min
+        )?.color;
+        return color;
+    }
+
 
     const safeProgress = Math.min(Math.max(priorityTimeline.progress_pct, 0), 100);
 
@@ -59,8 +60,7 @@ export function ProgressBarChart({ priorityTimeline }: ProgressBarChartProps) {
                     </div>
                     <div className="h-4 w-full bg-muted rounded-full overflow-hidden relative shadow-inner">
                         <div
-                            className={cn(`
-                  ${getColor(priorityTimeline.progress_pct)} h-full transition-all duration-1000 ease-out relative`)}
+                            className={cn(`${getPriorityTimelineColor(priorityTimeline.progress_pct)} h-full transition-all duration-1000 ease-out relative`)}
                             style={{ width: `${safeProgress}%` }}
                         >
                             <div className="absolute inset-0 bg-linear-to-r from-white/20 to-transparent" />

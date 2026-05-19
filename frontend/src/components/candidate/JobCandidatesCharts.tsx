@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { CandidatesDistributionChart, StagesBarChart, LocationBarChart } from "@/components/shared/BarChart";
+import {
+  CandidatesDistributionChart,
+  StagesBarChart,
+  LocationBarChart,
+} from "@/components/shared/BarChart";
 import { ProgressBarChart } from "@/components/shared/Progressbar";
 import { ResultPieChart } from "@/components/shared/ResultPieChart";
 import type { JobStatsResponse } from "@/types/admin";
@@ -13,7 +17,8 @@ import {
   DropdownMenuGroup,
   DropdownMenuLabel,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 
 interface JobCandidatesChartsProps {
   loading: boolean;
@@ -34,8 +39,14 @@ interface JobCandidatesChartsProps {
  */
 function getStageHrStats(
   jobStats: JobStatsResponse | null,
-  stageName: string
-): { totalCandidates: number; approveCount: number; rejectCount: number; maybeCount: number; undecidedCount: number } | null {
+  stageName: string,
+): {
+  totalCandidates: number;
+  approveCount: number;
+  rejectCount: number;
+  maybeCount: number;
+  undecidedCount: number;
+} | null {
   const stageDetail = jobStats?.stage_details?.[stageName];
   if (!stageDetail) return null;
 
@@ -54,7 +65,7 @@ function getStageHrStats(
  */
 function getStageScreening(
   jobStats: JobStatsResponse | null,
-  stageName: string
+  stageName: string,
 ): { passCount: number; failCount: number } | null {
   const stageDetail = jobStats?.stage_details?.[stageName];
   if (!stageDetail) return null;
@@ -108,65 +119,74 @@ export function JobCandidatesCharts({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="center">
         <DropdownMenuGroup>
-          <DropdownMenuLabel className="text-xs uppercase tracking-wider text-muted-foreground px-2 py-1.5">Stages</DropdownMenuLabel>
+          <DropdownMenuLabel className="text-xs uppercase tracking-wider text-muted-foreground px-2 py-1.5">
+            Stages
+          </DropdownMenuLabel>
           {stagesList.map((stage) => {
-            return <DropdownMenuCheckboxItem
-              checked={stage === selectedStage}
-              key={stage} className="rounded-lg my-0.5 capitalize"
-              onClick={() => handleStageClick(stage)}
-              onSelect={(e) => e.preventDefault()}
-            >
-              {stage}
-            </DropdownMenuCheckboxItem>
+            return (
+              <DropdownMenuCheckboxItem
+                checked={stage === selectedStage}
+                key={stage}
+                className="rounded-lg my-0.5 capitalize"
+                onClick={() => handleStageClick(stage)}
+                onSelect={(e) => e.preventDefault()}
+              >
+                {stage}
+              </DropdownMenuCheckboxItem>
+            );
           })}
         </DropdownMenuGroup>
       </DropdownMenuContent>
-
     </DropdownMenu>
   );
 
   const obj: {
     title: string;
     description: string;
-    chart: React.JSX.Element,
+    chart: React.JSX.Element;
     takeFullSpace?: boolean;
-    action?: React.ReactNode
+    action?: React.ReactNode;
   }[] = [
-      {
-        title: CHART_TEXTS.hrDecision.label,
-        description: selectedStage
-          ? `HR decisions for "${selectedStage}" stage`
-          : CHART_TEXTS.hrDecision.description,
-        chart: <CandidatesDistributionChart stats={activeHrStats} />,
-        action: StageSelector
-      },
-      {
-        title: CHART_TEXTS.screeningResults.label,
-        description: selectedStage
-          ? `AI results for "${selectedStage}" stage`
-          : CHART_TEXTS.screeningResults.description,
-        chart: <ResultPieChart passCount={activeScreening.passCount} failCount={activeScreening.failCount} />,
-        action: StageSelector
-      },
-      {
-        title: CHART_TEXTS.recruitmentStages.label,
-        description: CHART_TEXTS.recruitmentStages.description,
-        chart: <StagesBarChart
+    {
+      title: CHART_TEXTS.hrDecision.label,
+      description: selectedStage
+        ? `HR decisions for "${selectedStage}" stage`
+        : CHART_TEXTS.hrDecision.description,
+      chart: <CandidatesDistributionChart stats={activeHrStats} />,
+      action: StageSelector,
+    },
+    {
+      title: CHART_TEXTS.screeningResults.label,
+      description: selectedStage
+        ? `AI results for "${selectedStage}" stage`
+        : CHART_TEXTS.screeningResults.description,
+      chart: (
+        <ResultPieChart
+          passCount={activeScreening.passCount}
+          failCount={activeScreening.failCount}
+        />
+      ),
+      action: StageSelector,
+    },
+    {
+      title: CHART_TEXTS.recruitmentStages.label,
+      description: CHART_TEXTS.recruitmentStages.description,
+      chart: (
+        <StagesBarChart
           stages={jobStats?.stages || {}}
           onStageClick={handleStageClick}
           selectedStage={selectedStage}
-        />,
-        takeFullSpace: true
-      },
-      {
-        title: CHART_TEXTS.locations.label,
-        description: CHART_TEXTS.locations.description,
-        chart: <LocationBarChart locations={jobStats?.location || {}} />,
-        takeFullSpace: true
-      },
-
-    ];
-
+        />
+      ),
+      takeFullSpace: true,
+    },
+    {
+      title: CHART_TEXTS.locations.label,
+      description: CHART_TEXTS.locations.description,
+      chart: <LocationBarChart locations={jobStats?.location || {}} />,
+      takeFullSpace: true,
+    },
+  ];
 
   // TODO: Used when breadcrum won't able to fix !!
   // useEffect(() => {
@@ -179,55 +199,65 @@ export function JobCandidatesCharts({
   // }, [loading, jobStats]); // Only runs when loading status or data changes
 
   return (
-    <div className={cn(
-      "grid grid-cols-1 sm:grid-cols-2 gap-2 animate-in fade-in slide-in-from-bottom-4 duration-700",
-      isRefreshing && "opacity-60 transition-opacity duration-300"
-    )}>
+    <div
+      className={cn(
+        "grid grid-cols-1 sm:grid-cols-2 gap-2 animate-in fade-in slide-in-from-bottom-4 duration-700",
+        isRefreshing && "opacity-60 transition-opacity duration-300",
+      )}
+    >
       {/* Stage filter indicator */}
       {selectedStage && (
         <div className="sm:col-span-2 animate-in fade-in slide-in-from-top-2 duration-300">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/10 border border-primary/20 text-sm font-semibold text-primary">
+          <div className="inline-flex items-center gap-1 p-1 rounded-lg bg-primary/10 border border-primary/20 text-sm font-semibold text-primary">
             <span>Filtering by stage:</span>
             <span className="font-black">{selectedStage}</span>
-            <button
+            <Button
               onClick={() => setSelectedStage(null)}
-              className="ml-1 p-0.5 rounded-full hover:bg-primary/20 transition-colors duration-200"
+              variant={"ghost"}
+              size={"icon"}
+              className="text-primary hover:text-destructive cursor-pointer"
               title="Clear stage filter"
             >
               <X className="h-3.5 w-3.5" />
-            </button>
+            </Button>
           </div>
         </div>
       )}
       {/* Priority Timeline Section */}
       <div className="md:col-span-2 w-full animate-in fade-in slide-in-from-top-4 duration-1000">
         <div className="flex items-center justify-between gap-6 mb-2 border-b border-muted-foreground/10 pb-4">
-          <h4 className="font-black text-xl text-foreground tracking-tight uppercase">{CHART_TEXTS.priorityTimeline.label}</h4>
+          <h4 className="font-black text-lg text-foreground tracking-tight capitalize">
+            {CHART_TEXTS.priorityTimeline.label}
+          </h4>
           <div className="flex-1 flex items-center justify-end animate-in fade-in slide-in-from-right-2 duration-500">
             <ProgressBarChart priorityTimeline={jobStats?.priority_timeline || null} />
           </div>
         </div>
       </div>
-      {
-        obj.map(({ chart, title, description, takeFullSpace, action }) => (
-          <div className={cn("group overflow-hidden relative w-full", takeFullSpace && "md:col-span-2 w-full")} key={title}>
-            <div className="flex items-center justify-between gap-1 mb-2 border-b border-muted-foreground/10 pb-4">
-              <div>
-                <h4 className="font-black text-xl text-foreground tracking-tight uppercase">{title}</h4>
-                <p className="text-sm text-muted-foreground font-medium">{description}</p>
+      {obj.map(({ chart, title, takeFullSpace, action }) => (
+        <div
+          className={cn(
+            "group overflow-hidden relative w-full",
+            takeFullSpace && "md:col-span-2 w-full",
+          )}
+          key={title}
+        >
+          <div className="flex items-center justify-between gap-1 mb-2 border-b border-muted-foreground/10 pb-4">
+            <div>
+              <h4 className="font-black text-lg text-foreground tracking-tight capitalize">
+                {title}
+              </h4>
+              {/* <p className="text-sm text-muted-foreground font-medium">{description}</p> */}
+            </div>
+            {action && (
+              <div className="flex items-center animate-in fade-in slide-in-from-right-2 duration-500">
+                {action}
               </div>
-              {action && (
-                <div className="flex items-center animate-in fade-in slide-in-from-right-2 duration-500">
-                  {action}
-                </div>
-              )}
-            </div>
-            <div className="w-full min-h-[100px] max-h-[300px]">
-              {chart}
-            </div>
+            )}
           </div>
-        ))
-      }
+          <div className="w-full min-h-[100px] max-h-[300px]">{chart}</div>
+        </div>
+      ))}
     </div>
   );
 }
