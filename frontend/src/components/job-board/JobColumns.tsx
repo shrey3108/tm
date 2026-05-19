@@ -1,5 +1,5 @@
-import { Button, Badge, Label, Switch } from "@/components/";
-import { cn } from "@/lib/utils";
+import { Button, Badge } from "@/components/";
+
 import { DateDisplay } from "@/components/shared/DateDisplay";
 import SkillsBadgeList from "@/components/shared/SkillsBadgeList";
 import type { Job } from "@/types/job";
@@ -12,6 +12,7 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import { PERMISSIONS } from "@/lib/permissions";
+import { JobStatus } from "@/components/job/JobStatus";
 
 /**
  * Row-level action callbacks consumed by {@link getJobColumns}.
@@ -41,8 +42,8 @@ export const getJobColumns = ({
   onDelete,
   onEdit,
   onCandidates,
-  onViewSessions,
-  onSessionCandidates,
+  // onViewSessions,
+  // onSessionCandidates,
   loadingJobId,
 }: ColumnHandlers): ColumnDef<Job>[] => [
     {
@@ -121,22 +122,10 @@ export const getJobColumns = ({
       cell: ({ row }) => (
         <PermissionGuard permissions={PERMISSIONS.JOBS_MANAGE} hideWhenDenied>
           <div className="flex items-center justify-center gap-3 max-w-[100px] ">
-            <Switch
-              checked={!!row.original.is_active}
-              onCheckedChange={() => onToggleStatus(row.original)}
-              id={`status-${row.original.id}`}
-              size="sm"
-              disabled={loadingJobId === row.original.id}
+            <JobStatus
+              job={row.original}
+              onToggleStatus={() => onToggleStatus(row.original)}
             />
-            <Label
-              htmlFor={`status-${row.original.id}`}
-              className={cn(
-                "text-sm font-medium transition-colors cursor-pointer",
-                row.original.is_active ? "text-primary" : "text-muted-foreground",
-              )}
-            >
-              {row.original.is_active ? "Active" : "Inactive"}
-            </Label>
           </div>
         </PermissionGuard>
       ),
@@ -159,114 +148,134 @@ export const getJobColumns = ({
         <DateDisplay date={row.getValue("created_at")} showIcon className="text-sm" />
       ),
     },
+    // {
+    //   accessorKey: "activity_sessions",
+    //   // header: "Hiring Activity",
+    //   header: () => {
+    //     return (
+    //       <div className="flex items-center gap-2">
+    //         <span className="font-semibold text-base">Hiring Activity</span>
+    //       </div>
+    //     )
+    //   },
+    //   cell: ({ row }) => {
+    //     const sessions = row.original.activity_sessions || [];
+    //     const displaySessions = sessions.slice(-3).reverse(); // Show last 3 sessions // use -3 and reverse() if reverse needed
+
+    //     const remainingCount = sessions.length - 3;
+    //     const totalCandidates = row.original.total_candidates || 0;
+
+    //     return (
+    //       <div className="flex flex-col gap-0.5 min-w-[140px]">
+    //         {sessions.length === 0 ? (
+    //           <span className="text-xs text-muted-foreground italic">
+    //             No sessions
+    //           </span>
+    //         ) : (
+    //           <>
+    //             {displaySessions.map((s) => (
+    //               <div
+    //                 key={s.session_id}
+    //                 className="flex items-center text-xs"
+    //               // onClick={(e) => {
+    //               //   e.stopPropagation();
+    //               //   onSessionCandidates(row.original, s.start_date, s.end_date);
+    //               // }}
+    //               >
+    //                 <div className="flex items-center gap-1 overflow-hidden">
+    //                   {displaySessions.length > 1 && (
+    //                     <Badge
+    //                       variant="outline"
+    //                       className="h-5 px-1 py-0 text-[10px] leading-none border-primary/20 bg-primary/5"
+    //                     >
+    //                       #{s.session_id}
+    //                     </Badge>
+    //                   )}
+    //                   <span className="truncate mr-0.5">
+    //                     <DateDisplay date={s.start_date} className="text-sm" />
+    //                   </span>
+    //                 </div>
+    //                 <HoverCard>
+    //                   <HoverCardTrigger
+    //                     render={(props) => (
+    //                       <Badge
+    //                         {...props}
+    //                         variant="outline"
+    //                         className="cursor-pointer text-sm font-normal h-5 px-1.5 rounded-md border-muted-foreground/20 hover:border-primary/30 hover:bg-primary/5"
+    //                         onClick={(e) => {
+    //                           e.stopPropagation();
+    //                           onSessionCandidates(row.original, s.start_date, s.end_date as string);
+    //                         }}
+    //                       >
+    //                         <Users className="h-4 w-4" /><span className=" group-hover/session:text-primary transition-colors" >  {s.candidate_count}</span>
+    //                       </Badge>
+    //                     )}
+    //                   />
+    //                   <HoverCardContent side="top" className="w-auto p-2 min-w-0">
+    //                     <div className="text-[14px] font-semibold text-primary">
+    //                       Candidates for this session
+    //                     </div>
+    //                   </HoverCardContent>
+    //                 </HoverCard>
+    //               </div>
+    //             ))}
+    //             {remainingCount > 0 && (
+    //               <Button
+    //                 variant="link"
+    //                 size="sm"
+    //                 className="h-auto p-0 text-primary font-semibold hover:no-underline flex justify-start w-fit group"
+    //                 onClick={() => onViewSessions(row.original)}
+    //               >
+    //                 + {remainingCount} more
+    //                 <span className="ml-1 opacity-100 group-hover:translate-x-1 transition-transform">
+    //                   →
+    //                 </span>
+    //               </Button>
+    //             )}
+    //             {sessions.length <= 3 && (
+    //               <Button
+    //                 variant="link"
+    //                 size="sm"
+    //                 className="h-auto p-0 hover:text-primary transition-colors font-medium hover:no-underline flex justify-start w-fit"
+    //                 onClick={() => onViewSessions(row.original)}
+    //               >
+    //                 View details
+    //               </Button>
+    //             )}
+    //           </>
+    //         )}
+
+    //         <div className="flex items-center gap-1.5 pt-0.5 border-t border-border/40">
+    //           <span className="text-xs font-semibold text-muted-foreground">
+    //             Total candidates:{" "}
+    //             <span className="font-medium text-foreground">
+    //               {totalCandidates}
+    //             </span>
+    //           </span>
+    //         </div>
+    //       </div>
+    //     );
+    //   },
+    // },
     {
-      accessorKey: "activity_sessions",
-      // header: "Hiring Activity",
-      header: () => {
-        return (
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-base">Hiring Activity</span>
-          </div>
-        )
+      accessorKey: "total_candidates",
+      header: ({ column }) => {
+        return <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="hover:bg-transparent p-0 font-semibold text-base"
+        >
+          Total candidates
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
       },
       cell: ({ row }) => {
-        const sessions = row.original.activity_sessions || [];
-        const displaySessions = sessions.slice(-3).reverse(); // Show last 3 sessions // use -3 and reverse() if reverse needed
-
-        const remainingCount = sessions.length - 3;
-        const totalCandidates = row.original.total_candidates || 0;
-
         return (
-          <div className="flex flex-col gap-0.5 min-w-[140px]">
-            {sessions.length === 0 ? (
-              <span className="text-xs text-muted-foreground italic">
-                No sessions
-              </span>
-            ) : (
-              <>
-                {displaySessions.map((s) => (
-                  <div
-                    key={s.session_id}
-                    className="flex items-center text-xs"
-                  // onClick={(e) => {
-                  //   e.stopPropagation();
-                  //   onSessionCandidates(row.original, s.start_date, s.end_date);
-                  // }}
-                  >
-                    <div className="flex items-center gap-1 overflow-hidden">
-                      {displaySessions.length > 1 && (
-                        <Badge
-                          variant="outline"
-                          className="h-5 px-1 py-0 text-[10px] leading-none border-primary/20 bg-primary/5"
-                        >
-                          #{s.session_id}
-                        </Badge>
-                      )}
-                      <span className="truncate mr-0.5">
-                        <DateDisplay date={s.start_date} className="text-sm" />
-                      </span>
-                    </div>
-                    <HoverCard>
-                      <HoverCardTrigger
-                        render={(props) => (
-                          <Badge
-                            {...props}
-                            variant="outline"
-                            className="cursor-pointer text-sm font-normal h-5 px-1.5 rounded-md border-muted-foreground/20 hover:border-primary/30 hover:bg-primary/5"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onSessionCandidates(row.original, s.start_date, s.end_date as string);
-                            }}
-                          >
-                            <Users className="h-4 w-4" /><span className=" group-hover/session:text-primary transition-colors" >  {s.candidate_count}</span>
-                          </Badge>
-                        )}
-                      />
-                      <HoverCardContent side="top" className="w-auto p-2 min-w-0">
-                        <div className="text-[14px] font-semibold text-primary">
-                          Candidates for this session
-                        </div>
-                      </HoverCardContent>
-                    </HoverCard>
-                  </div>
-                ))}
-                {remainingCount > 0 && (
-                  <Button
-                    variant="link"
-                    size="sm"
-                    className="h-auto p-0 text-primary font-semibold hover:no-underline flex justify-start w-fit group"
-                    onClick={() => onViewSessions(row.original)}
-                  >
-                    + {remainingCount} more
-                    <span className="ml-1 opacity-100 group-hover:translate-x-1 transition-transform">
-                      →
-                    </span>
-                  </Button>
-                )}
-                {sessions.length <= 3 && (
-                  <Button
-                    variant="link"
-                    size="sm"
-                    className="h-auto p-0 hover:text-primary transition-colors font-medium hover:no-underline flex justify-start w-fit"
-                    onClick={() => onViewSessions(row.original)}
-                  >
-                    View details
-                  </Button>
-                )}
-              </>
-            )}
-
-            <div className="flex items-center gap-1.5 pt-0.5 border-t border-border/40">
-              <span className="text-xs font-semibold text-muted-foreground">
-                Total candidates:{" "}
-                <span className="font-medium text-foreground">
-                  {totalCandidates}
-                </span>
-              </span>
-            </div>
+          <div className="flex items-center justify-center gap-2">
+            <span className="text-sm font-normal">{row.original.total_candidates}</span>
           </div>
-        );
-      },
+        )
+      }
     },
     {
       accessorKey: "skills",

@@ -1,4 +1,4 @@
-import { Badge, Switch, Label } from "@/components/";
+import { Badge } from "@/components/";
 import AppPageHeader from "@/components/shared/AppPageHeader";
 import PermissionGuard from "@/components/auth/PermissionGuard";
 import type { Job } from "@/types/job";
@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { PERMISSIONS } from "@/lib/permissions";
 import { Button } from "@/components/ui/button";
 import { BarChart3, Upload, Users } from "lucide-react";
+import { JobStatus } from "@/components/job/JobStatus";
 
 interface JobCandidatesHeaderProps {
   job: Job | null;
@@ -43,21 +44,7 @@ export const JobCandidatesHeader = ({
             {job ? (
               <PermissionGuard permissions={PERMISSIONS.JOBS_MANAGE} hideWhenDenied>
                 <div className="flex items-center gap-2">
-                  <Switch
-                    checked={job.is_active}
-                    onCheckedChange={onToggleStatus}
-                    id={`status-${job.id}`}
-                    size="sm"
-                  />
-                  <Label
-                    htmlFor={`status-${job.id}`}
-                    className={cn(
-                      "cursor-pointer text-sm font-medium transition-colors",
-                      job.is_active ? "text-primary" : "text-muted-foreground",
-                    )}
-                  >
-                    {job.is_active ? "Active" : "Inactive"}
-                  </Label>
+                  <JobStatus job={job} onToggleStatus={onToggleStatus} />
                 </div>
               </PermissionGuard>
             ) : null}
