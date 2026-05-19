@@ -26,7 +26,7 @@ class HrDecision(Base):
         candidate_id: FK to the candidate being evaluated.
         stage_config_id: FK to the job stage this decision belongs to.
         user_id: FK to the user making the decision.
-        decision: The decision value — 'approve', 'reject', or 'May Be'.
+        decision: The decision value — 'pass', 'fail', or 'May Be'.
         decided_at: Timestamp when the decision was made.
     """
 
@@ -64,7 +64,7 @@ class HrDecision(Base):
         nullable=False,
     )
 
-    # DECISION FIELD: 'approve', 'reject', 'May Be'
+    # DECISION FIELD: 'pass', 'fail', 'May Be'
     decision: Mapped[str] = mapped_column(
         Text,
         nullable=False,
@@ -73,6 +73,11 @@ class HrDecision(Base):
     # DECISION NOTES
     notes: Mapped[str | None] = mapped_column(
         Text,
+        nullable=True,
+    )
+
+    # DECISION SCORE OUT OF 5
+    score: Mapped[int | None] = mapped_column(
         nullable=True,
     )
 

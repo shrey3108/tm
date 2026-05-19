@@ -250,13 +250,13 @@ async def delete_transcript(
                 .where(
                     HrDecision.candidate_id == interview.candidate_id,
                     HrDecision.stage_config_id == stage.job_stage_id,
-                    HrDecision.decision.in_(["approve", "proceed", "approved"])
+                    HrDecision.decision.in_(["pass", "proceed", "passed"])
                 )
                 .limit(1)
             )
             decision_result = await db.execute(decision_query)
             if decision_result.scalar_one_or_none():
-                raise HTTPException(status_code=400, detail="Cannot delete transcript because the candidate is already approved for this stage.")
+                raise HTTPException(status_code=400, detail="Cannot delete transcript because the candidate has already passed this stage.")
     
     
     # 4. Delete related records

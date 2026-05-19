@@ -409,8 +409,8 @@ class JobStatsService:
 
         return JobHRDecisionStats(
             total_candidates=total_candidates,
-            approved=counts.get("approve", 0) or counts.get("approved", 0),
-            rejected=counts.get("reject", 0) or counts.get("rejected", 0),
+            passed=counts.get("pass", 0) or counts.get("passed", 0),
+            failed=counts.get("fail", 0) or counts.get("failed", 0),
             maybe=counts.get("maybe", 0),
             pending=max(total_candidates - decided_total, 0),
             undecidedCount=max(total_candidates - decided_total, 0)

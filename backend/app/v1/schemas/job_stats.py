@@ -26,8 +26,8 @@ class JobHRDecisionStats(BaseModel):
     """HR decision summary for a job."""
 
     total_candidates: int = 0
-    approved: int = 0
-    rejected: int = 0
+    passed: int = 0
+    failed: int = 0
     maybe: int = 0
     pending: int = 0
     undecidedCount: int = 0
@@ -54,7 +54,7 @@ class JobPriorityTimeline(BaseModel):
 class JobStageDetails(BaseModel):
     """Stage-wise breakdown of HR and AI results."""
     
-    hr_decisions: dict[str, int] = {} # { "approve": 5, "reject": 2, ... }
+    hr_decisions: dict[str, int] = {} # { "pass": 5, "fail": 2, ... }
     ai_results: dict[str, int] = {}    # { "passed": 7, "failed": 3, ... }
 
 

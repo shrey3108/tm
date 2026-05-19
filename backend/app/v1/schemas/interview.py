@@ -36,7 +36,7 @@ class InterviewRead(BaseModel):
 class InterviewDecision(BaseModel):
     """Schema for HR decision after reviewing interview results."""
 
-    decision: Literal["approve", "reject"]
+    decision: Literal["pass", "fail"]
     notes: str | None = None
 
 

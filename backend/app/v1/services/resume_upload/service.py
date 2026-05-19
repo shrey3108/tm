@@ -172,20 +172,20 @@ class ResumeUploadService:
             )
             db.add(new_xm)
 
-            # Check if this candidate is already APPROVED for any other job
+            # Check if this candidate is already PASSED/APPROVED for any other job
             approval_stmt = select(HrDecision.id).where(
                 HrDecision.candidate_id == candidate.id,
-                HrDecision.decision.ilike("approve")
+                HrDecision.decision.ilike("pass")
             ).limit(1)
             is_already_hired = (await db.execute(approval_stmt)).scalar()
             
             if is_already_hired:
-                _log.info(f"Candidate {candidate.id} already approved elsewhere. Auto-rejecting for new job {job_id}")
+                _log.info(f"Candidate {candidate.id} already passed elsewhere. Auto-failing for new job {job_id}")
                 auto_reject = HrDecision(
                     candidate_id=candidate.id,
                     job_id=job_id,
                     user_id=current_user.id,
-                    decision="reject",
+                    decision="fail",
                     notes="Selected for another job"
                 )
                 db.add(auto_reject)

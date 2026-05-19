@@ -712,12 +712,12 @@ class JobAdminService:
             count_val = await db.scalar(session_unique_stmt) or 0
             
             s["candidate_count"] = count_val
-            s["approved_count"] = dec_counts.get("approve", 0)
-            s["rejected_count"] = dec_counts.get("reject", 0)
+            s["passed_count"] = dec_counts.get("pass", 0)
+            s["failed_count"] = dec_counts.get("fail", 0)
             
-            # Pending is total unique minus those with final decisions (approve/reject)
+            # Pending is total unique minus those with final decisions (pass/fail)
             # We use the total unique count for the session as the base
-            decided_total = s["approved_count"] + s["rejected_count"] + dec_counts.get("may be", 0)
+            decided_total = s["passed_count"] + s["failed_count"] + dec_counts.get("may be", 0)
             s["pending_count"] = max(0, count_val - decided_total) + dec_counts.get("may be", 0)
             
             if s["is_current"]:

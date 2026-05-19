@@ -175,9 +175,9 @@ class AnalyticsSummary(BaseModel):
     total_unprocessed: int
     active_jobs: int
     active_users: int
-    approved_count: int
+    passed_count: int
     maybe_count: int
-    reject_count: int
+    failed_count: int
     hr_decision_count: int
     pending_decision_count: int
 

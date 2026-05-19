@@ -23,9 +23,9 @@ class EvaluationRead(BaseModel):
 
 class StageOverrideCreate(BaseModel):
     override_reason: str = Field(..., description="Mandatory reason for overriding the AI evaluation")
-    override_recommendation: Optional[Literal["approve", "reject", "May Be"]] = Field(None, description="Override the AI's final recommendation")
+    override_recommendation: Optional[Literal["pass", "fail", "May Be"]] = Field(None, description="Override the AI's final recommendation")
     criterion_scores: Optional[Dict[str, float]] = Field(None, description="Optional override of specific criteria scores")
 
 class StageDecisionCreate(BaseModel):
-    decision: Literal["approve", "reject", "May Be"] = Field(..., description="Final decision for this stage")
+    decision: Literal["pass", "fail", "May Be"] = Field(..., description="Final decision for this stage")
     notes: Optional[str] = Field(None, description="Optional decision notes")

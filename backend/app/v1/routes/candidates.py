@@ -49,7 +49,7 @@ async def get_job_stats(
       - result: AI screening pass / fail / pending counts (native + cross-matched)
       - location: candidate count grouped by city/location
       - stages: candidate count grouped by hiring pipeline stage name
-      - hr_decisions: HR decision summary (total, approved, rejected, maybe, pending)
+      - hr_decisions: HR decision summary (total, passed, failed, maybe, pending)
     """
     try:
         return await job_stats_service.get_job_stats(
@@ -69,7 +69,7 @@ async def get_job_stats(
 async def search_candidates(
     query: str | None = Query(None, description="General search query (name, email)"),
     job: str | None = Query(None, description="Job name or UUID"),
-    hr_decision: list[str] | None = Query(None, description="Latest HR decision (approved, rejected, maybe)"),
+    hr_decision: list[str] | None = Query(None, description="Latest HR decision (passed, failed, maybe)"),
     city: list[str] | None = Query(None, description="City/Location name(s)"),
     result: list[str] | None = Query(None, description="AI screening result: 'passed', 'failed', or 'pending'"),
     stage_id: list[str] | None = Query(None, description="Hiring pipeline stage name(s) or ID(s)"),
@@ -104,7 +104,7 @@ async def get_job_candidates(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     query: str | None = Query(None, description="Search candidates by first name, last name, or email"),
-    hr_decision: list[str] | None = Query(None, description="Filter by HR decision: 'approve', 'reject', or 'May Be'"),
+    hr_decision: list[str] | None = Query(None, description="Filter by HR decision: 'pass', 'fail', or 'May Be'"),
     jd_version: list[int] | None = Query(None, description="Filter by original JD version number(s)"),
     start_date: datetime | None = Query(None),
     end_date: datetime | None = Query(None),
@@ -176,7 +176,7 @@ async def get_global_decision_summary(
     db: AsyncSession = Depends(get_db),
     user: UserRead = Depends(check_permission("candidates:access")),
 ) -> Any:
-    """Get global HR decision summary — total proceed, reject, May Be, and undecided counts across ALL candidates."""
+    """Get global HR decision summary — total proceed, fail, May Be, and undecided counts across ALL candidates."""
     try:
         return await hr_decision_service.get_decision_summary(db=db)
     except Exception as e:

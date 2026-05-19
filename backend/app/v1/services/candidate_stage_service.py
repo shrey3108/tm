@@ -114,7 +114,7 @@ class CandidateStageService:
             # but since current_status is just a string, we'll check if this is their primary application.
             candidate = await db.get(Candidate, candidate_id)
             if candidate and candidate.applied_job_id == job_id:
-                candidate.current_status = "Rejected"
+                candidate.current_status = "Failed"
             
             await db.flush()
             return current_cs

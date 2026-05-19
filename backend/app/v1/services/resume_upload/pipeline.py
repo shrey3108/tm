@@ -258,7 +258,7 @@ async def _run_resume_pipeline(
                     return
                 # --------------------------------------------------
 
-                from app.v1.utils.text import extract_heuristic_info
+                from app.v1.utils.text import extract_heuristic_info, standardize_to_resume_spaced
                 
                 # Helper to check if a value is effectively missing
                 def is_missing(val):
@@ -297,11 +297,12 @@ async def _run_resume_pipeline(
                         parsed_name = "Candidate"
 
                 # Phone fallback
-                parsed_phone = (
+                raw_phone = (
                     str(normalized["phone"][0]["text"]).strip()
                     if normalized.get("phone") and not is_missing(normalized["phone"][0]["text"])
                     else h_info.get("phone")
                 )
+                parsed_phone = standardize_to_resume_spaced(raw_phone) if raw_phone else None
 
                 # Location fallback
                 parsed_location = None
@@ -352,7 +353,8 @@ async def _run_resume_pipeline(
                 
                 parsed_email = parsed_summary.get("email")
                 parsed_name = parsed_summary.get("name", "Candidate")
-                parsed_phone = parsed_summary.get("phone")
+                raw_phone = parsed_summary.get("phone")
+                parsed_phone = standardize_to_resume_spaced(raw_phone) if raw_phone else None
                 first_name, last_name = split_name(parsed_name)
                 
                 extracted_skill_names_list = parsed_summary.get("skills", [])

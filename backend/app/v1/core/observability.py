@@ -4,7 +4,7 @@ from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.sdk.resources import Resource
-from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from openinference.instrumentation.openai import OpenAIInstrumentor
 from openinference.semconv.resource import ResourceAttributes
 from app.v1.core.config import settings
@@ -43,10 +43,19 @@ def setup_phoenix_tracing(project_name: str | None = None):
         # 2. Provider Setup
         provider = TracerProvider(resource=resource)
         
-        # 3. Exporter Setup (gRPC with Header)
+        # Auto-translate gRPC port (4317) to HTTP/proto endpoint (4318/v1/traces)
+        if collector_endpoint == "http://localhost:4317":
+            collector_endpoint = "http://localhost:4318/v1/traces"
+        elif "phoenix:4317" in collector_endpoint:
+            collector_endpoint = collector_endpoint.replace("phoenix:4317", "phoenix:4318/v1/traces")
+        elif collector_endpoint.endswith(":4317"):
+            collector_endpoint = collector_endpoint.replace(":4317", ":4318/v1/traces")
+        elif not collector_endpoint.endswith("/v1/traces"):
+            collector_endpoint = collector_endpoint.rstrip("/") + "/v1/traces"
+
+        # 3. Exporter Setup (HTTP OTLP)
         exporter = OTLPSpanExporter(
             endpoint=collector_endpoint, 
-            insecure=True,
             headers={"project_name": project_name}
         )
         provider.add_span_processor(BatchSpanProcessor(exporter))
@@ -60,8 +69,8 @@ def setup_phoenix_tracing(project_name: str | None = None):
             instrumentor.uninstrument()
         instrumentor.instrument(tracer_provider=provider, skip_dep_check=True)
 
-        print(f"DEBUG: APPLYING WORKING SCRIPT LOGIC | Project: '{project_name}'")
-        logger.info("Phoenix Tracing initialized for project: %s", project_name)
+        print(f"DEBUG: APPLYING WORKING SCRIPT LOGIC | Project: '{project_name}' | Endpoint: '{collector_endpoint}'")
+        logger.info("Phoenix Tracing initialized for project: %s (using HTTP exporter)", project_name)
 
     except Exception as e:
         logger.error(f"Failed to setup Phoenix tracing: {e}", exc_info=True)
