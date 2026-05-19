@@ -15,6 +15,12 @@ import type { UnifiedCandidate } from "@/types/candidate";
 import { Link } from "react-router-dom";
 import { slugify } from "@/utils/slug";
 import { DEFAULT_PASSING_THRESHOLD, RESUME_SCREENING_RESULT } from "@/constants";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card"
+
 function scoreColor(score: number, threshold: number = DEFAULT_PASSING_THRESHOLD) {
   if (score >= threshold) return "bg-green-500";
   return "bg-red-500";
@@ -170,12 +176,19 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center gap-2">
                 <span className=" text-sm">{score.toFixed(1)}%</span>
-                <div className="w-14 h-1.5 bg-muted rounded-full overflow-hidden">
-                  <div
-                    className={`h-full rounded-full ${scoreColor(score, passing_threshold)}`}
-                    style={{ width: `${score}%` }}
-                  />
-                </div>
+                <HoverCard>
+                  <HoverCardTrigger delay={10} closeDelay={10}>
+                    <div className="relative w-14 h-1.5 bg-muted rounded-full">
+                      <div className={`h-full rounded-full ${scoreColor(score, passing_threshold)}`} style={{ width: `${score}%` }} />
+                      <div className="absolute top-1/2 -translate-y-1/2 w-[2px] h-3 bg-neutral-600 dark:bg-neutral-400 rounded-sm -translate-x-1/2"
+                        style={{ left: `${passing_threshold}%` }} />
+                    </div>
+                  </HoverCardTrigger>
+                  <HoverCardContent className="w-full p-1 py-2 text-xs rounded-lg">
+                    Score: {score.toFixed(1)}%<br />Threshold: {passing_threshold}%
+                  </HoverCardContent>
+                </HoverCard>
+
               </div>
               <CandidateStatusBadge
                 status={

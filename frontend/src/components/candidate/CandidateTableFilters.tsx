@@ -388,7 +388,7 @@ export const CandidateTableFilters = ({
             >
               <span className="truncate">
                 {resumeScreeningFilter.length === 0
-                  ? "Result"
+                  ? "AI Result"
                   : resumeScreeningFilter.length === 1
                     ? resumeScreeningOptions.find((d) => d.value === resumeScreeningFilter[0])?.label ?? resumeScreeningFilter[0]
                     : `${resumeScreeningFilter.length} Results`}
@@ -397,7 +397,7 @@ export const CandidateTableFilters = ({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="min-w-[160px] rounded-xl shadow-lg p-1">
               <DropdownMenuGroup>
-                <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground px-2 py-1.5">Result</DropdownMenuLabel>
+                <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground px-2 py-1.5">AI Result</DropdownMenuLabel>
                 {resumeScreeningOptions.length === 0 ? (
                   <div className="px-2 py-4 text-xs text-center text-muted-foreground">
                     No results in current data
