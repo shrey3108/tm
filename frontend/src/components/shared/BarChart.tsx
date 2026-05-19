@@ -39,8 +39,8 @@ export function CandidatesDistributionChart({ stats }: CandidatesDistributionCha
   const data = [
     // { name: "Total Candidates", value: stats.totalCandidates, gradientId: "gradientTotal" },
     { name: "Approve", value: stats.approveCount, gradientId: "gradientApprove" },
-    { name: "Reject", value: stats.rejectCount, gradientId: "gradientReject" },
     { name: "Maybe", value: stats.maybeCount, gradientId: "gradientMaybe" },
+    { name: "Reject", value: stats.rejectCount, gradientId: "gradientReject" },
     { name: "Pending", value: stats.undecidedCount, gradientId: "gradientPending" },
   ];
 

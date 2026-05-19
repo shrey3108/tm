@@ -48,7 +48,7 @@ export default function AppPageHeader({
               <div className="flex flex-col min-w-0 overflow-hidden">
                 <h1
                   className={cn(
-                    "font-bold tracking-tight text-foreground truncate ",
+                    "font-bold tracking-tight text-foreground truncate",
                     headingClassName
                   )}
                 >
