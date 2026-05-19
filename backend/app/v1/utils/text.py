@@ -5,6 +5,7 @@ Utility functions for text construction from models.
 from __future__ import annotations
 
 import json
+import re
 from typing import Any
 
 
@@ -197,3 +198,64 @@ def extract_heuristic_info(text: str) -> dict[str, Any]:
         "phone": phones[0] if phones else None,
         "links": links
     }
+
+
+def standardize_to_resume_spaced(phone_str: str, default_country_code: str = "+91") -> str:
+    """
+    Parses any raw phone number from a resume and standardizes it 
+    into the '+91 12345 67891' spaced format.
+    Handles multiple phone numbers gracefully by extracting the first valid one.
+    """
+    if not phone_str:
+        return ""
+    
+    # 1. Split by common phone number separators
+    # Standard separators: ; , / \ | and or (case-insensitive)
+    parts = re.split(r'[;,/\\|]|\b(?:or|and)\b', phone_str, flags=re.IGNORECASE)
+    
+    # 2. Iterate through parts and find the first one containing at least 6 digits
+    chosen_part = ""
+    for part in parts:
+        cleaned_digits = re.sub(r'\D', '', part)
+        if len(cleaned_digits) >= 6:
+            chosen_part = part
+            break
+            
+    # If no part has at least 6 digits, fallback to the original string
+    if not chosen_part:
+        chosen_part = phone_str
+
+    # 3. Clean all formatting characters (spaces, hyphens, brackets, dots)
+    cleaned = re.sub(r'[\s().-]', '', chosen_part)
+    
+    # 4. Extract only digits
+    digits = re.sub(r'\D', '', cleaned)
+    
+    if not digits:
+        return ""
+        
+    # 5. Strip leading zero (if present in domestic formats)
+    if digits.startswith('0') and len(digits) > 10:
+        digits = digits[1:]
+
+    # 6. Extract country code and the 10-digit main number
+    if len(digits) > 10:
+        country_code = f"+{digits[:-10]}"
+        main_number = digits[-10:]
+    else:
+        country_code = default_country_code
+        main_number = digits
+
+    # Ensure country code starts with '+'
+    if not country_code.startswith('+'):
+        country_code = f"+{country_code}"
+
+    # 7. Format the 10-digit main number into two groups of 5
+    if len(main_number) == 10:
+        first_five = main_number[:5]
+        last_five = main_number[5:]
+        return f"{country_code} {first_five} {last_five}"
+    
+    # Fallback if the main number doesn't have exactly 10 digits
+    return f"{country_code} {main_number}"
+

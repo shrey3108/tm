@@ -150,7 +150,7 @@ async def candidate_stage_decision(
     db: AsyncSession = Depends(get_db),
     user: UserRead = Depends(check_permission("candidates:decide")),
 ) -> Any:
-    """Final HR decision for this candidate stage (Approve, Reject, May Be)."""
+    """Final HR decision for this candidate stage (Pass, Fail, May Be)."""
     
     # 1. Fetch CandidateStage to get candidate and job info
     from app.v1.db.models.job_stage_configs import JobStageConfig
@@ -166,7 +166,7 @@ async def candidate_stage_decision(
         raise HTTPException(status_code=404, detail="Candidate stage not found")
         
     # 2. Use HRDecisionService to handle the decision
-    # This automatically handles validation, stage advancement, and auto-rejections
+    # This automatically handles validation, stage advancement, and auto-failures
     hr_service = HRDecisionService()
     
     decision_data = HRDecisionCreate(

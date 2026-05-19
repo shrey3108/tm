@@ -46,15 +46,15 @@ class CrossJobMatchService:
                 _log.warning("run_cross_match: candidate not found for resume %s", resume_id)
                 return
 
-            # Skip cross-matching if the candidate is already approved for ANY job
+            # Skip cross-matching if the candidate is already passed/approved for ANY job
             check_approve = await db.execute(
                 select(HrDecision.id).where(
                     HrDecision.candidate_id == orig_candidate.id,
-                    func.lower(HrDecision.decision) == "approve"
+                    func.lower(HrDecision.decision) == "pass"
                 ).limit(1)
             )
             if check_approve.scalar():
-                _log.info("run_cross_match: candidate %s already approved elsewhere — skipping cross-match", orig_candidate.id)
+                _log.info("run_cross_match: candidate %s already passed elsewhere — skipping cross-match", orig_candidate.id)
                 return
 
             # 2. Get embedding — resume level first, fallback to chunks
@@ -273,9 +273,9 @@ class CrossJobMatchService:
             # AND the candidate is NOT approved for any job
             since_date = datetime.now() - timedelta(days=30 * months_limit)
             
-            # Subquery to find candidates who are already approved
+            # Subquery to find candidates who are already passed
             approved_candidates_subq = select(HrDecision.candidate_id).where(
-                func.lower(HrDecision.decision) == "approve"
+                func.lower(HrDecision.decision) == "pass"
             )
 
             resume_stmt = (

@@ -149,12 +149,12 @@ class HRDecisionService:
                     f"Only one 'May Be' decision is allowed per candidate{stage_msg}."
                 )
 
-        # Check "approve" decision limit (only 1 per candidate per stage for THIS job)
-        if decision_data.decision.lower() == "approve" and actual_job_id:
+        # Check "pass" decision limit (only 1 per candidate per stage for THIS job)
+        if decision_data.decision.lower() == "pass" and actual_job_id:
             query = select(func.count(HrDecision.id)).where(
                 HrDecision.candidate_id == candidate_id,
                 HrDecision.job_id == actual_job_id,
-                func.lower(HrDecision.decision) == "approve",
+                func.lower(HrDecision.decision) == "pass",
             )
 
             if stage_config_id:
@@ -168,7 +168,7 @@ class HRDecisionService:
             if approve_count >= 1:
                 stage_msg = f" for this stage" if stage_config_id else " for resume screening"
                 raise ValueError(
-                    f"This candidate has already been approved{stage_msg}. "
+                    f"This candidate has already passed{stage_msg}. "
                 )
 
         # Create the decision
@@ -179,6 +179,7 @@ class HRDecisionService:
             user_id=user_id,
             decision=decision_data.decision,
             notes=decision_data.notes,
+            score=decision_data.score,
         )
 
         db.add(hr_decision)
@@ -190,13 +191,13 @@ class HRDecisionService:
             f"by user {user_id}"
         )
 
-        # Handle auto-rejection from other jobs if this one is approved (Global Email-based Exclusivity)
-        if decision_data.decision.lower() == "approve" and actual_job_id:
-            await self._handle_email_based_global_rejection(db, candidate.email, actual_job_id, user_id)
+        # Handle auto-rejection from other jobs if this one is passed (Global Email-based Exclusivity)
+        if decision_data.decision.lower() == "pass" and actual_job_id:
+            await self._handle_email_based_global_failure(db, candidate.email, actual_job_id, user_id)
 
         
         # Trigger stage advancement in the pipeline
-        if decision_data.decision.lower() in ["approve", "reject"]:
+        if decision_data.decision.lower() in ["pass", "fail"]:
             from app.v1.db.models.candidate_stages import CandidateStage
             from app.v1.db.models.job_stage_configs import JobStageConfig
 
@@ -218,7 +219,7 @@ class HRDecisionService:
             cs_to_advance = cs_res.scalars().first()
 
             if cs_to_advance:
-                success = decision_data.decision.lower() == "approve"
+                success = decision_data.decision.lower() == "pass"
                 
                 # NEW TWO-STEP LOGIC:
                 # If it's an interview stage (Order > 0) and it's pending, just make it active.
@@ -253,7 +254,7 @@ class HRDecisionService:
                     await candidate_stage_service.advance_candidate(db, candidate_id, cs_to_advance.id, success=success)
                     await db.commit()
 
-            elif decision_data.decision.lower() == "approve":
+            elif decision_data.decision.lower() == "pass":
                 # Only initiate pipeline if NO stages exist at all for this job
                 existing_stages_stmt = (
                     select(CandidateStage)
@@ -285,9 +286,9 @@ class HRDecisionService:
                         await db.commit()
                         logger.info(f"Initiated pipeline and advanced from Stage 0 (Resume) for candidate {candidate_id}")
 
-            # Trigger cross-match in background if rejected
-            if decision_data.decision.lower() == "reject":
-                logger.info(f"Rejection detected. Triggering automatic cross-job discovery for candidate {candidate_id} from job context {actual_job_id}.")
+            # Trigger cross-match in background if failed/rejected
+            if decision_data.decision.lower() == "fail":
+                logger.info(f"Failure detected. Triggering automatic cross-job discovery for candidate {candidate_id} from job context {actual_job_id}.")
                 _trigger_cross_match_for_candidate(candidate, job_id=actual_job_id)
 
         # FINAL COMMIT: Save everything (decision + advancement) together
@@ -353,13 +354,13 @@ class HRDecisionService:
         )
         decisions = decisions_result.scalars().all()
 
-        # Group/Deduplicate "Selected for another job" rejections to avoid clutter
+        # Group/Deduplicate "Selected for another job" failures to avoid clutter
         final_decisions = []
         auto_reject_seen = False
         
         for d in decisions:
             is_auto_reject = (
-                d.decision.lower() == "reject" and 
+                d.decision.lower() == "fail" and 
                 d.notes and 
                 "Selected for another job" in d.notes
             )
@@ -373,16 +374,16 @@ class HRDecisionService:
                 final_decisions.append(d)
 
         # Count decisions from the filtered list
-        approve_count = sum(1 for d in final_decisions if d.decision.lower() == "approve")
-        reject_count = sum(1 for d in final_decisions if d.decision.lower() == "reject")
+        pass_count = sum(1 for d in final_decisions if d.decision.lower() == "pass")
+        fail_count = sum(1 for d in final_decisions if d.decision.lower() == "fail")
         may_be_count = sum(1 for d in final_decisions if d.decision == "May Be")
 
         return HRDecisionHistoryResponse(
             candidate_id=candidate_id,
             decisions=[HRDecisionResponse.model_validate(d) for d in final_decisions],
             total_decisions=len(final_decisions),
-            approve_count=approve_count,
-            reject_count=reject_count,
+            pass_count=pass_count,
+            fail_count=fail_count,
             may_be_count=may_be_count,
         )
 
@@ -427,16 +428,16 @@ class HRDecisionService:
                 raise ValueError(
                     "Only one 'May Be' decision is allowed per candidate per stage."
                 )
-        # Check "approve" decision limit (only 1 per candidate per stage for THIS job)
+        # Check "pass" decision limit (only 1 per candidate per stage for THIS job)
         if (
-            decision_data.decision.lower() == "approve"
-            and decision.decision.lower() != "approve"
+            decision_data.decision.lower() == "pass"
+            and decision.decision.lower() != "pass"
             and actual_job_id
         ):
             query = select(func.count(HrDecision.id)).where(
                 HrDecision.candidate_id == decision.candidate_id,
                 HrDecision.job_id == actual_job_id,
-                func.lower(HrDecision.decision) == "approve",
+                func.lower(HrDecision.decision) == "pass",
                 HrDecision.id != decision_id,
             )
             
@@ -450,15 +451,16 @@ class HRDecisionService:
             if approve_count >= 1:
                 stage_msg = f" for stage {actual_stage_id}" if actual_stage_id else ""
                 raise ValueError(
-                    f"This candidate has already been approved for this job{stage_msg}. "
+                    f"This candidate has already passed for this job{stage_msg}. "
                 )
 
         # Update decision
-        was_final_decision = decision.decision.lower() in ["approve", "reject"]
+        was_final_decision = decision.decision.lower() in ["pass", "fail"]
         old_decision = decision.decision.lower()
         
         decision.decision = decision_data.decision
         decision.notes = decision_data.notes
+        decision.score = decision_data.score
         if getattr(decision_data, "job_id", None):
             decision.job_id = decision_data.job_id
         if getattr(decision_data, "stage_config_id", None):
@@ -472,13 +474,13 @@ class HRDecisionService:
             f"by user {user_id}"
         )
 
-        # NEW: Handle auto-rejection from other jobs if this one is now approved
-        if decision_data.decision.lower() == "approve" and old_decision != "approve" and actual_job_id:
-            await self._handle_multi_job_auto_rejection(db, decision.candidate_id, actual_job_id, user_id)
+        # NEW: Handle auto-failure from other jobs if this one is now passed
+        if decision_data.decision.lower() == "pass" and old_decision != "pass" and actual_job_id:
+            await self._handle_multi_job_auto_failure(db, decision.candidate_id, actual_job_id, user_id)
 
         # Trigger stage advancement in the pipeline if it hasn't happened yet
-        # (transitioning from 'May Be' or None to 'approve'/'reject')
-        if decision_data.decision.lower() in ["approve", "reject"] and not was_final_decision:
+        # (transitioning from 'May Be' or None to 'pass'/'fail')
+        if decision_data.decision.lower() in ["pass", "fail"] and not was_final_decision:
             from app.v1.db.models.candidate_stages import CandidateStage
             from app.v1.db.models.job_stage_configs import JobStageConfig
 
@@ -497,12 +499,12 @@ class HRDecisionService:
             cs_to_advance = cs_res.scalar_one_or_none()
 
             if cs_to_advance:
-                success = decision_data.decision.lower() == "approve"
+                success = decision_data.decision.lower() == "pass"
                 await candidate_stage_service.advance_candidate(db, decision.candidate_id, cs_to_advance.id, success=success)
                 await db.commit()
 
-        # Trigger cross-match in background if candidate is now rejected and wasn't before
-        if decision_data.decision.lower() == "reject" and old_decision != "reject":
+        # Trigger cross-match in background if candidate is now failed and wasn't before
+        if decision_data.decision.lower() == "fail" and old_decision != "fail":
             # We need the candidate model with resumes loaded
             candidate_result = await db.execute(
                 select(Candidate)
@@ -511,7 +513,7 @@ class HRDecisionService:
             )
             candidate_to_cross_match = candidate_result.scalar_one_or_none()
             if candidate_to_cross_match:
-                logger.info(f"Transitioned to 'reject'. Triggering automatic cross-job discovery for candidate {decision.candidate_id} from job context {actual_job_id}.")
+                logger.info(f"Transitioned to 'fail'. Triggering automatic cross-job discovery for candidate {decision.candidate_id} from job context {actual_job_id}.")
                 _trigger_cross_match_for_candidate(candidate_to_cross_match, job_id=actual_job_id)
 
         await db.commit()
@@ -555,7 +557,7 @@ class HRDecisionService:
                 .over(
                     partition_by=func.coalesce(HrDecision.candidate_id, func.cast(HrDecision.id, UUID)),
                     order_by=(
-                        case((func.lower(HrDecision.decision) == "approve", 0), (HrDecision.decision == "May Be", 1), else_=2),
+                        case((func.lower(HrDecision.decision) == "pass", 0), (HrDecision.decision == "May Be", 1), else_=2),
                         HrDecision.decided_at.desc()
                     ),
                 )
@@ -575,8 +577,8 @@ class HRDecisionService:
 
         return HRDecisionSummary(
             total_candidates=total_candidates,
-            approved_count=counts.get("approve", 0),
-            reject_count=counts.get("reject", 0),
+            passed_count=counts.get("pass", 0),
+            failed_count=counts.get("fail", 0),
             maybe_count=counts.get("May Be", 0),
             undecided_count=max(total_candidates - decided_total, 0),
         )
@@ -654,8 +656,8 @@ class HRDecisionService:
         return HRJobDecisionSummary(
             job_id=job_id,
             total_candidates=total_candidates,
-            approved_count=counts.get("approve", 0),
-            reject_count=counts.get("reject", 0),
+            passed_count=counts.get("pass", 0),
+            failed_count=counts.get("fail", 0),
             maybe_count=counts.get("May Be", 0),
             undecided_count=max(total_candidates - decided_total, 0),
         )
@@ -796,20 +798,20 @@ class HRDecisionService:
         summary = await self.get_decision_summary(db)
         return {
             "total_candidates": summary.total_candidates,
-            "approved_count": summary.approved_count,
-            "reject_count": summary.reject_count,
+            "passed_count": summary.passed_count,
+            "failed_count": summary.failed_count,
             "maybe_count": summary.maybe_count,
             "undecided_count": summary.undecided_count,
         }
 
-    async def _handle_multi_job_auto_rejection(
+    async def _handle_multi_job_auto_failure(
         self,
         db: AsyncSession,
         candidate_id: uuid.UUID,
-        approved_job_id: uuid.UUID,
+        passed_job_id: uuid.UUID,
         user_id: uuid.UUID,
     ) -> None:
-        """Automatically reject a candidate from all other jobs once approved for one."""
+        """Automatically fail a candidate from all other jobs once passed/approved for one."""
         from app.v1.db.models.candidate_stages import CandidateStage
         from app.v1.db.models.job_stage_configs import JobStageConfig
         from app.v1.db.models.cross_job_matches import CrossJobMatch
@@ -822,23 +824,23 @@ class HRDecisionService:
             return
 
         other_job_ids = set()
-        if candidate.applied_job_id and candidate.applied_job_id != approved_job_id:
+        if candidate.applied_job_id and candidate.applied_job_id != passed_job_id:
             other_job_ids.add(candidate.applied_job_id)
             
         cross_res = await db.execute(
             select(CrossJobMatch.matched_job_id).where(CrossJobMatch.candidate_id == candidate_id)
         )
         for row in cross_res.all():
-            if row[0] != approved_job_id:
+            if row[0] != passed_job_id:
                 other_job_ids.add(row[0])
                 
         if not other_job_ids:
             return
 
-        note = "Auto-rejected because the candidate was accepted for another job."
+        note = "Auto-failed because the candidate was accepted for another job."
 
         for job_id in other_job_ids:
-            # Check if already rejected for this job (avoid duplicate rejections)
+            # Check if already failed for this job (avoid duplicate failures)
             latest_dec_stmt = (
                 select(HrDecision)
                 .where(HrDecision.candidate_id == candidate_id, HrDecision.job_id == job_id)
@@ -848,15 +850,15 @@ class HRDecisionService:
             latest_dec_res = await db.execute(latest_dec_stmt)
             latest_dec = latest_dec_res.scalar_one_or_none()
             
-            if latest_dec and latest_dec.decision.lower() == "reject":
+            if latest_dec and latest_dec.decision.lower() == "fail":
                 continue
                 
-            # Create auto-rejection record
+            # Create auto-failure record
             auto_reject = HrDecision(
                 candidate_id=candidate_id,
                 job_id=job_id,
                 user_id=user_id,
-                decision="reject",
+                decision="fail",
                 notes=note
             )
             db.add(auto_reject)
@@ -882,14 +884,14 @@ class HRDecisionService:
         await db.flush()
 
 
-    async def _handle_email_based_global_rejection(
+    async def _handle_email_based_global_failure(
         self,
         db: AsyncSession,
         email: str | None,
-        approved_job_id: uuid.UUID,
+        passed_job_id: uuid.UUID,
         user_id: uuid.UUID,
     ) -> None:
-        """Reject all candidate records associated with an email from all other jobs."""
+        """Fail all candidate records associated with an email from all other jobs."""
         if not email:
             return
 
@@ -916,7 +918,7 @@ class HRDecisionService:
                         all_linked_jobs.add(row[0])
             
             # 3. Remove the current job (the one we just approved)
-            all_linked_jobs.discard(approved_job_id)
+            all_linked_jobs.discard(passed_job_id)
 
             if all_linked_jobs:
                 for other_job_id in all_linked_jobs:
@@ -929,20 +931,20 @@ class HRDecisionService:
                         if (await db.execute(check_stmt)).scalar():
                             continue
 
-                        # Add auto-reject
+                        # Add auto-fail
                         auto_reject = HrDecision(
                             candidate_id=cid,
                             job_id=other_job_id,
                             user_id=user_id,
-                            decision="reject",
+                            decision="fail",
                             notes="Selected for another job"
                         )
                         db.add(auto_reject)
                 
                 await db.commit()
-                logger.info(f"Global auto-reject for email {email}: Rejected from {len(all_linked_jobs)} other jobs.")
+                logger.info(f"Global auto-fail for email {email}: Failed from {len(all_linked_jobs)} other jobs.")
         except Exception as e:
-            logger.error(f"Failed to global auto-reject candidate {email}: {e}")
+            logger.error(f"Failed to global auto-fail candidate {email}: {e}")
 
 
 # Create service instance

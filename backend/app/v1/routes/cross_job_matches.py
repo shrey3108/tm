@@ -57,10 +57,10 @@ async def trigger_cross_job_match(
     latest_decision_res = await db.execute(latest_decision_stmt)
     latest_decision = latest_decision_res.scalar_one_or_none()
 
-    if not latest_decision or latest_decision.decision.lower() != "reject":
+    if not latest_decision or latest_decision.decision.lower() != "fail":
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Manual discovery is only allowed once a candidate has been explicitly marked as 'rejected' for their applied position."
+            detail="Manual discovery is only allowed once a candidate has been explicitly marked as 'failed' for their applied position."
         )
     
     # Offload to Celery task

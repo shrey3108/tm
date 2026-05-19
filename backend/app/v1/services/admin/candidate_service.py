@@ -149,9 +149,11 @@ class CandidateAdminService:
 
         if hr_decision:
             decision_map = {
-                "approved": "approve",
-                "proceed": "approve",
-                "rejected": "reject",
+                "passed": "pass",
+                "approved": "pass",
+                "proceed": "pass",
+                "failed": "fail",
+                "rejected": "fail",
                 "maybe": "may be",
                 "pending": "pending"
             }
@@ -424,9 +426,11 @@ class CandidateAdminService:
                 
             # Map user-friendly labels to database values
             decision_map = {
-                "approved": "approve",
-                "proceed": "approve",
-                "rejected": "reject",
+                "passed": "pass",
+                "approved": "pass",
+                "proceed": "pass",
+                "failed": "fail",
+                "rejected": "fail",
                 "maybe": "may be"
             }
             hr_decision = [decision_map.get(d.lower(), d.lower()) for d in hr_decision]
@@ -649,10 +653,10 @@ class CandidateAdminService:
         status = "Pending"
         if latest_decision:
             raw_status = str(latest_decision.decision).lower().strip()
-            if raw_status == "approve":
-                status = "Approve"
-            elif raw_status == "reject":
-                status = "Reject"
+            if raw_status in ["pass", "approve"]:
+                status = "Pass"
+            elif raw_status in ["fail", "reject"]:
+                status = "Fail"
             elif raw_status in ["may be", "maybe"]:
                 status = "May Be"
             else:

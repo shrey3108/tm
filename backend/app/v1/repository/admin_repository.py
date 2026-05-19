@@ -477,7 +477,7 @@ class AdminRepository:
         total_resumes = total_passed + total_failed + total_pending + total_unprocessed
 
         # 3. HR Decisions - Strict Deduplication by Unique Individual
-        # Prioritize: Approved (0) > Maybe (1) > Rejected (2)
+        # Prioritize: Approved/Passed (0) > Maybe (1) > Rejected/Failed (2)
         decision_subq = (
             select(
                 func.coalesce(Candidate.email, func.cast(Candidate.id, Text)).label("unique_id"),
@@ -486,7 +486,7 @@ class AdminRepository:
                 .over(
                     partition_by=func.coalesce(Candidate.email, func.cast(Candidate.id, Text)),
                     order_by=(
-                        case((func.lower(HrDecision.decision) == "approve", 0), (func.lower(HrDecision.decision) == "may be", 1), else_=2),
+                        case((func.lower(HrDecision.decision) == "pass", 0), (func.lower(HrDecision.decision) == "may be", 1), else_=2),
                         HrDecision.decided_at.desc()
                     )
                 )
@@ -502,11 +502,11 @@ class AdminRepository:
         )
         decision_counts = {row[0]: row[1] for row in decision_res.all()}
         
-        approved_count = decision_counts.get("approve", 0)
+        passed_count = decision_counts.get("pass", 0)
         maybe_count = decision_counts.get("may be", 0)
-        reject_count = decision_counts.get("reject", 0)
+        failed_count = decision_counts.get("fail", 0)
         
-        hr_decision_count = approved_count + maybe_count + reject_count
+        hr_decision_count = passed_count + maybe_count + failed_count
         pending_decision_count = max(0, total_candidates - hr_decision_count)
 
         return {
@@ -522,9 +522,9 @@ class AdminRepository:
             "total_unprocessed": total_unprocessed,
             "active_jobs": active_jobs,
             "active_users": active_users,
-            "approved_count": approved_count,
+            "passed_count": passed_count,
             "maybe_count": maybe_count,
-            "reject_count": reject_count,
+            "failed_count": failed_count,
             "hr_decision_count": hr_decision_count,
             "pending_decision_count": pending_decision_count,
         }

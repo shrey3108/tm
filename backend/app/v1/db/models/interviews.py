@@ -25,7 +25,7 @@ class Interview(Base):
         job_id: FK to the job/position being interviewed for.
         interviewer_id: FK to the user conducting the interview.
         stage: Interview round number (1=HR screening, 2=Technical, 3=Panel, 4=CTO).
-        status: Current status — 'pending', 'completed', 'rejected', 'cancelled'.
+        status: Current status — 'pending', 'completed', 'failed', 'cancelled'.
         created_at: Timestamp when interview was created.
     """
 
@@ -63,7 +63,7 @@ class Interview(Base):
         default=1,
     )
 
-    # STATUS: 'pending', 'completed', 'rejected', 'cancelled'
+    # STATUS: 'pending', 'completed', 'failed', 'cancelled'
     status: Mapped[str] = mapped_column(
         Text,
         default="pending",
