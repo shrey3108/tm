@@ -19,23 +19,18 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import type { JobCandidatesStatsProps } from "./JobCandidatesStats";
 
 interface JobCandidatesChartsProps {
   loading: boolean;
   isRefreshing: boolean;
-  stats: {
-    totalCandidates: number;
-    approveCount: number;
-    rejectCount: number;
-    maybeCount: number;
-    undecidedCount: number;
-  };
+  stats: JobCandidatesStatsProps;
   jobStats: JobStatsResponse | null;
 }
 
 /**
  * Extracts HR decision stats for a specific stage from jobStats.stage_details.
- * The API returns partial hr_decisions keys like "approve", "reject", "may be".
+ * The API returns partial hr_decisions keys like "pass", "fail", "may be".
  */
 function getStageHrStats(
   jobStats: JobStatsResponse | null,
@@ -51,6 +46,7 @@ function getStageHrStats(
   if (!stageDetail) return null;
 
   const hrDec = stageDetail.hr_decisions ?? {};
+  console.log("hrDec", hrDec);
   const approveCount = hrDec["approve"] ?? 0;
   const rejectCount = hrDec["reject"] ?? 0;
   const maybeCount = hrDec["may be"] ?? 0;
@@ -147,46 +143,46 @@ export function JobCandidatesCharts({
     takeFullSpace?: boolean;
     action?: React.ReactNode;
   }[] = [
-    {
-      title: CHART_TEXTS.hrDecision.label,
-      description: selectedStage
-        ? `HR decisions for "${selectedStage}" stage`
-        : CHART_TEXTS.hrDecision.description,
-      chart: <CandidatesDistributionChart stats={activeHrStats} />,
-      action: StageSelector,
-    },
-    {
-      title: CHART_TEXTS.screeningResults.label,
-      description: selectedStage
-        ? `AI results for "${selectedStage}" stage`
-        : CHART_TEXTS.screeningResults.description,
-      chart: (
-        <ResultPieChart
-          passCount={activeScreening.passCount}
-          failCount={activeScreening.failCount}
-        />
-      ),
-      action: StageSelector,
-    },
-    {
-      title: CHART_TEXTS.recruitmentStages.label,
-      description: CHART_TEXTS.recruitmentStages.description,
-      chart: (
-        <StagesBarChart
-          stages={jobStats?.stages || {}}
-          onStageClick={handleStageClick}
-          selectedStage={selectedStage}
-        />
-      ),
-      takeFullSpace: true,
-    },
-    {
-      title: CHART_TEXTS.locations.label,
-      description: CHART_TEXTS.locations.description,
-      chart: <LocationBarChart locations={jobStats?.location || {}} />,
-      takeFullSpace: true,
-    },
-  ];
+      {
+        title: CHART_TEXTS.hrDecision.label,
+        description: selectedStage
+          ? `HR decisions for "${selectedStage}" stage`
+          : CHART_TEXTS.hrDecision.description,
+        chart: <CandidatesDistributionChart stats={activeHrStats as JobCandidatesStatsProps} />,
+        action: StageSelector,
+      },
+      {
+        title: CHART_TEXTS.screeningResults.label,
+        description: selectedStage
+          ? `AI results for "${selectedStage}" stage`
+          : CHART_TEXTS.screeningResults.description,
+        chart: (
+          <ResultPieChart
+            passCount={activeScreening.passCount}
+            failCount={activeScreening.failCount}
+          />
+        ),
+        action: StageSelector,
+      },
+      {
+        title: CHART_TEXTS.recruitmentStages.label,
+        description: CHART_TEXTS.recruitmentStages.description,
+        chart: (
+          <StagesBarChart
+            stages={jobStats?.stages || {}}
+            onStageClick={handleStageClick}
+            selectedStage={selectedStage}
+          />
+        ),
+        takeFullSpace: true,
+      },
+      {
+        title: CHART_TEXTS.locations.label,
+        description: CHART_TEXTS.locations.description,
+        chart: <LocationBarChart locations={jobStats?.location || {}} />,
+        takeFullSpace: true,
+      },
+    ];
 
   // TODO: Used when breadcrum won't able to fix !!
   // useEffect(() => {

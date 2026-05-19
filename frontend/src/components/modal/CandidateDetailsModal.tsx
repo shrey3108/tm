@@ -54,7 +54,7 @@ interface CandidateDetailsModalProps {
  * Modal dialog that displays a full candidate profile including resume analysis,
  * missing skills, extraordinary points, and the job description version used for screening.
  *
- * Allows HR users to approve, reject, or mark a candidate as "maybe" by submitting
+ * Allows HR users to 'pass', 'fail', or mark a candidate as "maybe" by submitting
  * a screening decision with an optional note. The modal fetches the associated job
  * and its version data on open, and refreshes the screening decision after submission.
  */
@@ -88,6 +88,7 @@ export function CandidateDetailsModal({
     resolver: zodResolver(candidateDecisionSchema),
     defaultValues: {
       note: "",
+      score: 5,
     },
   });
 
@@ -190,10 +191,11 @@ export function CandidateDetailsModal({
   const canTakeDecision =
     !hrDecision || hrDecision.decision.toLowerCase() === "may be";
 
-  const handleAction = (type: "approve" | "reject" | "maybe") => {
+  const handleAction = (type: CandidateDecisionFormValues['decision']) => {
     reset({
       decision: type,
-      note: form.watch("note"),
+      note: form.watch("note") || "",
+      score: form.watch("score") || 5,
     })
     form.clearErrors();
     setShowFeedbackModal(true);
@@ -208,6 +210,7 @@ export function CandidateDetailsModal({
         candidate_id: candidate.id,
         decision: data.decision,
         note: data.note,
+        score: data.score,
       });
       setHrDecision(result);
       // Refresh history to include the new decision
@@ -218,7 +221,7 @@ export function CandidateDetailsModal({
       await onDecisionSubmitted?.();
       toast.success("Decision submitted successfully");
       setShowFeedbackModal(false);
-      form.reset({ note: "" })
+      form.reset({ note: "", score: 5 })
     } catch (error) {
       const errorMessage = extractErrorMessage(error)
       toast.error(errorMessage || "Failed to submit decision");

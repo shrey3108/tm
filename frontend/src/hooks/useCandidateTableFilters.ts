@@ -5,7 +5,7 @@ import { toTitleCase } from "@/lib/utils";
 import { adminLocationService } from "@/apis/admin/location";
 import jobService from "@/apis/job";
 import { slugify } from "@/utils/slug";
-import { DEFAULT_PASSING_THRESHOLD } from "@/constants";
+import { DEFAULT_PASSING_THRESHOLD, HR_DECISION_OPTIONS, RESUME_SCREENING_RESULT } from "@/constants";
 import type { DateRange } from "react-day-picker";
 import { useDebouncedValue } from "./useDebounced";
 
@@ -20,6 +20,16 @@ export interface CandidateActiveFilters {
   activity_session?: string[];
   q?: string;
 }
+
+// TODO: Remove after backend update
+const normalizeHrDecision = (val: string | null | undefined): string => {
+  if (!val) return "pending";
+  const s = val.toLowerCase().trim();
+  if (s === "approve" || s === "approved" || s === "pass" || s === "passed") return "pass";
+  if (s === "reject" || s === "rejected" || s === "fail" || s === "failed") return "fail";
+  if (s === "may be" || s === "maybe") return "may be";
+  return s;
+};
 
 export const useCandidateTableFilters = <T extends UnifiedCandidate>(
   candidates: T[],
@@ -199,7 +209,7 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
       }
       // HR Decision filter
       if (skip !== 'hrDecision' && hrDecisionFilter.length > 0) {
-        const decision = c.hr_decision || 'pending';
+        const decision = normalizeHrDecision(c.hr_decision);
         if (!hrDecisionFilter.some(d => d.toLowerCase() === decision.toLowerCase())) return false;
       }
       // Resume Screening filter
@@ -229,44 +239,30 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
   // Full static option sets — shown on initial load when no cross-filtering is needed
 
   const ALL_HR_DECISION_OPTIONS = [
-    { value: 'approve', label: 'Approve' },
-    { value: 'May Be', label: 'May be' },
-    { value: 'reject', label: 'Reject' },
-    { value: 'pending', label: 'Pending' },
+    { value: "pass", label: HR_DECISION_OPTIONS.PASS },
+    { value: "May Be", label: HR_DECISION_OPTIONS.MAY_BE },
+    { value: "fail", label: HR_DECISION_OPTIONS.FAIL },
+    { value: "pending", label: HR_DECISION_OPTIONS.PENDING },
   ];
 
   const ALL_RESUME_SCREENING_OPTIONS = [
-    { value: 'passed', label: 'Pass' },
-    { value: 'failed', label: 'Fail' }
+    { value: "passed", label: RESUME_SCREENING_RESULT.PASS },
+    { value: "failed", label: RESUME_SCREENING_RESULT.FAIL }
   ];
 
   const HR_DECISION_LABEL_MAP: Record<string, string> = {
-    approve: 'Approve',
-    'may be': 'May be',
-    reject: 'Reject',
-    pending: 'Pending',
+    pass: HR_DECISION_OPTIONS.PASS,
+    "may be": HR_DECISION_OPTIONS.MAY_BE,
+    fail: HR_DECISION_OPTIONS.FAIL,
+    pending: HR_DECISION_OPTIONS.PENDING,
   };
 
   const RESUME_SCREENING_LABEL_MAP: Record<string, string> = {
-    passed: 'Pass',
-    failed: 'Fail',
-    pending: 'Pending',
+    passed: RESUME_SCREENING_RESULT.PASS,
+    failed: RESUME_SCREENING_RESULT.FAIL,
+    pending: HR_DECISION_OPTIONS.PENDING,
   };
 
-  /** True when any filter OTHER than the given one is active */
-  // @ts-ignore
-  const hasOtherFilters = (skip: string) => {
-    if (skip !== 'name' && !!debouncedNameFilter) return true;
-    if (skip !== 'status' && statusFilter.length > 0) return true;
-    if (skip !== 'location' && locationFilter.length > 0) return true;
-    if (skip !== 'job' && jobFilter.length > 0) return true;
-    if (skip !== 'date' && (dateRange?.from || dateRange?.to)) return true;
-    if (skip !== 'hrDecision' && hrDecisionFilter.length > 0) return true;
-    if (skip !== 'resumeScreening' && resumeScreeningFilter.length > 0) return true;
-    if (skip !== 'stage' && stageFilter.length > 0) return true;
-    if (skip !== 'activity' && activitySessionFilter.length > 0) return true;
-    return false;
-  };
 
   // Memoized job options: show all initially, then narrow by cross-filtering when filters are active
   const jobOptions = useMemo(() => {
@@ -297,7 +293,7 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
 
     const set = new Set<string>();
     subset.forEach(c => {
-      const d = (c.hr_decision || 'pending').toLowerCase();
+      const d = normalizeHrDecision(c.hr_decision);
       set.add(d);
     });
     return Array.from(set).sort().map(v => ({
@@ -482,7 +478,7 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
 
       // HR Decision filter (multi-select)
       if (hrDecisionFilter.length > 0) {
-        const decision = c.hr_decision || "pending";
+        const decision = normalizeHrDecision(c.hr_decision);
         if (!hrDecisionFilter.some(d => d.toLowerCase() === decision.toLowerCase())) {
           return false;
         }

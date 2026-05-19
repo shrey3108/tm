@@ -1,4 +1,3 @@
-// import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { DateDisplay } from "@/components/shared/DateDisplay"
 import { History, MessageSquare } from "lucide-react";
@@ -9,18 +8,12 @@ interface DecisionHistoryProps {
   decisions: HrDecisionHistoryItem[];
 }
 
-// function getDecisionBadgeVariant(decision: HrDecisionHistoryItem["decision"]) {
-//   if (decision === "approve") return "default";
-//   if (decision === "reject") return "destructive";
-//   return "secondary";
-// }
-
 export function DecisionHistory({ decisions }: DecisionHistoryProps) {
   if (decisions.length === 0) {
     return null;
   }
 
-  // If there's only 1 decision and it's approve or reject, don't show history
+  // If there's only 1 decision and it's 'pass' or 'fail', don't show history
   if (decisions.length === 1 && decisions[0].decision.toLowerCase() !== "may be") {
     return null;
   }
@@ -49,15 +42,6 @@ export function DecisionHistory({ decisions }: DecisionHistoryProps) {
                   #{decisions.length - index}
                 </span>
                 <CandidateStatusBadge status={decision.decision} />
-                {/* <Badge
-                  variant={decision.decision === "approve" ? "default" : "destructive"}
-                  className={`rounded-full px-2.5 py-0.5 flex items-center gap-1.5 w-fit border-0 shadow-none text-black ${decision.decision === "approve"
-                    ? "bg-green-300 dark:bg-green-300"
-                    : "bg-red-300 dark:bg-red-300"
-                    }`}
-                >
-                  {decision.decision.replace("maybe", "may be")}
-                </Badge> */}
               </div>
               <span className="text-[11px] font-medium text-muted-foreground">
                 Decided on <DateDisplay date={decision.decided_at} className="text-[11px]" />

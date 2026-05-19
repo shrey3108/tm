@@ -77,6 +77,7 @@ export function TimelineEventDetailModal({
                 <div className={cn(
                   "p-2 rounded-lg",
                 )}>
+                  {/* TODO: CHNAGE TO PASS FAIL after backend change*/}
                   {event.result?.toLowerCase().includes("pass") || event.result?.toLowerCase().includes("approve") ? (
                     <CheckCircle2 className="h-6 w-6" />
                   ) : event.result?.toLowerCase().includes("fail") || event.result?.toLowerCase().includes("reject") ? (

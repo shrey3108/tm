@@ -90,12 +90,12 @@ export default function JobCandidates() {
     city: activeFilters.city,
     result: activeFilters.resumeScreening,
   });
-  // @ts-ignore
-  const [selectedCandidate, setSelectedCandidate] = useState<CandidateAnalysis | null>(null);
+
+  const [selectedCandidate, _setSelectedCandidate] = useState<CandidateAnalysis | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isJobModalOpen, setIsJobModalOpen] = useState(false);
-  // @ts-ignore
-  const [modalInitialTab, setModalInitialTab] = useState<"analysis" | "jd" | "cross-job-match">("analysis");
+
+  const [modalInitialTab, _setModalInitialTab] = useState<"analysis" | "jd" | "cross-job-match">("analysis");
   const handleFiltersChange = (filters: CandidateActiveFilters) => {
     setActiveFilters(filters);
     setPagination((prev) => (prev.pageIndex === 0 ? prev : { ...prev, pageIndex: 0 }));
@@ -122,9 +122,6 @@ export default function JobCandidates() {
         setViewMode={setViewMode}
       />
 
-
-
-
       <div className="relative min-h-[400px]">
         {viewMode === "analytics" ? (
           /* Analytics View: Only Charts */
@@ -150,8 +147,8 @@ export default function JobCandidates() {
               ) : (
                 <JobCandidatesStats
                   totalCandidates={stats.totalCandidates}
-                  approveCount={stats.approveCount}
-                  rejectCount={stats.rejectCount}
+                  passedCount={stats.passedCount}
+                  failedCount={stats.failedCount}
                   maybeCount={stats.maybeCount}
                   undecidedCount={stats.undecidedCount}
                 />

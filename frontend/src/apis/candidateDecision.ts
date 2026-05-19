@@ -1,3 +1,4 @@
+import type { CandidateDecisionFormValues } from "@/schemas/candidate";
 import apiClient from "./client";
 
 export interface CandidateDecision {
@@ -12,10 +13,11 @@ export interface CandidateDecision {
 
 export interface CandidateDecisionCreate {
   candidate_id: string;
-  decision: "approve" | "reject" | "May Be";
+  decision: CandidateDecisionFormValues["decision"] | "May Be";
   notes?: string;
   stage_config_id?: string
   job_id?: string
+  score: number;
 }
 
 export interface HrDecisionHistoryItem {
@@ -23,9 +25,10 @@ export interface HrDecisionHistoryItem {
   candidate_id: string;
   stage_config_id: string | null;
   user_id: string;
-  decision: "approve" | "reject" | "May Be";
+  decision: CandidateDecisionFormValues["decision"];
   notes: string | null;
   decided_at: string;
+  score: number;
   stage_name?: string;
 }
 
@@ -39,17 +42,19 @@ export interface HrDecisionHistoryResponse {
 export const candidateDecisionApi = {
   submitDecision: async (data: {
     candidate_id: string;
-    decision: "approve" | "reject" | "maybe";
+    decision: CandidateDecisionFormValues['decision']
     note?: string;
     stage_config_id?: string
     job_id?: string
+    score: number;
   }) => {
     const backendData: CandidateDecisionCreate = {
       candidate_id: data.candidate_id,
       decision: data.decision === "maybe" ? "May Be" : data.decision,
       notes: data.note,
       stage_config_id: data.stage_config_id,
-      job_id: data.job_id
+      job_id: data.job_id,
+      score: data.score
     };
 
     const response = await apiClient.post<CandidateDecision>(

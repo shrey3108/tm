@@ -177,9 +177,9 @@ export interface AnalyticsSummary {
   total_unprocessed: number;
   active_jobs: number;
   active_users: number;
-  approved_count: number;
+  passed_count: number;
   maybe_count: number;
-  reject_count: number;
+  failed_count: number;
   hr_decision_count: number;
   pending_decision_count: number;
 }
@@ -566,10 +566,11 @@ export interface JobResultStats {
  */
 export interface JobHRDecisionStats {
   total_candidates: number;
-  approved: number;
-  rejected: number;
+  passed: number;
+  failed: number;
   maybe: number;
   pending: number;
+  undecidedCount: number;
 }
 
 export interface PriorityTimeline {

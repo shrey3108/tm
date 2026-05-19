@@ -1,6 +1,7 @@
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Rectangle, ResponsiveContainer, Label } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig, } from "@/components/ui/chart"
-import { MAX_LOCATION_BAR_CHART_DISPLAY_LIMIT } from "@/constants";
+import { MAX_LOCATION_BAR_CHART_DISPLAY_LIMIT, HR_DECISION_OPTIONS } from "@/constants";
+import type { JobCandidatesStatsProps } from "@/components/candidate/JobCandidatesStats";
 
 const chartConfig = {
   value: {
@@ -8,48 +9,42 @@ const chartConfig = {
     color: "#3b82f6",
   },
   approve: {
-    label: "Approve",
+    label: HR_DECISION_OPTIONS.PASS,
     color: "hsl(var(--success))",
   },
   reject: {
-    label: "Reject",
+    label: HR_DECISION_OPTIONS.FAIL,
     color: "hsl(var(--destructive))",
   },
   maybe: {
-    label: "Maybe",
+    label: HR_DECISION_OPTIONS.MAY_BE,
     color: "hsl(var(--warning))",
   },
   pending: {
-    label: "Pending",
+    label: HR_DECISION_OPTIONS.PENDING,
     color: "hsl(var(--muted-foreground))",
   },
 } satisfies ChartConfig
 
 interface CandidatesDistributionChartProps {
-  stats: {
-    totalCandidates: number;
-    approveCount: number;
-    rejectCount: number;
-    maybeCount: number;
-    undecidedCount: number;
-  };
+  stats: JobCandidatesStatsProps;
 }
 
 export function CandidatesDistributionChart({ stats }: CandidatesDistributionChartProps) {
   const data = [
     // { name: "Total Candidates", value: stats.totalCandidates, gradientId: "gradientTotal" },
-    { name: "Approve", value: stats.approveCount, gradientId: "gradientApprove" },
-    { name: "Maybe", value: stats.maybeCount, gradientId: "gradientMaybe" },
-    { name: "Reject", value: stats.rejectCount, gradientId: "gradientReject" },
-    { name: "Pending", value: stats.undecidedCount, gradientId: "gradientPending" },
+    { name: HR_DECISION_OPTIONS.PASS, value: stats.passedCount, gradientId: "gradientApprove" },
+    { name: HR_DECISION_OPTIONS.MAY_BE, value: stats.maybeCount, gradientId: "gradientMaybe" },
+    { name: HR_DECISION_OPTIONS.FAIL, value: stats.failedCount, gradientId: "gradientReject" },
+    { name: HR_DECISION_OPTIONS.PENDING, value: stats.undecidedCount, gradientId: "gradientPending" },
   ];
 
   const colors = {
     Total: ["#93c5fd", "#60a5fa"],     // soft blue
-    Approved: ["#86efac", "#4ade80"],  // soft green
-    Rejected: ["#fca5a5", "#f87171"],  // soft red
-    Maybe: ["#fde68a", "#fcd34d"],     // soft amber
-    Pending: ["#cbd5f5", "#a5b4fc"],   // soft slate/indigo
+    [HR_DECISION_OPTIONS.PASS]: ["#86efac", "#4ade80"],  // soft green
+    [HR_DECISION_OPTIONS.MAY_BE]: ["#fde68a", "#fcd34d"],     // soft amber
+    [HR_DECISION_OPTIONS.FAIL]: ["#fca5a5", "#f87171"],  // soft red
+    [HR_DECISION_OPTIONS.PENDING]: ["#cbd5f5", "#a5b4fc"],   // soft slate/indigo
   };
 
   return (
@@ -77,48 +72,48 @@ export function CandidatesDistributionChart({ stats }: CandidatesDistributionCha
               <linearGradient id="gradientApprove" x1="0" y1="0" x2="0" y2="1">
                 <stop
                   offset="0%"
-                  stopColor={colors.Approved[0]}
+                  stopColor={colors[HR_DECISION_OPTIONS.PASS][0]}
                   stopOpacity={0.8}
                 />
                 <stop
                   offset="100%"
-                  stopColor={colors.Approved[1]}
+                  stopColor={colors[HR_DECISION_OPTIONS.PASS][1]}
                   stopOpacity={1}
                 />
               </linearGradient>
               <linearGradient id="gradientReject" x1="0" y1="0" x2="0" y2="1">
                 <stop
                   offset="0%"
-                  stopColor={colors.Rejected[0]}
+                  stopColor={colors[HR_DECISION_OPTIONS.FAIL][0]}
                   stopOpacity={0.8}
                 />
                 <stop
                   offset="100%"
-                  stopColor={colors.Rejected[1]}
+                  stopColor={colors[HR_DECISION_OPTIONS.FAIL][1]}
                   stopOpacity={1}
                 />
               </linearGradient>
               <linearGradient id="gradientMaybe" x1="0" y1="0" x2="0" y2="1">
                 <stop
                   offset="0%"
-                  stopColor={colors.Maybe[0]}
+                  stopColor={colors[HR_DECISION_OPTIONS.MAY_BE][0]}
                   stopOpacity={0.8}
                 />
                 <stop
                   offset="100%"
-                  stopColor={colors.Maybe[1]}
+                  stopColor={colors[HR_DECISION_OPTIONS.MAY_BE][1]}
                   stopOpacity={1}
                 />
               </linearGradient>
               <linearGradient id="gradientPending" x1="0" y1="0" x2="0" y2="1">
                 <stop
                   offset="0%"
-                  stopColor={colors.Pending[0]}
+                  stopColor={colors[HR_DECISION_OPTIONS.PENDING][0]}
                   stopOpacity={0.8}
                 />
                 <stop
                   offset="100%"
-                  stopColor={colors.Pending[1]}
+                  stopColor={colors[HR_DECISION_OPTIONS.PENDING][1]}
                   stopOpacity={1}
                 />
               </linearGradient>

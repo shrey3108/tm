@@ -8,8 +8,15 @@ export const INFO = {
 export const ALLOWED_TRANSCRIPT_FILE_TYPES = [".docx", ".pdf", ".txt"];
 
 export const RESUME_SCREENING_RESULT = {
-  PASS: "pass",
-  FAIL: "fail",
+  PASS: "Pass",
+  FAIL: "Fail",
+} as const;
+
+export const HR_DECISION_OPTIONS = {
+  PASS: "Pass",
+  MAY_BE: "May Be",
+  FAIL: "Fail",
+  PENDING: "Pending",
 } as const;
 
 export const CROSS_JOB_MATCH = {

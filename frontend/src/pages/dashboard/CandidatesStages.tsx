@@ -280,17 +280,18 @@ export default function CandidatesStages() {
     resolver: zodResolver(candidateDecisionSchema),
     defaultValues: {
       note: "",
+      score: 0,
     },
   });
 
-  const handleAction = (type: "approve" | "reject" | "maybe") => {
+  const handleAction = (type: CandidateDecisionFormValues['decision']) => {
     form.reset({
       decision: type,
-      note: form.watch("note"),
+      note: form.watch("note") || "",
+      score: form.watch("score") || 0,
     });
     form.clearErrors();
     setShowFeedbackModal(true);
-
   };
 
   const submitFeedback = async (data: CandidateDecisionFormValues) => {
@@ -301,15 +302,15 @@ export default function CandidatesStages() {
     setIsSubmitting(true);
 
     try {
-      // @ts-ignore
-      const res = await candidateDecisionApi.submitDecision({
+      await candidateDecisionApi.submitDecision({
         candidate_id: candidate.id,
         decision: data.decision,
         note: data.note,
         stage_config_id: currentStage === "Resume Screening" ? undefined : configId as string,
-        job_id: job.id
+        job_id: job.id,
+        score: data.score
       });
-      form.setValue("note", "");
+      form.reset({ note: "", score: 0 });
       toast.success("Decision submitted successfully");
       setShowFeedbackModal(false);
       await fetchHrDecisionHistory();

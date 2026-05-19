@@ -1,15 +1,15 @@
-interface JobCandidatesStatsProps {
+export interface JobCandidatesStatsProps {
   totalCandidates: number;
-  approveCount: number;
-  rejectCount: number;
+  passedCount: number;
+  failedCount: number;
   maybeCount: number;
   undecidedCount: number;
 }
 
 export const JobCandidatesStats = ({
   totalCandidates,
-  approveCount,
-  rejectCount,
+  passedCount,
+  failedCount,
   maybeCount,
   undecidedCount,
 }: JobCandidatesStatsProps) => {
@@ -23,16 +23,16 @@ export const JobCandidatesStats = ({
       hoverBorder: "border-muted-foreground/10",
     },
     {
-      label: "Approve",
-      value: approveCount,
+      label: "Pass",
+      value: passedCount,
       activeColor: "text-green-600",
       labelColor: "text-green-600/70 group-hover:text-green-600",
       hoverBg: "hover:bg-green-500/5",
       hoverBorder: "hover:border-green-500/20",
     },
     {
-      label: "Reject",
-      value: rejectCount,
+      label: "Fail",
+      value: failedCount,
       activeColor: "text-red-600",
       labelColor: "text-red-500/50 group-hover:text-red-500/80",
       hoverBg: "hover:bg-red-500/5",
