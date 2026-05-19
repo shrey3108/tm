@@ -180,6 +180,7 @@ export default function CandidatesStages() {
         toast.success("Evaluation generated successfully!");
         fetchHistory(); // Refresh history to show the new transcript
         fetchEvaluationHistory(); // Refresh evaluation history
+        setRefetchTimeline(prev => prev + 1); // refetch the timeline after polling is done
       }
     } catch (error) {
       const errorMessage = extractErrorMessage(error);
