@@ -175,7 +175,7 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
           return (
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center gap-2">
-                <span className=" text-sm">{score.toFixed(1)}%</span>
+                <span className=" text-sm">{score.toFixed(2)}%</span>
                 <HoverCard>
                   <HoverCardTrigger delay={10} closeDelay={10}>
                     <div className="relative w-14 h-1.5 bg-muted rounded-full">
@@ -185,7 +185,7 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
                     </div>
                   </HoverCardTrigger>
                   <HoverCardContent className="w-full p-1 py-2 text-xs rounded-lg">
-                    Score: {score.toFixed(1)}%<br />Threshold: {passing_threshold}%
+                    Score: {score.toFixed(2)}%<br />Threshold: {passing_threshold}%
                   </HoverCardContent>
                 </HoverCard>
 
@@ -207,17 +207,16 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
         },
       },
       // 4. SCREENING DECISION
-      {
-        id: "hr_decision",
-        accessorKey: "hr_decision",
-        // header: "HR Decision",
-        header: () => {
-          return <div className="flex items-center justify-between">
-            <span className="font-semibold text-base">HR Decision</span>
-          </div>
-        },
-        cell: ({ row }) => <CandidateStatusBadge status={row.original.hr_decision} />,
-      },
+      // {
+      //   id: "hr_decision",
+      //   accessorKey: "hr_decision",
+      //   header: () => {
+      //     return <div className="flex items-center justify-between">
+      //       <span className="font-semibold text-base">HR Decision</span>
+      //     </div>
+      //   },
+      //   cell: ({ row }) => <CandidateStatusBadge status={row.original.hr_decision} />,
+      // },
 
       // CURRENT STAGE
       {
@@ -226,7 +225,7 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
         // header: "Stage",
         header: () => {
           return <div className="flex items-center justify-between">
-            <span className="font-semibold text-base">Stage</span>
+            <span className="font-semibold text-base">Stages</span>
           </div>
         },
         cell: ({ row }) => {
@@ -239,10 +238,11 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
 
           return (
             <div className="flex flex-col gap-1 min-w-[120px]">
-              <span className=" text-sm text-foreground text-wrap max-w-[150px]" title={stage.template_name}>
+              <span className=" text-sm text-foreground text-wrap max-w-[150px]">
                 {stage.template_name}
               </span>
-              <CandidateStatusBadge status={stage.status == "completed" ? stage.status.replace("completed", "complete") : stage.status.replace("ed", "")} />
+              {/* <CandidateStatusBadge status={stage.status == "completed" ? stage.status.replace("completed", "complete") : stage.status.replace("ed", "")} /> */}
+              <CandidateStatusBadge status={stage.hr_decision && stage.hr_decision.replace("ed", "")} />
             </div>
           );
         },
@@ -251,7 +251,7 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
       // 5. SOCIALS
       {
         id: "socials",
-        // header: "Socials",
+
         header: () => {
           return <div className="flex items-center justify-between">
             <span className="font-semibold text-base">Socials</span>
@@ -411,9 +411,9 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
         ? [
           {
             id: "actions",
-            header: () => <div className="text-right pr-2 text-base">Actions</div>,
+            header: () => <div className="text-center text-base">Actions</div>,
             cell: ({ row }: { row: { original: T } }) => (
-              <div className="flex items-center justify-end gap-2 pr-2">
+              <div className="flex items-center justify-center gap-2">
                 {renderActions(row.original)}
               </div>
             ),

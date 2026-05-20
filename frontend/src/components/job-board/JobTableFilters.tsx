@@ -99,7 +99,7 @@ export const JobTableFilters = ({
               </span>
               <ChevronDown className="h-4 w-4 opacity-60 shrink-0" />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="min-w-[100px] p-2 rounded-xl shadow-xl">
+            <DropdownMenuContent align="start" className="w-[130px] p-2 rounded-xl shadow-xl">
               <DropdownMenuGroup>
                 <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground px-2 py-1.5">Status</DropdownMenuLabel>
                 <DropdownMenuSeparator />
@@ -141,7 +141,7 @@ export const JobTableFilters = ({
             <DropdownMenu>
               <DropdownMenuTrigger
                 className={cn(
-                  "inline-flex items-center justify-between gap-2 h-10 px-3 min-w-[150px] rounded-xl border text-sm font-medium cursor-pointer select-none transition-all",
+                  "inline-flex items-center justify-between gap-2 h-10 px-3 w-[160px] rounded-xl border text-sm font-medium cursor-pointer select-none transition-all",
                   departmentFilter.length > 0
                     ? "border-primary/40 bg-primary/10 text-primary"
                     : "border-input bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground"
@@ -156,7 +156,7 @@ export const JobTableFilters = ({
                 </span>
                 <ChevronDown className="h-4 w-4 opacity-60 shrink-0" />
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="min-w-[160px] p-2 rounded-xl shadow-xl">
+              <DropdownMenuContent align="start" className="w-[160px] p-2 rounded-xl shadow-xl">
                 <div className="px-1 pb-2">
                   <div className="relative">
                     <Input
@@ -220,7 +220,7 @@ export const JobTableFilters = ({
           )}
 
           {/* Date Range Picker */}
-          <div className="flex items-center gap-1.5 px-3 h-10 w-[220px] rounded-xl border border-input text-xs bg-background hover:bg-muted/30 transition-colors">
+          <div className="flex items-center gap-1.5 px-3 h-10 w-fit rounded-xl border border-input text-xs bg-background hover:bg-muted/30 transition-colors">
             <Popover>
               <PopoverTrigger
                 className={cn(

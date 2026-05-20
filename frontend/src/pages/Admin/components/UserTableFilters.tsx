@@ -181,7 +181,7 @@ export const UserTableFilters = ({
 
         {/* Date Range Picker */}
         <div className={cn(
-          "flex items-center gap-1.5 px-3 h-9 rounded-xl border text-sm transition-colors",
+          "flex items-center gap-1.5 px-1.5 h-9 rounded-xl border text-sm transition-colors w-fit",
           dateRange?.from
             ? "border-primary/40 bg-primary/5 text-foreground"
             : "border-input bg-background/50 text-muted-foreground hover:bg-muted/50 hover:text-foreground"

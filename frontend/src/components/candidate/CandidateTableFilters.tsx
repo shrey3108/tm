@@ -112,7 +112,7 @@ export const CandidateTableFilters = ({
   // setActivitySearch,
   activitySessionOptions,
   hrScoreFilter = [],
-  setHrScoreFilter = () => {},
+  setHrScoreFilter = () => { },
 }: CandidateTableFiltersProps) => {
 
   // @ts-ignore
@@ -151,6 +151,7 @@ export const CandidateTableFilters = ({
               <DropdownMenuTrigger
                 className={cn(
                   normalStyle,
+                  "w-[140px]",
                   jobFilter.length > 0
                     ? "border-primary/40 bg-primary/10 text-primary"
                     : "border-input bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground"
@@ -165,7 +166,7 @@ export const CandidateTableFilters = ({
                 </span>
                 <ChevronDown className="h-4 w-4 opacity-60 shrink-0" />
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="min-w-[240px] p-2 rounded-xl shadow-xl">
+              <DropdownMenuContent align="start" className="w-[240px] p-2 rounded-xl shadow-xl">
                 <div className="px-1 pb-2">
                   <div className="relative">
                     <Input
@@ -245,6 +246,7 @@ export const CandidateTableFilters = ({
               <DropdownMenuTrigger
                 className={cn(
                   normalStyle,
+                  "w-[130px]",
                   locationFilter.length > 0
                     ? "border-primary/40 bg-primary/10 text-primary"
                     : "border-input bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground"
@@ -259,7 +261,7 @@ export const CandidateTableFilters = ({
                 </span>
                 <ChevronDown className="h-4 w-4 opacity-60 shrink-0" />
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="min-w-[160px] p-2 rounded-xl shadow-xl">
+              <DropdownMenuContent align="start" className="w-[160px] p-2 rounded-xl shadow-xl">
                 <div className="px-1 pb-2">
                   <div className="relative">
                     <Input
@@ -327,6 +329,7 @@ export const CandidateTableFilters = ({
             <DropdownMenuTrigger
               className={cn(
                 normalStyle,
+                "w-[130px]",
                 hrDecisionFilter.length > 0
                   ? "border-primary/30 bg-primary/5 text-primary"
                   : "border-input bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground"
@@ -341,7 +344,7 @@ export const CandidateTableFilters = ({
               </span>
               <ChevronDown className="h-3.5 w-3.5 opacity-60 shrink-0" />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="min-w-[100px] rounded-xl shadow-lg p-1">
+            <DropdownMenuContent align="start" className="w-[150px] rounded-xl shadow-lg p-1">
               <DropdownMenuGroup>
                 <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground px-2 py-1.5">HR Decision</DropdownMenuLabel>
                 {hrDecisionOptions.length === 0 ? (
@@ -386,6 +389,7 @@ export const CandidateTableFilters = ({
             <DropdownMenuTrigger
               className={cn(
                 normalStyle,
+                "w-[130px]",
                 resumeScreeningFilter.length > 0
                   ? "border-primary/30 bg-primary/5 text-primary"
                   : "border-input bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground"
@@ -400,7 +404,7 @@ export const CandidateTableFilters = ({
               </span>
               <ChevronDown className="h-3.5 w-3.5 opacity-60 shrink-0" />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="min-w-[100px] rounded-xl shadow-lg p-1">
+            <DropdownMenuContent align="start" className="w-[160px] rounded-xl shadow-lg p-1">
               <DropdownMenuGroup>
                 <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground px-2 py-1.5">AI Result</DropdownMenuLabel>
                 {resumeScreeningOptions.length === 0 ? (
@@ -445,6 +449,7 @@ export const CandidateTableFilters = ({
             <DropdownMenuTrigger
               className={cn(
                 normalStyle,
+                "w-[130px]",
                 hrScoreFilter.length > 0
                   ? "border-primary/30 bg-primary/5 text-primary"
                   : "border-input bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground"
@@ -459,7 +464,7 @@ export const CandidateTableFilters = ({
               </span>
               <ChevronDown className="h-3.5 w-3.5 opacity-60 shrink-0" />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="min-w-[100px] rounded-xl shadow-lg p-1">
+            <DropdownMenuContent align="start" className="w-[140px] rounded-xl shadow-lg p-1">
               <DropdownMenuGroup>
                 <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground px-2 py-1.5">Score Rating</DropdownMenuLabel>
                 {[1, 2, 3, 4, 5].map((score) => (
@@ -500,6 +505,7 @@ export const CandidateTableFilters = ({
             <DropdownMenuTrigger
               className={cn(
                 normalStyle,
+                "w-[130px]",
                 stageFilter.length > 0
                   ? "border-primary/30 bg-primary/5 text-primary"
                   : "border-input bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground"
@@ -514,7 +520,7 @@ export const CandidateTableFilters = ({
               </span>
               <ChevronDown className="h-3.5 w-3.5 opacity-60 shrink-0" />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="min-w-[150px] rounded-xl shadow-lg p-1">
+            <DropdownMenuContent align="start" className="w-[160px] rounded-xl shadow-lg p-1">
               <DropdownMenuGroup>
                 <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground px-2 py-1.5">Stages</DropdownMenuLabel>
                 {stageOptions.length === 0 ? (
@@ -647,7 +653,7 @@ export const CandidateTableFilters = ({
           )} */}
 
           {/* Date range picker */}
-          <div className="flex items-center gap-1.5 px-3 h-10 w-[220px] rounded-xl border border-input text-sm bg-background hover:bg-muted/30 transition-colors">
+          <div className="flex items-center gap-1.5 px-3 h-10 w-fit rounded-xl border border-input text-sm bg-background hover:bg-muted/30 transition-colors">
             <Popover>
               <PopoverTrigger
                 className={cn(

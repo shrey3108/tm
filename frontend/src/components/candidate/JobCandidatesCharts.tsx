@@ -142,6 +142,7 @@ export function JobCandidatesCharts({
     chart: React.JSX.Element;
     takeFullSpace?: boolean;
     action?: React.ReactNode;
+    haveBorder?: boolean
   }[] = [
       {
         title: CHART_TEXTS.hrDecision.label,
@@ -150,6 +151,7 @@ export function JobCandidatesCharts({
           : CHART_TEXTS.hrDecision.description,
         chart: <CandidatesDistributionChart stats={activeHrStats as JobCandidatesStatsProps} />,
         action: StageSelector,
+        haveBorder: true,
       },
       {
         title: CHART_TEXTS.screeningResults.label,
@@ -230,11 +232,12 @@ export function JobCandidatesCharts({
           </div>
         </div>
       </div>
-      {obj.map(({ chart, title, takeFullSpace, action }) => (
+      {obj.map(({ chart, title, takeFullSpace, action, haveBorder }) => (
         <div
           className={cn(
-            "group overflow-hidden relative w-full",
+            "group overflow-hidden relative w-full p-0.5",
             takeFullSpace && "md:col-span-2 w-full",
+            haveBorder && "border-r border-r-muted-foreground",
           )}
           key={title}
         >

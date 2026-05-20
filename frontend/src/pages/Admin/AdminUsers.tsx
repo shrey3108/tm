@@ -156,18 +156,6 @@ const AdminUsers = () => {
       ),
       cell: ({ row }) => <StatusBadge status={row.original.is_active} />,
     },
-    // {
-    //   accessorKey: "role_id",
-    //   header: "Role ID",
-    //   cell: ({ row }) => (
-    //     <small
-    //       className="text-muted-foreground truncate block max-w-[100px]"
-    //       title={row.original.role_id}
-    //     >
-    //       {row.original.role_id}
-    //     </small>
-    //   ),
-    // },
     {
       accessorKey: "role_name",
       header: "Role Name",
@@ -196,11 +184,11 @@ const AdminUsers = () => {
     },
     {
       id: "actions",
-      header: () => <div className="text-right pr-2">Actions</div>,
+      header: () => <div className="flex items-center justify-center ">Actions</div>,
       cell: ({ row }) => {
         const user = row.original;
         return (
-          (currentUser && < div className="flex gap-2 justify-end items-center flex-nowrap" >
+          (currentUser && < div className="flex items-center justify-center gap-2 flex-nowrap" >
             {user.full_name !== "System Admin" && user.role_name.toLowerCase() !== "super admin" && <PermissionGuard permissions={PERMISSIONS.USERS_MANAGE} hideWhenDenied>
               <Button
                 variant="outline"
