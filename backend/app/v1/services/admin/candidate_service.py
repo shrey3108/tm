@@ -937,7 +937,7 @@ class CandidateAdminService:
                 completed=is_finished,
                 result=result_val,
                 ai_result=ai_result_val,
-                hr_decision=hr_decision_val,
+                hr_decision=hr_decision_val or "pending",
                 evaluation_data=cs.evaluation_data
             )
 
