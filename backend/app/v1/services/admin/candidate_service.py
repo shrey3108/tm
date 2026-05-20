@@ -1275,7 +1275,7 @@ class CandidateAdminService:
                 "description": f"AI matched resume against {stage.job_stage.job.title if stage.job_stage and stage.job_stage.job else 'Job'}" if is_resume_screening else f"Candidate was in {title}",
                 "result": result,
                 "ai_result": result,
-                "hr_decision": None,
+                "hr_decision": "pending" if eval_obj is not None else None,
                 "score": float(score) if score is not None else None,
                 "ai_score": float(score) if score is not None else None,
                 "hr_score": None,
