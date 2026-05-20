@@ -62,7 +62,7 @@ export const JobTableFilters = ({
   totalCount,
   minDate,
 }: JobTableFiltersProps) => {
-  const statusOptions = ["active", "inactive"];
+  const statusOptions = ["open", "closed"];
 
   return (
     <div className="flex flex-col gap-4 p-4 bg-muted/20 rounded-2xl border border-muted-foreground/10 overflow-hidden">
@@ -99,7 +99,7 @@ export const JobTableFilters = ({
               </span>
               <ChevronDown className="h-4 w-4 opacity-60 shrink-0" />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="min-w-[160px] p-2 rounded-xl shadow-xl">
+            <DropdownMenuContent align="start" className="min-w-[100px] p-2 rounded-xl shadow-xl">
               <DropdownMenuGroup>
                 <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground px-2 py-1.5">Status</DropdownMenuLabel>
                 <DropdownMenuSeparator />
@@ -156,7 +156,7 @@ export const JobTableFilters = ({
                 </span>
                 <ChevronDown className="h-4 w-4 opacity-60 shrink-0" />
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="min-w-[200px] p-2 rounded-xl shadow-xl">
+              <DropdownMenuContent align="start" className="min-w-[160px] p-2 rounded-xl shadow-xl">
                 <div className="px-1 pb-2">
                   <div className="relative">
                     <Input
@@ -189,7 +189,7 @@ export const JobTableFilters = ({
                                   : [...departmentFilter, d.id]
                               )
                             }
-                            className="rounded-lg my-0.5 capitalize"
+                            className="rounded-lg my-0.5 capitalize pr-1"
                           >
                             {d.name}
                           </DropdownMenuCheckboxItem>

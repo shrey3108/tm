@@ -119,9 +119,10 @@ export function FeedbackDialog({
                 }`}
               {...register("note")}
             />
-            {errors.note && (
+            {errors && (
               <p className="text-xs  text-red-500">
-                {errors.note.message}
+                {errors.note && errors.note.message}
+                {errors.score && errors.score.message}
               </p>
             )}
           </div>

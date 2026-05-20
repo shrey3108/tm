@@ -54,7 +54,7 @@ export const DEFAULT_PASSING_THRESHOLD = 70.0;
 export const MAX_LOCATION_BAR_CHART_DISPLAY_LIMIT = 7;
 
 export const PRIORITY_TIMELINE_COLOR = [
-  { min: 0, max: 50, color: "bg-green-500" },
-  { min: 51, max: 75, color: "bg-yellow-500" },
-  { min: 76, max: 100, color: "bg-red-500" },
+  { min: 0, max: 50, color: "bg-[#86efac]" },
+  { min: 51, max: 75, color: "bg-[#fcd34d]" },
+  { min: 76, max: 100, color: "bg-[#f87171]" },
 ] as const;

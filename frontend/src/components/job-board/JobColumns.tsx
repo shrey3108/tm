@@ -113,7 +113,7 @@ export const getJobColumns = ({
               onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
               className="hover:bg-transparent p-0 font-semibold text-base"
             >
-              Job Status
+              Status
               <ArrowUpDown className="ml-2 h-4 w-4" />
             </Button>
           </PermissionGuard>

@@ -160,7 +160,6 @@ export function StageCentricChart({ data }: StageCentricChartProps) {
     <Card className="shadow-xs border-0">
       <CardHeader>
         <CardTitle>Stages - Job Distribution</CardTitle>
-        <CardDescription>Candidate distribution across stages by job</CardDescription>
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig} className="max-h-[350px] w-full">

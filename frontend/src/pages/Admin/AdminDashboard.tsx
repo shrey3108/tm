@@ -86,7 +86,7 @@ const AdminDashboard = () => {
 
   const jobColumns: Column<any>[] = [
     { header: "Job Title", accessor: "job_title" },
-    { header: "Department", accessor: "department" },
+    { header: "Department", accessor: "department", className: "capitalize" },
     { header: "Candidate Count", accessor: "candidate_count" },
   ];
 
@@ -95,7 +95,7 @@ const AdminDashboard = () => {
       <PageHeader
         title="Admin Dashboard"
         breadcrumbActions={
-          <div className="flex items-center justify-end gap-1.5 bg-muted/30 p-1 rounded-xl border border-border/40 h-9">
+          <div className="flex items-center justify-end gap-1.5 bg-muted/30 p-1 rounded-xl border border-border/40">
             <Button
               variant={viewMode === "report" ? "secondary" : "ghost"}
               size="sm"
