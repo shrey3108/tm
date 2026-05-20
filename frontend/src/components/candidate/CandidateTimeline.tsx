@@ -247,7 +247,11 @@ export function CandidateTimeline({
                       {event.hr_decision &&
                         <div className="flex items-center justify-start gap-2">
                           <span className="text-xs font-bold uppercase tracking-tight text-muted-foreground">HR decision:</span>
-                          <CandidateStatusBadge status={event.hr_decision?.replace("ed", "") || "N/A"} />
+                          <CandidateStatusBadge status={event.hr_decision?.replace("ed", "") || "N/A"} /> {event.hr_score !== null && event.hr_score !== undefined && (
+                            <span className="text-xs font-bold ">
+                              {event.hr_score}/5
+                            </span>
+                          )}
                         </div>}
                     </div>
                   </div>

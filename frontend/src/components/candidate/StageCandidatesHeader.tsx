@@ -38,14 +38,14 @@ export const StageCandidatesHeader = ({
 
   return (
     <AppPageHeader
-      headingClassName="text-2xl sm:text-4xl capitalize"
+      headingClassName="text-lg sm:text-xl capitalize"
       title={candidateName ? `${candidateName}` : (job?.title || "Loading...")}
       backAction={{ label: "Back to Candidates", onClick: onBack }}
       meta={
         <div className="flex items-center gap-2">
-          {candidateName && <span className="font-semibold text-muted-foreground capitalize">{job?.title}</span>}
+          {candidateName && <span className="font-semibold text-muted-foreground capitalize text-base">{job?.title}</span>}
           {candidateName && <span className="text-muted-foreground">•</span>}
-          <span className="font-semibold text-blue-500 capitalize">
+          <span className="font-semibold text-blue-500 capitalize text-base">
             {job?.department_name || "Department"}
           </span>
         </div>
