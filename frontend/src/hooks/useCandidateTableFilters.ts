@@ -106,27 +106,30 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
 
 
 
-  // Fetch all job titles once on mount — only when the job-filter column is visible.
+  // Fetch job titles — only when the job-filter column is visible, debounced on jobSearch.
   useEffect(() => {
     if (!fetchJobTitles) return;
-    const fetchJobs = async () => {
-      try {
-        const response = await jobService.getJobTitles();
-        const jobsArray = Array.isArray(response) ? response : (response as any)?.data;
+    const handler = setTimeout(() => {
+      const fetchJobs = async () => {
+        try {
+          const response = await jobService.getJobTitles(jobSearch);
+          const jobsArray = Array.isArray(response) ? response : (response as any)?.data;
 
+          const jobs = jobsArray.map((j: any) => ({
+            id: j.id,
+            title: j.title?.trim() || "Untitled",
+            slug: slugify(j.title || "")
+          }));
+          setAvailableJobs(jobs);
+        } catch (error) {
+          console.error("Failed to fetch jobs for filter:", error);
+        }
+      };
+      fetchJobs();
+    }, 500); // 500ms debounce
 
-        const jobs = jobsArray.map((j: any) => ({
-          id: j.id,
-          title: j.title?.trim() || "Untitled",
-          slug: slugify(j.title || "")
-        }));
-        setAvailableJobs(jobs);
-      } catch (error) {
-        console.error("Failed to fetch jobs for filter:", error);
-      }
-    };
-    fetchJobs();
-  }, [fetchJobTitles]); // Fetch whenever job context becomes active
+    return () => clearTimeout(handler);
+  }, [jobSearch, fetchJobTitles]);
 
   // Call onFiltersChange when internal filter states update
   useEffect(() => {
@@ -171,7 +174,7 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
         }
       };
       fetchLocations();
-    }, 300); // 300ms debounce
+    }, 500); // 500ms debounce
 
     return () => clearTimeout(handler);
   }, [locationSearch]);

@@ -199,12 +199,12 @@ export const CandidateTableFilters = ({
                                   : [...jobFilter, j.id]
                               )
                             }
-                            className="rounded-lg truncate  "
+                            className="rounded-lg truncate pr-1"
                           >
                             <HoverCard>
                               <HoverCardTrigger delay={10} closeDelay={10}>
-                                <div className="truncate w-full max-w-40 ">
-                                  <span className="capitalize">
+                                <div className="truncate w-full">
+                                  <span className="capitalize truncate">
                                     {j.title}
                                   </span>
                                 </div>
@@ -294,7 +294,7 @@ export const CandidateTableFilters = ({
                                   : [...locationFilter, l]
                               )
                             }
-                            className="rounded-lg my-0.5"
+                            className="rounded-lg pr-0"
                           >
                             {l}
                           </DropdownMenuCheckboxItem>
