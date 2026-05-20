@@ -178,11 +178,12 @@ const AdminJobPositions = () => {
                     className="h-9 w-9 rounded-xl hover:bg-primary/10 hover:text-primary transition-colors flex items-center justify-center shrink-0"
                   >
                     <Edit2 className="h-4 w-4 shrink-0" />
+                    <span className="sr-only">Edit</span>
                   </Button>
                 )}
               />
-              <HoverCardContent side="top" className="w-auto p-2 min-w-0">
-                <div className="text-sm font-semibold">Edit Position</div>
+              <HoverCardContent className="w-fit px-3 py-1.5 text-xs font-medium" side="top">
+                <span className="text-primary">Edit Position</span>
               </HoverCardContent>
             </HoverCard>
           </PermissionGuard>
@@ -200,11 +201,12 @@ const AdminJobPositions = () => {
                     className="h-9 w-9 rounded-xl hover:bg-destructive/10 hover:text-destructive transition-colors flex items-center justify-center shrink-0"
                   >
                     <Trash2Icon className="h-4 w-4 shrink-0" />
+                    <span className="sr-only">Delete</span>
                   </Button>
                 )}
               />
-              <HoverCardContent side="top" className="w-auto p-2 min-w-0">
-                <div className="text-sm font-semibold">Delete Position</div>
+              <HoverCardContent className="w-fit px-3 py-1.5 text-xs font-medium" side="top">
+                <span className="text-destructive">Delete Position</span>
               </HoverCardContent>
             </HoverCard>
           </PermissionGuard>

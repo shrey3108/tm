@@ -183,13 +183,13 @@ const AdminDepartments = () => {
       id: "actions",
       header: () => {
         return (
-          <div className="flex justify-center gap-2 ">
-            <span className="font-semibold">Action</span>
+          <div className="flex justify-start gap-2">
+            <span className="font-semibold">Actions</span>
           </div>
         )
       },
       cell: ({ row }) => (
-        <div className="flex gap-2 justify-center">
+        <div className="flex gap-2 justify-start">
           <PermissionGuard permissions={PERMISSIONS.DEPARTMENTS_MANAGE} hideWhenDenied>
             <HoverCard>
               <HoverCardTrigger
@@ -202,11 +202,12 @@ const AdminDepartments = () => {
                     className="h-9 w-9 rounded-xl hover:bg-primary/10 hover:text-primary transition-colors flex items-center justify-center shrink-0"
                   >
                     <Edit2 className="h-4 w-4 shrink-0" />
+                    <span className="sr-only">Edit</span>
                   </Button>
                 )}
               />
-              <HoverCardContent side="top" className="w-auto p-2 min-w-0">
-                <div className="text-sm font-semibold">Edit Department</div>
+              <HoverCardContent className="w-fit px-3 py-1.5 text-xs font-medium" side="top">
+                <span className="text-primary">Edit Department</span>
               </HoverCardContent>
             </HoverCard>
           </PermissionGuard>
@@ -223,11 +224,12 @@ const AdminDepartments = () => {
                     className="h-9 w-9 rounded-xl hover:bg-destructive/10 hover:text-destructive transition-colors flex items-center justify-center shrink-0"
                   >
                     <Trash2Icon className="h-4 w-4 shrink-0" />
+                    <span className="sr-only">Delete</span>
                   </Button>
                 )}
               />
-              <HoverCardContent side="top" className="w-auto p-2 min-w-0">
-                <div className="text-sm font-semibold">Delete Department</div>
+              <HoverCardContent className="w-fit px-3 py-1.5 text-xs font-medium" side="top">
+                <span className="text-destructive">Delete Department</span>
               </HoverCardContent>
             </HoverCard>
           </PermissionGuard>

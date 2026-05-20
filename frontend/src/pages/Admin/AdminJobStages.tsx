@@ -3,7 +3,7 @@ import AppPageShell from "@/components/shared/AppPageShell";
 import PageHeader from "@/components/shared/PageHeader";
 import { DataTable } from "@/components/shared/DataTable";
 import { Button } from "@/components/ui/button";
-import { Info, Pencil, Trash2, ArrowUpDown, Plus } from "lucide-react";
+import { Info, Edit2, Trash2, ArrowUpDown, Plus } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { StageTemplate } from "@/types/stage";
 import { adminStageTemplateService } from "@/apis/admin/stageTemplate";
@@ -159,7 +159,7 @@ const AdminJobStages = () => {
         </div>
       },
       cell: ({ row }) => (
-        <span className="text-muted-foreground truncate line-clamp-1 max-w-md capitalize">
+        <span className="text-muted-foreground truncate line-clamp-1 max-w-sm capitalize">
           {row.original.description || "No description"}
         </span>
       ),
@@ -195,54 +195,63 @@ const AdminJobStages = () => {
       },
       cell: ({ row }) => (
         <div className="flex items-center justify-start gap-2">
-          <HoverCard  >
-            <HoverCardTrigger>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => handleShow(row.original)}
-                className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
-              >
-                <Info className="h-4 w-4" />
-                <span className="sr-only">Show</span>
-              </Button>
-            </HoverCardTrigger>
+          <HoverCard>
+            <HoverCardTrigger
+              render={(props) => (
+                <Button
+                  {...props}
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleShow(row.original)}
+                  className="h-9 w-9 rounded-xl text-blue-500 hover:bg-blue-500/10 hover:text-blue-600 transition-colors flex items-center justify-center shrink-0"
+                >
+                  <Info className="h-4 w-4 shrink-0" />
+                  <span className="sr-only">Show</span>
+                </Button>
+              )}
+            />
             <HoverCardContent className="w-fit px-3 py-1.5 text-xs font-medium" side="top">
-              View Details
+              <span className="text-blue-600">View Info</span>
             </HoverCardContent>
           </HoverCard>
 
-          <HoverCard  >
-            <HoverCardTrigger>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => handleEdit(row.original)}
-                className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/10"
-              >
-                <Pencil className="h-4 w-4" />
-                <span className="sr-only">Edit</span>
-              </Button>
-            </HoverCardTrigger>
+          <HoverCard>
+            <HoverCardTrigger
+              render={(props) => (
+                <Button
+                  {...props}
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleEdit(row.original)}
+                  className="h-9 w-9 rounded-xl hover:bg-primary/10 hover:text-primary transition-colors flex items-center justify-center shrink-0"
+                >
+                  <Edit2 className="h-4 w-4 shrink-0" />
+                  <span className="sr-only">Edit</span>
+                </Button>
+              )}
+            />
             <HoverCardContent className="w-fit px-3 py-1.5 text-xs font-medium" side="top">
-              Edit Template
+              <span className="text-primary">Edit Stage</span>
             </HoverCardContent>
           </HoverCard>
 
-          <HoverCard  >
-            <HoverCardTrigger>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => handleDeleteClick(row.original)}
-                className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-              >
-                <Trash2 className="h-4 w-4" />
-                <span className="sr-only">Delete</span>
-              </Button>
-            </HoverCardTrigger>
+          <HoverCard>
+            <HoverCardTrigger
+              render={(props) => (
+                <Button
+                  {...props}
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleDeleteClick(row.original)}
+                  className="h-9 w-9 rounded-xl hover:bg-destructive/10 hover:text-destructive transition-colors flex items-center justify-center shrink-0"
+                >
+                  <Trash2 className="h-4 w-4 shrink-0" />
+                  <span className="sr-only">Delete</span>
+                </Button>
+              )}
+            />
             <HoverCardContent className="w-fit px-3 py-1.5 text-xs font-medium" side="top">
-              Delete Template
+              <span className="text-destructive">Delete Stage</span>
             </HoverCardContent>
           </HoverCard>
         </div>

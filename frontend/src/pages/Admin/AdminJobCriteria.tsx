@@ -177,7 +177,7 @@ const AdminJobCriteria = () => {
                 </div>
             },
             cell: ({ row }) => (
-                <span className="text-muted-foreground truncate line-clamp-1 max-w-md">
+                <span className="text-muted-foreground truncate line-clamp-1 max-w-sm">
                     {row.original.description || "No description"}
                 </span>
             ),
@@ -213,15 +213,15 @@ const AdminJobCriteria = () => {
                                     variant="ghost"
                                     size="icon"
                                     onClick={() => handleOpenInfo(row.original)}
-                                    className="h-9 w-9 p-0 rounded-xl text-blue-500 hover:text-blue-600 hover:bg-blue-500/10 transition-colors flex items-center justify-center shrink-0"
+                                    className="h-9 w-9 rounded-xl text-blue-500 hover:bg-blue-500/10 hover:text-blue-600 transition-colors flex items-center justify-center shrink-0"
                                 >
                                     <Info className="h-4 w-4 shrink-0" />
                                     <span className="sr-only">Info</span>
                                 </Button>
                             )}
                         />
-                        <HoverCardContent side="top" className="w-auto p-2 min-w-0">
-                            <div className="text-sm font-semibold">View Info</div>
+                        <HoverCardContent className="w-fit px-3 py-1.5 text-xs font-medium" side="top">
+                            <span className="text-blue-600">View Info</span>
                         </HoverCardContent>
                     </HoverCard>
 
@@ -234,15 +234,15 @@ const AdminJobCriteria = () => {
                                         variant="ghost"
                                         size="icon"
                                         onClick={() => handleUpdate(row.original)}
-                                        className="h-9 w-9 p-0 rounded-xl text-primary hover:text-primary hover:bg-primary/10 transition-colors flex items-center justify-center shrink-0"
+                                        className="h-9 w-9 rounded-xl hover:bg-primary/10 hover:text-primary transition-colors flex items-center justify-center shrink-0"
                                     >
                                         <Edit2 className="h-4 w-4 shrink-0" />
                                         <span className="sr-only">Update</span>
                                     </Button>
                                 )}
                             />
-                            <HoverCardContent side="top" className="w-auto p-2 min-w-0">
-                                <div className="text-sm font-semibold">Edit Criteria</div>
+                            <HoverCardContent className="w-fit px-3 py-1.5 text-xs font-medium" side="top">
+                                <span className="text-primary">Edit Criteria</span>
                             </HoverCardContent>
                         </HoverCard>
                     </PermissionGuard>
@@ -256,15 +256,15 @@ const AdminJobCriteria = () => {
                                         variant="ghost"
                                         size="icon"
                                         onClick={() => handleDeleteClick(row.original)}
-                                        className="h-9 w-9 p-0 rounded-xl text-destructive hover:text-destructive hover:bg-destructive/10 transition-colors flex items-center justify-center shrink-0"
+                                        className="h-9 w-9 rounded-xl hover:bg-destructive/10 hover:text-destructive transition-colors flex items-center justify-center shrink-0"
                                     >
                                         <Trash2Icon className="h-4 w-4 shrink-0" />
                                         <span className="sr-only">Delete</span>
                                     </Button>
                                 )}
                             />
-                            <HoverCardContent side="top" className="w-auto p-2 min-w-0">
-                                <div className="text-sm font-semibold">Delete Criteria</div>
+                            <HoverCardContent className="w-fit px-3 py-1.5 text-xs font-medium" side="top">
+                                <span className="text-destructive">Delete Criteria</span>
                             </HoverCardContent>
                         </HoverCard>
                     </PermissionGuard>
