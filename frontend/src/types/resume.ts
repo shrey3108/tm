@@ -144,7 +144,9 @@ export interface CandidateResponse {
   /** Error message if processing failed */
   processing_error: string | null;
   /** Current HR screening decision, if one has been made */
-  hr_decision?: "approve" | "reject" | "may be" | null;
+  hr_decision?: string;
+  /** Current HR screening score out of 5 */
+  hr_score?: number;
   /** ID of the job the candidate applied for */
   applied_job_id?: string | null;
   /** ID of the associated resume record */

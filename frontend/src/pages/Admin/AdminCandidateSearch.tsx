@@ -53,6 +53,7 @@ const AdminCandidateSearch = () => {
     status: [],
     city: [],
     hr_decision: [],
+    hr_score: [],
   });
 
   const handleFiltersChange = useCallback((newFilters: React.SetStateAction<CandidateActiveFilters>) => {

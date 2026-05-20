@@ -45,6 +45,7 @@ export default function JobCandidates() {
       city: [],
       job: [],
       hr_decision: [],
+      hr_score: [],
       dateRange: (startDate || endDate)
         ? {
           from: startDate ? new Date(startDate) : undefined,
@@ -89,6 +90,7 @@ export default function JobCandidates() {
     stage: activeFilters.stage,
     city: activeFilters.city,
     result: activeFilters.resumeScreening,
+    hr_score: activeFilters.hr_score,
   });
 
   const [selectedCandidate, _setSelectedCandidate] = useState<CandidateAnalysis | null>(null);

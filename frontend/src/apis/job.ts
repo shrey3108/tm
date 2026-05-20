@@ -42,8 +42,8 @@ const jobService = {
    * const jobTitles = await jobService.getJobTitles("Software Engineer");
    * ```
    */
-  getJobTitles: async (q: string = ""): Promise<JobTitle[]> => {
-    const response = await client.get<JobTitle[]>("/jobs/titles", {
+  getJobTitles: async (q: string = ""): Promise<{ data: JobTitle[] }> => {
+    const response = await client.get<{ data: JobTitle[] }>("/jobs/titles", {
       params: { ...(q ? { q } : undefined) },
     });
     return response.data;
@@ -127,9 +127,10 @@ const jobService = {
       start_date?: Date;
       end_date?: Date;
       activity_session?: string[];
-      stage?: string[]; // not supported in backend
-      city?: string[]; // not supported in backend
-      result?: string[]; // not supported in backend
+      stage_id?: string[];
+      city?: string[];
+      result?: string[];
+      hr_score?: number[];
     },
   ): Promise<CandidateAnalysisResponse> => {
     const response = await client.get<CandidateAnalysisResponse>(`/candidates/jobs/${jobId}`, {
@@ -137,9 +138,18 @@ const jobService = {
         ...(jdVersion !== undefined ? { jd_version: jdVersion } : undefined),
         skip,
         limit,
-        ...filters,
+        // ...filters,
         ...(candidate_id !== undefined ? { candidate_id: candidate_id } : undefined),
         ...(stage_id !== undefined ? { stage_id: stage_id } : undefined),
+        ...(filters?.query !== undefined ? { query: filters.query } : undefined),
+        ...(filters?.hr_decision !== undefined ? { hr_decision: filters.hr_decision } : undefined),
+        ...(filters?.jd_versions !== undefined ? { jd_versions: filters.jd_versions } : undefined),
+        ...(filters?.start_date !== undefined ? { start_date: filters.start_date } : undefined),
+        ...(filters?.end_date !== undefined ? { end_date: filters.end_date } : undefined),
+        ...(filters?.activity_session !== undefined ? { activity_session: filters.activity_session } : undefined),
+        ...(filters?.city !== undefined ? { city: filters.city } : undefined),
+        ...(filters?.result !== undefined ? { result: filters.result } : undefined),
+        ...(filters?.hr_score !== undefined ? { hr_score: filters.hr_score } : undefined),
       },
       paramsSerializer: {
         indexes: null,

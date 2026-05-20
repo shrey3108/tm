@@ -3,7 +3,7 @@ import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import jobService from "@/apis/job";
 import { toast } from "sonner";
 import { extractErrorMessage } from "@/utils/error";
-import { slugify } from "@/utils/slug";
+import { slugify, unSlugify } from "@/utils/slug";
 import type { CandidateAnalysis, JobStatsResponse } from "@/types/admin";
 import type { Job } from "@/types/job";
 import { useDeleteConfirmation } from "./useDeleteConfirmation";
@@ -26,6 +26,7 @@ export const useJobCandidates = (
     stage?: string[];
     city?: string[];
     result?: string[];
+    hr_score?: number[];
   }
 ) => {
   const navigate = useNavigate();
@@ -65,6 +66,7 @@ export const useJobCandidates = (
       stage: searchParams.getAll("stage"),
       city: searchParams.getAll("city"),
       result: searchParams.getAll("result"),
+      hr_score: searchParams.getAll("hr_score").map(Number),
     };
   }, [searchParams, externalFilters]);
 
@@ -85,8 +87,8 @@ export const useJobCandidates = (
         const limit = pageSize;
 
         if (!id) {
-          const response = await jobService.getJobs();
-          const foundJob = response.data.find((j) => slugify(j.title) === jobSlug);
+          const response = await jobService.getJobTitles(unSlugify(jobSlug));
+          const foundJob = response.data.find((j) => slugify(j.title) === jobSlug); // TODO: more better? or Just access via 0th index ?
 
           if (!foundJob) {
             toast.error("Job not found.");

@@ -24,6 +24,7 @@ export const adminCandidateService = {
       status?: string[];
       stage?: string[];
       result?: string[];
+      hr_score?: number[];
     },
   ): Promise<{ data: CandidateResponse[]; total: number }> => {
     const response = await apiClient.get<{ data: CandidateResponse[]; total: number }>(
@@ -54,6 +55,7 @@ export const adminCandidateService = {
       status?: string[];
       stage?: string[];
       result?: string[];
+      hr_score?: number[];
     },
   ): Promise<{ data: CandidateResponse[]; total: number }> => {
     const response = await apiClient.get<{ data: CandidateResponse[]; total: number }>(
@@ -83,6 +85,7 @@ export const adminCandidateService = {
       status?: string[];
       stage?: string[];
       result?: string[];
+      hr_score?: number[];
     },
   ): Promise<{ data: CandidateResponse[]; total: number }> => {
     const response = await apiClient.get<{ data: CandidateResponse[]; total: number }>(

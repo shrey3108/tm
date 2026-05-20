@@ -95,6 +95,8 @@ export function CandidateTable<T extends UnifiedCandidate>({
     setActivitySession,
     activitySearch,
     setActivitySearch,
+    hrScoreFilter,
+    setHrScoreFilter,
   } = useCandidateTableFilters(candidates, externalNameFilter, onNameFilterChange, showJobContext, isServerSide, onFiltersChange, passing_threshold, stageOptionsProp, activitySessions, initialDateRange);
 
   const columns = useCandidateTableColumns({
@@ -146,6 +148,8 @@ export function CandidateTable<T extends UnifiedCandidate>({
         totalCount={total != null && total !== candidates.length ? total : candidates.length}
         minDate={minDate}
         availableJobs={availableJobs}
+        hrScoreFilter={hrScoreFilter}
+        setHrScoreFilter={setHrScoreFilter}
       />
 
       <DataTable

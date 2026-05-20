@@ -17,7 +17,8 @@ export interface UnifiedCandidate {
   pass_fail?: string | boolean | null;
   is_parsed?: boolean;
   processing_status?: string | null;
-  hr_decision?: "approve" | "reject" | "may be" | null;
+  hr_decision?: string | null;
+  hr_score?: number | null;
   created_at: string;
   /** Explicit apply timestamp – falls back to created_at, then "N/A" */
   applied_at?: string | null;
@@ -37,6 +38,8 @@ export interface TimelineEvent {
   description?: string | null;
   result?: string | null;
   score?: number | null;
+  ai_score?: number;
+  hr_score?: number;
   stage_id?: string | null;
   stage_name?: string | null;
   job_id?: string | null;

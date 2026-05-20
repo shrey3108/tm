@@ -70,6 +70,8 @@ interface CandidateTableFiltersProps {
   activitySearch: string;
   setActivitySearch: (value: string) => void;
   activitySessionOptions?: [number, { start_date: string; end_date: string }][];
+  hrScoreFilter?: number[];
+  setHrScoreFilter?: (value: number[]) => void;
 }
 
 export const CandidateTableFilters = ({
@@ -109,6 +111,8 @@ export const CandidateTableFilters = ({
   activitySearch,
   // setActivitySearch,
   activitySessionOptions,
+  hrScoreFilter = [],
+  setHrScoreFilter = () => {},
 }: CandidateTableFiltersProps) => {
 
   // @ts-ignore
@@ -426,6 +430,61 @@ export const CandidateTableFilters = ({
                     <DropdownMenuCheckboxItem
                       checked={false}
                       onClick={() => setResumeScreeningFilter([])}
+                      className="text-destructive focus:text-destructive focus:bg-destructive/10 rounded-lg"
+                    >
+                      Clear selection
+                    </DropdownMenuCheckboxItem>
+                  </>
+                )}
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Score Rating multi-select dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              className={cn(
+                normalStyle,
+                hrScoreFilter.length > 0
+                  ? "border-primary/30 bg-primary/5 text-primary"
+                  : "border-input bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+              )}
+            >
+              <span className="truncate">
+                {hrScoreFilter.length === 0
+                  ? "Score Rating"
+                  : hrScoreFilter.length === 1
+                    ? `Score: ${hrScoreFilter[0]}`
+                    : `${hrScoreFilter.length} Ratings`}
+              </span>
+              <ChevronDown className="h-3.5 w-3.5 opacity-60 shrink-0" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="min-w-[100px] rounded-xl shadow-lg p-1">
+              <DropdownMenuGroup>
+                <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground px-2 py-1.5">Score Rating</DropdownMenuLabel>
+                {[1, 2, 3, 4, 5].map((score) => (
+                  <DropdownMenuCheckboxItem
+                    key={score}
+                    checked={hrScoreFilter.includes(score)}
+                    onSelect={(e) => e.preventDefault()}
+                    onClick={() =>
+                      setHrScoreFilter(
+                        hrScoreFilter.includes(score)
+                          ? hrScoreFilter.filter((v) => v !== score)
+                          : [...hrScoreFilter, score]
+                      )
+                    }
+                    className="rounded-lg mr-1"
+                  >
+                    Score: {score}
+                  </DropdownMenuCheckboxItem>
+                ))}
+                {hrScoreFilter.length > 0 && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuCheckboxItem
+                      checked={false}
+                      onClick={() => setHrScoreFilter([])}
                       className="text-destructive focus:text-destructive focus:bg-destructive/10 rounded-lg"
                     >
                       Clear selection

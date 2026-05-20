@@ -19,6 +19,7 @@ export interface CandidateActiveFilters {
   stage?: string[];
   activity_session?: string[];
   q?: string;
+  hr_score?: number[];
 }
 
 // TODO: Remove after backend update
@@ -61,6 +62,7 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [locationFilter, setLocationFilter] = useState<string[]>([]);
   const [hrDecisionFilter, setHrDecisionFilter] = useState<string[]>([]);
+  const [hrScoreFilter, setHrScoreFilter] = useState<number[]>([]);
 
   // jobFilter stores IDs internally for filtering and API calls
   const [jobFilter, setJobFilter] = useState<string[]>([]);
@@ -138,10 +140,11 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
         resumeScreening: resumeScreeningFilter,
         stage: stageFilter,
         activity_session: activitySessionFilter,
-        q: debouncedNameFilter
+        q: debouncedNameFilter,
+        hr_score: hrScoreFilter
       });
     }
-  }, [statusFilter, locationFilter, jobFilter, hrDecisionFilter, dateRange, resumeScreeningFilter, stageFilter, activitySessionFilter, debouncedNameFilter, onFiltersChange]);
+  }, [statusFilter, locationFilter, jobFilter, hrDecisionFilter, dateRange, resumeScreeningFilter, stageFilter, activitySessionFilter, debouncedNameFilter, hrScoreFilter, onFiltersChange]);
 
   const isAnyFilterActive =
     !!debouncedNameFilter ||
@@ -152,6 +155,7 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
     resumeScreeningFilter.length > 0 ||
     activitySessionFilter.length > 0 ||
     stageFilter.length > 0 ||
+    hrScoreFilter.length > 0 ||
     !!dateRange?.from ||
     !!dateRange?.to;
 
@@ -232,6 +236,11 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
         const candidateSessionId = String((c as any).activity_session_id || '');
         if (!activitySessionFilter.includes(candidateSessionId)) return false;
       }
+      // Score rating filter
+      if (skip !== 'hrScore' && hrScoreFilter.length > 0) {
+        const score = c.hr_score ?? null;
+        if (score === null || !hrScoreFilter.includes(score)) return false;
+      }
       return true;
     });
   };
@@ -283,7 +292,7 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
     return baseOptions.filter(j =>
       j.title.toLowerCase().includes(query)
     );
-  }, [availableJobs, jobSearch, isAnyFilterActive, candidates, debouncedNameFilter, statusFilter, locationFilter, hrDecisionFilter, dateRange, resumeScreeningFilter, stageFilter, activitySessionFilter, passingThreshold]);
+  }, [availableJobs, jobSearch, isAnyFilterActive, candidates, debouncedNameFilter, statusFilter, locationFilter, hrDecisionFilter, dateRange, resumeScreeningFilter, stageFilter, activitySessionFilter, hrScoreFilter, passingThreshold]);
 
 
   // --- Dynamic option sets: full static set on initial load, cross-filtered after ---
@@ -300,7 +309,7 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
       value: v === 'may be' ? 'May Be' : v,
       label: HR_DECISION_LABEL_MAP[v] || v,
     }));
-  }, [candidates, isAnyFilterActive, debouncedNameFilter, statusFilter, locationFilter, jobFilter, dateRange, resumeScreeningFilter, stageFilter, activitySessionFilter, passingThreshold]);
+  }, [candidates, isAnyFilterActive, debouncedNameFilter, statusFilter, locationFilter, jobFilter, dateRange, resumeScreeningFilter, stageFilter, activitySessionFilter, hrScoreFilter, passingThreshold]);
 
 
   const resumeScreeningOptions = useMemo(() => {
@@ -321,7 +330,7 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
       value: v,
       label: RESUME_SCREENING_LABEL_MAP[v] || v,
     }));
-  }, [candidates, isAnyFilterActive, debouncedNameFilter, statusFilter, locationFilter, jobFilter, dateRange, hrDecisionFilter, stageFilter, activitySessionFilter, passingThreshold]);
+  }, [candidates, isAnyFilterActive, debouncedNameFilter, statusFilter, locationFilter, jobFilter, dateRange, hrDecisionFilter, stageFilter, activitySessionFilter, hrScoreFilter, passingThreshold]);
 
 
   const statusOptions = useMemo(() => {
@@ -333,7 +342,7 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
       if (s) set.add(s);
     });
     return Array.from(set).sort();
-  }, [candidates, isAnyFilterActive, debouncedNameFilter, locationFilter, jobFilter, dateRange, hrDecisionFilter, resumeScreeningFilter, stageFilter, activitySessionFilter, passingThreshold]);
+  }, [candidates, isAnyFilterActive, debouncedNameFilter, locationFilter, jobFilter, dateRange, hrDecisionFilter, resumeScreeningFilter, stageFilter, activitySessionFilter, hrScoreFilter, passingThreshold]);
 
   const locationOptions = useMemo(() => {
     if (!isAnyFilterActive) {
@@ -352,7 +361,7 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
       options = options.filter(o => o.toLowerCase().includes(query));
     }
     return options;
-  }, [fetchedLocations, candidates, isAnyFilterActive, locationSearch, debouncedNameFilter, statusFilter, jobFilter, dateRange, hrDecisionFilter, resumeScreeningFilter, stageFilter, activitySessionFilter, passingThreshold]);
+  }, [fetchedLocations, candidates, isAnyFilterActive, locationSearch, debouncedNameFilter, statusFilter, jobFilter, dateRange, hrDecisionFilter, resumeScreeningFilter, stageFilter, activitySessionFilter, hrScoreFilter, passingThreshold]);
 
 
 
@@ -372,7 +381,7 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
       return stageOptionsProp.filter(s => set.has(s));
     }
     return derived;
-  }, [candidates, stageOptionsProp, isAnyFilterActive, debouncedNameFilter, statusFilter, locationFilter, jobFilter, dateRange, hrDecisionFilter, resumeScreeningFilter, activitySessionFilter, passingThreshold]);
+  }, [candidates, stageOptionsProp, isAnyFilterActive, debouncedNameFilter, statusFilter, locationFilter, jobFilter, dateRange, hrDecisionFilter, resumeScreeningFilter, activitySessionFilter, hrScoreFilter, passingThreshold]);
 
 
 
@@ -429,6 +438,12 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
             candidateScreening = "pending";
           }
           if (!resumeScreeningFilter.includes(candidateScreening)) return false;
+        }
+
+        // Score rating filter (multi-select)
+        if (hrScoreFilter.length > 0) {
+          const score = c.hr_score ?? null;
+          if (score === null || !hrScoreFilter.includes(score)) return false;
         }
 
         return true;
@@ -516,9 +531,15 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
         if (!activitySessionFilter.includes(candidateSessionId)) return false;
       }
 
+      // Score rating filter (multi-select)
+      if (hrScoreFilter.length > 0) {
+        const score = c.hr_score ?? null;
+        if (score === null || !hrScoreFilter.includes(score)) return false;
+      }
+
       return true;
     });
-  }, [candidates, debouncedNameFilter, statusFilter, locationFilter, hrDecisionFilter, jobFilter, dateRange, resumeScreeningFilter, stageFilter, activitySessionFilter, isServerSide]);
+  }, [candidates, debouncedNameFilter, statusFilter, locationFilter, hrDecisionFilter, jobFilter, dateRange, resumeScreeningFilter, stageFilter, activitySessionFilter, hrScoreFilter, isServerSide]);
 
   const hasActiveFilters = isAnyFilterActive;
 
@@ -533,6 +554,7 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
     setResumeScreeningFilter([]);
     setStageFilter([]);
     setActivitySessionFilter([]);
+    setHrScoreFilter([]);
   };
 
   return {
@@ -571,5 +593,7 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
     setActivitySession: handleActivitySessionChange,
     activitySearch,
     setActivitySearch,
+    hrScoreFilter,
+    setHrScoreFilter,
   };
 };
