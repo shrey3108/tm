@@ -32,6 +32,7 @@ class CandidateAdminService:
         limit: int = 100,
         query: str | None = None,
         hr_decision: list[str] | None = None,
+        hr_score: list[int] | None = None,
         jd_version: list[int] | None = None,
         start_date: datetime | None = None,
         end_date: datetime | None = None,
@@ -46,9 +47,10 @@ class CandidateAdminService:
         from app.v1.db.models.stage_templates import StageTemplate
 
         # 0. Cache lookup
-        cache_key = f"candidates:for_job:{job_id}:{skip}:{limit}"
+        cache_key = f"v3:candidates:for_job:{job_id}:{skip}:{limit}"
         if query: cache_key += f":q_{query}"
         if hr_decision: cache_key += f":hr_{sorted(hr_decision)}"
+        if hr_score: cache_key += f":score_{sorted(hr_score)}"
         if jd_version: cache_key += f":v_{sorted(jd_version)}"
         if start_date: cache_key += f":sd_{start_date.isoformat()}"
         if end_date: cache_key += f":ed_{end_date.isoformat()}"
@@ -68,6 +70,7 @@ class CandidateAdminService:
                 pass
 
         # 0.1 Stage filter processing
+        print(f"[DEBUG] get_candidates_for_job called: job_id={job_id}, stage_id={stage_id}")
         stage_ids = []
         stage_names = []
         stage_filter = None
@@ -112,7 +115,7 @@ class CandidateAdminService:
                 ).where(
                     and_(
                         CandidateStage.candidate_id == Candidate.id,
-                        CandidateStage.status.in_(["active", "completed", "pending", "failed"]),
+                        CandidateStage.status.in_(["active", "completed", "failed"]),
                         stage_filter
                     )
                 ).exists()
@@ -177,6 +180,68 @@ class CandidateAdminService:
                 )
             else:
                 dir_stmt = dir_stmt.where(latest_decision_subq.in_(hr_decision))
+
+        if hr_score:
+            if stage_id:
+                # Filter by score in the selected stages
+                decision_stage_filter = or_()
+                if stage_ids:
+                    decision_stage_filter = or_(decision_stage_filter, HrDecision.stage_config_id.in_(stage_ids))
+                if stage_names:
+                    decision_stage_filter = or_(
+                        decision_stage_filter,
+                        exists().where(
+                            and_(
+                                JobStageConfig.id == HrDecision.stage_config_id,
+                                JobStageConfig.template_id == StageTemplate.id,
+                                func.lower(StageTemplate.name).in_(stage_names)
+                            )
+                        )
+                    )
+                    if "resume screening" in stage_names:
+                        decision_stage_filter = or_(decision_stage_filter, HrDecision.stage_config_id.is_(None))
+                
+                # 1. Match score in selected stage
+                cond_stage_score = exists().where(
+                    and_(
+                        HrDecision.candidate_id == Candidate.id,
+                        HrDecision.score.in_(hr_score),
+                        decision_stage_filter
+                    )
+                )
+                
+                # 2. Match latest overall score when no decision exists in selected stage
+                cond_fallback_score = and_(
+                    ~exists().where(
+                        and_(
+                            HrDecision.candidate_id == Candidate.id,
+                            decision_stage_filter
+                        )
+                    ),
+                    exists().where(
+                        and_(
+                            HrDecision.id == (
+                                select(HrDecision.id)
+                                .where(HrDecision.candidate_id == Candidate.id)
+                                .order_by(HrDecision.decided_at.desc())
+                                .limit(1)
+                                .scalar_subquery()
+                            ),
+                            HrDecision.score.in_(hr_score)
+                        )
+                    )
+                )
+                
+                dir_stmt = dir_stmt.where(or_(cond_stage_score, cond_fallback_score))
+            else:
+                latest_score_subq = (
+                    select(HrDecision.score)
+                    .where(HrDecision.candidate_id == Candidate.id)
+                    .order_by(HrDecision.decided_at.desc())
+                    .limit(1)
+                    .scalar_subquery()
+                )
+                dir_stmt = dir_stmt.where(latest_score_subq.in_(hr_score))
 
         if jd_version:
             dir_stmt = dir_stmt.where(Candidate.applied_version_number.in_(jd_version))
@@ -275,6 +340,12 @@ class CandidateAdminService:
                 current_dec = resp.hr_decision.lower() if resp.hr_decision else "pending"
                 if current_dec not in [d.lower() for d in hr_decision]:
                     continue
+
+            # Apply hr_score filter in-memory for cross-matches if needed
+            if hr_score:
+                current_score = resp.hr_score
+                if current_score is None or int(current_score) not in hr_score:
+                    continue
             
             # Apply result (AI pass_fail) filter in-memory for cross-matches
             if result:
@@ -349,6 +420,7 @@ class CandidateAdminService:
         query: str | None = None,
         job: str | None = None,
         hr_decision: list[str] | None = None,
+        hr_score: list[int] | None = None,
         city: list[str] | None = None,
         result: list[str] | None = None,
         stage_id: list[str] | None = None,
@@ -450,6 +522,78 @@ class CandidateAdminService:
                 stmt = stmt.where(latest_decision_subq.in_(hr_decision))
                 total_stmt = total_stmt.where(latest_decision_subq.in_(hr_decision))
 
+        if hr_score:
+            if stage_id:
+                # Resolve stage template names & ids for decision filtering
+                stage_ids = []
+                stage_names = []
+                for s in stage_id:
+                    try:
+                        stage_ids.append(uuid.UUID(s))
+                    except ValueError:
+                        stage_names.append(s.lower())
+                
+                decision_stage_filter = or_()
+                if stage_ids:
+                    decision_stage_filter = or_(decision_stage_filter, HrDecision.stage_config_id.in_(stage_ids))
+                if stage_names:
+                    decision_stage_filter = or_(
+                        decision_stage_filter,
+                        exists().where(
+                            and_(
+                                JobStageConfig.id == HrDecision.stage_config_id,
+                                JobStageConfig.template_id == StageTemplate.id,
+                                func.lower(StageTemplate.name).in_(stage_names)
+                            )
+                        )
+                    )
+                    if "resume screening" in stage_names:
+                        decision_stage_filter = or_(decision_stage_filter, HrDecision.stage_config_id.is_(None))
+                
+                # 1. Match score in selected stage
+                cond_stage_score = exists().where(
+                    and_(
+                        HrDecision.candidate_id == Candidate.id,
+                        HrDecision.score.in_(hr_score),
+                        decision_stage_filter
+                    )
+                )
+                
+                # 2. Match latest overall score when no decision exists in selected stage
+                cond_fallback_score = and_(
+                    ~exists().where(
+                        and_(
+                            HrDecision.candidate_id == Candidate.id,
+                            decision_stage_filter
+                        )
+                    ),
+                    exists().where(
+                        and_(
+                            HrDecision.id == (
+                                select(HrDecision.id)
+                                .where(HrDecision.candidate_id == Candidate.id)
+                                .order_by(HrDecision.decided_at.desc())
+                                .limit(1)
+                                .scalar_subquery()
+                            ),
+                            HrDecision.score.in_(hr_score)
+                        )
+                    )
+                )
+                
+                stmt = stmt.where(or_(cond_stage_score, cond_fallback_score))
+                total_stmt = total_stmt.where(or_(cond_stage_score, cond_fallback_score))
+            else:
+                latest_score_subq = (
+                    select(HrDecision.score)
+                    .where(HrDecision.candidate_id == Candidate.id)
+                    .order_by(HrDecision.decided_at.desc())
+                    .limit(1)
+                    .scalar_subquery()
+                )
+                stmt = stmt.where(latest_score_subq.in_(hr_score))
+                total_stmt = total_stmt.where(latest_score_subq.in_(hr_score))
+
         # 5. AI Result filter
         if result:
             stmt = stmt.where(Resume.pass_fail.in_(result))
@@ -500,7 +644,7 @@ class CandidateAdminService:
         stmt = (
             stmt.options(
                 selectinload(Candidate.resumes).selectinload(Resume.version_results).selectinload(ResumeVersionResult.job),
-                selectinload(Candidate.hr_decisions),
+                selectinload(Candidate.hr_decisions).selectinload(HrDecision.stage_config).selectinload(JobStageConfig.template),
                 selectinload(Candidate.applied_job),
                 selectinload(Candidate.stages).selectinload(CandidateStage.job_stage).selectinload(JobStageConfig.template),
                 selectinload(Candidate.location_rel),
@@ -513,7 +657,7 @@ class CandidateAdminService:
         result = await db.execute(stmt)
         candidates = list(result.scalars().unique().all())
 
-        mapped_responses = [self._map_candidate_to_response(c) for c in candidates]
+        mapped_responses = [self._map_candidate_to_response(c, focus_stage_id=stage_id) for c in candidates]
         
         # Filter out failed processing
         mapped_responses = [r for r in mapped_responses if r.processing_status != "failed"]
@@ -645,13 +789,43 @@ class CandidateAdminService:
                         filtered_decisions.append(d)
             hr_decisions = filtered_decisions
 
+        if focus_stage_id:
+            focus_list = []
+            if isinstance(focus_stage_id, (list, tuple, set)):
+                focus_list = [str(item) for item in focus_stage_id]
+            elif isinstance(focus_stage_id, str):
+                focus_list = [focus_stage_id]
+            
+            focus_ids = set()
+            focus_names = set()
+            for fs in focus_list:
+                try:
+                    focus_ids.add(str(uuid.UUID(fs)).lower())
+                except ValueError:
+                    focus_names.add(fs.lower())
+
+            stage_filtered_decisions = []
+            for d in hr_decisions:
+                d_stage_config_id = getattr(d, "stage_config_id", None)
+                if d_stage_config_id and str(d_stage_config_id).lower() in focus_ids:
+                    stage_filtered_decisions.append(d)
+                else:
+                    d_stage_name = getattr(d, "stage_name", "")
+                    if d_stage_name and d_stage_name.lower() in focus_names:
+                        stage_filtered_decisions.append(d)
+                    elif not d_stage_config_id and "resume screening" in focus_names:
+                        stage_filtered_decisions.append(d)
+            
+            hr_decisions = stage_filtered_decisions
         latest_decision = None
         if hr_decisions:
             latest_decision = max(hr_decisions, key=lambda d: d.decided_at if d.decided_at else datetime.min.replace(tzinfo=timezone.utc))
 
         # Normalize decision string for frontend
         status = "Pending"
+        hr_score_val = None
         if latest_decision:
+            hr_score_val = float(latest_decision.score) if latest_decision.score is not None else None
             raw_status = str(latest_decision.decision).lower().strip()
             if raw_status in ["pass", "approve"]:
                 status = "Pass"
@@ -770,37 +944,51 @@ class CandidateAdminService:
         sorted_stages = sorted(candidate_stages, key=lambda x: x.job_stage.stage_order if x.job_stage else 0)
         pipeline = [_map_stage(cs) for cs in sorted_stages]
         
+        current_stage = None
         # If focus_stage_id is provided, filter the pipeline to ONLY that stage
         if focus_stage_id:
-            # Cast both to string for safer comparison across different UUID implementations/versions
-            focus_str = str(focus_stage_id).lower()
+            focus_list = []
+            if isinstance(focus_stage_id, (list, tuple, set)):
+                focus_list = [str(item) for item in focus_stage_id]
+            elif isinstance(focus_stage_id, str):
+                focus_list = [focus_stage_id]
             
-            # 1. First pass: try to find the specific candidate stage instance by its ID
-            filtered_pipeline = [s for s in pipeline if str(s.stage_id).lower() == focus_str]
-            
-            # 2. Second pass: if no instance ID matches, assume focus_stage_id is a JobStageConfig ID (most common case)
-            if not filtered_pipeline:
-                filtered_pipeline = [_map_stage(cs) for cs in sorted_stages if str(cs.job_stage_id).lower() == focus_str]
+            focus_ids = set()
+            focus_names = set()
+            for fs in focus_list:
+                try:
+                    focus_ids.add(str(uuid.UUID(fs)).lower())
+                except ValueError:
+                    focus_names.add(fs.lower())
+
+            filtered_pipeline = []
+            for s in pipeline:
+                if str(s.stage_id).lower() in focus_ids or (s.job_stage_id and str(s.job_stage_id).lower() in focus_ids):
+                    filtered_pipeline.append(s)
+                elif s.template_name and s.template_name.lower() in focus_names:
+                    filtered_pipeline.append(s)
             
             # Update the pipeline with the filtered result
             if filtered_pipeline:
                 pipeline = filtered_pipeline
+                # When a user filters by a stage, they want the 'Stage' column to show their progress in THAT specific stage.
+                current_stage = filtered_pipeline[0]
 
-        current_stage = None
-        if focus_stage_id and pipeline:
-            current_stage = pipeline[0]
-        else:
+        # If no focus stage is provided (or no match found), use the candidate's ACTUAL current stage.
+        if not current_stage:
             for cs in candidate_stages:
                 if cs.status == "active":
                     current_stage = _map_stage(cs)
                     break
             
-            if not current_stage and pipeline:
-                non_pending_stages = [s for s in pipeline if s.status != "pending"]
+            if not current_stage:
+                # No active stage — show the last non-pending stage (most recent progress)
+                all_pipeline = [_map_stage(cs) for cs in sorted_stages]
+                non_pending_stages = [s for s in all_pipeline if s.status != "pending"]
                 if non_pending_stages:
                     current_stage = non_pending_stages[-1]
-                else:
-                    current_stage = pipeline[0]
+                elif all_pipeline:
+                    current_stage = all_pipeline[0]
 
         # Job Context Overrides
         mapping_job_id = effective_filter_job_id
@@ -860,6 +1048,7 @@ class CandidateAdminService:
             processing_status=processing_status,
             processing_error=processing_error,
             hr_decision=status,
+            hr_score=hr_score_val,
             version_results=version_results if not is_focused else [],
             current_stage=current_stage,
             pipeline=pipeline,
@@ -1088,6 +1277,8 @@ class CandidateAdminService:
                 "ai_result": result,
                 "hr_decision": None,
                 "score": float(score) if score is not None else None,
+                "ai_score": float(score) if score is not None else None,
+                "hr_score": None,
                 "stage_id": stage.id,
                 "stage_name": title,
                 "job_id": stage.job_stage.job_id if stage.job_stage else None,
@@ -1114,6 +1305,8 @@ class CandidateAdminService:
                     "ai_result": r_res.pass_fail or "completed",
                     "hr_decision": None,
                     "score": float(r_res.resume_score) if r_res.resume_score is not None else None,
+                    "ai_score": float(r_res.resume_score) if r_res.resume_score is not None else None,
+                    "hr_score": None,
                     "stage_id": None,
                     "stage_name": "Resume Screening",
                     "job_id": r_res.job_id,
@@ -1167,6 +1360,7 @@ class CandidateAdminService:
             if target_ev:
                 target_ev["hr_decision"] = dec.decision
                 target_ev["result"] = dec.decision
+                target_ev["hr_score"] = float(dec.score) if dec.score is not None else None
                 if dec.notes:
                     note_text = f" HR Notes: {dec.notes}"
                     if note_text not in (target_ev["description"] or ""):

@@ -137,6 +137,7 @@ class CandidateResponse(BaseModel):
     processing_status: str | None = None
     processing_error: str | None = None
     hr_decision: str | None = None
+    hr_score: float | None = None
     job_id: uuid.UUID | None = None
     job_name: str | None = None
     is_cross_match: bool = False

@@ -12,6 +12,8 @@ class TimelineEvent(BaseModel):
     ai_result: Optional[str] = None
     hr_decision: Optional[str] = None
     score: Optional[float] = None
+    ai_score: Optional[float] = None
+    hr_score: Optional[float] = None
     stage_id: Optional[uuid.UUID] = None
     stage_name: Optional[str] = None
     job_id: Optional[uuid.UUID] = None

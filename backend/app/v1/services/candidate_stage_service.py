@@ -91,11 +91,11 @@ class CandidateStageService:
         """
         Mark current stage as completed/failed and activate the next stage if successful.
         """
-        # 1. Fetch current candidate stage with its config
+        # 1. Fetch current candidate stage with its config and template
         stmt = (
             select(CandidateStage)
             .where(CandidateStage.id == current_stage_id)
-            .options(selectinload(CandidateStage.job_stage))
+            .options(selectinload(CandidateStage.job_stage).selectinload(JobStageConfig.template))
         )
         res = await db.execute(stmt)
         current_cs = res.scalar_one_or_none()
@@ -154,7 +154,8 @@ class CandidateStageService:
             # Update candidate status only if it's their primary job or they have no status
             candidate = await db.get(Candidate, candidate_id)
             if candidate and (candidate.applied_job_id == job_id or not candidate.current_status):
-                candidate.current_status = next_js.template.name if next_js.template else f"Stage {next_order}"
+                current_stage_name = current_cs.job_stage.template.name if (current_cs.job_stage and current_cs.job_stage.template) else "Stage"
+                candidate.current_status = f"{current_stage_name} (Completed)"
             
             await db.flush()
             # Invalidate cache for the job
