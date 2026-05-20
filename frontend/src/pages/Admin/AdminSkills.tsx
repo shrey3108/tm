@@ -194,13 +194,13 @@ const AdminSkills = () => {
       id: "actions",
       header: () => {
         return (
-          <div className="flex justify-start gap-2">
+          <div className="flex items-center justify-center gap-2">
             <span className="font-semibold">Actions</span>
           </div>
         )
       },
       cell: ({ row }) => (
-        <div className="flex gap-2 justify-start">
+        <div className="gap-2 flex items-center justify-center">
           <PermissionGuard permissions={PERMISSIONS.SKILLS_MANAGE} hideWhenDenied>
             <HoverCard>
               <HoverCardTrigger

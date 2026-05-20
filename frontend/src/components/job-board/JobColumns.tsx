@@ -298,7 +298,7 @@ export const getJobColumns = ({
       // header: "Actions",
       header: () => {
         return (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-center gap-2">
             <span className="font-semibold text-base">Actions</span>
           </div>
         )

@@ -199,12 +199,12 @@ const AdminJobCriteria = () => {
         {
             id: "actions",
             header: () => {
-                return <div className="flex items-center justify-start gap-2">
+                return <div className="flex items-center justify-center gap-2">
                     <span className="font-semibold">Actions</span>
                 </div>
             },
             cell: ({ row }) => (
-                <div className="flex items-center justify-start gap-2 ">
+                <div className="flex items-center justify-center gap-2 ">
                     <HoverCard>
                         <HoverCardTrigger
                             render={(props) => (
