@@ -87,9 +87,9 @@ export default function JobCandidates() {
     start_date: activeFilters.dateRange?.from,
     end_date: activeFilters.dateRange?.to,
     activity_session: activeFilters.activity_session,
-    stage: activeFilters.stage,
+    stage_id: activeFilters.stage_id,
     city: activeFilters.city,
-    result: activeFilters.resumeScreening,
+    result: activeFilters.result,
     hr_score: activeFilters.hr_score,
   });
 

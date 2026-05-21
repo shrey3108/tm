@@ -15,8 +15,8 @@ export interface CandidateActiveFilters {
   job: string[];
   hr_decision: string[];
   dateRange?: DateRange | null;
-  resumeScreening?: string[];
-  stage?: string[];
+  result?: string[];
+  stage_id?: string[];
   activity_session?: string[];
   q?: string;
   hr_score?: number[];
@@ -51,14 +51,6 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
   const nameFilter = externalNameFilter !== undefined ? externalNameFilter : internalNameFilter;
   const setNameFilter = onNameFilterChange !== undefined ? onNameFilterChange : setInternalNameFilter;
 
-  // Sync internal name filter with state on mount (removed URL sync)
-  useEffect(() => {
-    // URL sync removed
-  }, []); // Only once on mount
-
-
-  const debouncedNameFilter = useDebouncedValue(nameFilter);
-
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [locationFilter, setLocationFilter] = useState<string[]>([]);
   const [hrDecisionFilter, setHrDecisionFilter] = useState<string[]>([]);
@@ -72,10 +64,15 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
   const [locationSearch, setLocationSearch] = useState("");
   const [availableJobs, setAvailableJobs] = useState<{ id: string; title: string; slug: string }[]>([]);
   const [jobSearch, setJobSearch] = useState("");
-  const [resumeScreeningFilter, setResumeScreeningFilter] = useState<string[]>([]);
+  const [resultFilter, setResultFilter] = useState<string[]>([]);
   const [stageFilter, setStageFilter] = useState<string[]>([]);
   const [activitySessionFilter, setActivitySessionFilter] = useState<string[]>([]);
   const [activitySearch, setActivitySearch] = useState("");
+
+  const debouncedNameFilter = useDebouncedValue(nameFilter);
+  const debouncedJobSearch = useDebouncedValue(jobSearch);
+  const debouncedLocationSearch = useDebouncedValue(locationSearch);
+
 
   // Handler to update activity session and sync date range in one batch
   const handleActivitySessionChange = (ids: string[]) => {
@@ -102,34 +99,34 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
     }
   };
 
-
-
-
-
-  // Fetch job titles — only when the job-filter column is visible, debounced on jobSearch.
+  // Fetch job titles — only when the job-filter column is visible
   useEffect(() => {
     if (!fetchJobTitles) return;
-    const handler = setTimeout(() => {
-      const fetchJobs = async () => {
-        try {
-          const response = await jobService.getJobTitles(jobSearch);
-          const jobsArray = Array.isArray(response) ? response : (response as any)?.data;
-
-          const jobs = jobsArray.map((j: any) => ({
+    jobService.getJobTitles(debouncedJobSearch)
+      .then((response) => {
+        const jobsArray = Array.isArray(response) ? response : (response as any)?.data ?? [];
+        setAvailableJobs(
+          jobsArray.map((j: any) => ({
             id: j.id,
             title: j.title?.trim() || "Untitled",
-            slug: slugify(j.title || "")
-          }));
-          setAvailableJobs(jobs);
-        } catch (error) {
-          console.error("Failed to fetch jobs for filter:", error);
-        }
-      };
-      fetchJobs();
-    }, 500); // 500ms debounce
+            slug: slugify(j.title || ""),
+          }))
+        );
+      })
+      .catch((err) => console.error("Failed to fetch jobs for filter:", err));
+  }, [debouncedJobSearch, fetchJobTitles]);
 
-    return () => clearTimeout(handler);
-  }, [jobSearch, fetchJobTitles]);
+  useEffect(() => {
+    adminLocationService
+      .getAllLocations(0, 500, debouncedLocationSearch)
+      .then((response) => {
+        const names = response.data.map((loc) => toTitleCase(loc.name.trim()));
+        setFetchedLocations(names);
+      })
+      .catch((err) => console.error("Failed to fetch jobs for filter:", err));
+  }, [debouncedLocationSearch]);
+
+
 
   // Call onFiltersChange when internal filter states update
   useEffect(() => {
@@ -140,14 +137,14 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
         job: jobFilter,
         hr_decision: hrDecisionFilter,
         dateRange: dateRange,
-        resumeScreening: resumeScreeningFilter,
-        stage: stageFilter,
+        result: resultFilter,
+        stage_id: stageFilter,
         activity_session: activitySessionFilter,
         q: debouncedNameFilter,
         hr_score: hrScoreFilter
       });
     }
-  }, [statusFilter, locationFilter, jobFilter, hrDecisionFilter, dateRange, resumeScreeningFilter, stageFilter, activitySessionFilter, debouncedNameFilter, hrScoreFilter, onFiltersChange]);
+  }, [statusFilter, locationFilter, jobFilter, hrDecisionFilter, dateRange, resultFilter, stageFilter, activitySessionFilter, debouncedNameFilter, hrScoreFilter, onFiltersChange]);
 
   const isAnyFilterActive =
     !!debouncedNameFilter ||
@@ -155,32 +152,12 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
     locationFilter.length > 0 ||
     hrDecisionFilter.length > 0 ||
     jobFilter.length > 0 ||
-    resumeScreeningFilter.length > 0 ||
+    resultFilter.length > 0 ||
     activitySessionFilter.length > 0 ||
     stageFilter.length > 0 ||
     hrScoreFilter.length > 0 ||
     !!dateRange?.from ||
     !!dateRange?.to;
-
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      const fetchLocations = async () => {
-        try {
-          const response = await adminLocationService.getAllLocations(0, 500, locationSearch);
-          const names = response.data.map((loc) => toTitleCase(loc.name.trim()));
-          setFetchedLocations(names);
-        } catch (error) {
-          console.error("Failed to fetch locations for filter:", error);
-        }
-      };
-      fetchLocations();
-    }, 500); // 500ms debounce
-
-    return () => clearTimeout(handler);
-  }, [locationSearch]);
-
-
-
 
   // --- Cross-filter helper: applies all filters EXCEPT the one named by `skip` ---
   const crossFilteredCandidates = (skip: string) => {
@@ -220,14 +197,14 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
         if (!hrDecisionFilter.some(d => d.toLowerCase() === decision.toLowerCase())) return false;
       }
       // Resume Screening filter
-      if (skip !== 'resumeScreening' && resumeScreeningFilter.length > 0) {
-        let candidateScreening = 'failed';
+      if (skip !== 'result' && resultFilter.length > 0) {
+        let candidateResult = 'failed';
         if (c.pass_fail === true || String(c.pass_fail).toLowerCase() === 'pass' || (c.resume_score ?? 0) >= passingThreshold) {
-          candidateScreening = 'passed';
+          candidateResult = 'passed';
         } else if (c.processing_status === 'processing' || c.processing_status === 'queued' || !c.is_parsed) {
-          candidateScreening = 'pending';
+          candidateResult = 'pending';
         }
-        if (!resumeScreeningFilter.includes(candidateScreening)) return false;
+        if (!resultFilter.includes(candidateResult)) return false;
       }
       // Stage filter
       if (skip !== 'stage' && stageFilter.length > 0) {
@@ -257,7 +234,7 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
     { value: "pending", label: HR_DECISION_OPTIONS.PENDING },
   ];
 
-  const ALL_RESUME_SCREENING_OPTIONS = [
+  const ALL_RESULT_OPTIONS = [
     { value: "passed", label: RESUME_SCREENING_RESULT.PASS },
     { value: "failed", label: RESUME_SCREENING_RESULT.FAIL }
   ];
@@ -269,7 +246,7 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
     pending: HR_DECISION_OPTIONS.PENDING,
   };
 
-  const RESUME_SCREENING_LABEL_MAP: Record<string, string> = {
+  const RESULT_LABEL_MAP: Record<string, string> = {
     passed: RESUME_SCREENING_RESULT.PASS,
     failed: RESUME_SCREENING_RESULT.FAIL,
     pending: HR_DECISION_OPTIONS.PENDING,
@@ -295,7 +272,7 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
     return baseOptions.filter(j =>
       j.title.toLowerCase().includes(query)
     );
-  }, [availableJobs, jobSearch, isAnyFilterActive, candidates, debouncedNameFilter, statusFilter, locationFilter, hrDecisionFilter, dateRange, resumeScreeningFilter, stageFilter, activitySessionFilter, hrScoreFilter, passingThreshold]);
+  }, [availableJobs, jobSearch, isAnyFilterActive, candidates, debouncedNameFilter, statusFilter, locationFilter, hrDecisionFilter, dateRange, resultFilter, stageFilter, activitySessionFilter, hrScoreFilter, passingThreshold]);
 
 
   // --- Dynamic option sets: full static set on initial load, cross-filtered after ---
@@ -312,12 +289,12 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
       value: v === 'may be' ? 'May Be' : v,
       label: HR_DECISION_LABEL_MAP[v] || v,
     }));
-  }, [candidates, isAnyFilterActive, debouncedNameFilter, statusFilter, locationFilter, jobFilter, dateRange, resumeScreeningFilter, stageFilter, activitySessionFilter, hrScoreFilter, passingThreshold]);
+  }, [candidates, isAnyFilterActive, debouncedNameFilter, statusFilter, locationFilter, jobFilter, dateRange, resultFilter, stageFilter, activitySessionFilter, hrScoreFilter, passingThreshold]);
 
 
-  const resumeScreeningOptions = useMemo(() => {
-    if (!isAnyFilterActive) return ALL_RESUME_SCREENING_OPTIONS;
-    const subset = crossFilteredCandidates('resumeScreening');
+  const resultOptions = useMemo(() => {
+    if (!isAnyFilterActive) return ALL_RESULT_OPTIONS;
+    const subset = crossFilteredCandidates('result');
 
     const set = new Set<string>();
     subset.forEach(c => {
@@ -331,7 +308,7 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
     });
     return Array.from(set).sort().map(v => ({
       value: v,
-      label: RESUME_SCREENING_LABEL_MAP[v] || v,
+      label: RESULT_LABEL_MAP[v] || v,
     }));
   }, [candidates, isAnyFilterActive, debouncedNameFilter, statusFilter, locationFilter, jobFilter, dateRange, hrDecisionFilter, stageFilter, activitySessionFilter, hrScoreFilter, passingThreshold]);
 
@@ -345,7 +322,7 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
       if (s) set.add(s);
     });
     return Array.from(set).sort();
-  }, [candidates, isAnyFilterActive, debouncedNameFilter, locationFilter, jobFilter, dateRange, hrDecisionFilter, resumeScreeningFilter, stageFilter, activitySessionFilter, hrScoreFilter, passingThreshold]);
+  }, [candidates, isAnyFilterActive, debouncedNameFilter, locationFilter, jobFilter, dateRange, hrDecisionFilter, resultFilter, stageFilter, activitySessionFilter, hrScoreFilter, passingThreshold]);
 
   const locationOptions = useMemo(() => {
     if (!isAnyFilterActive) {
@@ -364,9 +341,7 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
       options = options.filter(o => o.toLowerCase().includes(query));
     }
     return options;
-  }, [fetchedLocations, candidates, isAnyFilterActive, locationSearch, debouncedNameFilter, statusFilter, jobFilter, dateRange, hrDecisionFilter, resumeScreeningFilter, stageFilter, activitySessionFilter, hrScoreFilter, passingThreshold]);
-
-
+  }, [fetchedLocations, candidates, isAnyFilterActive, locationSearch, debouncedNameFilter, statusFilter, jobFilter, dateRange, hrDecisionFilter, resultFilter, stageFilter, activitySessionFilter, hrScoreFilter, passingThreshold]);
 
   const stageOptions = useMemo(() => {
     if (!isAnyFilterActive && stageOptionsProp && stageOptionsProp.length > 0) {
@@ -384,9 +359,7 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
       return stageOptionsProp.filter(s => set.has(s));
     }
     return derived;
-  }, [candidates, stageOptionsProp, isAnyFilterActive, debouncedNameFilter, statusFilter, locationFilter, jobFilter, dateRange, hrDecisionFilter, resumeScreeningFilter, activitySessionFilter, hrScoreFilter, passingThreshold]);
-
-
+  }, [candidates, stageOptionsProp, isAnyFilterActive, debouncedNameFilter, statusFilter, locationFilter, jobFilter, dateRange, hrDecisionFilter, resultFilter, activitySessionFilter, hrScoreFilter, passingThreshold]);
 
 
   const minDate = useMemo(() => {
@@ -403,55 +376,7 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
   }, [candidates]);
 
   const filteredCandidates = useMemo(() => {
-    // if(isServerSide) return candidates; //uncomment when api accepts stages filter
-
-    // If server side is enabled, most filters are handled by the API.
-    // However, some filters (like stage) might not be supported by the backend yet,
-    // so we apply them locally to the candidates returned by the server.
-    if (isServerSide) {
-      // If server side is enabled, most filters are handled by the API.
-      // However, some filters (like stage, location, result) might not be supported 
-      // by the backend yet, so we apply them locally to the candidates returned by the server.
-      return candidates.filter((c) => {
-        // Stage filter (multi-select)
-        if (stageFilter.length > 0) {
-          const candidateStage = c.current_stage?.template_name || "";
-          if (!stageFilter.includes(candidateStage)) return false;
-        }
-
-        // Location filter (multi-select) - Case-insensitive comparison
-        if (locationFilter.length > 0) {
-          const candidateLocation = (c.location || "").trim().toLowerCase();
-          const isMatched = locationFilter.some(
-            (filterLoc) => filterLoc.toLowerCase() === candidateLocation
-          );
-          if (!isMatched) return false;
-        }
-
-        // Resume Screening (Result) filter (multi-select)
-        if (resumeScreeningFilter.length > 0) {
-          let candidateScreening = "failed";
-          if (
-            c.pass_fail === true ||
-            String(c.pass_fail).toLowerCase() === "pass" ||
-            (c.resume_score ?? 0) >= passingThreshold
-          ) {
-            candidateScreening = "passed";
-          } else if (c.processing_status === "processing" || c.processing_status === "queued" || !c.is_parsed) {
-            candidateScreening = "pending";
-          }
-          if (!resumeScreeningFilter.includes(candidateScreening)) return false;
-        }
-
-        // Score rating filter (multi-select)
-        if (hrScoreFilter.length > 0) {
-          const score = c.hr_score ?? null;
-          if (score === null || !hrScoreFilter.includes(score)) return false;
-        }
-
-        return true;
-      });
-    }
+    if (isServerSide) return candidates;
 
     return candidates.filter((c) => {
       // Name / email filter
@@ -501,19 +426,19 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
           return false;
         }
       }
-      if (resumeScreeningFilter.length > 0) {
-        let candidateScreening = "failed";
+      if (resultFilter.length > 0) {
+        let candidateResult = "failed";
         if (
           c.pass_fail === true ||
           String(c.pass_fail).toLowerCase() === "pass" ||
           (c.resume_score ?? 0) >= passingThreshold
         ) {
-          candidateScreening = "passed";
+          candidateResult = "passed";
         } else if (c.processing_status === "processing" || c.processing_status === "queued" || !c.is_parsed) {
-          candidateScreening = "pending";
+          candidateResult = "pending";
         }
 
-        if (!resumeScreeningFilter.includes(candidateScreening)) {
+        if (!resultFilter.includes(candidateResult)) {
           return false;
         }
       }
@@ -542,7 +467,7 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
 
       return true;
     });
-  }, [candidates, debouncedNameFilter, statusFilter, locationFilter, hrDecisionFilter, jobFilter, dateRange, resumeScreeningFilter, stageFilter, activitySessionFilter, hrScoreFilter, isServerSide]);
+  }, [candidates, debouncedNameFilter, statusFilter, locationFilter, hrDecisionFilter, jobFilter, dateRange, resultFilter, stageFilter, activitySessionFilter, hrScoreFilter, isServerSide]);
 
   const hasActiveFilters = isAnyFilterActive;
 
@@ -554,7 +479,7 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
     setJobFilter([]);
     setJobSearch("");
     setDateRange({ from: undefined, to: undefined });
-    setResumeScreeningFilter([]);
+    setResultFilter([]);
     setStageFilter([]);
     setActivitySessionFilter([]);
     setHrScoreFilter([]);
@@ -580,13 +505,13 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
     setLocationSearch,
     jobSearch,
     setJobSearch,
-    resumeScreeningFilter,
-    setResumeScreeningFilter,
+    resultFilter,
+    setResultFilter,
     stageFilter,
     setStageFilter,
     stageOptions,
     hrDecisionOptions,
-    resumeScreeningOptions,
+    resultOptions,
     minDate,
     filteredCandidates,
     hasActiveFilters,

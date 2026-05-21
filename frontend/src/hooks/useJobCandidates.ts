@@ -23,7 +23,7 @@ export const useJobCandidates = (
     start_date?: Date;
     end_date?: Date;
     activity_session?: string[];
-    stage?: string[];
+    stage_id?: string[];
     city?: string[];
     result?: string[];
     hr_score?: number[];
@@ -63,7 +63,7 @@ export const useJobCandidates = (
       start_date: start_date ? new Date(start_date) : undefined,
       end_date: end_date ? new Date(end_date) : undefined,
       activity_session: searchParams.getAll("activity_session"),
-      stage: searchParams.getAll("stage"),
+      stage_id: searchParams.getAll("stage_id"),
       city: searchParams.getAll("city"),
       result: searchParams.getAll("result"),
       hr_score: searchParams.getAll("hr_score").map(Number),

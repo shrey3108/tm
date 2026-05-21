@@ -79,8 +79,8 @@ export function CandidateTable<T extends UnifiedCandidate>({
     setLocationSearch,
     jobSearch,
     setJobSearch,
-    resumeScreeningFilter,
-    setResumeScreeningFilter,
+    resultFilter,
+    setResultFilter,
     minDate,
     filteredCandidates,
     hasActiveFilters,
@@ -90,7 +90,7 @@ export function CandidateTable<T extends UnifiedCandidate>({
     setStageFilter,
     stageOptions,
     hrDecisionOptions,
-    resumeScreeningOptions,
+    resultOptions,
     activitySession,
     setActivitySession,
     activitySearch,
@@ -130,13 +130,13 @@ export function CandidateTable<T extends UnifiedCandidate>({
         jobOptions={jobOptions}
         jobSearch={jobSearch}
         setJobSearch={setJobSearch}
-        resumeScreeningFilter={resumeScreeningFilter}
-        setResumeScreeningFilter={setResumeScreeningFilter}
+        resultFilter={resultFilter}
+        setResultFilter={setResultFilter}
         stageFilter={stageFilter}
         setStageFilter={setStageFilter}
         stageOptions={stageOptions}
         hrDecisionOptions={hrDecisionOptions}
-        resumeScreeningOptions={resumeScreeningOptions}
+        resultOptions={resultOptions}
         activitySession={activitySession}
         setActivitySession={setActivitySession}
         activitySearch={activitySearch}

@@ -42,8 +42,8 @@ interface CandidateTableFiltersProps {
   setDateRange: (range: DateRange) => void;
   hrDecisionFilter: string[];
   setHrDecisionFilter: (value: string[]) => void;
-  resumeScreeningFilter: string[];
-  setResumeScreeningFilter: (value: string[]) => void;
+  resultFilter: string[];
+  setResultFilter: (value: string[]) => void;
   statusOptions: string[];
   locationOptions: string[];
   locationSearch: string;
@@ -55,7 +55,7 @@ interface CandidateTableFiltersProps {
   setStageFilter: (value: string[]) => void;
   stageOptions: string[];
   hrDecisionOptions: { value: string; label: string }[];
-  resumeScreeningOptions: { value: string; label: string }[];
+  resultOptions: { value: string; label: string }[];
   hasActiveFilters: boolean;
   clearFilters: () => void;
   resultCount: number;
@@ -87,8 +87,8 @@ export const CandidateTableFilters = ({
   setDateRange,
   hrDecisionFilter,
   setHrDecisionFilter,
-  resumeScreeningFilter,
-  setResumeScreeningFilter,
+  resultFilter,
+  setResultFilter,
   locationOptions,
   locationSearch,
   setLocationSearch,
@@ -99,7 +99,7 @@ export const CandidateTableFilters = ({
   setStageFilter,
   stageOptions,
   hrDecisionOptions,
-  resumeScreeningOptions,
+  resultOptions,
   hasActiveFilters,
   clearFilters,
   resultCount,
@@ -391,37 +391,37 @@ export const CandidateTableFilters = ({
               className={cn(
                 normalStyle,
                 "w-[130px]",
-                resumeScreeningFilter.length > 0
+                resultFilter.length > 0
                   ? "border-primary/30 bg-primary/5 text-primary"
                   : "border-input bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground"
               )}
             >
               <span className="truncate">
-                {resumeScreeningFilter.length === 0
+                {resultFilter.length === 0
                   ? "AI Result"
-                  : resumeScreeningFilter.length === 1
-                    ? resumeScreeningOptions.find((d) => d.value === resumeScreeningFilter[0])?.label ?? resumeScreeningFilter[0]
-                    : `${resumeScreeningFilter.length} Results`}
+                  : resultFilter.length === 1
+                    ? resultOptions.find((d) => d.value === resultFilter[0])?.label ?? resultFilter[0]
+                    : `${resultFilter.length} Results`}
               </span>
               <ChevronDown className="h-3.5 w-3.5 opacity-60 shrink-0" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-fit min-w-[130px] rounded-xl shadow-lg p-1">
               <DropdownMenuGroup>
                 <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground px-2 py-1.5">AI Result</DropdownMenuLabel>
-                {resumeScreeningOptions.length === 0 ? (
+                {resultOptions.length === 0 ? (
                   <div className="px-2 py-4 text-xs text-center text-muted-foreground">
                     No results in current data
                   </div>
-                ) : resumeScreeningOptions.map((d) => (
+                ) : resultOptions.map((d) => (
                   <DropdownMenuCheckboxItem
                     key={d.value}
-                    checked={resumeScreeningFilter.includes(d.value)}
+                    checked={resultFilter.includes(d.value)}
                     onSelect={(e) => e.preventDefault()}
                     onClick={() =>
-                      setResumeScreeningFilter(
-                        resumeScreeningFilter.includes(d.value)
-                          ? resumeScreeningFilter.filter((v) => v !== d.value)
-                          : [...resumeScreeningFilter, d.value]
+                      setResultFilter(
+                        resultFilter.includes(d.value)
+                          ? resultFilter.filter((v) => v !== d.value)
+                          : [...resultFilter, d.value]
                       )
                     }
                     className="rounded-lg pl-2 pr-6"
@@ -429,12 +429,12 @@ export const CandidateTableFilters = ({
                     {d.label}
                   </DropdownMenuCheckboxItem>
                 ))}
-                {resumeScreeningFilter.length > 0 && (
+                {resultFilter.length > 0 && (
                   <>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       variant="destructive"
-                      onClick={() => setResumeScreeningFilter([])}
+                      onClick={() => setResultFilter([])}
                       className="rounded-lg"
                     >
                       Clear selection

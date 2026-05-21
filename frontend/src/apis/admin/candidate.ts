@@ -22,7 +22,7 @@ export const adminCandidateService = {
       hr_decision?: string[];
       city?: string[];
       status?: string[];
-      stage?: string[];
+      stage_id?: string[];
       result?: string[];
       hr_score?: number[];
     },
@@ -53,7 +53,7 @@ export const adminCandidateService = {
       hr_decision?: string[];
       city?: string[];
       status?: string[];
-      stage?: string[];
+      stage_id?: string[];
       result?: string[];
       hr_score?: number[];
     },
@@ -83,7 +83,7 @@ export const adminCandidateService = {
       hr_decision?: string[];
       city?: string[];
       status?: string[];
-      stage?: string[];
+      stage_id?: string[];
       result?: string[];
       hr_score?: number[];
     },

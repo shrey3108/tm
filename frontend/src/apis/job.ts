@@ -147,6 +147,7 @@ const jobService = {
         ...(filters?.start_date !== undefined ? { start_date: filters.start_date } : undefined),
         ...(filters?.end_date !== undefined ? { end_date: filters.end_date } : undefined),
         ...(filters?.activity_session !== undefined ? { activity_session: filters.activity_session } : undefined),
+        ...(filters?.stage_id !== undefined ? { stage_id: filters.stage_id } : undefined),
         ...(filters?.city !== undefined ? { city: filters.city } : undefined),
         ...(filters?.result !== undefined ? { result: filters.result } : undefined),
         ...(filters?.hr_score !== undefined ? { hr_score: filters.hr_score } : undefined),
