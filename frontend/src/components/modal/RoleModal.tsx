@@ -33,6 +33,7 @@ import {
 import { useFormModal } from "@/hooks";
 import { roleCreateSchema, type RoleCreateFormValues } from "@/schemas/admin";
 import { cn } from "@/lib/utils";
+import { Required } from "@/components/job-form/Required";
 
 /**
  * Props for the RoleModal component.
@@ -149,8 +150,9 @@ const RoleModal = ({ show, handleClose, onSuccess, editRoleId }: RoleModalProps)
 
   return (
     <Dialog open={show} onOpenChange={(open) => !open && onHide()}>
-      <DialogContent className="max-w-lg font-sans h-[550px] flex flex-col">
-        <DialogHeader>
+      {/* <DialogContent className="max-w-lg font-sans h-[550px] flex flex-col"> */}
+      <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-3xl md:max-w-4xl lg:max-w-5xl max-h-[90vh] flex flex-col p-0 overflow-hidden bg-card/95 backdrop-blur-xl border-muted-foreground/20 shadow-2xl rounded-2xl h-[600px]">
+        <DialogHeader className="p-2 pb-2 border-b border-muted-foreground/10 bg-muted/30">
           <DialogTitle className="text-2xl font-bold">
             {isEditMode ? "Edit Role" : "Create New Role"}
           </DialogTitle>
@@ -164,17 +166,17 @@ const RoleModal = ({ show, handleClose, onSuccess, editRoleId }: RoleModalProps)
           </div>
         ) : (
           <Form {...formModal}>
-            <form id="role-form" onSubmit={handleFormSubmit} className="flex-1 flex flex-col min-h-0 space-y-6">
+            <form id="role-form" onSubmit={handleFormSubmit} className="flex-1 flex flex-col min-h-0 space-y-2">
               <FormField
                 control={control}
                 name="name"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-md font-semibold">Role Name</FormLabel>
+                  <FormItem className="flex-row items-center gap-x-2">
+                    <FormLabel className="text-md font-semibold px-2">Role Name <Required /></FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="e.g. Moderator"
-                        className="h-11 rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium"
+                        placeholder="e.g. HR Manager"
+                        className="h-11 w-full rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium"
                         {...field}
                       />
                     </FormControl>
@@ -184,8 +186,8 @@ const RoleModal = ({ show, handleClose, onSuccess, editRoleId }: RoleModalProps)
               />
 
               <div className="flex-1 flex flex-col min-h-0 space-y-3">
-                <FormLabel className="text-md font-semibold">Assign Permissions</FormLabel>
-                <div className="grid grid-cols-1 gap-3 p-4 bg-muted/30 rounded-2xl border border-muted-foreground/10 flex-1 overflow-y-auto custom-scrollbar">
+                <FormLabel className="text-md font-semibold px-2">Assign Permissions</FormLabel>
+                <div className="grid grid-cols-3 gap-3 p-4 bg-muted/30 rounded-2xl border border-muted-foreground/10 flex-1 overflow-y-auto custom-scrollbar">
                   {permissions.map((permission) => {
                     const isChecked = selectedPermissionIds.includes(permission.id);
                     return (
@@ -232,7 +234,7 @@ const RoleModal = ({ show, handleClose, onSuccess, editRoleId }: RoleModalProps)
             </form>
           </Form>
         )}
-        <DialogFooter className="pt-4 border-t gap-2 mt-auto">
+        <DialogFooter className="border-t gap-2 p-2">
           <Button
             variant="ghost"
             onClick={onHide}

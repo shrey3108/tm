@@ -19,10 +19,14 @@ import { Button } from "@/components";
 import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card";
 import { Badge } from "@/components/ui/badge";
 import PermissionGuard from "@/components/auth/PermissionGuard";
-import { PERMISSIONS } from "@/lib/permissions";
+import { PERMISSIONS, hasPermissions } from "@/lib/permissions";
+import { useAppSelector } from "@/store/hooks";
+import { selectCurrentUser } from "@/store/slices/authSlice";
 
 const AdminSkills = () => {
   const toast = useToast();
+  const user = useAppSelector(selectCurrentUser);
+  const hasManagePermission = hasPermissions(user?.permissions, PERMISSIONS.SKILLS_MANAGE);
   const [showModal, setShowModal] = useState(false);
   const [selectedSkill, setSelectedSkill] = useState<SkillRead | null>(null);
 
@@ -184,69 +188,67 @@ const AdminSkills = () => {
           </div>
         )
       },
-      cell: ({ row }) => (
+    cell: ({ row }) => (
         <div className="flex items-center gap-2 max-w-[800px] truncate ">
           {row.original.description || "No description provided"}
         </div>
       ),
     },
-    {
-      id: "actions",
-      header: () => {
-        return (
-          <div className="flex items-center justify-center gap-2">
-            <span className="font-semibold">Actions</span>
-          </div>
-        )
-      },
-      cell: ({ row }) => (
-        <div className="gap-2 flex items-center justify-center">
-          <PermissionGuard permissions={PERMISSIONS.SKILLS_MANAGE} hideWhenDenied>
-            <HoverCard>
-              <HoverCardTrigger
-                render={(props) => (
-                  <Button
-                    {...props}
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleEditClick(row.original)}
-                    className="h-9 w-9 rounded-xl hover:bg-primary/10 hover:text-primary transition-colors flex items-center justify-center shrink-0"
-                  >
-                    <Edit2 className="h-4 w-4 shrink-0" />
-                    <span className="sr-only">Edit</span>
-                  </Button>
-                )}
-              />
-              <HoverCardContent className="w-fit px-3 py-1.5 text-xs font-medium" side="top">
-                <span className="text-primary">Edit Skill</span>
-              </HoverCardContent>
-            </HoverCard>
-          </PermissionGuard>
+    ...(hasManagePermission
+      ? [
+          {
+            id: "actions",
+            header: () => (
+              <div className="flex items-center justify-center gap-2">
+                <span className="font-semibold">Actions</span>
+              </div>
+            ),
+            cell: ({ row }) => (
+              <div className="gap-2 flex items-center justify-center">
+                <HoverCard>
+                  <HoverCardTrigger
+                    render={(props) => (
+                      <Button
+                        {...props}
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleEditClick(row.original)}
+                        className="h-9 w-9 rounded-xl hover:bg-primary/10 hover:text-primary transition-colors flex items-center justify-center shrink-0"
+                      >
+                        <Edit2 className="h-4 w-4 shrink-0" />
+                        <span className="sr-only">Edit</span>
+                      </Button>
+                    )}
+                  />
+                  <HoverCardContent className="w-fit px-3 py-1.5 text-xs font-medium" side="top">
+                    <span className="text-primary">Edit Skill</span>
+                  </HoverCardContent>
+                </HoverCard>
 
-          <PermissionGuard permissions={PERMISSIONS.SKILLS_MANAGE} hideWhenDenied>
-            <HoverCard>
-              <HoverCardTrigger
-                render={(props) => (
-                  <Button
-                    {...props}
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleDeleteClick(row.original)}
-                    className="h-9 w-9 rounded-xl hover:bg-destructive/10 hover:text-destructive transition-colors flex items-center justify-center shrink-0"
-                  >
-                    <Trash2Icon className="h-4 w-4 shrink-0" />
-                    <span className="sr-only">Delete</span>
-                  </Button>
-                )}
-              />
-              <HoverCardContent className="w-fit px-3 py-1.5 text-xs font-medium" side="top">
-                <span className="text-destructive">Delete Skill</span>
-              </HoverCardContent>
-            </HoverCard>
-          </PermissionGuard>
-        </div>
-      ),
-    },
+                <HoverCard>
+                  <HoverCardTrigger
+                    render={(props) => (
+                      <Button
+                        {...props}
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDeleteClick(row.original)}
+                        className="h-9 w-9 rounded-xl hover:bg-destructive/10 hover:text-destructive transition-colors flex items-center justify-center shrink-0"
+                      >
+                        <Trash2Icon className="h-4 w-4 shrink-0" />
+                        <span className="sr-only">Delete</span>
+                      </Button>
+                    )}
+                  />
+                  <HoverCardContent className="w-fit px-3 py-1.5 text-xs font-medium" side="top">
+                    <span className="text-destructive">Delete Skill</span>
+                  </HoverCardContent>
+                </HoverCard>
+              </div>
+            ),
+          } as ColumnDef<SkillRead>,
+        ]
+      : []),
   ];
 
   return (
