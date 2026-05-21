@@ -34,7 +34,7 @@ export function ProgressBarChart({ priorityTimeline }: ProgressBarChartProps) {
     return (
         <div className="md:w-full h-auto flex flex-col justify-between p-0 sm:w-full">
             {/* Header Info */}
-            <div className="flex items-center flex-col md:flex-row  md:justify-between mb-0 gap-4">
+            <div className="flex items-center flex-col md:flex-row md:justify-between mb-0 gap-2">
                 <div className="space-y-1 shrink-0">
                     <div className="flex flex-wrap items-center gap-2">
                         <Timer className="w-5 h-5 text-primary" />
@@ -68,7 +68,7 @@ export function ProgressBarChart({ priorityTimeline }: ProgressBarChartProps) {
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2 sm:flex-col md:flex-row shrink-0">
+                <div className="flex items-center gap-2 md:flex-row shrink-0">
                     <div className="rounded-2xl p-0.5 text-center space-y-0 border w-24">
                         <div className="flex items-baseline justify-center gap-0.5">
                             <p className="text-lg font-black text-foreground">{priorityTimeline.days_total}</p>

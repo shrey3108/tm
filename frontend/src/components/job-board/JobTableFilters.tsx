@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuCheckboxItem,
+  DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuLabel,
   DropdownMenuGroup,
@@ -99,7 +100,7 @@ export const JobTableFilters = ({
               </span>
               <ChevronDown className="h-4 w-4 opacity-60 shrink-0" />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-[130px] p-2 rounded-xl shadow-xl">
+            <DropdownMenuContent align="start" className="w-fit min-w-[130px] p-2 rounded-xl shadow-xl">
               <DropdownMenuGroup>
                 <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground px-2 py-1.5">Status</DropdownMenuLabel>
                 <DropdownMenuSeparator />
@@ -115,7 +116,7 @@ export const JobTableFilters = ({
                           : [...statusFilter, s]
                       )
                     }
-                    className="rounded-lg my-0.5 capitalize"
+                    className="rounded-lg my-0.5 capitalize pl-2 pr-6"
                   >
                     {capitalize(s)}
                   </DropdownMenuCheckboxItem>
@@ -123,13 +124,13 @@ export const JobTableFilters = ({
                 {statusFilter.length > 0 && (
                   <>
                     <DropdownMenuSeparator />
-                    <DropdownMenuCheckboxItem
-                      checked={false}
+                    <DropdownMenuItem
+                      variant="destructive"
                       onClick={() => setStatusFilter([])}
-                      className="text-destructive focus:text-destructive focus:bg-destructive/10 rounded-lg"
+                      className="rounded-lg"
                     >
                       Clear statuses
-                    </DropdownMenuCheckboxItem>
+                    </DropdownMenuItem>
                   </>
                 )}
               </DropdownMenuGroup>
@@ -156,7 +157,7 @@ export const JobTableFilters = ({
                 </span>
                 <ChevronDown className="h-4 w-4 opacity-60 shrink-0" />
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-[160px] p-2 rounded-xl shadow-xl">
+              <DropdownMenuContent align="start" className="w-fit min-w-[160px] p-2 rounded-xl shadow-xl">
                 <div className="px-1 pb-2">
                   <div className="relative">
                     <Input
@@ -189,7 +190,7 @@ export const JobTableFilters = ({
                                   : [...departmentFilter, d.id]
                               )
                             }
-                            className="rounded-lg my-0.5 capitalize pr-1"
+                            className="rounded-lg my-0.5 capitalize pl-2 pr-6"
                           >
                             {d.name}
                           </DropdownMenuCheckboxItem>
@@ -206,13 +207,13 @@ export const JobTableFilters = ({
                 {departmentFilter.length > 0 && (
                   <>
                     <DropdownMenuSeparator />
-                    <DropdownMenuCheckboxItem
-                      checked={false}
+                    <DropdownMenuItem
+                      variant="destructive"
                       onClick={() => setDepartmentFilter([])}
-                      className="text-destructive focus:text-destructive focus:bg-destructive/10 rounded-lg"
+                      className="rounded-lg"
                     >
                       Clear departments
-                    </DropdownMenuCheckboxItem>
+                    </DropdownMenuItem>
                   </>
                 )}
               </DropdownMenuContent>

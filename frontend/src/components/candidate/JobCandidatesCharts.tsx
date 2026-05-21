@@ -46,7 +46,6 @@ function getStageHrStats(
   if (!stageDetail) return null;
 
   const hrDec = stageDetail.hr_decisions ?? {};
-  console.log("hrDec", hrDec);
   const approveCount = hrDec["approve"] ?? 0;
   const rejectCount = hrDec["reject"] ?? 0;
   const maybeCount = hrDec["may be"] ?? 0;
@@ -222,7 +221,7 @@ export function JobCandidatesCharts({
         </div>
       )}
       {/* Priority Timeline Section */}
-      <div className="md:col-span-2 w-full animate-in fade-in slide-in-from-top-4 duration-1000">
+      <div className="group overflow-hidden relative w-full p-0.5 sm:col-span-2 animate-in fade-in slide-in-from-top-4 duration-1000">
         <div className="flex items-center justify-between gap-6 mb-2 border-b border-muted-foreground/10 pb-4">
           <h4 className="font-black text-lg text-foreground tracking-tight capitalize">
             {CHART_TEXTS.priorityTimeline.label}
@@ -236,7 +235,7 @@ export function JobCandidatesCharts({
         <div
           className={cn(
             "group overflow-hidden relative w-full p-0.5",
-            takeFullSpace && "md:col-span-2 w-full",
+            takeFullSpace && "sm:col-span-2 w-full",
             haveBorder && "border-r border-r-muted-foreground",
           )}
           key={title}

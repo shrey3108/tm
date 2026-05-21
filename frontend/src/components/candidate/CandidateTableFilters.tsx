@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuCheckboxItem,
+  DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuLabel,
   DropdownMenuGroup,
@@ -227,13 +228,13 @@ export const CandidateTableFilters = ({
                 {jobFilter.length > 0 && (
                   <>
                     <DropdownMenuSeparator />
-                    <DropdownMenuCheckboxItem
-                      checked={false}
+                    <DropdownMenuItem
+                      variant="destructive"
                       onClick={() => setJobFilter([])}
-                      className="text-destructive focus:text-destructive focus:bg-destructive/10 rounded-lg"
+                      className="rounded-lg"
                     >
                       Clear jobs
-                    </DropdownMenuCheckboxItem>
+                    </DropdownMenuItem>
                   </>
                 )}
               </DropdownMenuContent>
@@ -294,7 +295,7 @@ export const CandidateTableFilters = ({
                                   : [...locationFilter, l]
                               )
                             }
-                            className="rounded-lg pr-0"
+                            className="rounded-lg pl-2 pr-6"
                           >
                             {l}
                           </DropdownMenuCheckboxItem>
@@ -311,13 +312,13 @@ export const CandidateTableFilters = ({
                 {locationFilter.length > 0 && (
                   <>
                     <DropdownMenuSeparator />
-                    <DropdownMenuCheckboxItem
-                      checked={false}
+                    <DropdownMenuItem
+                      variant="destructive"
                       onClick={() => setLocationFilter([])}
-                      className="text-destructive focus:text-destructive focus:bg-destructive/10 rounded-lg"
+                      className="rounded-lg"
                     >
                       Clear locations
-                    </DropdownMenuCheckboxItem>
+                    </DropdownMenuItem>
                   </>
                 )}
               </DropdownMenuContent>
@@ -344,7 +345,7 @@ export const CandidateTableFilters = ({
               </span>
               <ChevronDown className="h-3.5 w-3.5 opacity-60 shrink-0" />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-[150px] rounded-xl shadow-lg p-1">
+            <DropdownMenuContent align="start" className="w-fit min-w-[130px] rounded-xl shadow-lg p-1">
               <DropdownMenuGroup>
                 <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground px-2 py-1.5">HR Decision</DropdownMenuLabel>
                 {hrDecisionOptions.length === 0 ? (
@@ -363,7 +364,7 @@ export const CandidateTableFilters = ({
                           : [...hrDecisionFilter, d.value]
                       )
                     }
-                    className="rounded-lg"
+                    className="rounded-lg pl-2 pr-6"
                   >
                     {d.label}
                   </DropdownMenuCheckboxItem>
@@ -371,13 +372,13 @@ export const CandidateTableFilters = ({
                 {hrDecisionFilter.length > 0 && (
                   <>
                     <DropdownMenuSeparator />
-                    <DropdownMenuCheckboxItem
-                      checked={false}
+                    <DropdownMenuItem
+                      variant="destructive"
                       onClick={() => setHrDecisionFilter([])}
-                      className="text-destructive focus:text-destructive focus:bg-destructive/10 rounded-lg"
+                      className="rounded-lg"
                     >
                       Clear selection
-                    </DropdownMenuCheckboxItem>
+                    </DropdownMenuItem>
                   </>
                 )}
               </DropdownMenuGroup>
@@ -404,7 +405,7 @@ export const CandidateTableFilters = ({
               </span>
               <ChevronDown className="h-3.5 w-3.5 opacity-60 shrink-0" />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-[160px] rounded-xl shadow-lg p-1">
+            <DropdownMenuContent align="start" className="w-fit min-w-[130px] rounded-xl shadow-lg p-1">
               <DropdownMenuGroup>
                 <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground px-2 py-1.5">AI Result</DropdownMenuLabel>
                 {resumeScreeningOptions.length === 0 ? (
@@ -423,7 +424,7 @@ export const CandidateTableFilters = ({
                           : [...resumeScreeningFilter, d.value]
                       )
                     }
-                    className="rounded-lg mr-1"
+                    className="rounded-lg pl-2 pr-6"
                   >
                     {d.label}
                   </DropdownMenuCheckboxItem>
@@ -431,13 +432,13 @@ export const CandidateTableFilters = ({
                 {resumeScreeningFilter.length > 0 && (
                   <>
                     <DropdownMenuSeparator />
-                    <DropdownMenuCheckboxItem
-                      checked={false}
+                    <DropdownMenuItem
+                      variant="destructive"
                       onClick={() => setResumeScreeningFilter([])}
-                      className="text-destructive focus:text-destructive focus:bg-destructive/10 rounded-lg"
+                      className="rounded-lg"
                     >
                       Clear selection
-                    </DropdownMenuCheckboxItem>
+                    </DropdownMenuItem>
                   </>
                 )}
               </DropdownMenuGroup>
@@ -464,7 +465,7 @@ export const CandidateTableFilters = ({
               </span>
               <ChevronDown className="h-3.5 w-3.5 opacity-60 shrink-0" />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-[140px] rounded-xl shadow-lg p-1">
+            <DropdownMenuContent align="start" className="w-fit min-w-[130px] rounded-xl shadow-lg p-1">
               <DropdownMenuGroup>
                 <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground px-2 py-1.5">Score Rating</DropdownMenuLabel>
                 {[1, 2, 3, 4, 5].map((score) => (
@@ -479,21 +480,21 @@ export const CandidateTableFilters = ({
                           : [...hrScoreFilter, score]
                       )
                     }
-                    className="rounded-lg mr-1"
+                    className="rounded-lg pl-2 pr-6"
                   >
-                    Score: {score}
+                    {score}
                   </DropdownMenuCheckboxItem>
                 ))}
                 {hrScoreFilter.length > 0 && (
                   <>
                     <DropdownMenuSeparator />
-                    <DropdownMenuCheckboxItem
-                      checked={false}
+                    <DropdownMenuItem
+                      variant="destructive"
                       onClick={() => setHrScoreFilter([])}
-                      className="text-destructive focus:text-destructive focus:bg-destructive/10 rounded-lg"
+                      className="rounded-lg"
                     >
                       Clear selection
-                    </DropdownMenuCheckboxItem>
+                    </DropdownMenuItem>
                   </>
                 )}
               </DropdownMenuGroup>
@@ -520,7 +521,7 @@ export const CandidateTableFilters = ({
               </span>
               <ChevronDown className="h-3.5 w-3.5 opacity-60 shrink-0" />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-[160px] rounded-xl shadow-lg p-1">
+            <DropdownMenuContent align="start" className="w-fit min-w-[130px] rounded-xl shadow-lg p-1">
               <DropdownMenuGroup>
                 <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground px-2 py-1.5">Stages</DropdownMenuLabel>
                 {stageOptions.length === 0 ? (
@@ -541,7 +542,7 @@ export const CandidateTableFilters = ({
                               : [...stageFilter, s]
                           )
                         }
-                        className="rounded-lg pr-1"
+                        className="rounded-lg pl-2 pr-6"
                       >
                         {s}
                       </DropdownMenuCheckboxItem>
@@ -551,13 +552,13 @@ export const CandidateTableFilters = ({
                 {stageFilter.length > 0 && (
                   <>
                     <DropdownMenuSeparator />
-                    <DropdownMenuCheckboxItem
-                      checked={false}
+                    <DropdownMenuItem
+                      variant="destructive"
                       onClick={() => setStageFilter([])}
-                      className="text-destructive focus:text-destructive focus:bg-destructive/10 rounded-lg"
+                      className="rounded-lg"
                     >
                       Clear selection
-                    </DropdownMenuCheckboxItem>
+                    </DropdownMenuItem>
                   </>
                 )}
               </DropdownMenuGroup>
