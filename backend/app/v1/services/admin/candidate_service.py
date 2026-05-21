@@ -47,7 +47,7 @@ class CandidateAdminService:
         from app.v1.db.models.stage_templates import StageTemplate
 
         # 0. Cache lookup
-        cache_key = f"v3:candidates:for_job:{job_id}:{skip}:{limit}"
+        cache_key = f"candidates:for_job:{job_id}:{skip}:{limit}"
         if query: cache_key += f":q_{query}"
         if hr_decision: cache_key += f":hr_{sorted(hr_decision)}"
         if hr_score: cache_key += f":score_{sorted(hr_score)}"
@@ -210,29 +210,7 @@ class CandidateAdminService:
                     )
                 )
                 
-                # 2. Match latest overall score when no decision exists in selected stage
-                cond_fallback_score = and_(
-                    ~exists().where(
-                        and_(
-                            HrDecision.candidate_id == Candidate.id,
-                            decision_stage_filter
-                        )
-                    ),
-                    exists().where(
-                        and_(
-                            HrDecision.id == (
-                                select(HrDecision.id)
-                                .where(HrDecision.candidate_id == Candidate.id)
-                                .order_by(HrDecision.decided_at.desc())
-                                .limit(1)
-                                .scalar_subquery()
-                            ),
-                            HrDecision.score.in_(hr_score)
-                        )
-                    )
-                )
-                
-                dir_stmt = dir_stmt.where(or_(cond_stage_score, cond_fallback_score))
+                dir_stmt = dir_stmt.where(cond_stage_score)
             else:
                 latest_score_subq = (
                     select(HrDecision.score)
@@ -559,30 +537,8 @@ class CandidateAdminService:
                     )
                 )
                 
-                # 2. Match latest overall score when no decision exists in selected stage
-                cond_fallback_score = and_(
-                    ~exists().where(
-                        and_(
-                            HrDecision.candidate_id == Candidate.id,
-                            decision_stage_filter
-                        )
-                    ),
-                    exists().where(
-                        and_(
-                            HrDecision.id == (
-                                select(HrDecision.id)
-                                .where(HrDecision.candidate_id == Candidate.id)
-                                .order_by(HrDecision.decided_at.desc())
-                                .limit(1)
-                                .scalar_subquery()
-                            ),
-                            HrDecision.score.in_(hr_score)
-                        )
-                    )
-                )
-                
-                stmt = stmt.where(or_(cond_stage_score, cond_fallback_score))
-                total_stmt = total_stmt.where(or_(cond_stage_score, cond_fallback_score))
+                stmt = stmt.where(cond_stage_score)
+                total_stmt = total_stmt.where(cond_stage_score)
             else:
                 latest_score_subq = (
                     select(HrDecision.score)
