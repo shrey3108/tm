@@ -79,3 +79,6 @@ async def root():
         dict: A dictionary containing a welcome message with the project name.
     """
     return {"message": f"Welcome to {settings.PROJECT_NAME}"}
+
+# Trigger Uvicorn reload for new settings
+

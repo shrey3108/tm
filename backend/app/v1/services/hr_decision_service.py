@@ -221,38 +221,66 @@ class HRDecisionService:
             if cs_to_advance:
                 success = decision_data.decision.lower() == "pass"
                 
-                # NEW TWO-STEP LOGIC:
-                # If it's an interview stage (Order > 0) and it's pending, just make it active.
-                # BUT if it's Stage 0 (Resume Screening), ALWAYS advance immediately.
+                # Check if this is a Resume Screening decision for a job with no Stage 0 configuration
+                is_resume_screening_decision = (stage_config_id is None)
                 
                 is_stage_zero = False
                 if cs_to_advance.job_stage and cs_to_advance.job_stage.stage_order == 0:
                     is_stage_zero = True
 
-                if success and cs_to_advance.status == "pending" and not is_stage_zero:
-                    # Step 1: Resume Approval -> Make the stage "active" for interview
-                    cs_to_advance.status = "active"
-                    from datetime import datetime
-                    cs_to_advance.started_at = datetime.utcnow()
-                    
-                    # Ensure candidate status reflects "Active"
-                    from app.v1.db.models.stage_templates import StageTemplate
-                    st_stmt = (
-                        select(StageTemplate.name)
-                        .select_from(JobStageConfig)
-                        .join(StageTemplate, JobStageConfig.template_id == StageTemplate.id)
-                        .where(JobStageConfig.id == cs_to_advance.job_stage_id)
-                    )
-                    st_name = (await db.execute(st_stmt)).scalar()
-                    if candidate and st_name:
-                         candidate.current_status = f"{st_name} (Active)"
-                    
-                    await db.commit()
+                if is_resume_screening_decision and not is_stage_zero:
+                    # If this is a Resume Screening decision and the candidate stage is not Stage 0 (e.g. Stage 1 - HR Round):
+                    # - If passed: ensure the stage is active, do not mark completed.
+                    # - If failed: mark the stage as failed.
+                    if success:
+                        if cs_to_advance.status == "pending":
+                            cs_to_advance.status = "active"
+                            from datetime import datetime
+                            cs_to_advance.started_at = datetime.utcnow()
+                            
+                            from app.v1.db.models.stage_templates import StageTemplate
+                            st_stmt = (
+                                select(StageTemplate.name)
+                                .select_from(JobStageConfig)
+                                .join(StageTemplate, JobStageConfig.template_id == StageTemplate.id)
+                                .where(JobStageConfig.id == cs_to_advance.job_stage_id)
+                            )
+                            st_name = (await db.execute(st_stmt)).scalar()
+                            if candidate and st_name:
+                                 candidate.current_status = f"{st_name} (Active)"
+                        await db.commit()
+                    else:
+                        from app.v1.services.candidate_stage_service import candidate_stage_service
+                        await candidate_stage_service.advance_candidate(db, candidate_id, cs_to_advance.id, success=False)
+                        await db.commit()
                 else:
-                    # Step 2: Interview Approval (or Rejection) OR Stage 0 Approval -> Advance to next stage
-                    from app.v1.services.candidate_stage_service import candidate_stage_service
-                    await candidate_stage_service.advance_candidate(db, candidate_id, cs_to_advance.id, success=success)
-                    await db.commit()
+                    # NEW TWO-STEP LOGIC:
+                    # If it's an interview stage (Order > 0) and it's pending, just make it active.
+                    # BUT if it's Stage 0 (Resume Screening), ALWAYS advance immediately.
+                    if success and cs_to_advance.status == "pending" and not is_stage_zero:
+                        # Step 1: Resume Approval -> Make the stage "active" for interview
+                        cs_to_advance.status = "active"
+                        from datetime import datetime
+                        cs_to_advance.started_at = datetime.utcnow()
+                        
+                        # Ensure candidate status reflects "Active"
+                        from app.v1.db.models.stage_templates import StageTemplate
+                        st_stmt = (
+                            select(StageTemplate.name)
+                            .select_from(JobStageConfig)
+                            .join(StageTemplate, JobStageConfig.template_id == StageTemplate.id)
+                            .where(JobStageConfig.id == cs_to_advance.job_stage_id)
+                        )
+                        st_name = (await db.execute(st_stmt)).scalar()
+                        if candidate and st_name:
+                             candidate.current_status = f"{st_name} (Active)"
+                        
+                        await db.commit()
+                    else:
+                        # Step 2: Interview Approval (or Rejection) OR Stage 0 Approval -> Advance to next stage
+                        from app.v1.services.candidate_stage_service import candidate_stage_service
+                        await candidate_stage_service.advance_candidate(db, candidate_id, cs_to_advance.id, success=success)
+                        await db.commit()
 
             elif decision_data.decision.lower() == "pass":
                 # Only initiate pipeline if NO stages exist at all for this job
@@ -500,8 +528,40 @@ class HRDecisionService:
 
             if cs_to_advance:
                 success = decision_data.decision.lower() == "pass"
-                await candidate_stage_service.advance_candidate(db, decision.candidate_id, cs_to_advance.id, success=success)
-                await db.commit()
+                is_resume_screening_decision = (decision.stage_config_id is None)
+                is_stage_zero = False
+                if cs_to_advance.job_stage and cs_to_advance.job_stage.stage_order == 0:
+                    is_stage_zero = True
+
+                if is_resume_screening_decision and not is_stage_zero:
+                    # If this is a Resume Screening decision and the candidate stage is not Stage 0 (e.g. Stage 1 - HR Round):
+                    # - If passed: ensure the stage is active, do not mark completed.
+                    # - If failed: mark the stage as failed.
+                    if success:
+                        if cs_to_advance.status == "pending":
+                            cs_to_advance.status = "active"
+                            from datetime import datetime
+                            cs_to_advance.started_at = datetime.utcnow()
+                            
+                            from app.v1.db.models.stage_templates import StageTemplate
+                            st_stmt = (
+                                select(StageTemplate.name)
+                                .select_from(JobStageConfig)
+                                .join(StageTemplate, JobStageConfig.template_id == StageTemplate.id)
+                                .where(JobStageConfig.id == cs_to_advance.job_stage_id)
+                            )
+                            st_name = (await db.execute(st_stmt)).scalar()
+                            
+                            candidate_to_update = await db.get(Candidate, decision.candidate_id)
+                            if candidate_to_update and st_name:
+                                 candidate_to_update.current_status = f"{st_name} (Active)"
+                        await db.commit()
+                    else:
+                        await candidate_stage_service.advance_candidate(db, decision.candidate_id, cs_to_advance.id, success=False)
+                        await db.commit()
+                else:
+                    await candidate_stage_service.advance_candidate(db, decision.candidate_id, cs_to_advance.id, success=success)
+                    await db.commit()
 
         # Trigger cross-match in background if candidate is now failed and wasn't before
         if decision_data.decision.lower() == "fail" and old_decision != "fail":
