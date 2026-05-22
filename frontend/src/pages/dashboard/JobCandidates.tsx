@@ -221,7 +221,8 @@ export default function JobCandidates() {
                                     isLoading={reanalyzingCandidateIds.includes(candidate.id)}
                                     disabled={
                                       !needsReanalysis(candidate) ||
-                                      reanalyzingCandidateIds.includes(candidate.id)
+                                      reanalyzingCandidateIds.includes(candidate.id) ||
+                                      !candidate.is_parsed
                                     }
                                     title={
                                       !needsReanalysis(candidate)
@@ -281,7 +282,7 @@ export default function JobCandidates() {
                                       }
                                     })
                                   }}
-                                  disabled={!candidate.pipeline}
+                                  disabled={!candidate.pipeline || !candidate.is_parsed}
                                 >
                                   <Layers className="h-4 w-4 shrink-0 text-blue-600" />
                                 </Button>
