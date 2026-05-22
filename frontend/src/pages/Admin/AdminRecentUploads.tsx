@@ -171,7 +171,7 @@ const AdminRecentUploads = () => {
           data={uploads}
           loading={loading}
           searchKey="file_name"
-          searchPlaceholder="Filter files by name..."
+          searchPlaceholder="Filter by file name..."
           initialSorting={[{ id: "created_at", desc: true }]}
           pageIndex={pageIndex}
           pageSize={pageSize}

@@ -10,9 +10,9 @@ export const adminRoleService = {
   /**
    * Get all roles (admin only).
    */
-  getAllRoles: async (skip: number = 0, limit: number = 100): Promise<PaginatedResponse<RoleRead>> => {
+  getAllRoles: async (skip: number = 0, limit: number = 100, q?: string): Promise<PaginatedResponse<RoleRead>> => {
     const response = await apiClient.get<PaginatedResponse<RoleRead>>(`${ADMIN_PATH}/roles`, {
-      params: { skip, limit },
+      params: { skip, limit, q: q === "" ? undefined : q },
     });
     return response.data;
   },
