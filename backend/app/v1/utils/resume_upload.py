@@ -148,7 +148,7 @@ def extract_skill_names(
 ) -> list[str]:
     """Extract and deduplicate unique skill names from normalized extractions.
 
-    Splits comma-separated skill strings and normalizes them for deduplication.
+    Splits comma- or semicolon-separated skill strings and normalizes them for deduplication.
 
     Args:
         normalized: The dictionary of normalized extractions.
@@ -158,13 +158,27 @@ def extract_skill_names(
     """
     skill_names: list[str] = []
     seen: set[str] = set()
+
+    def is_missing(val):
+        if not val: return True
+        if isinstance(val, str) and val.strip().lower() in ("not mentioned", "null", "none", "unknown", "n/a"): return True
+        return False
+
     for item in normalized["skills"]:
         text = str(item["text"]).strip()
-        if not text:
+        if is_missing(text):
             continue
-        for part in (piece.strip() for piece in text.split(",")):
+
+        parts = [text]
+        for delimiter in (",", ";"):
+            new_parts = []
+            for part in parts:
+                new_parts.extend(part.split(delimiter))
+            parts = new_parts
+
+        for part in (piece.strip() for piece in parts):
             key = part.lower()
-            if part and key not in seen:
+            if part and not is_missing(part) and key not in seen:
                 seen.add(key)
                 skill_names.append(part)
     return skill_names
