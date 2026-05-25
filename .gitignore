@@ -19,3 +19,5 @@ logs/
 logs*.txt
 logs*.md
 
+# ignore Phoenix db files
+phoenix_data/

@@ -177,6 +177,10 @@ const AdminPrompts = () => {
         }, 2000);
     };
 
+    const filteredPrompts = prompts.filter(
+        (p) => selectedStages.length === 0 || selectedStages.includes(p.stage)
+    );
+
     return (
         <AppPageShell width="wide">
             <PermissionGuard permissions={[PERMISSIONS.ANALYTICS_READ, PERMISSIONS.ADMIN_ACCESS]}>
@@ -191,14 +195,14 @@ const AdminPrompts = () => {
                 ) :
                     <DataTable
                         columns={columns}
-                        data={prompts}
+                        data={filteredPrompts}
                         loading={loading}
                         isServerSide={true}
-                        pageCount={Math.ceil(total / pageSize)}
+                        pageCount={Math.ceil(filteredPrompts.length / pageSize)}
                         pageSize={pageSize}
-                        totalRecords={total}
+                        totalRecords={filteredPrompts.length}
                         totalCount={overallTotal}
-                        resultCount={prompts.length}
+                        resultCount={filteredPrompts.length}
                         onPaginationChange={setPagination}
                         onSearchChange={handleSearchChange}
                         entityName="Prompts"
@@ -246,6 +250,7 @@ const AdminPrompts = () => {
                                                             )
                                                         }
                                                         className="rounded-lg capitalize"
+                                                        closeOnClick={true}
                                                     >
                                                         {s}
                                                     </DropdownMenuCheckboxItem>

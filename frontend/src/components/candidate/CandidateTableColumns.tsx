@@ -75,8 +75,7 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
           return (
             <div className="flex flex-col gap-0.5 min-w-[160px] max-w-[250px]">
               <span
-                className="text-foreground truncate block capitalize"
-
+                className="text-foreground block capitalize"
               >
                 {isProcessing && !c.first_name ? (
                   <span className="text-muted-foreground italic text-sm">
@@ -86,10 +85,10 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
                   toTitleCase(fullName)
                 )}
               </span>
-              <span className="text-muted-foreground truncate block">
+              <span className="text-muted-foreground w-full wrap-break-word">
                 {c.email || "N/A"}
               </span>
-              <span className="text-muted-foreground truncate block">
+              <span className="text-muted-foreground w-full wrap-break-word">
                 {c.phone || "N/A"}
               </span>
             </div>

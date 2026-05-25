@@ -87,18 +87,22 @@ The frontend expects the backend API to be running. If the backend is on a diffe
 ```
 src/
 ├── apis/           # API calls and client configuration
+├── assets/         # Static assets (images, icons, etc.)
 ├── components/     # Reusable UI components
 │   ├── auth/      # Authentication components
 │   ├── common/    # Shared components (Button, Card, Input, etc.)
 │   └── modal/     # Modal dialogs for CRUD operations
-├── css/           # Stylesheets
+├── constants/      # App constants and static data configs
 ├── hooks/         # Custom React hooks
+├── lib/           # Third-party library configs and utilities (e.g., shadcn helper)
 ├── pages/         # Page components
 │   └── Admin/     # Admin dashboard and management pages
 ├── routes/        # Route definitions
 ├── schemas/       # Zod validation schemas
 ├── store/         # Redux state management
-└── utils/         # Utility functions
+├── styles/        # Global and component stylesheets (Tailwind + CSS)
+├── types/         # TypeScript type definitions
+└── utils/         # Utility helper functions
 ```
 
 ## Common Issues
@@ -121,7 +125,7 @@ rm -rf node_modules package-lock.json
 npm install
 
 # Using bun
-rm -rf node_modules bun.lockb
+rm -rf node_modules bun.lock
 bun install
 ```
 

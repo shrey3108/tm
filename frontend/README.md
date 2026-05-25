@@ -6,14 +6,14 @@ A React-based frontend for the HR Platform with authentication, job management, 
 
 - **React 19** - Latest React with hooks
 - **TypeScript** - Type-safe development
-- **Vite** - Fast build tool and dev server
+- **Vite 8** - Fast build tool and dev server
 - **React Router v7** - Client-side routing
 - **Redux Toolkit** - State management
-- **React Bootstrap** - UI component library
+- **Tailwind CSS v4 & Shadcn UI** - Utility-first styling and accessible component library
 - **React Hook Form + Zod** - Form handling and validation
 - **Axios** - HTTP client for API calls
 - **Role-based Access Control** - Admin, HR Manager, Recruiter roles
-- **Data Tables** - Sortable, searchable admin data tables
+- **Data Tables** - Sortable, searchable admin data tables with TanStack Table
 - **Modal Forms** - Create/edit resources with validation
 - **Resume Parsing** - Upload and parse candidate resumes
 - **Candidate Search** - Advanced search functionality
@@ -23,7 +23,7 @@ A React-based frontend for the HR Platform with authentication, job management, 
 ## Prerequisites
 
 - Node.js 18+
-- npm
+- npm or bun
 - Backend API running at `http://localhost:8000`
 
 ## Quick Start
@@ -31,20 +31,21 @@ A React-based frontend for the HR Platform with authentication, job management, 
 ```bash
 # Install dependencies
 npm install
-# bun install
+# or: bun install
 
 # Configure environment
 cp .env.example .env
 
 # Start development server
 npm run dev
-# bun run dev
+# or: bun dev
 ```
 
 The app will be available at `http://localhost:5173`.
 
 ## Available Scripts
-- all command alos run using bun
+- All commands can also be run using bun.
+
 | Script            | Description              |
 | ----------------- | ------------------------ |
 | `npm run dev`     | Start development server |
@@ -60,7 +61,7 @@ The app will be available at `http://localhost:5173`.
 - **Build Tool**: Vite 8
 - **Routing**: React Router v7
 - **State Management**: Redux Toolkit
-- **UI Library**: React Bootstrap 5.3
+- **UI Components**: Shadcn UI & Base UI
 - **Forms**: React Hook Form + Zod
 - **HTTP Client**: Axios
-- **Styling**: CSS + Bootstrap
+- **Styling**: Tailwind CSS v4 + CSS
