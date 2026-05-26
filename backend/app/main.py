@@ -58,8 +58,6 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-app.add_middleware(GlobalErrorHandlerMiddleware)  # ty:ignore[invalid-argument-type]
-
 app.add_middleware(
     CORSMiddleware,  # ty:ignore[invalid-argument-type]
     allow_origins=settings.BACKEND_CORS_ORIGINS,
@@ -81,4 +79,7 @@ async def root():
     return {"message": f"Welcome to {settings.PROJECT_NAME}"}
 
 # Trigger Uvicorn reload for new settings
+
+
+app.add_middleware(GlobalErrorHandlerMiddleware)  # ty:ignore[invalid-argument-type]
 
