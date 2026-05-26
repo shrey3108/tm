@@ -19,7 +19,7 @@ const DashboardLayout = lazy(() => import("@/pages/dashboard/DashboardLayout"));
 const JobBoard = lazy(() => import("@/pages/dashboard/job-board"));
 
 // Lazy-loaded route components
-const CreateJob = lazy(() => import("@/pages/dashboard/CreateJob"));
+const JobForm = lazy(() => import("@/pages/dashboard/JobForm"));
 const JobCandidates = lazy(() => import("@/pages/dashboard/JobCandidates"));
 const ProfilePage = lazy(() => import("@/pages/Profile"));
 const CandidatesStages = lazy(() => import("@/pages/dashboard/CandidatesStages"));
@@ -108,8 +108,8 @@ const AppRoutes = () => {
                 </RoleRoute>
               }
             >
-              <Route path="new" element={<CreateJob />} />
-              <Route path=":jobSlug/edit" element={<CreateJob />} />
+              <Route path="new" element={<JobForm />} />
+              <Route path=":jobSlug/edit" element={<JobForm />} />
             </Route>
 
             {/* Candidates Access */}
