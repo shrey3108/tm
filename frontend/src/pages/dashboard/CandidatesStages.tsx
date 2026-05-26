@@ -141,9 +141,13 @@ export default function CandidatesStages() {
     fetchStages();
   }, [job?.id]);
 
-  const candidateStage = candidate.pipeline?.find(
+  const candidateStage = candidate?.pipeline?.find(
     (s) => s.template_name === currentStage
-  );
+  )
+
+  // const candidateStage = candidateData?.pipeline?.find(
+  //   (s) => s.template_name === currentStage
+  // );
 
 
   const instanceId = candidateStage?.stage_id;
