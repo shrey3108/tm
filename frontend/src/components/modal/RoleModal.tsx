@@ -205,7 +205,7 @@ const RoleModal = ({ show, handleClose, onSuccess, editRoleId }: RoleModalProps)
                     className="h-9 w-full sm:w-64 rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all text-sm font-medium"
                   />
                 </div>
-                <div className="grid grid-cols-3 gap-3 p-4 bg-muted/30 rounded-2xl border border-muted-foreground/10 flex-1 overflow-y-auto custom-scrollbar">
+                <div className="grid grid-cols-3 gap-3 p-4 bg-muted/30 rounded-2xl border border-muted-foreground/10 flex-1 overflow-y-auto">
                   {filteredPermissions.map((permission) => {
                     const isChecked = selectedPermissionIds.includes(permission.id);
                     return (
@@ -213,7 +213,7 @@ const RoleModal = ({ show, handleClose, onSuccess, editRoleId }: RoleModalProps)
                         key={permission.id}
                         orientation="horizontal"
                         className={cn(
-                          "items-start gap-3 p-3 rounded-xl border-2 transition-all duration-200",
+                          "items-start gap-3 p-3 rounded-xl border-2 transition-all duration-200 h-20",
                           isChecked
                             ? "bg-primary/5 border-primary shadow-sm"
                             : "bg-background/50 border-transparent hover:border-muted-foreground/20",
