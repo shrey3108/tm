@@ -4,27 +4,39 @@ An AI-powered interview evaluation and screening platform that automates candida
 
 ---
 
-##  Features & Workflow
+## Features & Capabilities
 
-The platform tracks candidates through **4 main stages** (which can be dynamically adjusted depending on the job description):
+### 1. Recruitment Pipeline & Candidate Management
+- **Resume Screening (AI Pre-Filter)**: Auto-parses resumes (PDF/DOCX) and compares them with the Job Description (JD) to generate a match percentage and skill-gap analysis.
+- **Stage 1 – HR Screening**: Evaluates communication, confidence, and cultural fit from uploaded screening transcript.
+<!-- - **Stage 2 – Technical Practical**: Examines real-time technical skills, problem-solving, and implementation from coding test repo and project requirement . -->
+<!-- - **Stage 3 – Panel Evaluation**: Conducts a final technical + behavioral assessment to produce overall attribute-wise scores and hiring recommendations. -->
 
-1. **Resume Screening (AI Pre-Filter)**: Auto-parses resumes (PDF/DOCX) and compares them with the Job Description (JD) to generate a match percentage and skill-gap analysis.
-2. **Stage 1 – HR Screening**: Evaluates communication, confidence, and cultural fit from uploaded screening recordings.
-<!-- 3. **Stage 2 – Technical Practical**: Examines real-time technical skills, problem-solving, and implementation from coding test repo and project requirement . -->
-<!-- 4. **Stage 3 – Panel Evaluation**: Conducts a final technical + behavioral assessment to produce overall attribute-wise scores and hiring recommendations. -->
+- **Global & Job-Specific Views**:
+  - **Job Candidates View**: Browse candidates associated with a specific job and upload resume .
+  - **All Candidates View**: Centralized candidate search across the all the job.
+
+### 2. Comprehensive Admin Features & Management (CRUD)
+- **Admin Dashboard**: Visual overview of platform-wide metrics.
+- **Core Entities Management**:
+  - **Jobs Positions (CRUD)**: Create, read, update, and delete job postings and their respective criteria.
+  - **Job Stages & Criteria (CRUD)**: Dynamically customize the stages per job.
+  - **Skills & Departments (CRUD)**: Manage the skills and departments.
+  - **Priorities (CRUD)**: Set the deadline for candidate hiring.
+- **Read-Only System Configuration**:
+  - **Prompts (Read-Only)**: Review active LLM templates and system prompt instructions used by the evaluation engine.
+- **Cache Management**:
+  - **Clear Cache (Admin Only)**: Clear Redis memory cache.
 
 ---
 
-##  Dynamic Stage & Criteria Configuration
+## User Roles & Access Control
 
-The platform defines a standard workflow but supports full dynamic adjustment of interview stages and evaluation criteria based on the job designation, experience requirements, and Job Description (JD) complexity:
-- **Flexible Stages**: Stages can be added, removed, or customized using predefined templates.
-- **LLM-as-a-Judge Criteria**: Each stage evaluates specific candidate attributes using LLM-as-a-judge context scoring.
+The platform implements Role-Based Access Control (RBAC) to enforce security and clean separation of duties:
+- **HR User**: Accesses recruitment pipelines, uploads candidate resumes/transcripts, views screening recommendations, and updates candidate progression.
+- **Admin User**: Accesses the full admin panel (managing jobs, stages, criteria, skills, departments, priorities), clears system caches, and manages users.
+- **Security & Logs (Read-Only)**: Secure audit logs showing system activity, user actions, and security events for tracking and compliance.
 
----
-
-## User Roles & Permissions
-- The platform supports Role-Based Access Control (RBAC) with user roles.
 ---
 
 ##  Tech Stack & Dependencies
@@ -34,7 +46,6 @@ The platform defines a standard workflow but supports full dynamic adjustment of
 - **Database & ORM**: **PostgreSQL** with `pgvector` (vector extension), **SQLAlchemy 2.0** (async database connection), and **FastCRUD**
 - **Task Queue & Caching**: **Celery** with **Redis** (asynchronous processing for file analysis and speech-to-text)
 - **AI & LLM Integration**:
-  - **DSPy** (structured prompt programming and optimization)
   - **AutoGen** & **OpenAI API** compatibility (for agentic workflows)
   - **Sentence Transformers** (local text embedding generation)
   - **PyMuPDF**, **docx2txt**, **langextract**, **markitdown** (document parsing and extraction)
