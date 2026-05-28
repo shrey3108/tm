@@ -73,7 +73,7 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
             `${c.first_name || ""} ${c.last_name || ""}`.trim() ||
             "Unknown Candidate";
           return (
-            <div className="flex flex-col gap-0.5 min-w-[160px] max-w-[250px]">
+            <div className="flex flex-col gap-0.5 max-w-[160px] ">
               <span
                 className="text-foreground block capitalize"
               >
@@ -85,10 +85,10 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
                   toTitleCase(fullName)
                 )}
               </span>
-              <span className="text-muted-foreground w-full wrap-break-word">
+              <span className="text-muted-foreground w-full break-all">
                 {c.email || "N/A"}
               </span>
-              <span className="text-muted-foreground w-full wrap-break-word">
+              <span className="text-muted-foreground w-full break-all">
                 {c.phone || "N/A"}
               </span>
             </div>
