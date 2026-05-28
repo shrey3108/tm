@@ -2,6 +2,8 @@
 Pydantic schemas for Job-related data transfer.
 """
 
+from __future__ import annotations
+
 import uuid
 from datetime import datetime
 
@@ -32,6 +34,8 @@ class JobBase(BaseModel):
     position_id: uuid.UUID | None = None
     priority_start_date: datetime | None = None
     priority_end_date: datetime | None = None
+    task_file_path: str | None = None
+    task_skills: list[str] | None = None
 
 
 class StageInput(BaseModel):
@@ -137,7 +141,7 @@ class JobRead(JobBase):
     version: int = 1
     total_versions: int = 0
     job_versions: list[JobVersionMinimal] = []
-    created_by: uuid.UUID
+    created_by: uuid.UUID | None = None
     created_at: datetime
     department_name: str | None = None
     department: DepartmentRead | None = None
@@ -211,3 +215,14 @@ class JobTitlesListRead(BaseModel):
     """
 
     data: list[JobTitleRead]
+
+
+class JobTaskRead(BaseModel):
+    """
+    Schema for reading a job's task file path and extracted skills.
+    """
+
+    task_file_path: str | None = None
+    task_skills: list[str] | None = None
+
+    model_config = ConfigDict(from_attributes=True)

@@ -963,6 +963,17 @@ class CandidateAdminService:
                     if str(vr.job_id).lower() == str(mapping_job_id).lower():
                         mapping_job_name = vr.job.title if vr.job else None
                         break
+
+        # Task mapping with fallback
+        task_file_path = candidate.task_file_path
+        task_skills = candidate.task_skills
+        is_custom_task = False
+
+        if not task_file_path and candidate.applied_job:
+            task_file_path = candidate.applied_job.task_file_path
+            task_skills = candidate.applied_job.task_skills
+        else:
+            is_custom_task = True if task_file_path else False
         
         def _title(val: str | None) -> str | None:
             if not val: return val
@@ -1008,6 +1019,9 @@ class CandidateAdminService:
             version_results=version_results if not is_focused else [],
             current_stage=current_stage,
             pipeline=pipeline,
+            task_file_path=task_file_path,
+            task_skills=task_skills,
+            is_custom_task=is_custom_task,
         )
 
 

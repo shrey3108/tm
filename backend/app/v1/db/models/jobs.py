@@ -121,6 +121,16 @@ class Job(Base):
         nullable=True,
     )
 
+    task_file_path: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+    )
+
+    task_skills: Mapped[list[str] | None] = mapped_column(
+        JSONB,
+        nullable=True,
+    )
+
     version: Mapped[int] = mapped_column(
         Integer,
         default=1,

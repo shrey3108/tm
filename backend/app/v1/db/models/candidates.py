@@ -114,6 +114,16 @@ class Candidate(Base):
         nullable=True,
     )
 
+    task_file_path: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+    )
+
+    task_skills: Mapped[list[str] | None] = mapped_column(
+        JSONB,
+        nullable=True,
+    )
+
     # TIMESTAMPS
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

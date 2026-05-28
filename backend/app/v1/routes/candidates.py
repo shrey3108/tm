@@ -25,7 +25,9 @@ from app.v1.services.hr_decision_service import hr_decision_service
 from app.v1.services.job_stats_service import job_stats_service
 from app.v1.services.admin.candidate_service import candidate_admin_service
 from app.v1.schemas.job_stats import JobStatsResponse
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, File as FastAPIFile, UploadFile, status
+from app.v1.schemas.upload import CandidateTaskRead, JobCandidateSkillsRead
+from app.v1.services.admin.candidate_task_service import candidate_task_service
 from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter()
@@ -287,4 +289,81 @@ async def get_candidate_timeline(
         candidate_id=candidate_id, 
         job_id=job_id,
         query=q
+    )
+
+
+@router.post(
+    "/{candidate_id}/task",
+    response_model=CandidateTaskRead,
+    status_code=status.HTTP_200_OK,
+)
+async def upload_candidate_task(
+    candidate_id: uuid.UUID,
+    task_file: UploadFile = FastAPIFile(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: UserRead = Depends(check_permission("candidates:decide")),
+) -> Any:
+    """Upload a candidate-specific task PDF/DOCX and trigger required skills extraction."""
+    candidate = await candidate_task_service.upload_and_extract_candidate_task_skills(
+        db=db,
+        candidate_id=candidate_id,
+        task_file=task_file,
+    )
+    return {
+        "task_file_path": candidate.task_file_path,
+        "task_skills": candidate.task_skills,
+        "is_custom_task": True if candidate.task_file_path else False
+    }
+
+
+@router.get(
+    "/{candidate_id}/task",
+    response_model=CandidateTaskRead,
+    status_code=status.HTTP_200_OK,
+)
+async def read_candidate_task(
+    candidate_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: UserRead = Depends(check_permission("candidates:access")),
+) -> Any:
+    """Retrieve only the task PDF file path, extracted skills, and custom flag for a candidate."""
+    return await candidate_task_service.get_candidate_task_skills(
+        db=db,
+        candidate_id=candidate_id,
+    )
+
+
+@router.delete(
+    "/{candidate_id}/task",
+    status_code=status.HTTP_200_OK,
+)
+async def delete_candidate_task(
+    candidate_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: UserRead = Depends(check_permission("candidates:decide")),
+) -> dict[str, str]:
+    """Delete the candidate-specific task PDF and revert back to default job task."""
+    await candidate_task_service.delete_candidate_task_skills(
+        db=db,
+        candidate_id=candidate_id,
+    )
+    return {"message": "Candidate custom task deleted successfully."}
+
+
+@router.get(
+    "/{candidate_id}/jobs/{job_id}/skills",
+    response_model=JobCandidateSkillsRead,
+    status_code=status.HTTP_200_OK,
+)
+async def get_job_and_candidate_task_skills(
+    candidate_id: uuid.UUID,
+    job_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: UserRead = Depends(check_permission("candidates:access")),
+) -> Any:
+    """Retrieve job standard skills and custom/fallback task skills for a candidate and job."""
+    return await candidate_task_service.get_candidate_and_job_skills(
+        db=db,
+        candidate_id=candidate_id,
+        job_id=job_id,
     )

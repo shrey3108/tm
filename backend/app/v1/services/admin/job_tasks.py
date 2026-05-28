@@ -71,3 +71,67 @@ def match_all_resumes_to_job_task(job_id_str: str, months_limit: int = 3):
                 asyncio.run(engine.dispose())
         except Exception:
             pass
+
+
+async def extract_task_skills_logic(job_id_str: str, file_path_str: str):
+    """Logic to extract skills from an uploaded task description file and update the database."""
+    import uuid
+    from pathlib import Path
+    from app.v1.services.admin.task_service import task_service
+    
+    job_id = uuid.UUID(job_id_str)
+    file_path = Path(file_path_str)
+    
+    async with async_session_maker() as session:
+        await task_service.extract_skills_from_file_and_update(session, job_id, file_path)
+
+
+@celery_app.task(name="extract_task_skills_task")
+def extract_task_skills_task(job_id_str: str, file_path_str: str):
+    """Celery task wrapper for task PDF skill extraction."""
+    try:
+        asyncio.run(extract_task_skills_logic(job_id_str, file_path_str))
+    except Exception as exc:
+        _log.exception(f"Failed to run extract_task_skills_task for job {job_id_str}")
+    finally:
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                loop.create_task(engine.dispose())
+            else:
+                asyncio.run(engine.dispose())
+        except Exception:
+            pass
+
+
+async def extract_candidate_task_skills_logic(candidate_id_str: str, file_path_str: str):
+    """Logic to extract skills from an uploaded candidate task description file and update the database."""
+    import uuid
+    from pathlib import Path
+    from app.v1.services.admin.candidate_task_service import candidate_task_service
+    
+    candidate_id = uuid.UUID(candidate_id_str)
+    file_path = Path(file_path_str)
+    
+    async with async_session_maker() as session:
+        await candidate_task_service.extract_candidate_skills_from_file_and_update(session, candidate_id, file_path)
+
+
+@celery_app.task(name="extract_candidate_task_skills_task")
+def extract_candidate_task_skills_task(candidate_id_str: str, file_path_str: str):
+    """Celery task wrapper for candidate task PDF skill extraction."""
+    try:
+        asyncio.run(extract_candidate_task_skills_logic(candidate_id_str, file_path_str))
+    except Exception as exc:
+        _log.exception(f"Failed to run extract_candidate_task_skills_task for candidate {candidate_id_str}")
+    finally:
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                loop.create_task(engine.dispose())
+            else:
+                asyncio.run(engine.dispose())
+        except Exception:
+            pass
+
+

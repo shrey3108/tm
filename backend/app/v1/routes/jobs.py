@@ -5,7 +5,7 @@ API routes for job-related operations in version 1.
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, BackgroundTasks, Depends, Query, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Query, status, File as FastAPIFile, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.v1.db.session import get_db
@@ -19,6 +19,7 @@ from app.v1.schemas.job import (
     JobUpdate,
     JobActivityHistoryResponse,
     JobTitlesListRead,
+    JobTaskRead,
 )
 from app.v1.schemas.job_stage import (
     JobStageConfigCreate,
@@ -34,6 +35,7 @@ from app.v1.services.admin_service import admin_service
 from app.v1.services.job_service import job_service
 from app.v1.services.resume_upload_service import resume_upload_service
 from app.v1.services.stage_service import stage_service
+from app.v1.services.admin.task_service import task_service
 
 router = APIRouter()
 
@@ -423,3 +425,60 @@ async def get_stage_criteria(
         )
         for row in rows
     ]
+
+
+@router.post(
+    "/{job_id}/task",
+    response_model=JobTaskRead,
+    status_code=status.HTTP_200_OK,
+)
+async def upload_job_task(
+    job_id: uuid.UUID,
+    task_file: UploadFile = FastAPIFile(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: UserRead = Depends(check_permission("jobs:manage")),
+) -> Any:
+    """Upload a candidate task PDF for a specific job and extract required skills."""
+    return await task_service.upload_and_extract_task_skills(
+        db=db,
+        job_id=job_id,
+        task_file=task_file,
+    )
+
+
+@router.get(
+    "/{job_id}/task",
+    response_model=JobTaskRead,
+    status_code=status.HTTP_200_OK,
+)
+async def read_job_task(
+    job_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: UserRead = Depends(check_permission("jobs:access")),
+) -> Any:
+    """Retrieve only the task PDF file path and extracted required skills for a specific job."""
+    return await task_service.get_task_skills(
+        db=db,
+        job_id=job_id,
+    )
+
+
+@router.delete(
+    "/{job_id}/task",
+    status_code=status.HTTP_200_OK,
+)
+async def delete_job_task(
+    job_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: UserRead = Depends(check_permission("jobs:manage")),
+) -> dict[str, str]:
+    """Delete the candidate task PDF and reset task skills to null for a specific job."""
+    await task_service.delete_task_skills(
+        db=db,
+        job_id=job_id,
+    )
+    return {"message": "Task deleted successfully."}
+
+
+
+
