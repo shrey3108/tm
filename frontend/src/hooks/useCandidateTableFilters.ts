@@ -117,7 +117,6 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
   }, [debouncedJobSearch, fetchJobTitles]);
 
   useEffect(() => {
-    if (!debouncedLocationSearch) return
     adminLocationService
       .getAllLocations(0, 500, debouncedLocationSearch)
       .then((response) => {

@@ -20,6 +20,7 @@ import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/h
 import { Badge } from "@/components/ui/badge";
 import PermissionGuard from "@/components/auth/PermissionGuard";
 import { PERMISSIONS } from "@/lib/permissions";
+import { DateDisplay } from "@/components/shared";
 
 const AdminJobPositions = () => {
   const toast = useToast();
@@ -154,6 +155,34 @@ const AdminJobPositions = () => {
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
+    },
+    {
+      accessorKey: "created_at",
+      header: ({ column }) => (
+        <Button variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="hover:bg-transparent p-0 font-semibold">
+          Created Date
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => (
+        <DateDisplay date={row.original.created_at} showIcon />
+      )
+    },
+    {
+      accessorKey: "updated_at",
+      header: ({ column }) => (
+        <Button variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="hover:bg-transparent p-0 font-semibold">
+          Updated Date
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => (
+        <DateDisplay date={row.original.updated_at} showIcon />
+      )
     },
     {
       id: "actions",

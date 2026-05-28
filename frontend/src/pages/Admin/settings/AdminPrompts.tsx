@@ -32,8 +32,10 @@ import {
     DialogDescription,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { useAdminData } from "@/hooks";
+import { useAdminData, useDebouncedValue } from "@/hooks";
 import { ErrorDisplay } from "@/components/shared";
+
+
 const AdminPrompts = () => {
     const [search, setSearch] = useState("");
     const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
@@ -44,8 +46,12 @@ const AdminPrompts = () => {
     const [isViewModalOpen, setIsViewModalOpen] = useState(false);
     const [selectedStages, setSelectedStages] = useState<string[]>([]);
     const [allStages, setAllStages] = useState<string[]>([]);
-
-    const { data: prompts, loading, error, fetchData, total } = useAdminData(() => adminPromptService.getAllPrompts(pageIndex * pageSize, pageSize), { fetchOnMount: false });
+    const debouncedSearch = useDebouncedValue(search)
+    // Reset to first page when search changes
+    useEffect(() => {
+        setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+    }, [debouncedSearch]);
+    const { data: prompts, loading, error, fetchData, total } = useAdminData(() => adminPromptService.getAllPrompts(pageIndex * pageSize, pageSize, debouncedSearch), { fetchOnMount: false });
 
     // Collect all unique stages from the response data over time
     useEffect(() => {
@@ -65,13 +71,13 @@ const AdminPrompts = () => {
     const [isCopied, setIsCopied] = useState(false);
     useEffect(() => {
         fetchData();
-    }, [pageIndex, pageSize, search, fetchData]);
+    }, [pageIndex, pageSize, debouncedSearch, fetchData]);
     const [overallTotal, setOverallTotal] = useState(0);
     useEffect(() => {
-        if (!search) {
+        if (!debouncedSearch) {
             setOverallTotal(total);
         }
-    }, [total, search]);
+    }, [total, debouncedSearch]);
 
     const columns: ColumnDef<PromptRead>[] = [
         {
@@ -151,13 +157,6 @@ const AdminPrompts = () => {
         },
     ];
 
-    const filteredPrompts = prompts.filter(p => {
-        const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase()) ||
-            p.content.toLowerCase().includes(search.toLowerCase());
-        const matchesStage = selectedStages.length === 0 || selectedStages.includes(p.stage);
-        return matchesSearch && matchesStage;
-    });
-
     // Handle search with pagination reset
     const handleSearchChange = (value: string) => {
         setSearch(value);
@@ -178,6 +177,10 @@ const AdminPrompts = () => {
         }, 2000);
     };
 
+    const filteredPrompts = prompts.filter(
+        (p) => selectedStages.length === 0 || selectedStages.includes(p.stage)
+    );
+
     return (
         <AppPageShell width="wide">
             <PermissionGuard permissions={[PERMISSIONS.ANALYTICS_READ, PERMISSIONS.ADMIN_ACCESS]}>
@@ -195,9 +198,9 @@ const AdminPrompts = () => {
                         data={filteredPrompts}
                         loading={loading}
                         isServerSide={true}
-                        pageCount={Math.ceil(total / pageSize)}
+                        pageCount={Math.ceil(filteredPrompts.length / pageSize)}
                         pageSize={pageSize}
-                        totalRecords={total}
+                        totalRecords={filteredPrompts.length}
                         totalCount={overallTotal}
                         resultCount={filteredPrompts.length}
                         onPaginationChange={setPagination}
@@ -247,6 +250,7 @@ const AdminPrompts = () => {
                                                             )
                                                         }
                                                         className="rounded-lg capitalize"
+                                                        closeOnClick={true}
                                                     >
                                                         {s}
                                                     </DropdownMenuCheckboxItem>

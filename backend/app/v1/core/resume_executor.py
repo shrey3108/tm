@@ -65,6 +65,17 @@ async def run_in_resume_executor(
     if _resume_executor is None:
         initialize_resume_executor()
 
+    from opentelemetry.context import get_current, attach, detach
+    ctx = get_current()
+
+    def wrapped_func(*w_args, **w_kwargs):
+        token = attach(ctx)
+        try:
+            return func(*w_args, **w_kwargs)
+        finally:
+            detach(token)
+
     loop = asyncio.get_running_loop()
-    bound_callable = partial(func, *args, **kwargs)
+    bound_callable = partial(wrapped_func, *args, **kwargs)
     return await loop.run_in_executor(_resume_executor, bound_callable)
+

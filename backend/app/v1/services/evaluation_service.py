@@ -21,6 +21,8 @@ from app.v1.services.evaluation.agent import evaluation_agent
 from app.v1.core.config import settings
 from app.v1.core.observability import get_tracer
 from opentelemetry.trace import StatusCode
+from openinference.semconv.trace import SpanAttributes, OpenInferenceSpanKindValues
+import json
 
 logger = logging.getLogger(__name__)
 tracer = get_tracer("hiring-platform.evaluation")
@@ -39,14 +41,18 @@ class EvaluationService:
         Traced in Phoenix as 'hiring-platform.evaluate-candidate-stage'.
         """
         with tracer.start_as_current_span("evaluate-candidate-stage") as span:
+            span.set_attribute(SpanAttributes.OPENINFERENCE_SPAN_KIND, OpenInferenceSpanKindValues.CHAIN.value)
             span.set_attribute("candidate_stage_id", str(candidate_stage_id))
+            span.set_attribute(SpanAttributes.INPUT_VALUE, str(candidate_stage_id))
             try:
                 result = await self._run_evaluation(db, candidate_stage_id, span)
                 span.set_status(StatusCode.OK)
+                span.set_attribute(SpanAttributes.OUTPUT_VALUE, json.dumps(result))
                 return result
             except Exception as e:
                 span.set_status(StatusCode.ERROR, str(e))
                 span.record_exception(e)
+                span.set_attribute(SpanAttributes.OUTPUT_VALUE, f"Evaluation failed: {str(e)}")
                 raise e
 
     async def _run_evaluation(

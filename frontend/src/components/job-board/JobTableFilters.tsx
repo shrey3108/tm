@@ -117,6 +117,7 @@ export const JobTableFilters = ({
                       )
                     }
                     className="rounded-lg my-0.5 capitalize pl-2 pr-6"
+                    closeOnClick={true}
                   >
                     {capitalize(s)}
                   </DropdownMenuCheckboxItem>
@@ -191,6 +192,7 @@ export const JobTableFilters = ({
                               )
                             }
                             className="rounded-lg my-0.5 capitalize pl-2 pr-6"
+                            closeOnClick={true}
                           >
                             {d.name}
                           </DropdownMenuCheckboxItem>

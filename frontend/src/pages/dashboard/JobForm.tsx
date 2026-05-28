@@ -5,11 +5,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { X } from "lucide-react";
 
-import {
-  Button,
-  Form,
-} from "@/components";
-
+import { Form } from "@/components/ui/form";
+import { Button } from "@/components/ui/button"
 import {
   JobFormSkeleton,
   BasicJobDetails,
@@ -99,15 +96,18 @@ export default function CreateJob() {
               jobData = await jobService.getJob(id);
             } else {
               // Fallback: fetch all jobs and find by slug
-              const allJobs = await jobService.getJobs();
-              jobData = allJobs.data.find((j: any) => slugify(j.title) === jobSlug);
+              const allJobs = await jobService.getJobTitles();
+              const job = allJobs.data.find((j) => slugify(j.title) === jobSlug); // match slug and attempt to find job
+              id = job?.id;
+              jobData = await jobService.getJob(id); // if job found fetch job details
 
-              // If still not found, try a more lenient match or just error out
+              // If still not found error out
               if (!jobData) {
                 toast.error("Job not found.");
                 navigate("/dashboard/jobs");
                 return;
               }
+
               id = jobData.id;
             }
 

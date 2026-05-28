@@ -3,17 +3,17 @@
  * Displays all roles and permissions with ability to create new permissions.
  */
 
-import { useCallback, useState } from "react";
+import { useEffect, useState } from "react";
 import { adminPermissionService, adminRoleService } from "@/apis/admin";
 import type { PermissionRead, RoleRead } from "@/types/admin";
 import { DataTable } from "@/components/shared/DataTable";
-import type { ColumnDef } from "@tanstack/react-table";
+import type { ColumnDef, PaginationState } from "@tanstack/react-table";
 import ErrorDisplay from "@/components/shared/ErrorDisplay";
 import AppPageShell from "@/components/shared/AppPageShell";
 import { DateDisplay } from "@/components/shared/DateDisplay";
 import PageHeader from "@/components/shared/PageHeader";
 import { CreatePermissionModal, DeleteModal, RoleModal } from "@/components/modal";
-import { useAdminData, useDeleteConfirmation } from "@/hooks";
+import { useAdminData, useDebouncedValue, useDeleteConfirmation } from "@/hooks";
 import { Button } from "@/components/ui/button";
 import PermissionGuard from "@/components/auth/PermissionGuard";
 import { PERMISSIONS } from "@/lib/permissions";
@@ -24,42 +24,52 @@ const AdminRoles = () => {
   const [showPermissionModal, setShowPermissionModal] = useState(false);
   const [showRoleModal, setShowRoleModal] = useState(false);
   const [editingRoleId, setEditingRoleId] = useState<string | null>(null);
+  const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 10,
+  });
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search, 500);
 
-  const fetchAll = useCallback(async () => {
-    const [roles, permissions] = await Promise.all([
-      (await adminRoleService.getAllRoles()).data,
-      (await adminPermissionService.getAllPermissions()).data,
-    ]);
-    return { roles, permissions };
-  }, []);
+  useEffect(() => {
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  }, [debouncedSearch]);
 
   const {
-    data: combinedData,
+    data: roles,
+    total,
     loading,
     error,
-    fetchData,
-  } = useAdminData<{ roles: RoleRead[]; permissions: PermissionRead[] }>(
-    async () => {
-      const data = await fetchAll();
-      return [data]; // useAdminData expects an array
-    },
-    { initialData: [{ roles: [], permissions: [] }] },
+    fetchData: fetchRoles,
+  } = useAdminData<RoleRead>(
+    () => adminRoleService.getAllRoles(pageIndex * pageSize, pageSize, debouncedSearch),
+    { fetchOnMount: false }
   );
 
-  const roles = combinedData[0]?.roles || [];
-  // const permissions = combinedData[0]?.permissions || [];
+  // Refetch when pagination or search changes
+  useEffect(() => {
+    fetchRoles();
+  }, [pageIndex, pageSize, debouncedSearch, fetchRoles]);
+
+  const [overallTotal, setOverallTotal] = useState(0);
+  useEffect(() => {
+    if (!debouncedSearch) {
+      setOverallTotal(total);
+    }
+  }, [total, debouncedSearch]);
+
   const { user: currentUser } = useAuth();
 
   // Two separate delete hooks for clarity.
   const roleDelete = useDeleteConfirmation<RoleRead>({
     deleteFn: (id) => adminRoleService.deleteRole(id as string),
-    onSuccess: fetchData,
+    onSuccess: fetchRoles,
     itemTitle: (role) => `role "${role.name}"`,
   });
 
   const permissionDelete = useDeleteConfirmation<PermissionRead>({
     deleteFn: (id) => adminPermissionService.deletePermission(id as string),
-    onSuccess: fetchData,
+    onSuccess: fetchRoles,
     itemTitle: (perm) => `permission "${perm.name}"`,
   });
 
@@ -199,7 +209,7 @@ const AdminRoles = () => {
       />
 
       {error && !roles.length ? (
-        <ErrorDisplay message={error} onRetry={fetchData} />
+        <ErrorDisplay message={error} onRetry={fetchRoles} />
       ) : (
         <div className="flex flex-col gap-8">
           <div className="space-y-4">
@@ -208,7 +218,20 @@ const AdminRoles = () => {
               columns={roleColumns}
               data={roles}
               loading={loading}
-              emptyMessage="No roles found."
+              searchKey="name"
+              searchPlaceholder="Filter roles by name..."
+              searchValue={search}
+              onSearchChange={setSearch}
+              initialSorting={[{ id: "name", desc: false }]}
+              isServerSide={true}
+              pageIndex={pageIndex}
+              pageSize={pageSize}
+              pageCount={Math.ceil(total / pageSize)}
+              onPaginationChange={setPagination}
+              totalRecords={total}
+              totalCount={overallTotal}
+              resultCount={roles.length}
+              entityName="Roles"
             />
           </div>
 
@@ -227,13 +250,13 @@ const AdminRoles = () => {
       <CreatePermissionModal
         show={showPermissionModal}
         handleClose={() => setShowPermissionModal(false)}
-        onPermissionCreated={fetchData}
+        onPermissionCreated={fetchRoles}
       />
 
       <RoleModal
         show={showRoleModal}
         handleClose={() => setShowRoleModal(false)}
-        onSuccess={fetchData}
+        onSuccess={fetchRoles}
         editRoleId={editingRoleId}
       />
 

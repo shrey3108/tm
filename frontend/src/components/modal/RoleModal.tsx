@@ -60,6 +60,7 @@ const DEFAULT_ROLE_VALUES: RoleCreateFormValues = {
 const RoleModal = ({ show, handleClose, onSuccess, editRoleId }: RoleModalProps) => {
   const [permissions, setPermissions] = useState<PermissionRead[]>([]);
   const [fetchingData, setFetchingData] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const isEditMode = !!editRoleId;
 
@@ -96,10 +97,19 @@ const RoleModal = ({ show, handleClose, onSuccess, editRoleId }: RoleModalProps)
 
   const selectedPermissionIds = watch("permission_ids") || [];
 
+  const filteredPermissions = permissions.filter((permission) => {
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      permission.name.toLowerCase().includes(searchLower) ||
+      permission.description.toLowerCase().includes(searchLower)
+    );
+  });
+
   useEffect(() => {
     const fetchData = async () => {
       if (!show) return;
 
+      setSearchTerm("");
       setFetchingData(true);
       setSubmitError(null);
       try {
@@ -176,7 +186,7 @@ const RoleModal = ({ show, handleClose, onSuccess, editRoleId }: RoleModalProps)
                     <FormControl>
                       <Input
                         placeholder="e.g. HR Manager"
-                        className="h-11 w-full rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium"
+                        className="h-9 w-full rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium"
                         {...field}
                       />
                     </FormControl>
@@ -186,16 +196,24 @@ const RoleModal = ({ show, handleClose, onSuccess, editRoleId }: RoleModalProps)
               />
 
               <div className="flex-1 flex flex-col min-h-0 space-y-3">
-                <FormLabel className="text-md font-semibold px-2">Assign Permissions</FormLabel>
-                <div className="grid grid-cols-3 gap-3 p-4 bg-muted/30 rounded-2xl border border-muted-foreground/10 flex-1 overflow-y-auto custom-scrollbar">
-                  {permissions.map((permission) => {
+                <div className="flex sm:flex-row sm:items-center gap-2 px-2">
+                  <FormLabel className="text-md font-semibold">Assign Permissions <Required /></FormLabel>
+                  <Input
+                    placeholder="Search permissions..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="h-9 w-full sm:w-64 rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all text-sm font-medium"
+                  />
+                </div>
+                <div className="grid grid-cols-3 gap-3 p-4 bg-muted/30 rounded-2xl border border-muted-foreground/10 flex-1 overflow-y-auto">
+                  {filteredPermissions.map((permission) => {
                     const isChecked = selectedPermissionIds.includes(permission.id);
                     return (
                       <Field
                         key={permission.id}
                         orientation="horizontal"
                         className={cn(
-                          "items-start gap-3 p-3 rounded-xl border-2 transition-all duration-200",
+                          "items-start gap-3 p-3 rounded-xl border-2 transition-all duration-200 h-20",
                           isChecked
                             ? "bg-primary/5 border-primary shadow-sm"
                             : "bg-background/50 border-transparent hover:border-muted-foreground/20",
@@ -224,6 +242,11 @@ const RoleModal = ({ show, handleClose, onSuccess, editRoleId }: RoleModalProps)
                       </Field>
                     );
                   })}
+                  {filteredPermissions.length === 0 && (
+                    <div className="col-span-3 flex items-center justify-center p-8 text-muted-foreground text-sm font-medium">
+                      No permissions match your search.
+                    </div>
+                  )}
                 </div>
                 <FormField
                   control={control}

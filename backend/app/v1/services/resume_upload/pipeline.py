@@ -30,6 +30,7 @@ from .logging import log_event, log_stage
 from .processor import ResumeProcessor
 from app.v1.core.observability import get_tracer
 from opentelemetry.trace import StatusCode
+from openinference.semconv.trace import SpanAttributes, OpenInferenceSpanKindValues
 
 logger = get_logger(__name__)
 tracer = get_tracer("hiring-platform.pipeline")
@@ -57,9 +58,14 @@ async def run_resume_processing_pipeline(
         reanalyze: If True, skips extraction and uses stored data.
     """
     with tracer.start_as_current_span("resume-processing-pipeline") as span:
+        span.set_attribute(SpanAttributes.OPENINFERENCE_SPAN_KIND, OpenInferenceSpanKindValues.CHAIN.value)
         span.set_attribute("job_id", str(job_id))
         span.set_attribute("resume_id", str(resume_id))
         span.set_attribute("reanalyze", reanalyze)
+        span.set_attribute(
+            SpanAttributes.INPUT_VALUE,
+            f"job_id={job_id}, resume_id={resume_id}, file_path={file_path}, reanalyze={reanalyze}"
+        )
         
         try:
             result = await _run_resume_pipeline(
@@ -74,10 +80,12 @@ async def run_resume_processing_pipeline(
                 span=span
             )
             span.set_status(StatusCode.OK)
+            span.set_attribute(SpanAttributes.OUTPUT_VALUE, "Pipeline execution completed successfully.")
             return result
         except Exception as e:
             span.set_status(StatusCode.ERROR, str(e))
             span.record_exception(e)
+            span.set_attribute(SpanAttributes.OUTPUT_VALUE, f"Pipeline execution failed: {str(e)}")
             raise e
 
 async def _run_resume_pipeline(

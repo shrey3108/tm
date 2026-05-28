@@ -201,6 +201,7 @@ export const CandidateTableFilters = ({
                               )
                             }
                             className="rounded-lg truncate pr-1"
+                            closeOnClick={true}
                           >
                             <HoverCard>
                               <HoverCardTrigger delay={10} closeDelay={10}>
@@ -296,6 +297,7 @@ export const CandidateTableFilters = ({
                               )
                             }
                             className="rounded-lg pl-2 pr-6"
+                            closeOnClick={true}
                           >
                             {l}
                           </DropdownMenuCheckboxItem>
@@ -365,6 +367,7 @@ export const CandidateTableFilters = ({
                       )
                     }
                     className="rounded-lg pl-2 pr-6"
+                    closeOnClick={true}
                   >
                     {d.label}
                   </DropdownMenuCheckboxItem>
@@ -425,6 +428,7 @@ export const CandidateTableFilters = ({
                       )
                     }
                     className="rounded-lg pl-2 pr-6"
+                    closeOnClick={true}
                   >
                     {d.label}
                   </DropdownMenuCheckboxItem>
@@ -481,6 +485,7 @@ export const CandidateTableFilters = ({
                       )
                     }
                     className="rounded-lg pl-2 pr-6"
+                    closeOnClick={true}
                   >
                     {score}
                   </DropdownMenuCheckboxItem>
@@ -543,6 +548,7 @@ export const CandidateTableFilters = ({
                           )
                         }
                         className="rounded-lg pl-2 pr-6"
+                        closeOnClick={true}
                       >
                         {s}
                       </DropdownMenuCheckboxItem>
@@ -619,6 +625,7 @@ export const CandidateTableFilters = ({
                               )
                             }
                             className="rounded-lg my-0.5"
+                            closeOnClick={true}
                           >
                             <div className="flex flex-col gap-0.5">
                               <span className="font-medium text-xs">Activity {sessionId}</span>
