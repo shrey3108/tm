@@ -89,9 +89,10 @@ export function CandidateTimeline({
     }
   };
 
+  // find the first stage where hr decision is pass or fail
   const firstRejectedIndex = useMemo(() => events?.events.findIndex(e => {
-    const r = e.result?.toLowerCase() || "";
-    return r.includes("fail") || r.includes("failed") || r.includes("rejected") || r.includes("reject");
+    const r = e.hr_decision?.toLowerCase() || "";
+    return r.includes("fail") || r.includes("failed") || r.includes("rejected") || r.includes("reject")
   }), [events]);
 
   const activeEventIndex = useMemo(() => events?.events.findIndex(e =>
