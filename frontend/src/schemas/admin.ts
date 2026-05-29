@@ -155,6 +155,22 @@ const jobBaseSchema = z.object({
   priority_start_date: z.string().optional().nullable(),
   /** Priority end date */
   priority_end_date: z.string().optional().nullable(),
+  /** Optional project requirement documentation PDF file (max size 5MB) */
+  project_document: z
+    .any()
+    .optional()
+    .refine(
+      (file) => !file || file instanceof File,
+      "Invalid file object"
+    )
+    .refine(
+      (file) => !file || file.size <= 5 * 1024 * 1024,
+      "File size must be less than 5MB"
+    )
+    .refine(
+      (file) => !file || file.type === "application/pdf",
+      "Only PDF files are allowed"
+    ),
 });
 
 /**

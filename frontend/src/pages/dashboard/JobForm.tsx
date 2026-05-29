@@ -76,6 +76,7 @@ export default function CreateJob() {
       position_id: "",
       stages: null,
       processing_version: undefined,
+      project_document: undefined,
     },
   });
 
@@ -142,6 +143,7 @@ export default function CreateJob() {
       });
     }
   };
+
 
 
 
