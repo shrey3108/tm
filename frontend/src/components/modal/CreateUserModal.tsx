@@ -4,9 +4,9 @@
  * Uses Zod for form validation and shadcn components.
  */
 
-import { useCallback, useEffect, useState } from "react";
-import { adminRoleService, adminUserService } from "@/apis/admin";
-import type { RoleRead, UserAdminRead } from "@/types/admin";
+import { useCallback } from "react";
+import { adminUserService } from "@/apis/admin";
+import type { UserAdminRead } from "@/types/admin";
 import ErrorDisplay from "@/components/shared/ErrorDisplay";
 import {
   Dialog,
@@ -33,6 +33,9 @@ import {
 } from "@/components";
 import { useFormModal } from "@/hooks";
 import { userCreateSchema, type UserCreateFormValues } from "@/schemas/admin";
+import { useAdminRoles } from "@/hooks/queries/admin/useAdminRoles";
+import { toast } from "sonner";
+import { extractErrorMessage } from "@/utils/error";
 
 /**
  * Props for the CreateUserModal component.
@@ -56,8 +59,7 @@ const DEFAULT_USER_VALUES: UserCreateFormValues = {
  * Modal dialog for creating or editing a user account.
  */
 const CreateUserModal = ({ show, handleClose, onUserSaved, user }: CreateUserModalProps) => {
-  const [roles, setRoles] = useState<RoleRead[]>([]);
-  const [fetchingRoles, setFetchingRoles] = useState(false);
+
   const isEditMode = !!user;
 
   const mapItemToValues = useCallback(
@@ -106,27 +108,15 @@ const CreateUserModal = ({ show, handleClose, onUserSaved, user }: CreateUserMod
     handleFormSubmit,
     isSubmitting,
     submitError,
-    setSubmitError,
     control,
   } = formModal;
 
-  useEffect(() => {
-    if (show) {
-      const fetchRoles = async () => {
-        try {
-          setFetchingRoles(true);
-          const data = await adminRoleService.getAllRoles();
-          setRoles(data.data);
-        } catch (err) {
-          console.error("Failed to fetch roles:", err);
-          setSubmitError("Failed to load roles. Please try again.");
-        } finally {
-          setFetchingRoles(false);
-        }
-      };
-      fetchRoles();
-    }
-  }, [show, setSubmitError]);
+  const { data: roles, loading, error } = useAdminRoles({ isEnable: show })
+  if (error) {
+    const msg = extractErrorMessage(error);
+    toast.error(msg);
+  }
+
 
   return (
     <Dialog open={show} onOpenChange={(open) => !open && handleClose()}>
@@ -184,7 +174,7 @@ const CreateUserModal = ({ show, handleClose, onUserSaved, user }: CreateUserMod
                     <Select
                       onValueChange={field.onChange}
                       value={field.value}
-                      disabled={fetchingRoles}
+                      disabled={loading}
                     >
                       <FormControl>
                         <SelectTrigger className="w-full">

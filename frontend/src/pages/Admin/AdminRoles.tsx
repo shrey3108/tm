@@ -13,14 +13,16 @@ import AppPageShell from "@/components/shared/AppPageShell";
 import { DateDisplay } from "@/components/shared/DateDisplay";
 import PageHeader from "@/components/shared/PageHeader";
 import { CreatePermissionModal, DeleteModal, RoleModal } from "@/components/modal";
-import { useAdminData, useDebouncedValue, useDeleteConfirmation } from "@/hooks";
+import { useDebouncedValue, useDeleteConfirmation } from "@/hooks";
 import { Button } from "@/components/ui/button";
 import PermissionGuard from "@/components/auth/PermissionGuard";
 import { PERMISSIONS } from "@/lib/permissions";
 import { useAuth } from "@/store/hooks";
 import { Plus } from "lucide-react";
+import { useAdminRoles } from "@/hooks/queries/admin/useAdminRoles";
 
 const AdminRoles = () => {
+  const { user: currentUser } = useAuth();
   const [showPermissionModal, setShowPermissionModal] = useState(false);
   const [showRoleModal, setShowRoleModal] = useState(false);
   const [editingRoleId, setEditingRoleId] = useState<string | null>(null);
@@ -29,47 +31,40 @@ const AdminRoles = () => {
     pageSize: 10,
   });
   const [search, setSearch] = useState("");
-  const debouncedSearch = useDebouncedValue(search, 500);
+  const [overallTotal, setOverallTotal] = useState(0);
 
-  useEffect(() => {
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-  }, [debouncedSearch]);
+  const debouncedSearch = useDebouncedValue(search);
 
-  const {
-    data: roles,
-    total,
-    loading,
-    error,
-    fetchData: fetchRoles,
-  } = useAdminData<RoleRead>(
-    () => adminRoleService.getAllRoles(pageIndex * pageSize, pageSize, debouncedSearch),
-    { fetchOnMount: false }
+  const { data: roles, total, loading, error, refetch, } = useAdminRoles(
+    {
+      skip: pageIndex * pageSize,
+      limit: pageSize,
+      q: debouncedSearch,
+    }
   );
 
-  // Refetch when pagination or search changes
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  };
   useEffect(() => {
-    fetchRoles();
-  }, [pageIndex, pageSize, debouncedSearch, fetchRoles]);
-
-  const [overallTotal, setOverallTotal] = useState(0);
-  useEffect(() => {
-    if (!debouncedSearch) {
-      setOverallTotal(total);
+    if (!debouncedSearch && overallTotal !== total) {
+      queueMicrotask(() => {
+        setOverallTotal(total);
+      })
     }
-  }, [total, debouncedSearch]);
-
-  const { user: currentUser } = useAuth();
+  }, [total, debouncedSearch, overallTotal]);
 
   // Two separate delete hooks for clarity.
   const roleDelete = useDeleteConfirmation<RoleRead>({
     deleteFn: (id) => adminRoleService.deleteRole(id as string),
-    onSuccess: fetchRoles,
+    onSuccess: refetch,
     itemTitle: (role) => `role "${role.name}"`,
   });
 
   const permissionDelete = useDeleteConfirmation<PermissionRead>({
     deleteFn: (id) => adminPermissionService.deletePermission(id as string),
-    onSuccess: fetchRoles,
+    onSuccess: refetch,
     itemTitle: (perm) => `permission "${perm.name}"`,
   });
 
@@ -209,7 +204,7 @@ const AdminRoles = () => {
       />
 
       {error && !roles.length ? (
-        <ErrorDisplay message={error} onRetry={fetchRoles} />
+        <ErrorDisplay message={error.message} onRetry={refetch} />
       ) : (
         <div className="flex flex-col gap-8">
           <div className="space-y-4">
@@ -221,7 +216,7 @@ const AdminRoles = () => {
               searchKey="name"
               searchPlaceholder="Filter roles by name..."
               searchValue={search}
-              onSearchChange={setSearch}
+              onSearchChange={handleSearchChange}
               initialSorting={[{ id: "name", desc: false }]}
               isServerSide={true}
               pageIndex={pageIndex}
@@ -250,13 +245,13 @@ const AdminRoles = () => {
       <CreatePermissionModal
         show={showPermissionModal}
         handleClose={() => setShowPermissionModal(false)}
-        onPermissionCreated={fetchRoles}
+        onPermissionCreated={refetch}
       />
 
       <RoleModal
         show={showRoleModal}
         handleClose={() => setShowRoleModal(false)}
-        onSuccess={fetchRoles}
+        onSuccess={refetch}
         editRoleId={editingRoleId}
       />
 
