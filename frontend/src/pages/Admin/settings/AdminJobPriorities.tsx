@@ -11,7 +11,7 @@ import { useToast } from "@/components/shared/ToastProvider";
 import { DataTable } from "@/components/shared/DataTable";
 import ErrorDisplay from "@/components/shared/ErrorDisplay";
 import { CreateJobPriorityModal, DeleteModal } from "@/components/modal";
-import { useAdminData, useDebouncedValue } from "@/hooks";
+import { useDebouncedValue } from "@/hooks";
 import { Edit2, Trash2Icon, ArrowUpDown, Clock, AlertCircle, Plus } from "lucide-react";
 import { extractErrorMessage } from "@/utils/error";
 import type { ColumnDef, PaginationState } from "@tanstack/react-table";
@@ -21,6 +21,7 @@ import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/h
 import PermissionGuard from "@/components/auth/PermissionGuard";
 import { PERMISSIONS } from "@/lib/permissions";
 import { DateDisplay } from "@/components/shared";
+import { useJobPriorities } from "@/hooks/queries/admin/useJobPriority";
 
 const AdminJobPriorities = () => {
   const toast = useToast();
@@ -30,41 +31,30 @@ const AdminJobPriorities = () => {
     pageIndex: 0,
     pageSize: 10,
   });
-  const [search, setSearch] = useState("");
-
-  const debouncedSearch = useDebouncedValue(search, 500);
-  // Reset to first page when search changes
-  useEffect(() => {
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-  }, [debouncedSearch]);
-
-  const {
-    data: priorities,
-    total,
-    loading,
-    error,
-    fetchData: fetchPriorities,
-  } = useAdminData<JobPriorityRead>(
-    () => adminJobPriorityService.getAllPriorities(pageIndex * pageSize, pageSize, debouncedSearch),
-    { fetchOnMount: false }
-  );
-
-  // Refetch when pagination or search changes
-  useEffect(() => {
-    fetchPriorities();
-  }, [pageIndex, pageSize, debouncedSearch, fetchPriorities]);
-
-  const [overallTotal, setOverallTotal] = useState(0);
-  useEffect(() => {
-    if (!debouncedSearch) {
-      setOverallTotal(total);
-    }
-  }, [total, debouncedSearch]);
-
-  const [_deletingId, setDeletingId] = useState<string | null>(null);
+  const [, setDeletingId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<JobPriorityRead | null>(null);
+  const [overallTotal, setOverallTotal] = useState(0);
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search, 500);
+
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  };
+
+  const { data: priorities, loading, error, refetch, total } = useJobPriorities(pageIndex * pageSize, pageSize, debouncedSearch);
+
+  useEffect(() => {
+    if (!debouncedSearch && overallTotal !== total) {
+      queueMicrotask(() => {
+        setOverallTotal(total);
+      });
+    }
+  }, [total, debouncedSearch, overallTotal]);
+
+
 
   /**
    * Performs immediate deletion of a priority.
@@ -75,7 +65,7 @@ const AdminJobPriorities = () => {
       setDeletingId(priority.id);
       setDeleteError(null);
       await adminJobPriorityService.deletePriority(priority.id);
-      fetchPriorities();
+      refetch();
       toast.success("Priority deleted successfully");
     } catch (err) {
       const errMsg = extractErrorMessage(err);
@@ -115,7 +105,7 @@ const AdminJobPriorities = () => {
     const jobNames = jobNamesStr
       .split(",")
       .map((name) => {
-        let trimmed = name.trim();
+        const trimmed = name.trim();
         // remove quotes or brackets if they exist (for robustness)
         if (
           (trimmed.startsWith("'") && trimmed.endsWith("'")) ||
@@ -315,7 +305,7 @@ const AdminJobPriorities = () => {
       />
 
       {error ? (
-        <ErrorDisplay message={error} onRetry={fetchPriorities} />
+        <ErrorDisplay message={error.message} onRetry={refetch} />
       ) : (
         <DataTable
           columns={columns}
@@ -323,7 +313,7 @@ const AdminJobPriorities = () => {
           loading={loading}
           searchKey="name"
           searchValue={search}
-          onSearchChange={setSearch}
+          onSearchChange={handleSearchChange}
           searchPlaceholder="Filter priorities by name..."
           initialSorting={[{ id: "name", desc: false }]}
           isServerSide={true}
@@ -341,7 +331,7 @@ const AdminJobPriorities = () => {
       <CreateJobPriorityModal
         show={showModal}
         handleClose={handleCloseModal}
-        onPrioritySaved={fetchPriorities}
+        onPrioritySaved={refetch}
         priority={selectedPriority}
       />
 
