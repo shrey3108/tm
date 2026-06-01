@@ -8,6 +8,7 @@ import type { Job } from "@/types/job";
 import { extractErrorMessage } from "@/utils/error";
 import { slugify } from "@/utils/slug";
 import type { PaginationState } from "@tanstack/react-table";
+import { useAdminJobs } from "@/hooks/queries/jobs";
 
 // Sub-components
 import { JobBoardHeader } from "@/components/job-board/JobBoardHeader";
@@ -26,8 +27,6 @@ import { useDebouncedValue } from "@/hooks";
 const AdminJobs = () => {
   const navigate = useNavigate();
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(false);
   const [loadingJobId, setLoadingJobId] = useState<string | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [jobToDelete, setJobToDelete] = useState<Job | null>(null);
@@ -80,45 +79,46 @@ const AdminJobs = () => {
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
   };
 
-  /** Fetches jobs using the admin service with current pagination. */
-  const fetchJobs = useCallback(async () => {
-    setLoading(true);
-    try {
-      const skip = pagination.pageIndex * pagination.pageSize;
-      const limit = pagination.pageSize;
-
-      let statusParam: boolean | boolean[] | undefined = undefined;
-      if (statusFilter.length > 0) {
-        statusParam = statusFilter.map((s) => s === "active");
-      }
-
-      let departmentIdParam: string | string[] | undefined = undefined;
-      if (departmentFilter.length > 0) {
-        departmentIdParam = departmentFilter;
-      }
-
-      const filters = {
-        q: debouncedTitle || undefined,
-        status: statusParam,
-        department_id: departmentIdParam,
-      };
-
-      const response = await adminJobService.getAllJobs(skip, limit, filters);
-      setJobs(response.data as unknown as Job[]);
-      setTotal(response.total);
-    } catch (error) {
-      console.error("Failed to fetch jobs:", error);
-      const errorMessage = extractErrorMessage(error, "Failed to load jobs.");
-      toast.error(errorMessage);
-    } finally {
-      setLoading(false);
+  // Prepare filter params for useAdminJobs query
+  const queryFilters = useMemo(() => {
+    let statusParam: boolean | boolean[] | undefined = undefined;
+    if (statusFilter.length > 0) {
+      statusParam = statusFilter.map((s) => s === "active");
     }
-  }, [pagination.pageIndex, pagination.pageSize, debouncedTitle, statusFilter, departmentFilter]);
+
+    let departmentIdParam: string | string[] | undefined = undefined;
+    if (departmentFilter.length > 0) {
+      departmentIdParam = departmentFilter;
+    }
+
+    return {
+      q: debouncedTitle || undefined,
+      status: statusParam,
+      department_id: departmentIdParam,
+    };
+  }, [debouncedTitle, statusFilter, departmentFilter]);
+
+  const {
+    data: queryData,
+    loading,
+    refetch,
+    total,
+  } = useAdminJobs(
+    pagination.pageIndex * pagination.pageSize,
+    pagination.pageSize,
+    queryFilters
+  );
+
+  // Synchronize query results with local jobs state
+  useEffect(() => {
+    if (queryData) {
+      setJobs(queryData as unknown as Job[]);
+    }
+  }, [queryData]);
 
   useEffect(() => {
-    fetchJobs();
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [fetchJobs]);
+  }, [pagination.pageIndex, pagination.pageSize]);
 
   /** Opens the delete-confirmation dialog for the given job. */
   const handleDeleteClick = (job: Job) => {
@@ -133,7 +133,7 @@ const AdminJobs = () => {
     try {
       await adminJobService.deleteJob(jobToDelete.id);
       toast.success("Job deleted successfully");
-      fetchJobs();
+      refetch();
     } catch (error) {
       console.error("Failed to delete job:", error);
       const errorMessage = extractErrorMessage(error, "Failed to delete job.");

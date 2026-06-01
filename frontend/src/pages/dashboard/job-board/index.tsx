@@ -17,6 +17,7 @@ import { useJobTableFilters } from "@/hooks/useJobTableFilters";
 import { JobActivityModal } from "@/components/job-board/JobActivityModal";
 import type { PaginationState } from "@tanstack/react-table";
 import { useDebouncedValue } from "@/hooks";
+import { useJobs } from "@/hooks/queries/jobs";
 
 /**
  * JobBoard page component for the dashboard.
@@ -32,7 +33,6 @@ import { useDebouncedValue } from "@/hooks";
 export default function JobBoard() {
   const navigate = useNavigate();
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [loading, setLoading] = useState(false);
   const [loadingJobId, setLoadingJobId] = useState<string | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [jobToDelete, setJobToDelete] = useState<Job | null>(null);
@@ -42,7 +42,7 @@ export default function JobBoard() {
     pageIndex: 0,
     pageSize: 10,
   });
-  const [total, setTotal] = useState(0);
+
   const {
     titleFilter,
     setTitleFilter,
@@ -84,45 +84,46 @@ export default function JobBoard() {
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
   };
 
-  /** Fetches all jobs from the API and replaces the local job list. Shows a toast on failure. */
-  const fetchJobs = useCallback(async () => {
-    setLoading(true);
-    try {
-      const skip = pagination.pageIndex * pagination.pageSize;
-      const limit = pagination.pageSize;
-
-      let statusParam: boolean | boolean[] | undefined = undefined;
-      if (statusFilter.length > 0) {
-        statusParam = statusFilter.map((s) => s === "active");
-      }
-
-      let departmentIdParam: string | string[] | undefined = undefined;
-      if (departmentFilter.length > 0) {
-        departmentIdParam = departmentFilter;
-      }
-
-      const filters = {
-        q: debouncedTitle || undefined,
-        status: statusParam,
-        department_id: departmentIdParam,
-      };
-
-      const response = await jobService.getJobs(skip, limit, filters);
-      setJobs(response.data);
-      setTotal(response.total);
-    } catch (error) {
-      console.error("Failed to fetch jobs:", error);
-      const errorMessage = extractErrorMessage(error, "Failed to load jobs.");
-      toast.error(errorMessage);
-    } finally {
-      setLoading(false);
+  // Prepare filter params for useJobs query
+  const queryFilters = useMemo(() => {
+    let statusParam: boolean | boolean[] | undefined = undefined;
+    if (statusFilter.length > 0) {
+      statusParam = statusFilter.map((s) => s === "active");
     }
-  }, [pagination.pageIndex, pagination.pageSize, debouncedTitle, statusFilter, departmentFilter]);
+
+    let departmentIdParam: string | string[] | undefined = undefined;
+    if (departmentFilter.length > 0) {
+      departmentIdParam = departmentFilter;
+    }
+
+    return {
+      q: debouncedTitle || undefined,
+      status: statusParam,
+      department_id: departmentIdParam,
+    };
+  }, [debouncedTitle, statusFilter, departmentFilter]);
+
+  const {
+    data: queryData,
+    loading,
+    refetch,
+    total,
+  } = useJobs(
+    pagination.pageIndex * pagination.pageSize,
+    pagination.pageSize,
+    queryFilters
+  );
+
+  // Synchronize query results with local jobs state
+  useEffect(() => {
+    if (queryData) {
+      setJobs(queryData);
+    }
+  }, [queryData]);
 
   useEffect(() => {
-    fetchJobs();
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [fetchJobs]);
+  }, [pagination.pageIndex, pagination.pageSize]);
 
   /** Opens the delete-confirmation dialog for the given job. */
   const handleDeleteClick = (job: Job) => {
@@ -137,7 +138,7 @@ export default function JobBoard() {
     try {
       await jobService.deleteJob(jobToDelete.id);
       toast.success("Job deleted successfully");
-      fetchJobs();
+      refetch();
     } catch (error) {
       console.error("Failed to delete job:", error);
       const errorMessage = extractErrorMessage(error, "Failed to delete job.");

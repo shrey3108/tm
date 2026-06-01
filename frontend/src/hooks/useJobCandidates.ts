@@ -8,6 +8,7 @@ import type { CandidateAnalysis, JobStatsResponse } from "@/types/admin";
 import type { Job } from "@/types/job";
 import { useDeleteConfirmation } from "./useDeleteConfirmation";
 import { resumeService } from "@/apis/resume";
+import { useJob, useJobCandidatesList, useJobStats, useJobTitle } from "./queries/jobs";
 
 type JobRouteState = {
   jobId?: string;
@@ -35,8 +36,6 @@ export const useJobCandidates = (
 
   const [candidates, setCandidates] = useState<CandidateAnalysis[]>([]);
   const [job, setJob] = useState<Job | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [reanalyzingCandidateIds, setReanalyzingCandidateIds] = useState<string[]>([]);
   const [jdVersion, setJdVersion] = useState<number | undefined>(undefined);
@@ -45,10 +44,48 @@ export const useJobCandidates = (
   const currentJobId = useRef<string | null>(null);
   const jobStateRef = useRef<Job | null>(null);
 
+  // Synchronize jobId from router state or ref
+  const [resolvedJobId, setResolvedJobId] = useState<string | null>(
+    () => (location.state as JobRouteState | null)?.jobId || currentJobId.current || null
+  );
+
   // Sync ref with state
   useEffect(() => {
     jobStateRef.current = job;
   }, [job]);
+
+  // Resolve job ID from slug if not available
+  const { data: jobs, error: jobTitleError, loading: isJobTitleLoading } = useJobTitle(
+    jobSlug ? unSlugify(jobSlug) : "",
+    !!jobSlug && !resolvedJobId
+  );
+
+  useEffect(() => {
+    if (resolvedJobId) return;
+
+    // Error in fetching job title
+    if (jobTitleError) {
+      toast.error("Failed to fetch job title.");
+      navigate("/dashboard/jobs");
+      return;
+    }
+
+    if (isJobTitleLoading) return;
+
+    if (jobs && jobs.length > 0) {
+      const foundJob = jobs.find((j) => slugify(j.title) === jobSlug);
+      if (foundJob) {
+        setResolvedJobId(foundJob.id);
+        currentJobId.current = foundJob.id;
+      } else {
+        toast.error("Job not found.");
+        navigate("/dashboard/jobs");
+      }
+    } else if (jobs && jobs.length === 0) {
+      toast.error("Job not found.");
+      navigate("/dashboard/jobs");
+    }
+  }, [jobSlug, resolvedJobId, jobs, jobTitleError, isJobTitleLoading, navigate]);
 
   // Extract filters from searchParams or use externalFilters
   const filters = useMemo(() => {
@@ -70,67 +107,70 @@ export const useJobCandidates = (
     };
   }, [searchParams, externalFilters]);
 
+  // TanStack Query hooks integration
+  const {
+    data: jobData,
+    loading: jobLoading,
+    refetch: refetchJob,
+  } = useJob(resolvedJobId);
+
+  const {
+    data: candidatesData,
+    loading: candidatesLoading,
+    isRefreshing,
+    refetch: refetchCandidates,
+    total: candidatesTotal,
+  } = useJobCandidatesList(
+    resolvedJobId,
+    jdVersion,
+    pageIndex * pageSize,
+    pageSize,
+    filters
+  );
+
+  const {
+    data: statsData,
+    loading: statsLoading,
+    refetch: refetchStats,
+  } = useJobStats(resolvedJobId, {
+    start_date: filters.start_date,
+    end_date: filters.end_date,
+  });
+
+  const loading = !resolvedJobId || jobLoading || candidatesLoading || statsLoading;
+
+  // Synchronize query results to local states
+  useEffect(() => {
+    if (jobData) {
+      setJob(jobData);
+    }
+  }, [jobData]);
+
+  useEffect(() => {
+    if (candidatesData) {
+      setCandidates(candidatesData);
+    }
+  }, [candidatesData]);
+
+  useEffect(() => {
+    if (candidatesTotal !== undefined) {
+      setTotalCandidates(candidatesTotal);
+    }
+  }, [candidatesTotal]);
+
+  useEffect(() => {
+    if (statsData) {
+      setJobStats(statsData);
+    }
+  }, [statsData]);
+
   const fetchData = useCallback(
-    async (isPolling = false) => {
-      if (!jobSlug) return;
-
-      const isInitialLoad = !jobStateRef.current && !isPolling;
-      if (isInitialLoad) {
-        setLoading(true);
-      } else if (!isPolling) {
-        setIsRefreshing(true);
-      }
-
-      try {
-        let id = (location.state as JobRouteState | null)?.jobId || currentJobId.current;
-        const skip = pageIndex * pageSize;
-        const limit = pageSize;
-
-        if (!id) {
-          const response = await jobService.getJobTitles(unSlugify(jobSlug));
-          const foundJob = response.data.find((j) => slugify(j.title) === jobSlug); // TODO: more better? or Just access via 0th index ?
-
-          if (!foundJob) {
-            toast.error("Job not found.");
-            if (!isPolling) navigate("/dashboard/jobs");
-            return;
-          }
-          id = foundJob.id;
-        }
-
-        currentJobId.current = id;
-
-        if (isPolling) {
-          const candidatesResponse = await jobService.getJobCandidates(id, jdVersion, skip, limit, undefined, undefined, filters);
-          setCandidates(candidatesResponse.data || []);
-          setTotalCandidates(candidatesResponse.total || 0);
-        } else {
-          // Fetch job data, candidates and stats when not polling
-          const [jobData, candidatesResponse, statsData] = await Promise.all([
-            jobService.getJob(id),
-            jobService.getJobCandidates(id, jdVersion, skip, limit, undefined, undefined, filters),
-            jobService.getJobStats(id, {
-              start_date: filters.start_date,
-              end_date: filters.end_date,
-            }),
-          ]);
-          setJob(jobData);
-          setCandidates(candidatesResponse.data || []);
-          setTotalCandidates(candidatesResponse.total || 0);
-          setJobStats(statsData);
-        }
-      } catch (error) {
-        console.error("Failed to fetch job data:", error);
-        const errorMessage = extractErrorMessage(error)
-        if (!isPolling) {
-          toast.error(errorMessage || "Failed to load candidates.");
-        }
-      } finally {
-        setLoading(false);
-        setIsRefreshing(false);
-      }
+    async (_isPolling = false) => {
+      refetchJob();
+      refetchCandidates();
+      refetchStats();
     },
-    [jobSlug, location.state, navigate, jdVersion, pageIndex, pageSize, filters],
+    [refetchJob, refetchCandidates, refetchStats]
   );
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -219,22 +259,6 @@ export const useJobCandidates = (
     }
   }, [job, fetchData]);
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  // Polling
-  useEffect(() => {
-    const isAnyProcessing = candidates.some(
-      (c) => c.processing_status === "processing" || !c.is_parsed,
-    );
-    if (isAnyProcessing) {
-      const interval = setInterval(() => {
-        fetchData(true);
-      }, 5000);
-      return () => clearInterval(interval);
-    }
-  }, [candidates, fetchData]);
 
 
   const minDate = useMemo(() => {
