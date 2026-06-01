@@ -1,5 +1,6 @@
 import { adminRoleService } from "@/apis/admin";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { QUERY_KEYS } from "@/constants/queryKeys";
 
 /**
  * @param skip number of records to skip
@@ -8,7 +9,7 @@ import { useQuery, keepPreviousData } from "@tanstack/react-query";
  */
 export const useAdminRoles = ({ skip, limit, q, isEnable = true }: { skip?: number, limit?: number, q?: string, isEnable?: boolean }) => {
   const res = useQuery({
-    queryKey: ["roles", skip, limit, q],
+    queryKey: [QUERY_KEYS.ADMIN.ROLES, skip, limit, q],
     queryFn: () => adminRoleService.getAllRoles(skip, limit, q),
     placeholderData: keepPreviousData,
     staleTime: 1000 * 60, // 1 minute

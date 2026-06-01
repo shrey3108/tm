@@ -1,5 +1,6 @@
 import { adminLocationService } from "@/apis/admin";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { QUERY_KEYS } from "@/constants/queryKeys";
 
 /**
  * @param skip number of records to skip
@@ -8,7 +9,7 @@ import { useQuery, keepPreviousData } from "@tanstack/react-query";
  */
 export const useAdminLocations = (skip: number, limit: number, q: string) => {
     const res = useQuery({
-        queryKey: ["locations", skip, limit, q],
+        queryKey: [QUERY_KEYS.ADMIN.LOCATIONS, skip, limit, q],
         queryFn: () => adminLocationService.getAllLocations(skip, limit, q),
         placeholderData: keepPreviousData,
         staleTime: 1000 * 60 // 1 minute

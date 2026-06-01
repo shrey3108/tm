@@ -1,5 +1,6 @@
 import jobService from "@/apis/job";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { QUERY_KEYS } from "@/constants/queryKeys";
 
 export interface CandidateFilters {
   query?: string;
@@ -22,7 +23,7 @@ export const useJobCandidatesList = (
   filters?: CandidateFilters
 ) => {
   const res = useQuery({
-    queryKey: ["jobCandidates", jobId, jdVersion, skip, limit, filters],
+    queryKey: [QUERY_KEYS.JOBS.CANDIDATES, jobId, jdVersion, skip, limit, filters],
     queryFn: () =>
       jobService.getJobCandidates(
         jobId!,

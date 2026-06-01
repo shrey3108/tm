@@ -10,6 +10,7 @@ import type { Job } from "@/types/job";
 import type { CandidateAnalysis } from "@/types/admin";
 import type { EvaluationRead, EvaluationHistoryRead } from "@/types/candidateStage";
 import { slugify } from "@/utils/slug";
+import type { HrDecisionHistoryItem } from "@/apis/candidateDecision";
 import {
   useResolvedJobAndCandidate,
   useJobStagesQuery,
@@ -18,8 +19,9 @@ import {
   useCandidateTranscriptsQuery,
   useHrDecisionHistoryQuery,
   useCandidateDetailsQuery,
-  useSubmitDecisionMutation,
 } from "./queries/candidates";
+import { useSubmitDecisionMutation } from "./mutations/candidates/useCandidateStages";
+import { QUERY_KEYS } from "@/constants/queryKeys";
 
 /**
  * A comprehensive hook for managing the state and logic of the Candidate Stages view.
@@ -117,9 +119,9 @@ export function useCandidatesStages() {
     if (isPolling && evaluationData) {
       setIsPolling(false);
       toast.success("Evaluation generated successfully!");
-      queryClient.invalidateQueries({ queryKey: ["candidateTranscripts", candidate?.id] });
-      queryClient.invalidateQueries({ queryKey: ["evaluationHistory", instanceId] });
-      queryClient.invalidateQueries({ queryKey: ["candidateTimeline", candidate?.id] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CANDIDATES.TRANSCRIPTS, candidate?.id] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CANDIDATES.EVALUATION_HISTORY, instanceId] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CANDIDATES.TIMELINE, candidate?.id] });
       setRefetchTimeline((prev) => prev + 1);
     }
   }, [isPolling, evaluationData, candidate?.id, instanceId, queryClient]);
@@ -234,10 +236,10 @@ export function useCandidatesStages() {
   const isResumeScreening = currentStage === "Resume Screening";
   const filteredHistory = isResumeScreening
     ? hrDecisionHistory?.filter(
-        (item) => item.stage_config_id == null || item?.stage_name === "Resume Screening"
+        (item: HrDecisionHistoryItem) => item.stage_config_id == null || item?.stage_name === "Resume Screening"
       )
     : hrDecisionHistory?.filter(
-        (item) => item.stage_config_id !== null && item.stage_config_id === configId
+        (item: HrDecisionHistoryItem) => item.stage_config_id !== null && item.stage_config_id === configId
       );
 
   const latestDecision = filteredHistory ? filteredHistory[0] : hrDecisionHistory[0];
@@ -288,7 +290,7 @@ export function useCandidatesStages() {
     },
     fetchHrDecisionHistory: async () => {
       await refetchHrDecisionHistory();
-      queryClient.invalidateQueries({ queryKey: ["candidateTimeline", candidate?.id] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CANDIDATES.TIMELINE, candidate?.id] });
     },
     setRefetchTimeline,
   };

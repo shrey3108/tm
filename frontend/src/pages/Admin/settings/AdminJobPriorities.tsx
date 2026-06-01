@@ -3,7 +3,6 @@
  * Displays all job priorities with ability to create, edit, and delete.
  */
 import { useState, useEffect } from "react";
-import { adminJobPriorityService } from "@/apis/admin";
 import type { JobPriorityRead } from "@/types/admin";
 import AppPageShell from "@/components/shared/AppPageShell";
 import PageHeader from "@/components/shared/PageHeader";
@@ -22,9 +21,11 @@ import PermissionGuard from "@/components/auth/PermissionGuard";
 import { PERMISSIONS } from "@/lib/permissions";
 import { DateDisplay } from "@/components/shared";
 import { useJobPriorities } from "@/hooks/queries/admin/useJobPriority";
+import { useDeletePriorityMutation } from "@/hooks/mutations/admin/useJobPriority";
 
 const AdminJobPriorities = () => {
   const toast = useToast();
+  const deletePriorityMutation = useDeletePriorityMutation();
   const [showModal, setShowModal] = useState(false);
   const [selectedPriority, setSelectedPriority] = useState<JobPriorityRead | null>(null);
   const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
@@ -64,8 +65,7 @@ const AdminJobPriorities = () => {
     try {
       setDeletingId(priority.id);
       setDeleteError(null);
-      await adminJobPriorityService.deletePriority(priority.id);
-      refetch();
+      await deletePriorityMutation.mutateAsync(priority.id);
       toast.success("Priority deleted successfully");
     } catch (err) {
       const errMsg = extractErrorMessage(err);

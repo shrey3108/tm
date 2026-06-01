@@ -1,5 +1,6 @@
 import { adminJobPositionService } from "@/apis/admin";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { QUERY_KEYS } from "@/constants/queryKeys";
 
 /**
  * @param skip number of records to skip
@@ -8,7 +9,7 @@ import { useQuery, keepPreviousData } from "@tanstack/react-query";
  */
 export const useJobPosition = (skip: number, limit: number, q: string) => {
     const res = useQuery({
-        queryKey: ["positions", skip, limit, q],
+        queryKey: [QUERY_KEYS.ADMIN.POSITIONS, skip, limit, q],
         queryFn: () => adminJobPositionService.getAllPositions(skip, limit, q),
         placeholderData: keepPreviousData,
         staleTime: 1000 * 60 // 1 minute

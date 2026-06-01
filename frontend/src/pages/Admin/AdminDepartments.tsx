@@ -3,7 +3,6 @@
  * Displays all departments with ability to create, edit, and delete.
  */
 import { useState, useEffect } from "react";
-import { adminDepartmentService } from "@/apis/admin";
 import type { DepartmentRead } from "@/types/admin";
 import AppPageShell from "@/components/shared/AppPageShell";
 import PageHeader from "@/components/shared/PageHeader";
@@ -23,11 +22,13 @@ import { PERMISSIONS, hasPermissions } from "@/lib/permissions";
 import { useAppSelector } from "@/store/hooks";
 import { selectCurrentUser } from "@/store/slices/authSlice";
 import { useDepartment } from "@/hooks/queries/admin/useDepartment";
+import { useDeleteDepartmentMutation } from "@/hooks/mutations/admin/useDepartment";
 
 const AdminDepartments = () => {
   const toast = useToast();
   const user = useAppSelector(selectCurrentUser);
   const hasManagePermission = hasPermissions(user?.permissions, PERMISSIONS.DEPARTMENTS_MANAGE);
+  const deleteDepartmentMutation = useDeleteDepartmentMutation();
   const [showModal, setShowModal] = useState(false);
   const [selectedDepartment, setSelectedDepartment] = useState<DepartmentRead | null>(null);
   const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
@@ -69,8 +70,7 @@ const AdminDepartments = () => {
     try {
       setDeletingId(dept.id);
       setDeleteError(null);
-      await adminDepartmentService.deleteDepartment(dept.id);
-      refetch();
+      await deleteDepartmentMutation.mutateAsync(dept.id);
       toast.success("Department deleted successfully");
     } catch (err) {
       const errMsg = extractErrorMessage(err);

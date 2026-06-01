@@ -4,8 +4,8 @@
  */
 
 import { useCallback } from "react";
-import { adminJobPositionService } from "@/apis/admin";
 import type { JobPositionRead } from "@/types/admin";
+import { useCreatePositionMutation, useUpdatePositionMutation } from "@/hooks/mutations/admin/useJobPosition";
 import {
   Button,
   Input,
@@ -47,6 +47,8 @@ const PositionModal = ({
   position,
 }: PositionModalProps) => {
   const isEditMode = !!position;
+  const createPositionMutation = useCreatePositionMutation();
+  const updatePositionMutation = useUpdatePositionMutation();
 
   const mapItemToValues = useCallback(
     (p: JobPositionRead): JobPositionCreateFormValues => ({
@@ -56,18 +58,15 @@ const PositionModal = ({
     [],
   );
 
-  const onSubmit = useCallback(
-    async (data: JobPositionCreateFormValues) => {
-      if (isEditMode && position) {
-        await adminJobPositionService.updatePosition(position.id, data);
-      } else {
-        await adminJobPositionService.createPosition(data);
-      }
-      onPositionSaved();
-      handleClose();
-    },
-    [isEditMode, position, onPositionSaved, handleClose],
-  );
+  const onSubmit = async (data: JobPositionCreateFormValues) => {
+    if (isEditMode && position) {
+      await updatePositionMutation.mutateAsync({ id: position.id, data });
+    } else {
+      await createPositionMutation.mutateAsync(data);
+    }
+    onPositionSaved();
+    handleClose();
+  };
 
   const formModal = useFormModal<JobPositionCreateFormValues, JobPositionRead>({
     schema: jobPositionCreateSchema,

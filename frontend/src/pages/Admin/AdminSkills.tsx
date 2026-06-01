@@ -3,7 +3,6 @@
  * Displays all skills with ability to create, edit, and delete.
  */
 import { useState, useEffect } from "react";
-import { adminSkillService } from "@/apis/admin";
 import type { SkillRead } from "@/types/admin";
 import AppPageShell from "@/components/shared/AppPageShell";
 import PageHeader from "@/components/shared/PageHeader";
@@ -23,11 +22,13 @@ import { PERMISSIONS, hasPermissions } from "@/lib/permissions";
 import { useAppSelector } from "@/store/hooks";
 import { selectCurrentUser } from "@/store/slices/authSlice";
 import { useSkill } from "@/hooks/queries/admin/useSkill";
+import { useDeleteSkillMutation } from "@/hooks/mutations/admin/useSkill";
 
 const AdminSkills = () => {
   const toast = useToast();
   const user = useAppSelector(selectCurrentUser);
   const hasManagePermission = hasPermissions(user?.permissions, PERMISSIONS.SKILLS_MANAGE);
+  const deleteSkillMutation = useDeleteSkillMutation();
   const [showModal, setShowModal] = useState(false);
   const [selectedSkill, setSelectedSkill] = useState<SkillRead | null>(null);
 
@@ -69,8 +70,7 @@ const AdminSkills = () => {
     try {
       setDeletingId(skill.id);
       setDeleteError(null);
-      await adminSkillService.deleteSkill(skill.id);
-      refetch();
+      await deleteSkillMutation.mutateAsync(skill.id);
       toast.success("Skill deleted successfully");
     } catch (err) {
       const errMsg = extractErrorMessage(err);

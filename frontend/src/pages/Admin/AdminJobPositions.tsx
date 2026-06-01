@@ -3,7 +3,6 @@
  * Displays all positions with ability to create, edit, and delete.
  */
 import { useState, useEffect } from "react";
-import { adminJobPositionService } from "@/apis/admin";
 import type { JobPositionRead } from "@/types/admin";
 import AppPageShell from "@/components/shared/AppPageShell";
 import PageHeader from "@/components/shared/PageHeader";
@@ -22,9 +21,11 @@ import PermissionGuard from "@/components/auth/PermissionGuard";
 import { PERMISSIONS } from "@/lib/permissions";
 import { DateDisplay } from "@/components/shared";
 import { useJobPosition } from "@/hooks/queries/admin/useJobPosition";
+import { useDeletePositionMutation } from "@/hooks/mutations/admin/useJobPosition";
 
 const AdminJobPositions = () => {
   const toast = useToast();
+  const deletePositionMutation = useDeletePositionMutation();
   const [showModal, setShowModal] = useState(false);
   const [selectedPosition, setSelectedPosition] = useState<JobPositionRead | null>(null);
   const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
@@ -60,8 +61,7 @@ const AdminJobPositions = () => {
     try {
       setDeletingId(pos.id);
       setDeleteError(null);
-      await adminJobPositionService.deletePosition(pos.id);
-      refetch();
+      await deletePositionMutation.mutateAsync(pos.id);
       toast.success("Position deleted successfully");
     } catch (err) {
       const errMsg = extractErrorMessage(err);

@@ -1,4 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
+import { QUERY_KEYS } from "@/constants/queryKeys";
 import jobService from "@/apis/job";
 import { jobStageService } from "@/apis/jobStage";
 import { candidateStageService } from "@/apis/candidateStage";
@@ -9,7 +10,6 @@ import { slugify, unSlugify } from "@/utils/slug";
 import { useJob, useJobTitle } from "@/hooks/queries/jobs";
 import type { Job } from "@/types/job";
 import type { CandidateAnalysis } from "@/types/admin";
-import type { CandidateDecisionFormValues } from "@/schemas/candidate";
 
 /**
  * Hook to resolve Job and Candidate from URL slugs if state is not available.
@@ -41,7 +41,7 @@ export function useResolvedJobAndCandidate(
   // 2. Fetch candidate search matching the unslugified name if candidate is not in state
   const candidateName = candidateNameSlug ? unSlugify(candidateNameSlug) : "";
   const candidateSearchQuery = useQuery({
-    queryKey: ["candidateSearch", resolvedJob?.id, candidateNameSlug],
+    queryKey: [QUERY_KEYS.CANDIDATES.SEARCH, resolvedJob?.id, candidateNameSlug],
     queryFn: async () => {
       const response = await jobService.getJobCandidates(
         resolvedJob!.id,
@@ -82,7 +82,7 @@ export function useResolvedJobAndCandidate(
  */
 export function useJobStagesQuery(jobId: string | null | undefined) {
   return useQuery({
-    queryKey: ["jobStages", jobId],
+    queryKey: [QUERY_KEYS.CANDIDATES.JOB_STAGES, jobId],
     queryFn: () => jobStageService.getJobStages(jobId!),
     enabled: !!jobId,
     staleTime: 1000 * 60 * 1,
@@ -97,7 +97,7 @@ export function useCandidateEvaluationQuery(
   isPolling: boolean
 ) {
   return useQuery({
-    queryKey: ["evaluation", instanceId],
+    queryKey: [QUERY_KEYS.CANDIDATES.EVALUATION, instanceId],
     queryFn: () => candidateStageService.getEvaluation(instanceId!),
     enabled: !!instanceId,
     staleTime: 1000 * 60 * 1,
@@ -110,7 +110,7 @@ export function useCandidateEvaluationQuery(
  */
 export function useCandidateEvaluationHistoryQuery(instanceId: string | null | undefined) {
   return useQuery({
-    queryKey: ["evaluationHistory", instanceId],
+    queryKey: [QUERY_KEYS.CANDIDATES.EVALUATION_HISTORY, instanceId],
     queryFn: () => candidateStageService.getEvaluationHistory(instanceId!),
     enabled: !!instanceId,
     staleTime: 1000 * 60 * 1,
@@ -122,7 +122,7 @@ export function useCandidateEvaluationHistoryQuery(instanceId: string | null | u
  */
 export function useCandidateTranscriptsQuery(candidateId: string | null | undefined) {
   return useQuery({
-    queryKey: ["candidateTranscripts", candidateId],
+    queryKey: [QUERY_KEYS.CANDIDATES.TRANSCRIPTS, candidateId],
     queryFn: () => transcriptService.getCandidateTranscripts(candidateId!),
     enabled: !!candidateId,
     staleTime: 1000 * 60 * 1,
@@ -138,7 +138,7 @@ export function useHrDecisionHistoryQuery(
   stageConfigId: string | null | undefined
 ) {
   return useQuery({
-    queryKey: ["hrDecisionHistory", candidateId, jobId, stageConfigId],
+    queryKey: [QUERY_KEYS.CANDIDATES.HR_DECISION_HISTORY, candidateId, jobId, stageConfigId],
     queryFn: () =>
       candidateDecisionApi.getDecisionHistory(
         candidateId!,
@@ -158,7 +158,7 @@ export function useCandidateDetailsQuery(
   candidateId: string | null | undefined
 ) {
   return useQuery({
-    queryKey: ["candidateDetails", jobId, candidateId],
+    queryKey: [QUERY_KEYS.CANDIDATES.DETAILS, jobId, candidateId],
     queryFn: async () => {
       const response = await jobService.getJobCandidates(jobId!, undefined, 0, 1, candidateId!);
       return response.data?.[0] ?? null;
@@ -176,46 +176,21 @@ export function useCandidateTimelineQuery(
   jobId: string | undefined
 ) {
   return useQuery({
-    queryKey: ["candidateTimeline", candidateId, jobId],
+    queryKey: [QUERY_KEYS.CANDIDATES.TIMELINE, candidateId, jobId],
     queryFn: () => adminCandidateService.getCandidateTimeline(candidateId!, jobId),
     enabled: !!candidateId,
     staleTime: 1000 * 60 * 1,
   });
 }
 
-/**
- * Mutation hook to submit HR decisions.
- */
-export function useSubmitDecisionMutation() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data: {
-      candidate_id: string;
-      decision: CandidateDecisionFormValues["decision"];
-      note?: string;
-      stage_config_id?: string;
-      job_id?: string;
-      score: number;
-    }) => candidateDecisionApi.submitDecision(data),
-    onSuccess: (_, variables) => {
-      // Invalidate HR decisions for this candidate
-      queryClient.invalidateQueries({
-        queryKey: ["hrDecisionHistory", variables.candidate_id],
-      });
-      // Invalidate timeline queries
-      queryClient.invalidateQueries({
-        queryKey: ["candidateTimeline", variables.candidate_id],
-      });
-    },
-  });
-}
+
 
 /**
  * Hook to query a single transcript details by ID.
  */
 export function useTranscriptQuery(transcriptId: string | null | undefined) {
   return useQuery({
-    queryKey: ["transcript", transcriptId],
+    queryKey: [QUERY_KEYS.CANDIDATES.TRANSCRIPT, transcriptId],
     queryFn: () => transcriptService.getTranscript(transcriptId!),
     enabled: !!transcriptId,
     staleTime: 1000 * 60 * 5,

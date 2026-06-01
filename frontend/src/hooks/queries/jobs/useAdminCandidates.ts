@@ -1,6 +1,7 @@
 import { adminCandidateService } from "@/apis/admin";
 import { resumeService } from "@/apis/resume";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { QUERY_KEYS } from "@/constants/queryKeys";
 import type { CandidateActiveFilters } from "@/hooks/useCandidateTableFilters";
 import type { CandidateResponse } from "@/types/resume";
 
@@ -11,7 +12,7 @@ export const useAdminCandidates = (
   filters: CandidateActiveFilters
 ) => {
   const res = useQuery({
-    queryKey: ["adminCandidates", jobId, skip, limit, filters],
+    queryKey: [QUERY_KEYS.JOBS.ADMIN_CANDIDATES, jobId, skip, limit, filters],
     queryFn: async () => {
       let result: { data: CandidateResponse[]; total: number } = {
         data: [],

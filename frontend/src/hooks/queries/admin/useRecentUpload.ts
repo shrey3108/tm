@@ -1,5 +1,6 @@
 import { adminAnalyticsService } from "@/apis/admin";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { QUERY_KEYS } from "@/constants/queryKeys";
 
 /**
  * @param skip number of records to skip
@@ -8,7 +9,7 @@ import { useQuery, keepPreviousData } from "@tanstack/react-query";
  */
 export const useRecentUploads = (skip: number, limit: number, q: string) => {
     const res = useQuery({
-        queryKey: ["recent-uploads", skip, limit, q],
+        queryKey: [QUERY_KEYS.ADMIN.RECENT_UPLOADS, skip, limit, q],
         queryFn: () => adminAnalyticsService.getRecentUploads(skip, limit, q),
         placeholderData: keepPreviousData,
         staleTime: 1000 * 60 // 1 minute

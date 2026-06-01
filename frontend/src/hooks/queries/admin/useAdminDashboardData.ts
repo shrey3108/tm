@@ -1,9 +1,10 @@
 import { adminAnalyticsService } from "@/apis/admin";
 import { useQuery } from "@tanstack/react-query";
+import { QUERY_KEYS } from "@/constants/queryKeys";
 
 export const useAdminDashboardData = () => {
   const res = useQuery({
-    queryKey: ["adminDashboardData"],
+    queryKey: [QUERY_KEYS.ADMIN.DASHBOARD_DATA],
     queryFn: async () => {
       const [analytics, report] = await Promise.all([
         adminAnalyticsService.getAnalytics(),
