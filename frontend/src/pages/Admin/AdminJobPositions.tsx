@@ -11,7 +11,7 @@ import { useToast } from "@/components/shared/ToastProvider";
 import { DataTable } from "@/components/shared/DataTable";
 import ErrorDisplay from "@/components/shared/ErrorDisplay";
 import { PositionModal, DeleteModal } from "@/components/modal";
-import { useAdminData, useDebouncedValue } from "@/hooks";
+import { useDebouncedValue } from "@/hooks";
 import { Edit2, Trash2Icon, ArrowUpDown, AlertCircle, Plus } from "lucide-react";
 import { extractErrorMessage } from "@/utils/error";
 import type { ColumnDef, PaginationState } from "@tanstack/react-table";
@@ -21,58 +21,47 @@ import { Badge } from "@/components/ui/badge";
 import PermissionGuard from "@/components/auth/PermissionGuard";
 import { PERMISSIONS } from "@/lib/permissions";
 import { DateDisplay } from "@/components/shared";
+import { useJobPosition } from "@/hooks/queries/admin/useJobPosition";
 
 const AdminJobPositions = () => {
   const toast = useToast();
   const [showModal, setShowModal] = useState(false);
   const [selectedPosition, setSelectedPosition] = useState<JobPositionRead | null>(null);
-
   const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 10,
   });
   const [search, setSearch] = useState("");
-  const debouncedSearch = useDebouncedValue(search);
-
-  const {
-    data: positions,
-    total,
-    loading,
-    error,
-    fetchData: fetchPositions,
-  } = useAdminData<JobPositionRead>(
-    () => adminJobPositionService.getAllPositions(pageIndex * pageSize, pageSize, debouncedSearch),
-    { fetchOnMount: false }
-  );
-
-  // Reset to first page when search changes
-  useEffect(() => {
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-  }, [debouncedSearch]);
-
-  // Refetch when pagination or search changes
-  useEffect(() => {
-    fetchPositions();
-  }, [pageIndex, pageSize, fetchPositions, debouncedSearch]);
-
   const [overallTotal, setOverallTotal] = useState(0);
-  useEffect(() => {
-    if (!debouncedSearch) {
-      setOverallTotal(total);
-    }
-  }, [total, debouncedSearch]);
-
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<JobPositionRead | null>(null);
+
+  const debouncedSearch = useDebouncedValue(search);
+
+  const { data: positions, total, loading, error, refetch } = useJobPosition(pageIndex * pageSize, pageSize, debouncedSearch)
+
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  };
+
+  useEffect(() => {
+    if (!debouncedSearch && overallTotal !== total) {
+      queueMicrotask(() => {
+        setOverallTotal(total);
+      })
+    }
+  }, [total, debouncedSearch, overallTotal]);
+
 
   const handleDeleteClick = async (pos: JobPositionRead) => {
     try {
       setDeletingId(pos.id);
       setDeleteError(null);
       await adminJobPositionService.deletePosition(pos.id);
-      fetchPositions();
+      refetch();
       toast.success("Position deleted successfully");
     } catch (err) {
       const errMsg = extractErrorMessage(err);
@@ -259,7 +248,7 @@ const AdminJobPositions = () => {
       />
 
       {error && !positions.length ? (
-        <ErrorDisplay message={error} onRetry={fetchPositions} />
+        <ErrorDisplay message={error.message} onRetry={refetch} />
       ) : (
         <DataTable
           columns={columns}
@@ -267,7 +256,7 @@ const AdminJobPositions = () => {
           loading={loading}
           searchKey="name"
           searchValue={search}
-          onSearchChange={setSearch}
+          onSearchChange={handleSearchChange}
           searchPlaceholder="Filter positions by name..."
           initialSorting={[{ id: "name", desc: false }]}
           isServerSide={true}
@@ -285,7 +274,7 @@ const AdminJobPositions = () => {
       <PositionModal
         show={showModal}
         handleClose={handleCloseModal}
-        onPositionSaved={fetchPositions}
+        onPositionSaved={refetch}
         position={selectedPosition}
       />
 

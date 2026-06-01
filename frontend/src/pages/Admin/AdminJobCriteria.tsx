@@ -16,11 +16,12 @@ import {
 } from "@/apis/admin";
 import { CriteriaInfoModal } from "@/components/admin/CriteriaInfoModal";
 import { DeleteModal } from "@/components/modal";
-import { useAdminData, useDebouncedValue } from "@/hooks";
+import { useDebouncedValue } from "@/hooks";
 import { extractErrorMessage } from "@/utils/error";
 import { Badge } from "@/components/ui/badge";
 import PermissionGuard from "@/components/auth/PermissionGuard";
 import { PERMISSIONS } from "@/lib/permissions";
+import { useJobCriteria } from "@/hooks/queries/admin/useJobCriteria";
 
 /**
  * Admin page for managing job evaluation criteria.
@@ -37,47 +38,36 @@ const AdminJobCriteria = () => {
         pageSize: 10,
     });
     const [search, setSearch] = useState("");
-    const debouncedSearch = useDebouncedValue(search);
-
-    // Reset to first page when search changes
-    useEffect(() => {
-        setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-    }, [debouncedSearch]);
-
-    const {
-        data: criteriaData,
-        total,
-        loading,
-        error,
-        fetchData: fetchCriteria,
-    } = useAdminData<CriterionRead>(
-        () => adminCriteriaService.getAllCriteria(pageIndex * pageSize, pageSize, debouncedSearch),
-        { fetchOnMount: false }
-    );
-
-    // Refetch when pagination or search changes
-    useEffect(() => {
-        fetchCriteria();
-    }, [pageIndex, pageSize, debouncedSearch, fetchCriteria]);
-
-    const [overallTotal, setOverallTotal] = useState(0);
-    useEffect(() => {
-        if (!debouncedSearch) {
-            setOverallTotal(total);
-        }
-    }, [total, debouncedSearch]);
-
     const [_deletingId, setDeletingId] = useState<string | null>(null);
     const [deleteError, setDeleteError] = useState<string | null>(null);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [itemToDelete, setItemToDelete] = useState<CriterionRead | null>(null);
+    const [overallTotal, setOverallTotal] = useState(0);
+
+    const debouncedSearch = useDebouncedValue(search);
+
+    const { data: criteriaData, total, loading, error, refetch } = useJobCriteria(pageIndex * pageSize, pageSize, debouncedSearch)
+
+
+    useEffect(() => {
+        if (!debouncedSearch && overallTotal !== total) {
+            queueMicrotask(() => {
+                setOverallTotal(total);
+            })
+        }
+    }, [total, debouncedSearch, overallTotal]);
+    const handleSearchChange = (value: string) => {
+        setSearch(value);
+        setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+    };
+
 
     const handleDeleteClick = async (criterion: CriterionRead) => {
         try {
             setDeletingId(criterion.id);
             setDeleteError(null);
             await adminCriteriaService.deleteCriterion(criterion.id);
-            fetchCriteria();
+            refetch();
             toast.success("Criteria deleted successfully");
         } catch (err) {
             const errMsg = extractErrorMessage(err);
@@ -291,7 +281,7 @@ const AdminJobCriteria = () => {
                 }
             />
 
-            {error && !criteriaData ? <ErrorDisplay message={error} onRetry={fetchCriteria} /> :
+            {error && !criteriaData ? <ErrorDisplay message={error.message} onRetry={refetch} /> :
                 <DataTable
                     columns={columns}
                     data={criteriaData}
@@ -299,7 +289,7 @@ const AdminJobCriteria = () => {
                     searchKey="name"
                     searchPlaceholder="Search criteria..."
                     searchValue={search}
-                    onSearchChange={setSearch}
+                    onSearchChange={handleSearchChange}
                     initialSorting={[{ id: "created_at", desc: true }]}
                     isServerSide={true}
                     pageIndex={pageIndex}
