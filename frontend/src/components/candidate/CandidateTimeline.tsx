@@ -3,8 +3,10 @@ import { Card } from "@/components/ui/card";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { Clock, Loader2, ChevronRight, Calendar } from "lucide-react";
-import { adminCandidateService } from "@/apis/admin/candidate";
-import type { HiringTimelineResponse, TimelineEvent } from "@/types/candidate";
+import { useCandidateTimelineQuery } from "@/hooks/queries/candidates";
+import type { TimelineEvent } from "@/types/candidate";
+import type { Job } from "@/types/job";
+import type { CandidateAnalysis } from "@/types/admin";
 import { TimelineEventDetailModal } from "./TimelineEventDetailModal";
 import { CandidateStatusBadge, DateDisplay } from "@/components/shared";
 import { useNavigate } from "react-router-dom";
@@ -19,8 +21,8 @@ interface CandidateTimelineProps {
   className?: string;
   onSelectStage?: (stageName: string) => void;
   selectedStage?: string;
-  job?: any;
-  candidate?: any;
+  job?: Job;
+  candidate?: CandidateAnalysis;
   refetch?: number | boolean;
   currentStage: string
   stageId: string | undefined
@@ -39,7 +41,6 @@ export function CandidateTimeline({
   selectedStage,
   job,
   candidate,
-  refetch,
   currentStage,
   stageId,
   isPolling,
@@ -48,33 +49,11 @@ export function CandidateTimeline({
   // setIsJobModalOpen,
   onTranscriptDisableChange
 }: CandidateTimelineProps) {
-  const [events, setEvents] = useState<HiringTimelineResponse>();
-  const [isLoading, setIsLoading] = useState(false);
+  const { data: events, isLoading } = useCandidateTimelineQuery(candidateId, jobId);
   const [selectedEvent, setSelectedEvent] = useState<TimelineEvent | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const navigate = useNavigate();
-  useEffect(() => {
-    console.log("should refetch", refetch)
-    const fetchTimeline = async () => {
-      if (!candidateId) return;
-      setIsLoading(true);
-      try {
-        const response = await adminCandidateService.getCandidateTimeline(candidateId, jobId);
-        // const sortedEvents = [...response.events]
-        // .sort(
-        //   (a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime()
-        // );
-        setEvents(response);
-      } catch (error) {
-        console.error("Failed to fetch timeline:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchTimeline();
-  }, [candidateId, jobId, refetch]);
 
   const handleEventClick = (event: TimelineEvent) => {
     setSelectedEvent(event);
@@ -174,8 +153,7 @@ export function CandidateTimeline({
       <ScrollArea className="w-full whitespace-nowrap rounded-md border-0">
         <div className="flex w-max space-x-1 p-1">
           {events?.events.map((event, index) => {
-            // @ts-expect-error - event_type might not be in all events
-            const _isDecision = event.event_type === "decision";
+
             const resultLower = event.result?.toLowerCase() || "";
 
             const isCompleted = event.result !== null && event.result !== "Ongoing" && !resultLower.includes("pending");
