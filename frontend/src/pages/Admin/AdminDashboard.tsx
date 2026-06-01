@@ -3,86 +3,34 @@
  * Displays analytics summary and hiring reports for administrators.
  */
 
-import { useEffect, useState } from "react";
-import { adminAnalyticsService } from "@/apis/admin";
-import { adminStageTemplateService } from "@/apis/admin/stageTemplate";
-import jobService from "@/apis/job";
-import type { AnalyticsSummary, HiringReport } from "@/types/admin";
-import type { JobTitle } from "@/types/job";
+import { useState, useMemo } from "react";
 import AdminDataTable, { type Column } from "@/components/shared/AdminDataTable";
 import AppPageShell from "@/components/shared/AppPageShell";
 import PageHeader from "@/components/shared/PageHeader";
 import StatCard from "@/components/shared/StatCard";
-import { useAdminData, useAdminDashboardFilters } from "@/hooks";
+import { useAdminDashboardFilters } from "@/hooks";
 import { Separator } from "@/components/ui/separator";
 import { StageCentricChart } from "@/components/admin/AdminPipelineChart";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { FileText, BarChart3 } from "lucide-react";
 import AdminDashboardFilters from "@/components/admin/AdminDashboardFilters";
+import { useAdminDashboardData } from "@/hooks/queries/admin/useAdminDashboardData";
+import { useJobStage } from "@/hooks/queries/admin/useJobStage";
+import { useJobTitle } from "@/hooks/queries/jobs/useJob";
 
 const AdminDashboard = () => {
   const [viewMode, setViewMode] = useState<"report" | "chart">("report");
-  const [jobs, setJobs] = useState<JobTitle[]>([]);
-  const [stages, setStages] = useState<{ name: string }[]>([]);
+  // Fetch job titles
+  const { data: jobs } = useJobTitle("", true);
+  // Fetch stage templates
+  const { data: stagesData } = useJobStage(0, 100, "");
+  const stages = useMemo(() => stagesData.map(t => ({ name: t.name })), [stagesData]);
 
-  useEffect(() => {
-    const fetchFilters = async () => {
-      try {
-        const [jobsRes, stagesRes] = await Promise.all([
-          jobService.getJobTitles(),
-          adminStageTemplateService.getAllTemplates(0, 100),
-        ]);
-        // BECAUSE OF {data:[{id:"",title:""}]}
-        // @ts-ignore
-        setJobs(jobsRes.data);
-        setStages(stagesRes.data.map(t => ({ name: t.name })));
-      } catch (err) {
-        console.error("Failed to load filters", err);
-      }
-    };
-    fetchFilters();
-  }, []);
+  // Fetch dashboard summary and hiring report
+  const { analytics, report, loading, error, refetch } = useAdminDashboardData();
 
-  const {
-    data: dashboardData,
-    loading,
-    error,
-    fetchData,
-  } = useAdminData<{ analytics: AnalyticsSummary; report: HiringReport }>(
-    async () => {
-      const [analytics, report] = await Promise.all([
-        adminAnalyticsService.getAnalytics(),
-        adminAnalyticsService.getHiringReport(
-          undefined,
-          undefined
-        ),
-      ]);
-      return [{ analytics, report }];
-    },
-    { initialData: [], fetchOnMount: false, initialLoading: false },
-  );
-  // console.log(jobs);
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  const analytics = dashboardData[0]?.analytics;
-  const report = dashboardData[0]?.report;
-
-  const {
-    departments,
-    stages: filteredStages,
-    filteredReport,
-    filteredJobs,
-    filters,
-    setFilter,
-    resetFilters,
-    toggleFilter,
-    clearFilter,
-    hasActiveFilters,
-  } = useAdminDashboardFilters(report, jobs, stages);
-
+  const { departments, stages: filteredStages, filteredReport, filteredJobs, filters, setFilter, resetFilters, toggleFilter, clearFilter, hasActiveFilters } = useAdminDashboardFilters(report, jobs, stages);
 
   const jobColumns: Column<any>[] = [
     { header: "Job Title", accessor: "job_title" },
@@ -186,8 +134,8 @@ const AdminDashboard = () => {
               columns={jobColumns}
               data={filteredReport?.candidates_by_job || []}
               loading={loading}
-              error={error}
-              onRetry={fetchData}
+              error={error ? error.message : null}
+              onRetry={refetch}
               rowKey="job_id"
               emptyMessage="No job data available for the selected filters."
               className="border-0 shadow-none"
