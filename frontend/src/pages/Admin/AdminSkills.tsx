@@ -11,7 +11,7 @@ import { useToast } from "@/components/shared/ToastProvider";
 import { DataTable } from "@/components/shared/DataTable";
 import ErrorDisplay from "@/components/shared/ErrorDisplay";
 import { CreateSkillModal, DeleteModal } from "@/components/modal";
-import { useAdminData, useDebouncedValue } from "@/hooks";
+import { useDebouncedValue } from "@/hooks";
 import { Edit2, Trash2Icon, ArrowUpDown, AlertCircle, Plus } from "lucide-react";
 import { extractErrorMessage } from "@/utils/error";
 import type { ColumnDef, PaginationState } from "@tanstack/react-table";
@@ -22,6 +22,7 @@ import PermissionGuard from "@/components/auth/PermissionGuard";
 import { PERMISSIONS, hasPermissions } from "@/lib/permissions";
 import { useAppSelector } from "@/store/hooks";
 import { selectCurrentUser } from "@/store/slices/authSlice";
+import { useSkill } from "@/hooks/queries/admin/useSkill";
 
 const AdminSkills = () => {
   const toast = useToast();
@@ -35,40 +36,30 @@ const AdminSkills = () => {
     pageSize: 10,
   });
   const [search, setSearch] = useState("");
-  const debouncedSearch = useDebouncedValue(search)
 
-  // Reset to first page when search changes
-  useEffect(() => {
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-  }, [debouncedSearch]);
-
-  const {
-    data: skills,
-    total,
-    loading,
-    error,
-    fetchData: fetchSkills,
-  } = useAdminData<SkillRead>(
-    () => adminSkillService.getAllSkills(pageIndex * pageSize, pageSize, debouncedSearch),
-    { fetchOnMount: false }
-  );
-
-  // Refetch when pagination or search changes
-  useEffect(() => {
-    fetchSkills();
-  }, [pageIndex, pageSize, debouncedSearch, fetchSkills]);
-
-  const [overallTotal, setOverallTotal] = useState(0);
-  useEffect(() => {
-    if (!debouncedSearch) {
-      setOverallTotal(total);
-    }
-  }, [total, debouncedSearch]);
-
-  const [_deletingId, setDeletingId] = useState<string | null>(null);
+  const [, setDeletingId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<SkillRead | null>(null);
+  const [overallTotal, setOverallTotal] = useState(0);
+
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  };
+
+
+  const debouncedSearch = useDebouncedValue(search)
+  const { data: skills, total, loading, error, refetch } = useSkill(pageIndex * pageSize, pageSize, debouncedSearch)
+
+
+  useEffect(() => {
+    if (!debouncedSearch && total !== overallTotal) {
+      queueMicrotask(() => {
+        setOverallTotal(total);
+      });
+    }
+  }, [total, debouncedSearch, overallTotal]);
 
   /**
    * Performs immediate deletion of a skill.
@@ -79,7 +70,7 @@ const AdminSkills = () => {
       setDeletingId(skill.id);
       setDeleteError(null);
       await adminSkillService.deleteSkill(skill.id);
-      fetchSkills();
+      refetch();
       toast.success("Skill deleted successfully");
     } catch (err) {
       const errMsg = extractErrorMessage(err);
@@ -115,7 +106,7 @@ const AdminSkills = () => {
     const jobNames = jobNamesStr
       .split(",")
       .map((name) => {
-        let trimmed = name.trim();
+        const trimmed = name.trim();
         // remove quotes if they exist (for robustness)
         if (
           (trimmed.startsWith("'") && trimmed.endsWith("'")) ||
@@ -188,7 +179,7 @@ const AdminSkills = () => {
           </div>
         )
       },
-    cell: ({ row }) => (
+      cell: ({ row }) => (
         <div className="flex items-center gap-2 max-w-[800px] truncate ">
           {row.original.description || "No description provided"}
         </div>
@@ -196,58 +187,58 @@ const AdminSkills = () => {
     },
     ...(hasManagePermission
       ? [
-          {
-            id: "actions",
-            header: () => (
-              <div className="flex items-center justify-center gap-2">
-                <span className="font-semibold">Actions</span>
-              </div>
-            ),
-            cell: ({ row }) => (
-              <div className="gap-2 flex items-center justify-center">
-                <HoverCard>
-                  <HoverCardTrigger
-                    render={(props) => (
-                      <Button
-                        {...props}
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleEditClick(row.original)}
-                        className="h-9 w-9 rounded-xl hover:bg-primary/10 hover:text-primary transition-colors flex items-center justify-center shrink-0"
-                      >
-                        <Edit2 className="h-4 w-4 shrink-0" />
-                        <span className="sr-only">Edit</span>
-                      </Button>
-                    )}
-                  />
-                  <HoverCardContent className="w-fit px-3 py-1.5 text-xs font-medium" side="top">
-                    <span className="text-primary">Edit Skill</span>
-                  </HoverCardContent>
-                </HoverCard>
+        {
+          id: "actions",
+          header: () => (
+            <div className="flex items-center justify-center gap-2">
+              <span className="font-semibold">Actions</span>
+            </div>
+          ),
+          cell: ({ row }) => (
+            <div className="gap-2 flex items-center justify-center">
+              <HoverCard>
+                <HoverCardTrigger
+                  render={(props) => (
+                    <Button
+                      {...props}
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleEditClick(row.original)}
+                      className="h-9 w-9 rounded-xl hover:bg-primary/10 hover:text-primary transition-colors flex items-center justify-center shrink-0"
+                    >
+                      <Edit2 className="h-4 w-4 shrink-0" />
+                      <span className="sr-only">Edit</span>
+                    </Button>
+                  )}
+                />
+                <HoverCardContent className="w-fit px-3 py-1.5 text-xs font-medium" side="top">
+                  <span className="text-primary">Edit Skill</span>
+                </HoverCardContent>
+              </HoverCard>
 
-                <HoverCard>
-                  <HoverCardTrigger
-                    render={(props) => (
-                      <Button
-                        {...props}
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDeleteClick(row.original)}
-                        className="h-9 w-9 rounded-xl hover:bg-destructive/10 hover:text-destructive transition-colors flex items-center justify-center shrink-0"
-                      >
-                        <Trash2Icon className="h-4 w-4 shrink-0" />
-                        <span className="sr-only">Delete</span>
-                      </Button>
-                    )}
-                  />
-                  <HoverCardContent className="w-fit px-3 py-1.5 text-xs font-medium" side="top">
-                    <span className="text-destructive">Delete Skill</span>
-                  </HoverCardContent>
-                </HoverCard>
-              </div>
-            ),
-          } as ColumnDef<SkillRead>,
-        ]
+              <HoverCard>
+                <HoverCardTrigger
+                  render={(props) => (
+                    <Button
+                      {...props}
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDeleteClick(row.original)}
+                      className="h-9 w-9 rounded-xl hover:bg-destructive/10 hover:text-destructive transition-colors flex items-center justify-center shrink-0"
+                    >
+                      <Trash2Icon className="h-4 w-4 shrink-0" />
+                      <span className="sr-only">Delete</span>
+                    </Button>
+                  )}
+                />
+                <HoverCardContent className="w-fit px-3 py-1.5 text-xs font-medium" side="top">
+                  <span className="text-destructive">Delete Skill</span>
+                </HoverCardContent>
+              </HoverCard>
+            </div>
+          ),
+        } as ColumnDef<SkillRead>,
+      ]
       : []),
   ];
 
@@ -266,7 +257,7 @@ const AdminSkills = () => {
       />
 
       {error && !skills.length ? (
-        <ErrorDisplay message={error} onRetry={fetchSkills} />
+        <ErrorDisplay message={error.message} onRetry={refetch} />
       ) : (
         <DataTable
           columns={columns}
@@ -275,7 +266,7 @@ const AdminSkills = () => {
           searchKey="name"
           searchPlaceholder="Filter skills by name..."
           searchValue={search}
-          onSearchChange={setSearch}
+          onSearchChange={handleSearchChange}
           initialSorting={[{ id: "name", desc: false }]}
           isServerSide={true}
           pageIndex={pageIndex}
@@ -293,7 +284,7 @@ const AdminSkills = () => {
       <CreateSkillModal
         show={showModal}
         handleClose={handleCloseModal}
-        onSkillSaved={fetchSkills}
+        onSkillSaved={refetch}
         skill={selectedSkill}
       />
 
