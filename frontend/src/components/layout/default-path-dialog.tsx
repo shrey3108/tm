@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import {
@@ -19,11 +19,12 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import { transcriptService } from "@/apis/transcript"
 import { toast } from "sonner"
 import { Loader2, FolderOpen } from "lucide-react"
 import { extractErrorMessage } from "@/utils/error"
 import { DirectoryPathSchema, type DirectoryPathFormValues } from "@/schemas/file"
+import { useDefaultTranscriptPathQuery } from "@/hooks/queries/jobs/useTranscript"
+import { useUpdateDefaultTranscriptPathMutation } from "@/hooks/mutations/jobs/useTranscriptMutation"
 
 interface DefaultPathDialogProps {
   open: boolean
@@ -31,8 +32,8 @@ interface DefaultPathDialogProps {
 }
 
 export function DefaultPathDialog({ open, onOpenChange }: DefaultPathDialogProps) {
-  const [isLoading, setIsLoading] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)
+  const { data, isLoading } = useDefaultTranscriptPathQuery({ enabled: open })
+  const { mutateAsync: updatePath, isPending: isSaving } = useUpdateDefaultTranscriptPathMutation()
 
   const form = useForm<DirectoryPathFormValues>({
     resolver: zodResolver(DirectoryPathSchema),
@@ -43,35 +44,21 @@ export function DefaultPathDialog({ open, onOpenChange }: DefaultPathDialogProps
   })
 
   useEffect(() => {
-    if (open) {
-      const fetchDefaultPath = async () => {
-        setIsLoading(true)
-        try {
-          const response = await transcriptService.getDefaultTranscriptPath()
-          form.reset({ path: response.default_path || "" })
-        } catch (error: any) {
-          toast.error("Failed to fetch default path")
-        } finally {
-          setIsLoading(false)
-        }
-      }
-      fetchDefaultPath()
-    } else {
+    if (open && data) {
+      form.reset({ path: data.default_path || "" })
+    } else if (!open) {
       form.reset()
     }
-  }, [open, form])
+  }, [open, data, form])
 
   const onSubmit = async (values: DirectoryPathFormValues) => {
-    setIsSaving(true)
     try {
-      await transcriptService.updateDefaultTranscriptPath(values.path)
+      await updatePath(values.path)
       toast.success("Default path updated successfully")
       onOpenChange(false)
     } catch (error: unknown) {
       const errorMessage = extractErrorMessage(error)
       toast.error(errorMessage || "Failed to update default path")
-    } finally {
-      setIsSaving(false)
     }
   }
 

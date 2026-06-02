@@ -30,3 +30,18 @@ export function useUploadTranscriptMutation() {
         },
     });
 }
+
+/**
+ * Hook for updating default transcript path.
+ */
+export function useUpdateDefaultTranscriptPathMutation() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (path: string) => transcriptService.updateDefaultTranscriptPath(path),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: [QUERY_KEYS.ADMIN.DASHBOARD_DATA, "transcript-default-path"],
+            });
+        },
+    });
+}
