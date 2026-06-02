@@ -17,13 +17,13 @@ import {
   DeleteModal,
 } from "@/components/modal";
 import { JobCandidatesSkeleton } from "@/components/candidate/JobCandidatesSkeleton";
-import { resumeService } from "@/apis/resume";
 import { useDeleteConfirmation } from "@/hooks";
 import type { PaginationState } from "@tanstack/react-table";
 import { Button } from "@/components";
 import type { CandidateActiveFilters } from "@/hooks/useCandidateTableFilters";
 import { useToast } from "@/components/shared";
 import { useAdminCandidates, useJob } from "@/hooks/queries/jobs";
+import { useDeleteResumeMutation } from "@/hooks/mutations/jobs/useResumeMutation";
 
 
 const AdminCandidateSearch = () => {
@@ -99,7 +99,7 @@ const AdminCandidateSearch = () => {
   //   setSelectedResumeId(candidate.resume_id || null);
   //   setShowAnalysisDetails(true);
   // };
-
+  const { mutateAsync: deleteResume } = useDeleteResumeMutation();
   const {
     showModal: showDeleteModal,
     handleDeleteClick,
@@ -114,7 +114,7 @@ const AdminCandidateSearch = () => {
       if (!candidate?.resume_id || !candidate.applied_job_id) {
         throw new Error("Cannot delete: Missing job context or resume ID.");
       }
-      await resumeService.deleteResume(candidate.applied_job_id, candidate.resume_id);
+      await deleteResume({ jobId: candidate.applied_job_id, resumeId: candidate.resume_id });
     },
     onSuccess: () => {
       fetchCandidates();

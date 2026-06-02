@@ -1,15 +1,14 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
-import jobService from "@/apis/job";
 import { toast } from "sonner";
 import { extractErrorMessage } from "@/utils/error";
 import { slugify, unSlugify } from "@/utils/slug";
 import type { CandidateAnalysis, JobStatsResponse } from "@/types/admin";
 import type { Job } from "@/types/job";
 import { useDeleteConfirmation } from "./useDeleteConfirmation";
-import { resumeService } from "@/apis/resume";
 import { useJob, useJobCandidatesList, useJobStats, useJobTitle } from "./queries/jobs";
-
+import { useReanalyzeCandidateMutation, useUpdateJobMutation, } from "@/hooks/mutations/jobs/useJobMutations";
+import { useUploadResumeMutation, useDeleteResumeMutation } from "@/hooks/mutations/jobs/useResumeMutation"
 type JobRouteState = {
   jobId?: string;
 };
@@ -137,6 +136,11 @@ export const useJobCandidates = (
     end_date: filters.end_date,
   });
 
+  const { mutateAsync: uploadResume } = useUploadResumeMutation();
+  const { mutateAsync: reanalyzeCandidate } = useReanalyzeCandidateMutation();
+  const { mutateAsync: updateJob } = useUpdateJobMutation();
+  const { mutateAsync: deleteResume } = useDeleteResumeMutation();
+
   const loading = !resolvedJobId || jobLoading || candidatesLoading || statsLoading;
 
   // Synchronize query results to local states
@@ -180,10 +184,10 @@ export const useJobCandidates = (
     setIsUploading(true);
     const uploadPromises = Array.from(files).map(async (file) => {
       try {
-        await jobService.uploadResume(job.id, file);
+        await uploadResume({ jobId: job.id, file });
         toast.success(`Uploaded ${file.name} successfully!`);
       } catch (error) {
-        const errorMessage = extractErrorMessage(error)
+        const errorMessage = extractErrorMessage(error);
         console.error(`Failed to upload ${file.name}:`, error);
         toast.error(errorMessage || `Failed to upload ${file.name}`);
       }
@@ -191,7 +195,6 @@ export const useJobCandidates = (
 
     await Promise.all(uploadPromises);
     setIsUploading(false);
-    fetchData(true);
     if (event.target) event.target.value = "";
   };
 
@@ -200,18 +203,17 @@ export const useJobCandidates = (
       if (!job) return;
       setReanalyzingCandidateIds((current) => [...current, candidateId]);
       try {
-        const response = await jobService.reanalyzeCandidate(job.id, candidateId);
+        const response = await reanalyzeCandidate({ jobId: job.id, candidateId });
         toast.success(response.message || "Re-analysis started successfully.");
-        await fetchData(true);
       } catch (error) {
-        const errorMessage = extractErrorMessage(error)
+        const errorMessage = extractErrorMessage(error);
         console.error("Failed to reanalyze candidate:", error);
         toast.error(errorMessage || "Failed to start candidate re-analysis.");
       } finally {
         setReanalyzingCandidateIds((current) => current.filter((id) => id !== candidateId));
       }
     },
-    [fetchData, job],
+    [reanalyzeCandidate, job],
   );
 
   const needsReanalysis = useCallback(
@@ -237,27 +239,26 @@ export const useJobCandidates = (
     if (toReanalyze.length === 0) return;
     toast.info(`Re-analyzing ${toReanalyze.length} candidate(s)...`);
     for (const candidate of toReanalyze) {
-      jobService.reanalyzeCandidate(job.id, candidate.id).catch((err) => {
+      reanalyzeCandidate({ jobId: job.id, candidateId: candidate.id }).catch((err) => {
         console.error(`Failed to reanalyze ${candidate.id}:`, err);
       });
       await new Promise((resolve) => setTimeout(resolve, 300));
     }
     toast.success("Requests sent for all candidates that need reanalysis.");
-  }, [candidates, job, needsReanalysis]);
+  }, [candidates, job, needsReanalysis, reanalyzeCandidate]);
 
   const handleToggleStatus = useCallback(async () => {
     if (!job) return;
     try {
-      const updatedJob = await jobService.updateJob(job.id, { is_active: !job.is_active });
+      const updatedJob = await updateJob({ jobId: job.id, data: { is_active: !job.is_active } });
       setJob(updatedJob);
       toast.success(`Job ${!job.is_active ? "activated" : "deactivated"} successfully`);
-      await fetchData();
     } catch (error) {
       console.error("Failed to toggle job status:", error);
       const errorMessage = extractErrorMessage(error, "Failed to update job status");
       toast.error(errorMessage);
     }
-  }, [job, fetchData]);
+  }, [job, updateJob]);
 
 
 
@@ -290,10 +291,9 @@ export const useJobCandidates = (
       if (!candidate?.resume_id || !jobId) {
         throw new Error("Cannot delete: Missing job context or resume ID.");
       }
-      await resumeService.deleteResume(jobId, candidate.resume_id);
+      await deleteResume({ jobId, resumeId: candidate.resume_id });
     },
     onSuccess: () => {
-      fetchData();
       toast.success("Candidate deleted successfully");
     },
     itemTitle: (c) => `${c.first_name || ""} ${c.last_name || ""}`.trim() || "this candidate",

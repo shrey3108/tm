@@ -201,3 +201,26 @@ export function useReorderStagesMutation() {
   });
 }
 
+
+
+/**
+ * Hook for reanalyzing a candidate for a job.
+ */
+export function useReanalyzeCandidateMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ jobId, candidateId }: { jobId: string; candidateId: string }) =>
+      jobService.reanalyzeCandidate(jobId, candidateId),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.JOBS.CANDIDATES, variables.jobId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.JOBS.STATS, variables.jobId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.JOBS.DETAIL, variables.jobId],
+      });
+    },
+  });
+}
