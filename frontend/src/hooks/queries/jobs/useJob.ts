@@ -87,3 +87,19 @@ export const useJobStages = (jobId: string | null | undefined) => {
   };
 };
 
+
+export const useJobVersion = (versionId: string | null, enabled: boolean) => {
+  const res = useQuery({
+    queryKey: [QUERY_KEYS.JOBS.JOB_VERSION, versionId],
+    queryFn: () => jobService.getJobVersion(versionId!),
+    staleTime: 1000 * 60, // 1 minute
+    enabled: enabled
+  });
+
+  return {
+    data: res.data ?? null,
+    loading: res.isLoading,
+    error: res.error,
+    refetch: res.refetch,
+  };
+};

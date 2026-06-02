@@ -1,10 +1,8 @@
-import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Loader2 } from "lucide-react";
-import type { JobVersionDetail } from "@/types/job";
-import jobService from "@/apis/job";
+import { useJobVersion } from "@/hooks/queries/jobs";
 
 export interface JDPreviewModalProps {
     isOpen: boolean;
@@ -19,31 +17,7 @@ export interface JDPreviewModalProps {
  * 
  */
 export function JDPreviewModal({ isOpen, onOpenChange, versionId }: JDPreviewModalProps) {
-    const [previewVersion, setPreviewVersion] = useState<JobVersionDetail | null>(null);
-    const [isPreviewLoading, setIsPreviewLoading] = useState(false);
-
-    useEffect(() => {
-        if (!isOpen) {
-            setPreviewVersion(null);
-            return;
-        }
-
-        if (!versionId) return;
-
-        const fetchVersion = async () => {
-            setIsPreviewLoading(true);
-            try {
-                const versionData = await jobService.getJobVersion(versionId);
-                setPreviewVersion(versionData);
-            } catch (error) {
-                console.error("Failed to fetch version details:", error);
-            } finally {
-                setIsPreviewLoading(false);
-            }
-        };
-
-        fetchVersion();
-    }, [versionId, isOpen]);
+    const { data: previewVersion, loading: isPreviewLoading } = useJobVersion(versionId, isOpen)
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>

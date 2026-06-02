@@ -36,5 +36,6 @@ export const QUERY_KEYS = {
     DETAIL: "job",
     ADMIN_LIST: "adminJobs",
     ADMIN_CANDIDATES: "adminCandidates",
+    JOB_VERSION: "jobVersion"
   },
 } as const;
