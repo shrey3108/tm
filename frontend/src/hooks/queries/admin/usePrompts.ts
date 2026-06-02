@@ -7,7 +7,7 @@ import { QUERY_KEYS } from "@/constants/queryKeys";
  * @param limit number of records to fetch
  * @param q query string
  */
-export const usePrompts = (skip: number, limit: number, q: string) => {
+export const usePrompts = (skip: number = 0, limit: number = 10, q: string = "") => {
     const res = useQuery({
         queryKey: [QUERY_KEYS.ADMIN.PROMPTS, skip, limit, q],
         queryFn: () => adminPromptService.getAllPrompts(skip, limit, q),

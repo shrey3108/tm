@@ -3,8 +3,8 @@ import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { QUERY_KEYS } from "@/constants/queryKeys";
 
 export const useAdminJobs = (
-  skip: number,
-  limit: number,
+  skip: number = 0,
+  limit: number = 10,
   filters?: {
     q?: string;
     status?: boolean | boolean[];

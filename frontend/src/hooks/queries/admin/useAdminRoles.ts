@@ -7,7 +7,7 @@ import { QUERY_KEYS } from "@/constants/queryKeys";
  * @param limit number of records to fetch
  * @param q query string
  */
-export const useAdminRoles = ({ skip, limit, q, isEnable = true }: { skip?: number, limit?: number, q?: string, isEnable?: boolean }) => {
+export const useAdminRoles = ({ skip = 0, limit = 10, q = "", isEnable = true }: { skip?: number, limit?: number, q?: string, isEnable?: boolean } = {}) => {
   const res = useQuery({
     queryKey: [QUERY_KEYS.ADMIN.ROLES, skip, limit, q],
     queryFn: () => adminRoleService.getAllRoles(skip, limit, q),

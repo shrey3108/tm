@@ -18,8 +18,8 @@ export interface CandidateFilters {
 export const useJobCandidatesList = (
   jobId: string | null | undefined,
   jdVersion: number | undefined,
-  skip: number,
-  limit: number,
+  skip: number = 0,
+  limit: number = 10,
   filters?: CandidateFilters
 ) => {
   const res = useQuery({

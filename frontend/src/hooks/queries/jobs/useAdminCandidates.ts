@@ -7,9 +7,9 @@ import type { CandidateResponse } from "@/types/resume";
 
 export const useAdminCandidates = (
   jobId: string | undefined,
-  skip: number,
-  limit: number,
-  filters: CandidateActiveFilters
+  skip: number = 0,
+  limit: number = 10,
+  filters: CandidateActiveFilters = { status: [], city: [], job: [], hr_decision: [] }
 ) => {
   const res = useQuery({
     queryKey: [QUERY_KEYS.JOBS.ADMIN_CANDIDATES, jobId, skip, limit, filters],

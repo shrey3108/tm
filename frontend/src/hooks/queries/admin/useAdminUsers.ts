@@ -7,7 +7,7 @@ import { QUERY_KEYS } from "@/constants/queryKeys";
  * @param limit number of records to fetch
  * @param q query string
  */
-export const useAdminUsers = ({ skip, limit, q }: { skip?: number, limit?: number, q?: string }) => {
+export const useAdminUsers = ({ skip = 0, limit = 10, q = "" }: { skip?: number, limit?: number, q?: string } = {}) => {
   const res = useQuery({
     queryKey: [QUERY_KEYS.ADMIN.USERS, skip, limit, q],
     queryFn: () => adminUserService.getAllUsers(skip, limit, q),

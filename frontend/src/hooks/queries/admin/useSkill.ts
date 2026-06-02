@@ -7,7 +7,7 @@ import { QUERY_KEYS } from "@/constants/queryKeys";
  * @param limit number of records to fetch
  * @param q query string
  */
-export const useSkill = (skip: number, limit: number, q: string) => {
+export const useSkill = (skip: number = 0, limit: number = 10, q: string = "") => {
     const res = useQuery({
         queryKey: [QUERY_KEYS.ADMIN.SKILLS, skip, limit, q],
         queryFn: () => adminSkillService.getAllSkills(skip, limit, q),
