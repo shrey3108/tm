@@ -20,7 +20,13 @@ import AppPageShell from "@/components/shared/AppPageShell";
 import PageHeader from "@/components/shared/PageHeader";
 import { jobCriteriaCreateSchema, type JobCriteriaCreateFormValues } from "@/schemas/admin";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { adminCriteriaService } from "@/apis/admin";
+import {
+    useCreateCriterionMutation,
+    useUpdateCriterionMutation,
+} from "@/hooks/mutations/admin/useJobCriteria";
+import { useJobCriteria } from "@/hooks/queries/admin/useJobCriteria";
+import type { CriterionRead } from "@/types/admin";
+import { slugify } from "@/utils/slug";
 
 /**
  * Form page for creating or editing job evaluation criteria.
@@ -32,7 +38,13 @@ export default function AdminJobCriteriaForm() {
     const { slug } = useParams<{ slug?: string }>();
     const toast = useToast();
 
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const createMutation = useCreateCriterionMutation();
+    const updateMutation = useUpdateCriterionMutation();
+    const isSubmitting = createMutation.isPending || updateMutation.isPending;
+
+    const { data: criteria, loading: isLoadingCriteria } = useJobCriteria(0, 100);
+    const criterion = criteria.find(c => slugify(c.name) === slug || c.id === (location.state as any)?.id);
+
     const [isEditMode, setIsEditMode] = useState(false);
 
     const form = useForm<JobCriteriaCreateFormValues>({
@@ -46,45 +58,35 @@ export default function AdminJobCriteriaForm() {
         },
     });
 
-
     useEffect(() => {
-        const fetchDetails = async (id: string) => {
-            try {
-                const criteria = await adminCriteriaService.getCriterionById(id);
-                form.reset({
-                    name: criteria.name,
-                    description: criteria.prompt_text || criteria.description || "",
-                    is_active: true, // Placeholder as backend doesn't have it
-                    apply_to_all: true,
-                    job_ids: [],
-                });
-            } catch (error) {
-                console.error("Failed to fetch criteria details:", error);
-                toast.error("Failed to load criteria details");
-            }
-        };
-
         const stateData = location.state as any;
+
+        const initializeForm = (c: CriterionRead) => {
+            form.reset({
+                name: c.name,
+                description: c.prompt_text || c.description || "",
+                is_active: true,
+                apply_to_all: true,
+                job_ids: [],
+            });
+        };
 
         if (slug && slug !== "new") {
             setIsEditMode(true);
             if (stateData?.criteria) {
-                const criteria = stateData.criteria;
-                form.reset({
-                    name: criteria.name,
-                    description: criteria.prompt_text || criteria.description || "",
-                    is_active: true,
-                    apply_to_all: true,
-                    job_ids: [],
-                });
-            } else if (stateData?.id) {
-                fetchDetails(stateData.id);
+                initializeForm(stateData.criteria);
+            } else if (!isLoadingCriteria) {
+                if (criterion) {
+                    initializeForm(criterion);
+                } else {
+                    toast.error("Criteria not found");
+                    navigate("/dashboard/admin/criteria-stages/criteria");
+                }
             }
         }
-    }, [slug, location.state, form, toast]);
+    }, [slug, location.state, form, toast, navigate, criterion, isLoadingCriteria]);
 
     const onSubmit = async (values: JobCriteriaCreateFormValues) => {
-        setIsSubmitting(true);
         try {
             const payload = {
                 name: values.name,
@@ -93,20 +95,18 @@ export default function AdminJobCriteriaForm() {
             };
 
             if (isEditMode) {
-                const id = (location.state as any)?.id;
+                const id = (location.state as any)?.id || criterion?.id;
                 if (!id) throw new Error("Missing criteria ID for update");
-                await adminCriteriaService.updateCriterion(id, payload);
+                await updateMutation.mutateAsync({ id, data: payload });
                 toast.success("Job criteria updated successfully");
             } else {
-                await adminCriteriaService.createCriterion(payload);
+                await createMutation.mutateAsync(payload);
                 toast.success("Job criteria created successfully");
             }
             navigate("/dashboard/admin/criteria-stages/criteria");
         } catch (error) {
             console.error("Failed to save criteria:", error);
             toast.error("Failed to save job criteria");
-        } finally {
-            setIsSubmitting(false);
         }
     };
 

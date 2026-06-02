@@ -6,12 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Info, Edit2, Trash2, ArrowUpDown, Plus } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { StageTemplate } from "@/types/stage";
-import { adminStageTemplateService } from "@/apis/admin/stageTemplate";
 import { ErrorDisplay, useToast } from "@/components/shared";
 import { StageDeleteDialog } from "@/components/admin/StageDeleteDialog";
 import { StageDetailDialog } from "@/components/admin/StageDetailDialog";
-import { useAdminData, useDebouncedValue } from "@/hooks";
+import { useDebouncedValue } from "@/hooks";
 import { useNavigate } from "react-router-dom";
+import {
+  useUpdateStageTemplateMutation,
+  useDeleteStageTemplateMutation,
+} from "@/hooks/mutations/admin/useJobStage";
 import { slugify } from "@/utils/slug";
 import type { PaginationState } from "@tanstack/react-table";
 import {
@@ -43,10 +46,8 @@ const AdminJobStages = () => {
 
   const debouncedSearch = useDebouncedValue(search, 500);
 
-  const { setData, setTotal } = useAdminData<StageTemplate>(
-    () => adminStageTemplateService.getAllTemplates(pageIndex * pageSize, pageSize, debouncedSearch),
-    { fetchOnMount: false }
-  );
+  const updateStageMutation = useUpdateStageTemplateMutation();
+  const deleteStageMutation = useDeleteStageTemplateMutation();
 
   const { data, total, loading, refetch, error } = useJobStage(pageIndex * pageSize, pageSize, debouncedSearch)
   const handleSearchChange = (value: string) => {
@@ -76,22 +77,11 @@ const AdminJobStages = () => {
   };
 
   const handleDefaultToggle = async (template: StageTemplate, isChecked: boolean) => {
-    const previousData = [...data];
-
-    // Optimistic update
-    setData(prev => prev.map(t =>
-      t.id === template.id ? { ...t, is_default: isChecked } : t
-    ));
-
     try {
-      await adminStageTemplateService.updateTemplate(template.id, { is_default: isChecked });
+      await updateStageMutation.mutateAsync({ id: template.id, data: { is_default: isChecked } });
       toast.success("Stage template updated successfully");
-
-      // refetch(); 
     } catch (error) {
-      // Revert on error
-      const errorMessage = extractErrorMessage(error)
-      setData(previousData);
+      const errorMessage = extractErrorMessage(error);
       toast.error(errorMessage || "Failed to update stage template");
     }
   };
@@ -104,22 +94,11 @@ const AdminJobStages = () => {
   const confirmDelete = async () => {
     if (!selectedTemplate) return;
 
-    const previousData = [...data];
-    const previousTotal = total;
-
-    // Optimistic update
-    setData(prev => prev.filter(t => t.id !== selectedTemplate.id));
-    setTotal(prev => prev - 1);
-
     try {
-      await adminStageTemplateService.deleteTemplate(selectedTemplate.id);
+      await deleteStageMutation.mutateAsync(selectedTemplate.id);
       toast.success("Stage template deleted successfully");
-      // refetch(); 
     } catch (error) {
-      // Revert on error
-      const errorMessage = extractErrorMessage(error)
-      setData(previousData);
-      setTotal(previousTotal);
+      const errorMessage = extractErrorMessage(error);
       toast.error(errorMessage || "Failed to delete stage template");
     } finally {
       setIsDeleteOpen(false);

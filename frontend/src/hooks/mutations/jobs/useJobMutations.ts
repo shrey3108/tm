@@ -90,7 +90,7 @@ export function useUpdateJobMutation() {
 
       return { previousJobs, previousAdminJobs, previousJobDetail };
     },
-    onError: (err, { jobId }, context) => {
+    onError: (_err, { jobId }, context) => {
       // Rollback on error
       if (context) {
         if (context.previousJobs !== undefined) {
@@ -104,7 +104,7 @@ export function useUpdateJobMutation() {
         }
       }
     },
-    onSettled: (data, error, variables) => {
+    onSettled: (_data, _error, variables) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.JOBS.LIST] });
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.JOBS.ADMIN_LIST] });
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.JOBS.DETAIL, variables.jobId] });

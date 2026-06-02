@@ -11,7 +11,6 @@ import { useNavigate } from "react-router-dom";
 import { ErrorDisplay, useToast } from "@/components/shared";
 import { slugify } from "@/utils/slug";
 import {
-    adminCriteriaService,
     type CriterionRead,
 } from "@/apis/admin";
 import { CriteriaInfoModal } from "@/components/admin/CriteriaInfoModal";
@@ -22,6 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import PermissionGuard from "@/components/auth/PermissionGuard";
 import { PERMISSIONS } from "@/lib/permissions";
 import { useJobCriteria } from "@/hooks/queries/admin/useJobCriteria";
+import { useDeleteCriterionMutation } from "@/hooks/mutations/admin/useJobCriteria";
 
 /**
  * Admin page for managing job evaluation criteria.
@@ -46,6 +46,8 @@ const AdminJobCriteria = () => {
 
     const debouncedSearch = useDebouncedValue(search);
 
+    const deleteCriterionMutation = useDeleteCriterionMutation();
+
     const { data: criteriaData, total, loading, error, refetch } = useJobCriteria(pageIndex * pageSize, pageSize, debouncedSearch)
 
 
@@ -66,8 +68,7 @@ const AdminJobCriteria = () => {
         try {
             setDeletingId(criterion.id);
             setDeleteError(null);
-            await adminCriteriaService.deleteCriterion(criterion.id);
-            refetch();
+            await deleteCriterionMutation.mutateAsync(criterion.id);
             toast.success("Criteria deleted successfully");
         } catch (err) {
             const errMsg = extractErrorMessage(err);
