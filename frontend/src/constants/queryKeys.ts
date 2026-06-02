@@ -16,6 +16,7 @@ export const QUERY_KEYS = {
     USERS: "users",
     ROLES: "roles",
     DASHBOARD_DATA: "adminDashboardData",
+    CLEAR_CACHE: "adminCache",
   },
   CANDIDATES: {
     SEARCH: "candidateSearch",
