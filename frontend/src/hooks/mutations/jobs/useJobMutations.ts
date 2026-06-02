@@ -26,7 +26,85 @@ export function useUpdateJobMutation() {
   return useMutation({
     mutationFn: ({ jobId, data }: { jobId: string; data: Record<string, any> }) =>
       jobService.updateJob(jobId, data),
-    onSuccess: (_data, variables) => {
+    onMutate: async ({ jobId, data }) => {
+      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+      await queryClient.cancelQueries({ queryKey: [QUERY_KEYS.JOBS.LIST] });
+      await queryClient.cancelQueries({ queryKey: [QUERY_KEYS.JOBS.ADMIN_LIST] });
+      await queryClient.cancelQueries({ queryKey: [QUERY_KEYS.JOBS.DETAIL, jobId] });
+
+      // Snapshot the previous values
+      const previousJobs = queryClient.getQueryData([QUERY_KEYS.JOBS.LIST]);
+      const previousAdminJobs = queryClient.getQueryData([QUERY_KEYS.JOBS.ADMIN_LIST]);
+      const previousJobDetail = queryClient.getQueryData([QUERY_KEYS.JOBS.DETAIL, jobId]);
+
+      // Optimistically update the detail query if it exists
+      if (previousJobDetail) {
+        queryClient.setQueryData(
+          [QUERY_KEYS.JOBS.DETAIL, jobId],
+          (old: any) => ({ ...old, ...data })
+        );
+      }
+
+      // Optimistically update the list query caches
+      queryClient.setQueriesData(
+        { queryKey: [QUERY_KEYS.JOBS.LIST] },
+        (old: any) => {
+          if (!old) return old;
+          if (old.data && Array.isArray(old.data)) {
+            return {
+              ...old,
+              data: old.data.map((job: any) =>
+                job.id === jobId ? { ...job, ...data } : job
+              ),
+            };
+          }
+          if (Array.isArray(old)) {
+            return old.map((job: any) =>
+              job.id === jobId ? { ...job, ...data } : job
+            );
+          }
+          return old;
+        }
+      );
+
+      queryClient.setQueriesData(
+        { queryKey: [QUERY_KEYS.JOBS.ADMIN_LIST] },
+        (old: any) => {
+          if (!old) return old;
+          if (old.data && Array.isArray(old.data)) {
+            return {
+              ...old,
+              data: old.data.map((job: any) =>
+                job.id === jobId ? { ...job, ...data } : job
+              ),
+            };
+          }
+          if (Array.isArray(old)) {
+            return old.map((job: any) =>
+              job.id === jobId ? { ...job, ...data } : job
+            );
+          }
+          return old;
+        }
+      );
+
+      return { previousJobs, previousAdminJobs, previousJobDetail };
+    },
+    onError: (err, { jobId }, context) => {
+      // Rollback on error
+      if (context) {
+        if (context.previousJobs !== undefined) {
+          queryClient.setQueriesData({ queryKey: [QUERY_KEYS.JOBS.LIST] }, context.previousJobs);
+        }
+        if (context.previousAdminJobs !== undefined) {
+          queryClient.setQueriesData({ queryKey: [QUERY_KEYS.JOBS.ADMIN_LIST] }, context.previousAdminJobs);
+        }
+        if (context.previousJobDetail !== undefined) {
+          queryClient.setQueryData([QUERY_KEYS.JOBS.DETAIL, jobId], context.previousJobDetail);
+        }
+      }
+    },
+    onSettled: (data, error, variables) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.JOBS.LIST] });
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.JOBS.ADMIN_LIST] });
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.JOBS.DETAIL, variables.jobId] });

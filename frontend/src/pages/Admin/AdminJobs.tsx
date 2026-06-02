@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { adminJobService } from "@/apis/admin";
+
+import { useDeleteJobMutation, useUpdateJobMutation } from "@/hooks/mutations/jobs/useJobMutations";
 import AppPageShell from "@/components/shared/AppPageShell";
 import { DataTable } from "@/components/shared/DataTable";
 import type { Job } from "@/types/job";
@@ -15,7 +16,12 @@ import { JobBoardHeader } from "@/components/job-board/JobBoardHeader";
 import { JobDeleteDialog } from "@/components/job-board/JobDeleteDialog";
 import { getJobColumns } from "@/components/job-board/JobColumns";
 import { JobTableFilters } from "@/components/job-board/JobTableFilters";
-import { useJobTableFilters } from "@/hooks/useJobTableFilters";
+import {
+  useJobTableFilters,
+  useFilteredJobs,
+  useFilteredDepartmentOptions,
+  useFilteredStatusOptions,
+} from "@/hooks/useJobTableFilters";
 import { JobActivityModal } from "@/components/job-board/JobActivityModal";
 import { useDebouncedValue } from "@/hooks";
 
@@ -26,7 +32,8 @@ import { useDebouncedValue } from "@/hooks";
  */
 const AdminJobs = () => {
   const navigate = useNavigate();
-  const [jobs, setJobs] = useState<Job[]>([]);
+  const deleteMutation = useDeleteJobMutation();
+  const updateMutation = useUpdateJobMutation();
   const [loadingJobId, setLoadingJobId] = useState<string | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [jobToDelete, setJobToDelete] = useState<Job | null>(null);
@@ -47,14 +54,12 @@ const AdminJobs = () => {
     setDepartmentFilter,
     dateRange,
     setDateRange,
-    departmentOptions,
+    allDepartments,
     departmentSearch,
     setDepartmentSearch,
-    filteredJobs,
     hasActiveFilters,
     clearFilters,
-    minDate
-  } = useJobTableFilters(jobs);
+  } = useJobTableFilters();
 
   const debouncedTitle = useDebouncedValue(titleFilter, 500);
 
@@ -83,7 +88,7 @@ const AdminJobs = () => {
   const queryFilters = useMemo(() => {
     let statusParam: boolean | boolean[] | undefined = undefined;
     if (statusFilter.length > 0) {
-      statusParam = statusFilter.map((s) => s === "active");
+      statusParam = statusFilter.map((s) => s === "open");
     }
 
     let departmentIdParam: string | string[] | undefined = undefined;
@@ -98,23 +103,17 @@ const AdminJobs = () => {
     };
   }, [debouncedTitle, statusFilter, departmentFilter]);
 
-  const {
-    data: queryData,
-    loading,
-    refetch,
-    total,
-  } = useAdminJobs(
+  const { data: queryData, loading, total, } = useAdminJobs(
     pagination.pageIndex * pagination.pageSize,
     pagination.pageSize,
     queryFilters
   );
 
-  // Synchronize query results with local jobs state
-  useEffect(() => {
-    if (queryData) {
-      setJobs(queryData as unknown as Job[]);
-    }
-  }, [queryData]);
+  const jobsList = (queryData || []) as unknown as Job[];
+
+  const { filteredJobs, minDate } = useFilteredJobs(jobsList, dateRange);
+  const departmentOptions = useFilteredDepartmentOptions(jobsList, allDepartments, titleFilter, statusFilter, departmentFilter);
+  const statusOptions = useFilteredStatusOptions(jobsList, titleFilter);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -127,51 +126,46 @@ const AdminJobs = () => {
   };
 
   /** Deletes the selected job via the admin API, refreshes the list, and closes the dialog. */
-  const handleDeleteConfirm = async () => {
+  const handleDeleteConfirm = () => {
     if (!jobToDelete) return;
 
-    try {
-      await adminJobService.deleteJob(jobToDelete.id);
-      toast.success("Job deleted successfully");
-      refetch();
-    } catch (error) {
-      console.error("Failed to delete job:", error);
-      const errorMessage = extractErrorMessage(error, "Failed to delete job.");
-      toast.error(errorMessage);
-    } finally {
-      setIsDeleteDialogOpen(false);
-      setJobToDelete(null);
-    }
+    deleteMutation.mutate(jobToDelete.id, {
+      onSuccess: () => {
+        toast.success("Job deleted successfully");
+      },
+      onError: (error) => {
+        console.error("Failed to delete job:", error);
+        const errorMessage = extractErrorMessage(error, "Failed to delete job.");
+        toast.error(errorMessage);
+      },
+      onSettled: () => {
+        setIsDeleteDialogOpen(false);
+        setJobToDelete(null);
+      },
+    });
   };
 
   const handleToggleStatus = useCallback(
-    async (job: Job) => {
+    (job: Job) => {
       setLoadingJobId(job.id);
-      // Optimistic update
-      setJobs((prev) =>
-        prev.map((j) =>
-          j.id === job.id ? { ...j, is_active: !job.is_active } : j
-        )
+      updateMutation.mutate(
+        { jobId: job.id, data: { is_active: !job.is_active } },
+        {
+          onSuccess: () => {
+            toast.success(`Job ${!job.is_active ? "activated" : "deactivated"} successfully`);
+          },
+          onError: (error) => {
+            console.error("Failed to toggle job status:", error);
+            const errorMessage = extractErrorMessage(error, "Failed to update job status");
+            toast.error(errorMessage);
+          },
+          onSettled: () => {
+            setLoadingJobId(null);
+          },
+        }
       );
-
-      try {
-        await adminJobService.updateJob(job.id, { is_active: !job.is_active });
-        toast.success(`Job ${!job.is_active ? "activated" : "deactivated"} successfully`);
-      } catch (error) {
-        // Rollback on error
-        setJobs((prev) =>
-          prev.map((j) =>
-            j.id === job.id ? { ...j, is_active: job.is_active } : j
-          )
-        );
-        console.error("Failed to toggle job status:", error);
-        const errorMessage = extractErrorMessage(error, "Failed to update job status");
-        toast.error(errorMessage);
-      } finally {
-        setLoadingJobId(null);
-      }
     },
-    [],
+    [updateMutation],
   );
 
   /** Memoized column definitions. */
@@ -221,6 +215,7 @@ const AdminJobs = () => {
             setTitleFilter={handleSetTitleFilter}
             statusFilter={statusFilter}
             setStatusFilter={handleSetStatusFilter}
+            statusOptions={statusOptions}
             departmentFilter={departmentFilter}
             setDepartmentFilter={handleSetDepartmentFilter}
             dateRange={dateRange}
