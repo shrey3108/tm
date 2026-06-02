@@ -1,6 +1,8 @@
 import jobService from "@/apis/job";
 import { useQuery } from "@tanstack/react-query";
 import { QUERY_KEYS } from "@/constants/queryKeys";
+import { slugify } from "@/utils/slug";
+import { adminJobService } from "@/apis/admin/job";
 
 export const useJob = (jobId: string | null | undefined) => {
   const res = useQuery({
@@ -33,3 +35,55 @@ export const useJobTitle = (q?: string, isEnable?: boolean) => {
     refetch: res.refetch,
   };
 };
+
+export const useJobBySlugOrId = (
+  jobId: string | null | undefined,
+  jobSlug: string | undefined,
+  enabled: boolean
+) => {
+  const isListEnabled = enabled && !jobId && !!jobSlug;
+
+  // Query titles if we only have the slug
+  const titlesQuery = useJobTitle(jobSlug, isListEnabled);
+
+  // Find matching job ID from the list
+  const resolvedJobId = jobId || (() => {
+    if (!titlesQuery.data) return null;
+    const found = titlesQuery.data.find((j) => slugify(j.title) === jobSlug);
+    return found ? found.id : null;
+  })();
+
+  // Finally query the job detail using the resolved ID
+  const detailQuery = useJob(resolvedJobId || undefined);
+
+  // Determine query states
+  const loading =
+    (isListEnabled && titlesQuery.loading) ||
+    (!!resolvedJobId && detailQuery.loading);
+
+  const error = titlesQuery.error || detailQuery.error;
+
+  return {
+    data: detailQuery.data,
+    loading,
+    error,
+    refetch: detailQuery.refetch,
+  };
+};
+
+export const useJobStages = (jobId: string | null | undefined) => {
+  const res = useQuery({
+    queryKey: [QUERY_KEYS.CANDIDATES.JOB_STAGES, jobId],
+    queryFn: () => adminJobService.getJobStages(jobId!),
+    enabled: !!jobId,
+    staleTime: 1000 * 60, // 1 minute
+  });
+
+  return {
+    data: res.data ?? [],
+    loading: res.isLoading,
+    error: res.error,
+    refetch: res.refetch,
+  };
+};
+
