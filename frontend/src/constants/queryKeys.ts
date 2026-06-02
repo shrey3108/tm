@@ -29,6 +29,7 @@ export const QUERY_KEYS = {
     DETAILS: "candidateDetails",
     TIMELINE: "candidateTimeline",
     TRANSCRIPT: "transcript",
+    CROSS_JOB_MATCH: "crossJobMatch"
   },
   JOBS: {
     STATS: "jobStats",
