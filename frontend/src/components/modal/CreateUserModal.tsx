@@ -5,7 +5,7 @@
  */
 
 import { useCallback } from "react";
-import { adminUserService } from "@/apis/admin";
+import { useCreateUserMutation, useUpdateUserMutation } from "@/hooks/mutations/admin/useUser";
 import type { UserAdminRead } from "@/types/admin";
 import ErrorDisplay from "@/components/shared/ErrorDisplay";
 import {
@@ -34,8 +34,7 @@ import {
 import { useFormModal } from "@/hooks";
 import { userCreateSchema, type UserCreateFormValues } from "@/schemas/admin";
 import { useAdminRoles } from "@/hooks/queries/admin/useAdminRoles";
-import { toast } from "sonner";
-import { extractErrorMessage } from "@/utils/error";
+
 
 /**
  * Props for the CreateUserModal component.
@@ -61,6 +60,8 @@ const DEFAULT_USER_VALUES: UserCreateFormValues = {
 const CreateUserModal = ({ show, handleClose, onUserSaved, user }: CreateUserModalProps) => {
 
   const isEditMode = !!user;
+  const createUserMutation = useCreateUserMutation();
+  const updateUserMutation = useUpdateUserMutation();
 
   const mapItemToValues = useCallback(
     (u: UserAdminRead): UserCreateFormValues => ({
@@ -73,27 +74,24 @@ const CreateUserModal = ({ show, handleClose, onUserSaved, user }: CreateUserMod
     [],
   );
 
-  const onSubmit = useCallback(
-    async (data: UserCreateFormValues) => {
-      if (isEditMode && user) {
-        const updateData = {
-          full_name: data.full_name,
-          is_active: data.is_active,
-          role_id: data.role_id,
-        };
-        await adminUserService.updateUser(user.id, updateData);
-      } else {
-        const payload = { ...data };
-        if (!payload.password) {
-          delete payload.password;
-        }
-        await adminUserService.createUser(payload);
+  const onSubmit = async (data: UserCreateFormValues) => {
+    if (isEditMode && user) {
+      const updateData = {
+        full_name: data.full_name,
+        is_active: data.is_active,
+        role_id: data.role_id,
+      };
+      await updateUserMutation.mutateAsync({ id: user.id, data: updateData });
+    } else {
+      const payload = { ...data };
+      if (!payload.password) {
+        delete payload.password;
       }
-      onUserSaved();
-      handleClose();
-    },
-    [isEditMode, user, onUserSaved, handleClose],
-  );
+      await createUserMutation.mutateAsync(payload);
+    }
+    onUserSaved();
+    handleClose();
+  };
 
   const formModal = useFormModal<UserCreateFormValues, UserAdminRead>({
     schema: userCreateSchema,
@@ -111,11 +109,7 @@ const CreateUserModal = ({ show, handleClose, onUserSaved, user }: CreateUserMod
     control,
   } = formModal;
 
-  const { data: roles, loading, error } = useAdminRoles({ isEnable: show })
-  if (error) {
-    const msg = extractErrorMessage(error);
-    toast.error(msg);
-  }
+  const { data: roles, loading } = useAdminRoles({ isEnable: show });
 
 
   return (

@@ -4,8 +4,8 @@
  */
 
 import { useEffect, useState } from "react";
-import { adminPermissionService, adminRoleService } from "@/apis/admin";
 import type { PermissionRead, RoleRead } from "@/types/admin";
+import { useDeleteRoleMutation, useDeletePermissionMutation } from "@/hooks/mutations/admin/useRole";
 import { DataTable } from "@/components/shared/DataTable";
 import type { ColumnDef, PaginationState } from "@tanstack/react-table";
 import ErrorDisplay from "@/components/shared/ErrorDisplay";
@@ -55,16 +55,18 @@ const AdminRoles = () => {
     }
   }, [total, debouncedSearch, overallTotal]);
 
+  // Mutation hooks for delete operations
+  const deleteRoleMutation = useDeleteRoleMutation();
+  const deletePermissionMutation = useDeletePermissionMutation();
+
   // Two separate delete hooks for clarity.
   const roleDelete = useDeleteConfirmation<RoleRead>({
-    deleteFn: (id) => adminRoleService.deleteRole(id as string),
-    onSuccess: refetch,
+    mutation: deleteRoleMutation,
     itemTitle: (role) => `role "${role.name}"`,
   });
 
   const permissionDelete = useDeleteConfirmation<PermissionRead>({
-    deleteFn: (id) => adminPermissionService.deletePermission(id as string),
-    onSuccess: refetch,
+    mutation: deletePermissionMutation,
     itemTitle: (perm) => `permission "${perm.name}"`,
   });
 

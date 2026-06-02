@@ -14,6 +14,10 @@ export const useAdminRoles = ({ skip = 0, limit = 10, q = "", isEnable = true }:
     placeholderData: keepPreviousData,
     staleTime: 1000 * 60, // 1 minute
     enabled: isEnable,
+    select: ((data) => ({
+      data: data.data.filter((role) => role.name.toLowerCase() !== "superadmin"), // remove super admin
+      total: data.total - 1
+    }))
   });
 
   return {

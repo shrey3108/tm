@@ -5,9 +5,10 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { adminPermissionService, adminRoleService } from "@/apis/admin";
-import type { PermissionRead } from "@/types/admin";
-import ErrorDisplay from "@/components/shared/ErrorDisplay";
+import { useCreateRoleMutation, useUpdateRoleMutation } from "@/hooks/mutations/admin/useRole";
+import { useAdminPermissions } from "@/hooks/queries/admin/useAdminPermissions";
+import { useAdminRoleById } from "@/hooks/queries/admin/useAdminRoleById";
+import type { RoleWithPermissions } from "@/types/admin";
 import {
   Dialog,
   DialogContent,
@@ -34,6 +35,7 @@ import { useFormModal } from "@/hooks";
 import { roleCreateSchema, type RoleCreateFormValues } from "@/schemas/admin";
 import { cn } from "@/lib/utils";
 import { Required } from "@/components/job-form/Required";
+import { useToast } from "../shared";
 
 /**
  * Props for the RoleModal component.
@@ -58,29 +60,41 @@ const DEFAULT_ROLE_VALUES: RoleCreateFormValues = {
  * Modal dialog for creating or editing a role.
  */
 const RoleModal = ({ show, handleClose, onSuccess, editRoleId }: RoleModalProps) => {
-  const [permissions, setPermissions] = useState<PermissionRead[]>([]);
-  const [fetchingData, setFetchingData] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-
+  const toast = useToast();
   const isEditMode = !!editRoleId;
+  const createRoleMutation = useCreateRoleMutation();
+  const updateRoleMutation = useUpdateRoleMutation();
 
-  const onSubmit = useCallback(
-    async (data: RoleCreateFormValues) => {
-      if (editRoleId) {
-        await adminRoleService.updateRole(editRoleId, data);
-      } else {
-        await adminRoleService.createRole(data);
-      }
-      onSuccess();
-      handleClose();
-    },
-    [editRoleId, onSuccess, handleClose],
+  const { data: permissions, loading: permissionsLoading } = useAdminPermissions({ isEnable: show });
+  const { data: roleData, loading: roleLoading } = useAdminRoleById(show ? editRoleId : null);
+
+  const fetchingData = permissionsLoading || (isEditMode && roleLoading);
+
+  const mapItemToValues = useCallback(
+    (role: RoleWithPermissions): RoleCreateFormValues => ({
+      name: role.name,
+      permission_ids: role.permissions.map((p) => p.id),
+    }),
+    [],
   );
 
-  const formModal = useFormModal<RoleCreateFormValues, any>({
+  const onSubmit = async (data: RoleCreateFormValues) => {
+    if (editRoleId) {
+      await updateRoleMutation.mutateAsync({ id: editRoleId, data });
+    } else {
+      await createRoleMutation.mutateAsync(data);
+    }
+    onSuccess();
+    handleClose();
+  };
+
+  const formModal = useFormModal<RoleCreateFormValues, RoleWithPermissions>({
     schema: roleCreateSchema,
     defaultValues: DEFAULT_ROLE_VALUES,
+    item: roleData,
     show,
+    mapItemToValues,
     onSubmit,
   });
 
@@ -89,7 +103,6 @@ const RoleModal = ({ show, handleClose, onSuccess, editRoleId }: RoleModalProps)
     isSubmitting,
     submitError,
     setSubmitError,
-    reset,
     setValue,
     control,
     watch,
@@ -105,42 +118,10 @@ const RoleModal = ({ show, handleClose, onSuccess, editRoleId }: RoleModalProps)
     );
   });
 
+  // Reset search term when modal opens
   useEffect(() => {
-    const fetchData = async () => {
-      if (!show) return;
-
-      setSearchTerm("");
-      setFetchingData(true);
-      setSubmitError(null);
-      try {
-
-        const permsData = await adminPermissionService.getAllPermissions();
-        setPermissions(permsData.data);
-
-
-        if (editRoleId) {
-          const roleData = await adminRoleService.getRoleById(editRoleId);
-          setValue("name", roleData.name);
-          setValue(
-            "permission_ids",
-            roleData.permissions.map((p) => p.id),
-          );
-        } else {
-          reset({
-            name: "",
-            permission_ids: [],
-          });
-        }
-      } catch (err) {
-        console.error("Failed to fetch data:", err);
-        setSubmitError("Failed to load required data.");
-      } finally {
-        setFetchingData(false);
-      }
-    };
-
-    fetchData();
-  }, [show, editRoleId, setValue, reset, setSubmitError]);
+    if (show) setSearchTerm("");
+  }, [show]);
 
   const onHide = () => {
     setSubmitError(null);
@@ -158,6 +139,13 @@ const RoleModal = ({ show, handleClose, onSuccess, editRoleId }: RoleModalProps)
     setValue("permission_ids", current, { shouldValidate: true });
   };
 
+  useEffect(() => {
+    if (submitError) {
+      toast.error(isEditMode ? "Failed to update role" : "Failed to create role");
+    }
+  }, [submitError]);
+
+
   return (
     <Dialog open={show} onOpenChange={(open) => !open && onHide()}>
       {/* <DialogContent className="max-w-lg font-sans h-[550px] flex flex-col"> */}
@@ -168,9 +156,7 @@ const RoleModal = ({ show, handleClose, onSuccess, editRoleId }: RoleModalProps)
           </DialogTitle>
         </DialogHeader>
 
-        {submitError && <ErrorDisplay message={submitError} />}
-
-        {fetchingData ? (
+        {fetchingData && !permissions.length ? (
           <div className="flex-1 flex items-center justify-center p-10">
             <p className="text-muted-foreground animate-pulse font-medium">Loading data...</p>
           </div>

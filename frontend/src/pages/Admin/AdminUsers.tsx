@@ -4,7 +4,6 @@
  */
 
 import { useState, useEffect } from "react";
-import { adminUserService } from "@/apis/admin";
 import type { UserAdminRead } from "@/types/admin";
 import AppPageShell from "@/components/shared/AppPageShell";
 import { DateDisplay } from "@/components/shared/DateDisplay";
@@ -29,6 +28,7 @@ import { ArrowUpDown } from "lucide-react";
 import { Button } from "@/components";
 import { useAuth } from "@/store/hooks";
 import { useAdminUsers } from "@/hooks/queries/admin/useAdminUsers";
+import { useDeleteUserMutation } from "@/hooks/mutations/admin/useUser";
 
 const AdminUsers = () => {
   const toast = useToast();
@@ -77,6 +77,7 @@ const AdminUsers = () => {
   };
 
 
+  const deleteUserMutation = useDeleteUserMutation();
 
   const {
     showModal: showDeleteModal,
@@ -87,9 +88,8 @@ const AdminUsers = () => {
     error: deleteError,
     message: deleteMessage,
   } = useDeleteConfirmation<UserAdminRead>({
-    deleteFn: (id) => adminUserService.deleteUser(id as string),
+    mutation: deleteUserMutation,
     onSuccess: () => {
-      refetch();
       toast.success("User deleted successfully");
     },
     itemTitle: (user) => `user "${user.full_name || user.email}"`,
