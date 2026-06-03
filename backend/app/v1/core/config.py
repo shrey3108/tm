@@ -210,6 +210,14 @@ class Settings(BaseSettings):
     ADMIN_FULL_NAME: str = Field(
         default="admin", description="Full name for the default admin user"
     )
+    DEFAULT_RECRUITER_EMAIL: str | None = Field(
+        default=None,
+        description="Default recruiter email address fallback",
+    )
+    DEFAULT_CANDIDATE_EMAIL: str | None = Field(
+        default=None,
+        description="Default candidate email address fallback",
+    )
 
     # Redis cache
     REDIS_URL: str = Field(
@@ -243,6 +251,16 @@ class Settings(BaseSettings):
     USE_CROSS_ENCODER: bool = Field(
         default=False,
         description="Whether to use a cross-encoder for re-ranking",
+    )
+
+    EVALUATION_PROMPT_VERSION: str = Field(
+        default="v1",
+        description="The version of the evaluation prompt to load dynamically"
+    )
+
+    GITHUB_EVALUATOR_URL: str = Field(
+        default="http://127.0.0.1:8001",
+        description="URL for the GitHub Evaluator microservice"
     )
 
     @computed_field

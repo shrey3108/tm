@@ -147,6 +147,7 @@ class CandidateResponse(BaseModel):
     task_file_path: str | None = None
     task_skills: list[str] | None = None
     is_custom_task: bool = False
+    github_evaluation_id: uuid.UUID | None = None
 
 
 # Alias for backward compatibility

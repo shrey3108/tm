@@ -19,11 +19,33 @@ class UUIDHelper:
         if hasattr(uuid, "uuid7"):
             return uuid.uuid7()
 
-        # Fallback for environments where uuid7 might not be available yet
-        # though the project specifies Python >= 3.14
-        raise RuntimeError(
-            "uuid.uuid7 is not available in the current Python environment."
+        # Pure Python fallback matching RFC 9562 for Python < 3.14
+        import time
+        import os
+        import struct
+
+        # 48-bit timestamp (milliseconds since epoch)
+        timestamp_ms = int(time.time() * 1000)
+        timestamp_bytes = struct.pack(">Q", timestamp_ms)[2:]  # 6 bytes
+
+        # Generate 10 random bytes
+        rand_bytes = os.urandom(10)
+
+        # Version 7: set 4 bits of version to 0111 (0x7)
+        ver_and_rand = (rand_bytes[0] & 0x0F) | 0x70
+
+        # Variant: set 2 bits of variant to 10xx (0x80)
+        var_and_rand = (rand_bytes[2] & 0x3F) | 0x80
+
+        # Assemble the 16-byte UUID
+        uuid_bytes = (
+            timestamp_bytes +
+            bytes([ver_and_rand, rand_bytes[1]]) +
+            bytes([var_and_rand]) +
+            rand_bytes[3:]
         )
+
+        return uuid.UUID(bytes=uuid_bytes)
 
     @staticmethod
     def to_string(u: uuid.UUID) -> str:

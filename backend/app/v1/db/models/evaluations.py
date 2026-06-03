@@ -119,33 +119,75 @@ class Evaluation(Base):
     def highlights(self) -> dict | None:
         """Parses the highlights, with backward compatibility for old formats."""
         # 1. Try parsing recommendation column (New format stores JSON here)
+        data = None
         if self.recommendation:
             try:
                 import json
                 data = json.loads(self.recommendation)
-                if isinstance(data, dict) and "overall_summary" in data:
-                    return data
             except (json.JSONDecodeError, TypeError):
                 pass
 
         # 2. Try pulling from evaluation_data (Old format stored everything there)
-        if isinstance(self.evaluation_data, dict) and ("strengths" in self.evaluation_data or "criteria" in self.evaluation_data):
-            return {
-                "strengths": self.evaluation_data.get("strengths", []),
-                "weaknesses": self.evaluation_data.get("weaknesses", []),
-                "suggested_followups": self.evaluation_data.get("suggested_followups", []),
-                "overall_summary": self.evaluation_data.get("overall_summary", self.recommendation),
-                "recommendation": f"{self.result.upper()} - {self.evaluation_data.get('overall_summary', self.recommendation)}",
-            }
+        if not (isinstance(data, dict) and "overall_summary" in data):
+            if isinstance(self.evaluation_data, dict) and ("strengths" in self.evaluation_data or "criteria" in self.evaluation_data):
+                data = {
+                    "strengths": self.evaluation_data.get("strengths", []),
+                    "weaknesses": self.evaluation_data.get("weaknesses", []),
+                    "suggested_followups": self.evaluation_data.get("suggested_followups", []),
+                    "overall_summary": self.evaluation_data.get("overall_summary", self.recommendation),
+                    "recommendation": f"{self.result.upper()} - {self.evaluation_data.get('overall_summary', self.recommendation)}",
+                }
 
         # 3. Fallback for very old or manual records
-        return {
-            "strengths": [],
-            "weaknesses": [],
-            "suggested_followups": [],
-            "overall_summary": self.recommendation,
-            "recommendation": f"{self.result.upper()} - {self.recommendation}",
-        }
+        if not isinstance(data, dict):
+            data = {
+                "strengths": [],
+                "weaknesses": [],
+                "suggested_followups": [],
+                "overall_summary": self.recommendation,
+                "recommendation": f"{self.result.upper()} - {self.recommendation}",
+            }
+
+        # Clean highlights to remove symbols/emojis and fix formatting for both old and new records
+        if isinstance(data, dict):
+            summary = data.get("overall_summary") or ""
+            if isinstance(summary, str) and summary.strip():
+                # Remove emojis and symbols
+                symbols_to_remove = ["❌", "✅", "📐", "⚠️", "✨", "📌", "🎯"]
+                for sym in symbols_to_remove:
+                    summary = summary.replace(sym, "")
+                
+                # Replace multiple newlines with a clean inline separator to prevent paragraph collapse
+                lines = [line.strip() for line in summary.split("\n") if line.strip()]
+                cleaned_summary = " ── ".join(lines)
+                
+                # Clean up any leftover dividers or spaces
+                while "  " in cleaned_summary:
+                    cleaned_summary = cleaned_summary.replace("  ", " ")
+                while " ── ── " in cleaned_summary:
+                    cleaned_summary = cleaned_summary.replace(" ── ── ", " ── ")
+                while "====" in cleaned_summary:
+                    cleaned_summary = cleaned_summary.replace("====", "")
+                
+                data["overall_summary"] = cleaned_summary.strip(" -=")
+
+            # Clean list strengths, weaknesses, followups to remove headers and emojis
+            for key in ["strengths", "weaknesses", "suggested_followups"]:
+                items = data.get(key) or []
+                cleaned_items = []
+                for item in items:
+                    if isinstance(item, str):
+                        # Filter out raw header bullets if they exist (old format compatibility)
+                        trimmed = item.strip()
+                        if trimmed.startswith("[") and trimmed.endswith("]") and ("Strengths" in trimmed or "Weaknesses" in trimmed or "Followup" in trimmed):
+                            continue
+                        # Remove emojis
+                        for sym in ["❌", "✅", "📐", "⚠️", "✨", "📌", "🎯"]:
+                            item = item.replace(sym, "")
+                        cleaned_items.append(item.strip())
+                data[key] = cleaned_items
+
+        return data
 
     @property
     def structured_evaluation_data(self) -> dict:
@@ -184,4 +226,39 @@ class Evaluation(Base):
                         if "evidence" not in details:
                             details["evidence"] = []
                             
-        return criteria
+        # Sort/order keys to guarantee perfect side-by-side grid alignment (PostgreSQL JSONB scrambles insertion order)
+        ordered_keys = [
+            "Debug approach (JD Skills)",
+            "Debug approach (Task Skills)",
+            
+            "Logical thinking (JD Skills)",
+            "Logical thinking (Task Skills)",
+            
+            "Code structure clarity (JD Skills)",
+            "Code structure clarity (Task Skills)",
+            
+            "Problem-solving ability (JD Skills)",
+            "Problem-solving ability (Task Skills)",
+            
+            "Implementation accuracy (JD Skills)",
+            "Implementation accuracy (Task Skills)",
+            
+            "Security compliance (JD Skills)",
+            "Security compliance (Task Skills)",
+            
+            "Documentation quality (JD Skills)",
+            "Documentation quality (Task Skills)"
+        ]
+        
+        sorted_criteria = {}
+        # First, add the ordered keys in the perfect alternating sequence
+        for k in ordered_keys:
+            if k in criteria:
+                sorted_criteria[k] = criteria[k]
+                
+        # Then, add any other keys that were not in our predefined list (fail-safe)
+        for k, v in criteria.items():
+            if k not in sorted_criteria:
+                sorted_criteria[k] = v
+                
+        return sorted_criteria

@@ -35,6 +35,27 @@ async def get_candidate_stage_evaluation(
     )
     evaluation = res.scalars().first()
     if not evaluation:
+        # Check if the CandidateStage exists and has a cloning/processing error
+        stage = await db.get(CandidateStage, id)
+        if stage and stage.status == "failed" and isinstance(stage.evaluation_data, dict) and "error" in stage.evaluation_data:
+            from datetime import datetime, timezone
+            # Construct a mock Evaluation dict with the error details conforming to EvaluationRead
+            return {
+                "id": id,  # Use stage id as a dummy evaluation id
+                "candidate_stage_id": id,
+                "version": 1,
+                "overall_score": 0.0,
+                "result": "fail",
+                "structured_evaluation_data": {},  # maps to evaluation_data schema field
+                "created_at": stage.completed_at or stage.started_at or datetime.now(timezone.utc),
+                "highlights": {
+                    "overall_summary": f"Evaluation Failed: {stage.evaluation_data.get('error')}",
+                    "recommendation": f"Failed with status: {stage.evaluation_data.get('status', 'unknown')}",
+                    "strengths": [],
+                    "weaknesses": [],
+                    "suggested_followups": []
+                }
+            }
         raise HTTPException(status_code=404, detail="Evaluation not found for this candidate stage")
     return evaluation
 
@@ -54,9 +75,38 @@ async def get_candidate_stage_evaluation_history(
         .order_by(Evaluation.attempt_number.desc())
     )
     evaluations = res.scalars().all()
-    if not evaluations:
+    evaluations_list = list(evaluations)
+
+    # Check if the CandidateStage is failed with an error and include it in history
+    stage = await db.get(CandidateStage, id)
+    if stage and stage.status == "failed" and isinstance(stage.evaluation_data, dict) and "error" in stage.evaluation_data:
+        from datetime import datetime, timezone
+        # If there are existing evaluations, the next attempt version is max + 1, otherwise 1
+        next_version = (evaluations_list[0].attempt_number + 1) if evaluations_list else 1
+        
+        mock_eval = {
+            "id": id,  # Use stage id as a dummy evaluation id
+            "candidate_stage_id": id,
+            "version": next_version,
+            "overall_score": 0.0,
+            "result": "fail",
+            "structured_evaluation_data": {},
+            "created_at": stage.completed_at or stage.started_at or datetime.now(timezone.utc),
+            "highlights": {
+                "overall_summary": f"Evaluation Failed: {stage.evaluation_data.get('error')}",
+                "recommendation": f"Failed with status: {stage.evaluation_data.get('status', 'unknown')}",
+                "strengths": [],
+                "weaknesses": [],
+                "suggested_followups": []
+            }
+        }
+        # Prepend so the latest failed attempt appears first in history
+        evaluations_list.insert(0, mock_eval)
+
+    if not evaluations_list:
         raise HTTPException(status_code=404, detail="No evaluations found for this candidate stage")
-    return list(evaluations)
+        
+    return evaluations_list
 
 
 @router.get("/{id}/similarity-scores")
@@ -194,4 +244,183 @@ async def candidate_stage_decision(
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to record decision: {str(e)}")
+
+
+from pydantic import BaseModel
+
+class GitHubEvaluationRequest(BaseModel):
+    github_url: str | None = None
+
+@router.post("/{id}/evaluate-github")
+async def evaluate_candidate_github_repo(
+    id: uuid.UUID,
+    payload: GitHubEvaluationRequest,
+    db: AsyncSession = Depends(get_db),
+    user: UserRead = Depends(check_permission("candidates:decide")),
+) -> Any:
+    """Trigger background GitHub repository evaluation for the Technical Practical Round."""
+    from app.v1.db.models.job_stage_configs import JobStageConfig
+    from app.v1.db.models.jobs import Job
+    from app.v1.db.models.stage_templates import StageTemplate
+    from app.v1.services.evaluation_tasks import evaluate_candidate_practical_task
+
+    # 1. Fetch CandidateStage with eager relationships
+    stmt = (
+        select(CandidateStage)
+        .options(
+            selectinload(CandidateStage.job_stage).options(
+                selectinload(JobStageConfig.job).selectinload(Job.skills),
+                selectinload(JobStageConfig.template),
+            ),
+            selectinload(CandidateStage.candidate).selectinload(Candidate.resumes),
+        )
+        .where(CandidateStage.id == id)
+    )
+    res = await db.execute(stmt)
+    stage = res.scalars().first()
+
+    if not stage:
+        raise HTTPException(status_code=404, detail="Candidate stage not found")
+
+    # 2. Verify stage is Technical Practical Round
+    stage_template_name = stage.job_stage.template.name if stage.job_stage and stage.job_stage.template else None
+    if stage_template_name != "Technical Practical Round":
+        raise HTTPException(
+            status_code=400,
+            detail=f"This stage is not configured for Technical Practical Round evaluation (found: {stage_template_name}).",
+        )
+
+    candidate = stage.candidate
+    job = stage.job_stage.job
+
+    if not candidate or not job:
+        raise HTTPException(status_code=400, detail="Candidate or Job association missing.")
+
+    # 3. Resolve GitHub URL (payload URL takes precedence over candidate.task_file_path)
+    github_url = payload.github_url
+    if not github_url:
+        task_path = candidate.task_file_path or ""
+        if task_path.startswith(("http://", "https://")) and "github.com" in task_path.lower():
+            github_url = task_path
+
+    if not github_url:
+        raise HTTPException(
+            status_code=400,
+            detail="GitHub URL not found. Please provide a valid GitHub repository URL in the request body.",
+        )
+
+    # 4. Save/update candidate task_file_path with the solution repo URL
+    candidate.task_file_path = github_url
+
+    # 5. Fallback logic for project skills
+    task_skills = candidate.task_skills
+    if not task_skills:
+        # Fallback to job default task skills
+        task_skills = job.task_skills or []
+    
+    if not task_skills:
+        raise HTTPException(
+            status_code=400,
+            detail="Please upload a task description first (Job default task or Candidate custom task) before running the repository evaluation.",
+        )
+
+    # 6. Get Job standard skills
+    jd_skills = [skill.name for skill in job.skills] if job.skills else []
+
+    # 7. Trigger microservice evaluation submit synchronously to detect duplicate/cloning errors immediately
+    from app.v1.core.config import settings
+    import httpx
+
+    evaluator_url = settings.GITHUB_EVALUATOR_URL
+    submit_url = f"{evaluator_url.rstrip('/')}/api/v1/repositories"
+    # Prioritize settings.DEFAULT_RECRUITER_EMAIL from .env over user.email
+    recruiter_email = settings.DEFAULT_RECRUITER_EMAIL or (user.email if user else None)
+
+    # Prioritize settings.DEFAULT_CANDIDATE_EMAIL from .env over candidate.email
+    candidate_email = settings.DEFAULT_CANDIDATE_EMAIL or (candidate.email if (candidate and candidate.email) else None)
+
+    payload = {
+        "github_url": github_url,
+        "job_title": job.title if job else "Software Engineer",
+        "jd_skills": jd_skills,
+        "project_required_skills": task_skills,
+        "repo_id": str(candidate.id) if candidate else None,
+        "candidate_email": candidate_email,
+        "recruiter_email": recruiter_email,
+    }
+
+    eval_id = None
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(submit_url, json=payload)
+            
+            if response.status_code not in (200, 201):
+                error_msg = "Failed to submit repository to evaluator."
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get("error_message") or error_data.get("detail") or error_data.get("message") or error_data.get("error") or response.text
+                    eval_id = error_data.get("evaluation_id")
+                except Exception:
+                    error_msg = response.text or error_msg
+                    eval_id = None
+                
+                if response.status_code == 409:
+                    if eval_id:
+                        from app.v1.core.logging import get_logger
+                        get_logger(__name__).info(f"Repository already submitted. Re-using evaluation ID: {eval_id}")
+                    else:
+                        raise HTTPException(status_code=409, detail=error_msg)
+                else:
+                    stage.evaluation_data = {
+                        "error": error_msg,
+                        "status": "submission_error"
+                    }
+                    await db.commit()
+                    raise HTTPException(status_code=response.status_code, detail=error_msg)
+
+            submit_data = response.json()
+            eval_id = submit_data.get("evaluation_id")
+            submit_status = submit_data.get("status")
+
+            # Check if there is an immediate cloning_error or other failure in submission response
+            if not eval_id or submit_status in ("cloning_error", "failed"):
+                error_msg = submit_data.get("error_message") or submit_data.get("message") or submit_data.get("detail") or "Failed to initiate evaluation on evaluator service."
+                stage.evaluation_data = {
+                    "error": error_msg,
+                    "status": submit_status or "submission_error"
+                }
+                await db.commit()
+                raise HTTPException(status_code=400, detail=error_msg)
+
+    except httpx.HTTPError as he:
+        error_msg = f"Communication with evaluator microservice failed: {str(he)}"
+        stage.evaluation_data = {
+            "error": error_msg,
+            "status": "communication_error"
+        }
+        await db.commit()
+        raise HTTPException(status_code=502, detail=error_msg)
+
+    # 8. Set stage status to processing since submission succeeded
+    stage.status = "processing"
+    stage.evaluation_data = {}  # Reset previous errors
+    await db.commit()
+
+    # 9. Dispatch async Celery task
+    evaluate_candidate_practical_task.delay(
+        str(id),
+        github_url,
+        jd_skills,
+        task_skills,
+        recruiter_email=recruiter_email,
+        eval_id=eval_id,
+    )
+
+    return {
+        "message": "GitHub repository evaluation task has been triggered successfully in the background.",
+        "candidate_stage_id": id,
+        "github_url": github_url,
+        "status": "processing",
+        "evaluation_id": eval_id,
+    }
 

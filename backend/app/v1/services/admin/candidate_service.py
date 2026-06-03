@@ -861,10 +861,13 @@ class CandidateAdminService:
             if cs.evaluation_data:
                 # For Stage 0, evaluation_data is the ResumeMatchAnalysis
                 # For interview stages, it's the AI eval results
-                if cs.status in ["active", "pending"]:
+                if cs.status in ["active", "pending", "completed"]:
                     if isinstance(cs.evaluation_data, dict):
-                        # Extract pass_fail from AI data if present
+                        # Extract pass_fail or result from AI data if present
                         ai_pf = cs.evaluation_data.get("pass_fail") or cs.evaluation_data.get("result")
+                        if "is_passed" in cs.evaluation_data:
+                            ai_pf = "passed" if cs.evaluation_data["is_passed"] else "failed"
+                        
                         if ai_pf:
                             ai_result_val = ai_pf
                         elif "match_percentage" in cs.evaluation_data:
@@ -1022,6 +1025,7 @@ class CandidateAdminService:
             task_file_path=task_file_path,
             task_skills=task_skills,
             is_custom_task=is_custom_task,
+            github_evaluation_id=candidate.github_evaluation_id,
         )
 
 

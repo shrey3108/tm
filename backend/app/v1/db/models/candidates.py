@@ -124,6 +124,11 @@ class Candidate(Base):
         nullable=True,
     )
 
+    github_evaluation_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        nullable=True,
+    )
+
     # TIMESTAMPS
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
