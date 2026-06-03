@@ -4,8 +4,8 @@
  */
 
 import { useCallback } from "react";
-import { adminJobPriorityService } from "@/apis/admin";
 import type { JobPriorityRead } from "@/types/admin";
+import { useCreatePriorityMutation, useUpdatePriorityMutation } from "@/hooks/mutations/admin/useJobPriority";
 import {
   Button,
   Input,
@@ -46,6 +46,8 @@ const CreateJobPriorityModal = ({
   priority,
 }: CreateJobPriorityModalProps) => {
   const isEditMode = !!priority;
+  const createPriorityMutation = useCreatePriorityMutation();
+  const updatePriorityMutation = useUpdatePriorityMutation();
 
   const mapItemToValues = useCallback(
     (p: JobPriorityRead): JobPriorityCreateFormValues => ({
@@ -55,18 +57,15 @@ const CreateJobPriorityModal = ({
     [],
   );
 
-  const onSubmit = useCallback(
-    async (data: JobPriorityCreateFormValues) => {
-      if (isEditMode && priority) {
-        await adminJobPriorityService.updatePriority(priority.id, data);
-      } else {
-        await adminJobPriorityService.createPriority(data);
-      }
-      onPrioritySaved();
-      handleClose();
-    },
-    [isEditMode, priority, onPrioritySaved, handleClose],
-  );
+  const onSubmit = async (data: JobPriorityCreateFormValues) => {
+    if (isEditMode && priority) {
+      await updatePriorityMutation.mutateAsync({ id: priority.id, data });
+    } else {
+      await createPriorityMutation.mutateAsync(data);
+    }
+    onPrioritySaved();
+    handleClose();
+  };
 
   const formModal = useFormModal<JobPriorityCreateFormValues, JobPriorityRead>({
     schema: jobPriorityCreateSchema,

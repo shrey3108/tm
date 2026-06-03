@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useMemo } from "react";
 import { Loader2 } from "lucide-react";
 import ErrorDisplay from "@/components/shared/ErrorDisplay";
 import { Button } from "@/components/ui/button";
@@ -12,10 +12,9 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { adminJobService } from "@/apis/admin";
-import type { JobResumeInfoResponse } from "@/types/resume";
 import { extractErrorMessage } from "@/utils/error";
 import { DEFAULT_PASSING_THRESHOLD } from "@/constants";
+import { useAdminJobResumeDetailQuery } from "@/hooks/queries/admin/useAdminJobResumeDetail";
 
 interface CandidateAnalysisModalProps {
   show: boolean;
@@ -32,34 +31,19 @@ const CandidateAnalysisModal = ({
   resumeId,
   passing_threshold = DEFAULT_PASSING_THRESHOLD,
 }: CandidateAnalysisModalProps) => {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [data, setData] = useState<JobResumeInfoResponse | null>(null);
+  const {
+    data,
+    isLoading: loading,
+    error: queryError,
+    refetch: fetchData,
+  } = useAdminJobResumeDetailQuery(jobId, resumeId, {
+    enabled: show && !!jobId && !!resumeId,
+  });
 
-  const fetchData = useCallback(async () => {
-    if (!jobId || !resumeId) return;
-
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await adminJobService.getJobResumeDetail(jobId, resumeId);
-      setData(result);
-    } catch (err) {
-      console.error("Failed to fetch candidate analysis details:", err);
-      setError(extractErrorMessage(err, "Failed to load analysis details."));
-    } finally {
-      setLoading(false);
-    }
-  }, [jobId, resumeId]);
-
-  useEffect(() => {
-    if (show && jobId && resumeId) {
-      fetchData();
-    } else if (!show) {
-      setData(null);
-      setError(null);
-    }
-  }, [show, jobId, resumeId, fetchData]);
+  const error = useMemo(
+    () => (queryError ? extractErrorMessage(queryError, "Failed to load analysis details.") : null),
+    [queryError]
+  );
 
   return (
     <Dialog open={show} onOpenChange={(open) => !open && onHide()}>

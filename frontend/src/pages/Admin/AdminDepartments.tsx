@@ -3,7 +3,6 @@
  * Displays all departments with ability to create, edit, and delete.
  */
 import { useState, useEffect } from "react";
-import { adminDepartmentService } from "@/apis/admin";
 import type { DepartmentRead } from "@/types/admin";
 import AppPageShell from "@/components/shared/AppPageShell";
 import PageHeader from "@/components/shared/PageHeader";
@@ -11,7 +10,7 @@ import { useToast } from "@/components/shared/ToastProvider";
 import { DataTable } from "@/components/shared/DataTable";
 import ErrorDisplay from "@/components/shared/ErrorDisplay";
 import { CreateDepartmentModal, DeleteModal } from "@/components/modal";
-import { useAdminData, useDebouncedValue } from "@/hooks";
+import { useDebouncedValue } from "@/hooks";
 import { Edit2, Trash2Icon, ArrowUpDown, AlertCircle, Plus } from "lucide-react";
 import { extractErrorMessage } from "@/utils/error";
 import type { ColumnDef, PaginationState } from "@tanstack/react-table";
@@ -22,54 +21,46 @@ import PermissionGuard from "@/components/auth/PermissionGuard";
 import { PERMISSIONS, hasPermissions } from "@/lib/permissions";
 import { useAppSelector } from "@/store/hooks";
 import { selectCurrentUser } from "@/store/slices/authSlice";
+import { useDepartment } from "@/hooks/queries/admin/useDepartment";
+import { useDeleteDepartmentMutation } from "@/hooks/mutations/admin/useDepartment";
 
 const AdminDepartments = () => {
   const toast = useToast();
   const user = useAppSelector(selectCurrentUser);
   const hasManagePermission = hasPermissions(user?.permissions, PERMISSIONS.DEPARTMENTS_MANAGE);
+  const deleteDepartmentMutation = useDeleteDepartmentMutation();
   const [showModal, setShowModal] = useState(false);
   const [selectedDepartment, setSelectedDepartment] = useState<DepartmentRead | null>(null);
-
   const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 10,
   });
   const [search, setSearch] = useState("");
-  const debouncedSearch = useDebouncedValue(search)
-  const {
-    data: departments,
-    total,
-    loading,
-    error,
-    fetchData: fetchDepartments,
-  } = useAdminData<DepartmentRead>(
-    () => adminDepartmentService.getAllDepartments(pageIndex * pageSize, pageSize, debouncedSearch),
-    { fetchOnMount: false }
-  );
-
-
-  // Reset to first page when search changes
-  useEffect(() => {
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-  }, [debouncedSearch]);
-
-
-  // Refetch when pagination changes
-  useEffect(() => {
-    fetchDepartments();
-  }, [pageIndex, pageSize, fetchDepartments, debouncedSearch]);
-
-  const [overallTotal, setOverallTotal] = useState(0);
-  useEffect(() => {
-    if (!debouncedSearch) {
-      setOverallTotal(total);
-    }
-  }, [total, debouncedSearch]);
-
   const [_deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<DepartmentRead | null>(null);
+  const [overallTotal, setOverallTotal] = useState(0);
+
+
+  const debouncedSearch = useDebouncedValue(search)
+
+  const { data: departments, total, loading, error, refetch } = useDepartment(pageIndex * pageSize, pageSize, debouncedSearch)
+
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  };
+
+  useEffect(() => {
+    if (!debouncedSearch && total !== overallTotal) {
+      queueMicrotask(() => {
+        setOverallTotal(total);
+      });
+    }
+  }, [total, debouncedSearch, overallTotal]);
+
+
 
   /**
    * Performs immediate deletion of a department.
@@ -79,8 +70,7 @@ const AdminDepartments = () => {
     try {
       setDeletingId(dept.id);
       setDeleteError(null);
-      await adminDepartmentService.deleteDepartment(dept.id);
-      fetchDepartments();
+      await deleteDepartmentMutation.mutateAsync(dept.id);
       toast.success("Department deleted successfully");
     } catch (err) {
       const errMsg = extractErrorMessage(err);
@@ -115,7 +105,7 @@ const AdminDepartments = () => {
     const jobNames = jobNamesStr
       .split(",")
       .map((name) => {
-        let trimmed = name.trim();
+        const trimmed = name.trim();
         // remove quotes if they exist (for robustness)
         if (
           (trimmed.startsWith("'") && trimmed.endsWith("'")) ||
@@ -185,58 +175,58 @@ const AdminDepartments = () => {
     },
     ...(hasManagePermission
       ? [
-          {
-            id: "actions",
-            header: () => (
-              <div className="flex items-center justify-center gap-2">
-                <span className="font-semibold">Actions</span>
-              </div>
-            ),
-            cell: ({ row }) => (
-              <div className="flex items-center justify-center gap-2">
-                <HoverCard>
-                  <HoverCardTrigger
-                    render={(props) => (
-                      <Button
-                        {...props}
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleEditClick(row.original)}
-                        className="h-9 w-9 rounded-xl hover:bg-primary/10 hover:text-primary transition-colors flex items-center justify-center shrink-0"
-                      >
-                        <Edit2 className="h-4 w-4 shrink-0" />
-                        <span className="sr-only">Edit</span>
-                      </Button>
-                    )}
-                  />
-                  <HoverCardContent className="w-fit px-3 py-1.5 text-xs font-medium" side="top">
-                    <span className="text-primary">Edit Department</span>
-                  </HoverCardContent>
-                </HoverCard>
+        {
+          id: "actions",
+          header: () => (
+            <div className="flex items-center justify-center gap-2">
+              <span className="font-semibold">Actions</span>
+            </div>
+          ),
+          cell: ({ row }) => (
+            <div className="flex items-center justify-center gap-2">
+              <HoverCard>
+                <HoverCardTrigger
+                  render={(props) => (
+                    <Button
+                      {...props}
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleEditClick(row.original)}
+                      className="h-9 w-9 rounded-xl hover:bg-primary/10 hover:text-primary transition-colors flex items-center justify-center shrink-0"
+                    >
+                      <Edit2 className="h-4 w-4 shrink-0" />
+                      <span className="sr-only">Edit</span>
+                    </Button>
+                  )}
+                />
+                <HoverCardContent className="w-fit px-3 py-1.5 text-xs font-medium" side="top">
+                  <span className="text-primary">Edit Department</span>
+                </HoverCardContent>
+              </HoverCard>
 
-                <HoverCard>
-                  <HoverCardTrigger
-                    render={(props) => (
-                      <Button
-                        {...props}
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDeleteClick(row.original)}
-                        className="h-9 w-9 rounded-xl hover:bg-destructive/10 hover:text-destructive transition-colors flex items-center justify-center shrink-0"
-                      >
-                        <Trash2Icon className="h-4 w-4 shrink-0" />
-                        <span className="sr-only">Delete</span>
-                      </Button>
-                    )}
-                  />
-                  <HoverCardContent className="w-fit px-3 py-1.5 text-xs font-medium" side="top">
-                    <span className="text-destructive">Delete Department</span>
-                  </HoverCardContent>
-                </HoverCard>
-              </div>
-            ),
-          } as ColumnDef<DepartmentRead>,
-        ]
+              <HoverCard>
+                <HoverCardTrigger
+                  render={(props) => (
+                    <Button
+                      {...props}
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDeleteClick(row.original)}
+                      className="h-9 w-9 rounded-xl hover:bg-destructive/10 hover:text-destructive transition-colors flex items-center justify-center shrink-0"
+                    >
+                      <Trash2Icon className="h-4 w-4 shrink-0" />
+                      <span className="sr-only">Delete</span>
+                    </Button>
+                  )}
+                />
+                <HoverCardContent className="w-fit px-3 py-1.5 text-xs font-medium" side="top">
+                  <span className="text-destructive">Delete Department</span>
+                </HoverCardContent>
+              </HoverCard>
+            </div>
+          ),
+        } as ColumnDef<DepartmentRead>,
+      ]
       : []),
   ];
 
@@ -256,7 +246,7 @@ const AdminDepartments = () => {
       />
 
       {error && !departments.length ? (
-        <ErrorDisplay message={error} onRetry={fetchDepartments} />
+        <ErrorDisplay message={error.message} onRetry={refetch} />
       ) : (
         <DataTable
           columns={columns}
@@ -264,7 +254,7 @@ const AdminDepartments = () => {
           loading={loading}
           searchKey="name"
           searchValue={search}
-          onSearchChange={setSearch}
+          onSearchChange={handleSearchChange}
           searchPlaceholder="Filter departments by name..."
           initialSorting={[{ id: "name", desc: false }]}
           isServerSide={true}
@@ -283,7 +273,7 @@ const AdminDepartments = () => {
       <CreateDepartmentModal
         show={showModal}
         handleClose={handleCloseModal}
-        onDepartmentSaved={fetchDepartments}
+        onDepartmentSaved={refetch}
         department={selectedDepartment}
       />
 

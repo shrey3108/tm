@@ -31,6 +31,7 @@ interface JobTableFiltersProps {
   setTitleFilter: (value: string) => void;
   statusFilter: string[];
   setStatusFilter: (value: string[]) => void;
+  statusOptions: string[];
   departmentFilter: string[];
   setDepartmentFilter: (value: string[]) => void;
   dateRange: DateRange | undefined;
@@ -50,6 +51,7 @@ export const JobTableFilters = ({
   setTitleFilter,
   statusFilter,
   setStatusFilter,
+  statusOptions,
   departmentFilter,
   setDepartmentFilter,
   dateRange,
@@ -63,7 +65,6 @@ export const JobTableFilters = ({
   totalCount,
   minDate,
 }: JobTableFiltersProps) => {
-  const statusOptions = ["open", "closed"];
 
   return (
     <div className="flex flex-col gap-4 p-4 bg-muted/20 rounded-2xl border border-muted-foreground/10 overflow-hidden">
@@ -149,7 +150,7 @@ export const JobTableFilters = ({
                     : "border-input bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                 )}
               >
-                <span className="truncate mr-auto text-left">
+                <span className="truncate mr-auto text-left capitalize">
                   {departmentFilter.length === 0
                     ? "Departments"
                     : departmentFilter.length <= FILTER_DISPLAY_LIMIT
@@ -159,7 +160,7 @@ export const JobTableFilters = ({
                 <ChevronDown className="h-4 w-4 opacity-60 shrink-0" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-fit min-w-[160px] p-2 rounded-xl shadow-xl">
-                <div className="px-1 pb-2">
+                {departmentFilter.length >= FILTER_DISPLAY_LIMIT || departmentOptions.length >= FILTER_DISPLAY_LIMIT ? <div className="px-1 pb-2">
                   <div className="relative">
                     <Input
                       placeholder="Search departments..."
@@ -169,7 +170,7 @@ export const JobTableFilters = ({
                       onKeyDown={(e) => e.stopPropagation()}
                     />
                   </div>
-                </div>
+                </div> : null}
                 <DropdownMenuSeparator />
                 <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
                   <DropdownMenuGroup>
@@ -194,7 +195,7 @@ export const JobTableFilters = ({
                             className="rounded-lg my-0.5 capitalize pl-2 pr-6"
                             closeOnClick={true}
                           >
-                            {d.name}
+                            {capitalize(d.name)}
                           </DropdownMenuCheckboxItem>
                         ))}
                         {departmentOptions.length > FILTER_DISPLAY_LIMIT && (

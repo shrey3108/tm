@@ -1,33 +1,14 @@
-import { useEffect, useState } from "react";
-import { authService } from "@/apis/auth";
-import type { UserRead } from "@/types/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Mail, User, ShieldCheck, Calendar } from "lucide-react";
 import AppPageShell from "@/components/shared/AppPageShell";
 import PageHeader from "@/components/shared/PageHeader";
+import { useAuthUser } from "@/hooks/queries/auth/useAuthUser";
+import { extractErrorMessage } from "@/utils/error";
 
 export default function ProfilePage() {
-  const [user, setUser] = useState<UserRead | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const userData = await authService.getMe();
-        setUser(userData);
-      } catch (err) {
-        setError("Failed to load profile. Please try again later.");
-        console.error("Profile fetch error:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProfile();
-  }, []);
+  const { data: user, isLoading: loading, error } = useAuthUser();
 
   if (loading) {
     return (
@@ -36,11 +17,12 @@ export default function ProfilePage() {
       </div>
     );
   }
+  const errorMessage = extractErrorMessage(error);
 
-  if (error || !user) {
+  if (errorMessage || !user) {
     return (
       <div className="flex h-[80vh] items-center justify-center text-destructive">
-        {error || "User not found"}
+        {errorMessage || "User not found"}
       </div>
     );
   }

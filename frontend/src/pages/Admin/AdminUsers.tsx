@@ -4,7 +4,6 @@
  */
 
 import { useState, useEffect } from "react";
-import { adminUserService } from "@/apis/admin";
 import type { UserAdminRead } from "@/types/admin";
 import AppPageShell from "@/components/shared/AppPageShell";
 import { DateDisplay } from "@/components/shared/DateDisplay";
@@ -18,7 +17,7 @@ import {
   // CreateUserModal,
   DeleteModal
 } from "@/components/modal";
-import { useAdminData, useDebouncedValue, useDeleteConfirmation } from "@/hooks";
+import { useDebouncedValue, useDeleteConfirmation } from "@/hooks";
 import PermissionGuard from "@/components/auth/PermissionGuard";
 import { PERMISSIONS } from "@/lib/permissions";
 import { UserTableFilters } from "./components/UserTableFilters";
@@ -28,9 +27,12 @@ import type { ColumnDef, PaginationState } from "@tanstack/react-table";
 import { ArrowUpDown } from "lucide-react";
 import { Button } from "@/components";
 import { useAuth } from "@/store/hooks";
+import { useAdminUsers } from "@/hooks/queries/admin/useAdminUsers";
+import { useDeleteUserMutation } from "@/hooks/mutations/admin/useUser";
 
 const AdminUsers = () => {
   const toast = useToast();
+  const { user: currentUser } = useAuth();
   const [showModal, setShowModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserAdminRead | null>(null);
 
@@ -38,16 +40,8 @@ const AdminUsers = () => {
     pageIndex: 0,
     pageSize: 10,
   });
-  const {
-    data: users,
-    total,
-    loading,
-    error,
-    fetchData: fetchUsers,
-  } = useAdminData<UserAdminRead>(
-    () => adminUserService.getAllUsers(pageIndex * pageSize, pageSize, debouncedSearch),
-    { fetchOnMount: false }
-  );
+
+  const [users, setUsers] = useState<UserAdminRead[]>([]);
 
   const {
     searchFilter,
@@ -65,20 +59,25 @@ const AdminUsers = () => {
     minDate,
   } = useUserTableFilters(users);
 
-  const debouncedSearch = useDebouncedValue(searchFilter)
-  const { user: currentUser } = useAuth();
+  const debouncedSearch = useDebouncedValue(searchFilter);
 
-  // Reset to first page when search changes
+  const { data: queryUsers, total, loading, error, refetch, } = useAdminUsers({
+    skip: pageIndex * pageSize,
+    limit: pageSize,
+    q: debouncedSearch,
+  });
+
   useEffect(() => {
+    setUsers(queryUsers);
+  }, [queryUsers]);
+
+  const handleSearchChange = (value: string) => {
+    setSearchFilter(value);
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-  }, [debouncedSearch]);
+  };
 
 
-
-  // Refetch when pagination or search changes
-  useEffect(() => {
-    fetchUsers();
-  }, [pageIndex, pageSize, debouncedSearch, fetchUsers]);
+  const deleteUserMutation = useDeleteUserMutation();
 
   const {
     showModal: showDeleteModal,
@@ -89,9 +88,8 @@ const AdminUsers = () => {
     error: deleteError,
     message: deleteMessage,
   } = useDeleteConfirmation<UserAdminRead>({
-    deleteFn: (id) => adminUserService.deleteUser(id as string),
+    mutation: deleteUserMutation,
     onSuccess: () => {
-      fetchUsers();
       toast.success("User deleted successfully");
     },
     itemTitle: (user) => `user "${user.full_name || user.email}"`,
@@ -233,12 +231,12 @@ const AdminUsers = () => {
       />
 
       {error && !users.length ? (
-        <ErrorDisplay message={error} onRetry={fetchUsers} />
+        <ErrorDisplay message={error.message} onRetry={refetch} />
       ) : (
         <div className="space-y-4">
           <UserTableFilters
             searchFilter={searchFilter}
-            setSearchFilter={setSearchFilter}
+            setSearchFilter={handleSearchChange}
             statusFilter={statusFilter}
             setStatusFilter={setStatusFilter}
             roleFilter={roleFilter}
@@ -272,7 +270,7 @@ const AdminUsers = () => {
       <CreateUserModal
         show={showModal}
         handleClose={handleCloseModal}
-        onUserSaved={fetchUsers}
+        onUserSaved={refetch}
         user={selectedUser}
       />
 

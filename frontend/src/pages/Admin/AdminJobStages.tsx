@@ -6,12 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Info, Edit2, Trash2, ArrowUpDown, Plus } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { StageTemplate } from "@/types/stage";
-import { adminStageTemplateService } from "@/apis/admin/stageTemplate";
-import { useToast } from "@/components/shared";
+import { ErrorDisplay, useToast } from "@/components/shared";
 import { StageDeleteDialog } from "@/components/admin/StageDeleteDialog";
 import { StageDetailDialog } from "@/components/admin/StageDetailDialog";
-import { useAdminData, useDebouncedValue } from "@/hooks";
+import { useDebouncedValue } from "@/hooks";
 import { useNavigate } from "react-router-dom";
+import {
+  useUpdateStageTemplateMutation,
+  useDeleteStageTemplateMutation,
+} from "@/hooks/mutations/admin/useJobStage";
 import { slugify } from "@/utils/slug";
 import type { PaginationState } from "@tanstack/react-table";
 import {
@@ -21,6 +24,7 @@ import {
 } from "@/components/ui/hover-card";
 import { Switch } from "@/components/ui/switch"
 import { extractErrorMessage } from "@/utils/error";
+import { useJobStage } from "@/hooks/queries/admin/useJobStage";
 
 /**
  * Admin page for managing job stage templates.
@@ -33,42 +37,32 @@ const AdminJobStages = () => {
     pageIndex: 0,
     pageSize: 10,
   });
+
   const [search, setSearch] = useState("");
-
-  const debouncedSearch = useDebouncedValue(search, 500);
-  // Reset to first page when search changes
-  useEffect(() => {
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-  }, [debouncedSearch]);
-
-  // Dialog states
   const [selectedTemplate, setSelectedTemplate] = useState<StageTemplate | null>(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
-
-  const {
-    data,
-    total,
-    loading,
-    fetchData: fetchTemplates,
-    setData,
-    setTotal,
-  } = useAdminData<StageTemplate>(
-    () => adminStageTemplateService.getAllTemplates(pageIndex * pageSize, pageSize, debouncedSearch),
-    { fetchOnMount: false }
-  );
-
-  // Refetch when pagination or search changes
-  useEffect(() => {
-    fetchTemplates();
-  }, [pageIndex, pageSize, debouncedSearch, fetchTemplates]);
-
   const [overallTotal, setOverallTotal] = useState(0);
+
+  const debouncedSearch = useDebouncedValue(search, 500);
+
+  const updateStageMutation = useUpdateStageTemplateMutation();
+  const deleteStageMutation = useDeleteStageTemplateMutation();
+
+  const { data, total, loading, refetch, error } = useJobStage(pageIndex * pageSize, pageSize, debouncedSearch)
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  };
+
+
   useEffect(() => {
-    if (!debouncedSearch) {
-      setOverallTotal(total);
+    if (!debouncedSearch && overallTotal !== total) {
+      queueMicrotask(() => {
+        setOverallTotal(total);
+      })
     }
-  }, [total, debouncedSearch]);
+  }, [total, debouncedSearch, overallTotal]);
 
   const handleShow = (template: StageTemplate) => {
     setSelectedTemplate(template);
@@ -83,22 +77,11 @@ const AdminJobStages = () => {
   };
 
   const handleDefaultToggle = async (template: StageTemplate, isChecked: boolean) => {
-    const previousData = [...data];
-
-    // Optimistic update
-    setData(prev => prev.map(t =>
-      t.id === template.id ? { ...t, is_default: isChecked } : t
-    ));
-
     try {
-      await adminStageTemplateService.updateTemplate(template.id, { is_default: isChecked });
+      await updateStageMutation.mutateAsync({ id: template.id, data: { is_default: isChecked } });
       toast.success("Stage template updated successfully");
-
-      // fetchTemplates(); 
     } catch (error) {
-      // Revert on error
-      const errorMessage = extractErrorMessage(error)
-      setData(previousData);
+      const errorMessage = extractErrorMessage(error);
       toast.error(errorMessage || "Failed to update stage template");
     }
   };
@@ -111,22 +94,11 @@ const AdminJobStages = () => {
   const confirmDelete = async () => {
     if (!selectedTemplate) return;
 
-    const previousData = [...data];
-    const previousTotal = total;
-
-    // Optimistic update
-    setData(prev => prev.filter(t => t.id !== selectedTemplate.id));
-    setTotal(prev => prev - 1);
-
     try {
-      await adminStageTemplateService.deleteTemplate(selectedTemplate.id);
+      await deleteStageMutation.mutateAsync(selectedTemplate.id);
       toast.success("Stage template deleted successfully");
-      // fetchTemplates(); 
     } catch (error) {
-      // Revert on error
-      const errorMessage = extractErrorMessage(error)
-      setData(previousData);
-      setTotal(previousTotal);
+      const errorMessage = extractErrorMessage(error);
       toast.error(errorMessage || "Failed to delete stage template");
     } finally {
       setIsDeleteOpen(false);
@@ -274,26 +246,26 @@ const AdminJobStages = () => {
           </Button>
         }
       />
-
-      <DataTable
-        columns={columns}
-        data={data}
-        loading={loading}
-        searchKey="name"
-        searchValue={search}
-        onSearchChange={setSearch}
-        searchPlaceholder="Search templates..."
-        isServerSide={true}
-        pageIndex={pageIndex}
-        pageSize={pageSize}
-        pageCount={Math.ceil(total / pageSize)}
-        onPaginationChange={setPagination}
-        totalRecords={total}
-        totalCount={overallTotal}
-        resultCount={data.length}
-        entityName="Templates"
-      />
-
+      {error && !data ? <ErrorDisplay message={error.message} onRetry={refetch} /> :
+        <DataTable
+          columns={columns}
+          data={data}
+          loading={loading}
+          searchKey="name"
+          searchValue={search}
+          onSearchChange={handleSearchChange}
+          searchPlaceholder="Search templates..."
+          isServerSide={true}
+          pageIndex={pageIndex}
+          pageSize={pageSize}
+          pageCount={Math.ceil(total / pageSize)}
+          onPaginationChange={setPagination}
+          totalRecords={total}
+          totalCount={overallTotal}
+          resultCount={data.length}
+          entityName="Templates"
+        />
+      }
 
       <StageDetailDialog
         isOpen={isDetailOpen}

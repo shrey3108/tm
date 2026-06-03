@@ -4,7 +4,6 @@
  */
 
 import { useCallback } from "react";
-import { adminPermissionService } from "@/apis/admin";
 import {
   Button,
   Input,
@@ -25,6 +24,7 @@ import {
 import { useFormModal } from "@/hooks";
 import { permissionCreateSchema, type PermissionCreateFormValues } from "@/schemas/admin";
 import ErrorDisplay from "@/components/shared/ErrorDisplay";
+import { useCreatePermissionMutation } from "@/hooks/mutations/admin/usePermission";
 
 /**
  * Props for the CreatePermissionModalProps component.
@@ -46,13 +46,15 @@ const CreatePermissionModal = ({
   handleClose,
   onPermissionCreated,
 }: CreatePermissionModalProps) => {
+  const { mutateAsync: createPermission } = useCreatePermissionMutation();
+
   const onSubmit = useCallback(
     async (data: PermissionCreateFormValues) => {
-      await adminPermissionService.createPermission(data);
+      await createPermission(data);
       onPermissionCreated();
       handleClose();
     },
-    [onPermissionCreated, handleClose]
+    [onPermissionCreated, handleClose, createPermission]
   );
 
   const formModal = useFormModal<PermissionCreateFormValues, null>({

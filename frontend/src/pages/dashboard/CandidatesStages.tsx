@@ -70,7 +70,7 @@ export default function CandidatesStages() {
   return (
     <AppPageShell width="full" className="p-0 overflow-hidden bg-background">
       <StageCandidatesHeader
-        job={job}
+        job={job || null}
         candidateName={candidateName}
         onBack={() => navigate(-1)}
         onInfoClick={() => setIsJobModalOpen(true)}
@@ -91,8 +91,8 @@ export default function CandidatesStages() {
             jobId={job?.id}
             onSelectStage={setCurrentStage}
             selectedStage={currentStage}
-            job={job}
-            candidate={candidate}
+            job={job || undefined}
+            candidate={candidate || undefined}
             refetch={refetchTimeline}
             currentStage={currentStage}
             stageId={instanceId}
@@ -172,7 +172,7 @@ export default function CandidatesStages() {
       <JobInfoModal
         isOpen={isJobModalOpen}
         onClose={() => setIsJobModalOpen(false)}
-        job={job}
+        job={job || null}
       />
       {candidateData && (
         <CandidateDetailsModal

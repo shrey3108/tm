@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { X, Plus, Check, Search, Loader2 } from "lucide-react";
 import {
@@ -13,8 +13,8 @@ import type { SkillRead } from "@/types/admin";
 import { cn } from "@/lib/utils";
 import { Required } from "@/components/job-form/Required";
 import { CreateSkillModal } from "../modal";
-import { adminSkillService } from "@/apis/admin/skill";
-import { useAdminData } from "@/hooks";
+import { useDebouncedValue } from "@/hooks/useDebounced";
+import { useSkill } from "@/hooks/queries/admin/useSkill";
 
 interface SkillSelectorSectionProps {
   initialSelectedSkills?: SkillRead[];
@@ -33,6 +33,11 @@ export const SkillSelectorSection = ({
     defaultValue: [],
   });
 
+  const debouncedSearch = useDebouncedValue(skillSearch);
+
+  const { data: skills, loading: isLoading, refetch: refetchSkills } = useSkill(0, 100, debouncedSearch);
+
+  const displaySkills = skills;
   const toggleSkill = (skillId: string) => {
     const current = [...selectedSkillIds];
     const index = current.indexOf(skillId);
@@ -47,25 +52,6 @@ export const SkillSelectorSection = ({
       shouldTouch: true,
     });
   };
-
-
-  const {
-    data: skills,
-    fetchData: fetchSkills,
-    loading: isLoading,
-  } = useAdminData<SkillRead>(
-    () => adminSkillService.getAllSkills(0, 100, skillSearch),
-    { fetchOnMount: true, initialData: [] },
-  );
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchSkills();
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [skillSearch, fetchSkills]);
-
-  const displaySkills = skills;
 
   const selectedSkills = useMemo(() => {
     const pool = [...initialSelectedSkills, ...skills];
@@ -205,7 +191,7 @@ export const SkillSelectorSection = ({
         </div>
       )}
       <CreateSkillModal show={showModal} handleClose={handleCloseModal}
-        onSkillSaved={fetchSkills}
+        onSkillSaved={refetchSkills}
         skill={selectedSkill} />
     </div>
   );

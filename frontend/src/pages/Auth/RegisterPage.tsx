@@ -6,10 +6,9 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useNavigate, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { CheckCircle, Eye, EyeOff, Loader2 } from "lucide-react";
 import { registerSchema, type RegisterFormValues } from "@/schemas/auth";
-import { authService } from "@/apis/auth";
 import { extractErrorMessage } from "@/utils/error";
 import {
   Card,
@@ -29,12 +28,15 @@ import {
 } from "@/components";
 import { INFO } from "@/constants";
 import { InputGroup, InputGroupInput, InputGroupAddon, InputGroupButton } from "@/components/ui/input-group";
+import { useRegisterMutation } from "@/hooks/mutations/auth/useAuthMutations";
+
 const RegisterPage = () => {
-  const navigate = useNavigate();
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false)
+  const registerMutation = useRegisterMutation();
+
+  const error = registerMutation.error
+    ? extractErrorMessage(registerMutation.error, "Registration failed. Please try again.")
+    : null;
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -45,24 +47,11 @@ const RegisterPage = () => {
     },
   });
 
-  const onSubmit = async (data: RegisterFormValues) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      await authService.register(data);
-      setIsSuccess(true);
-      setTimeout(() => {
-        navigate("/login");
-      }, 3000);
-    } catch (err: unknown) {
-      const errorMsg = extractErrorMessage(err, "Registration failed. Please try again.");
-      setError(errorMsg);
-    } finally {
-      setIsLoading(false);
-    }
+  const onSubmit = (data: RegisterFormValues) => {
+    registerMutation.mutate(data);
   };
 
-  if (isSuccess) {
+  if (registerMutation.isSuccess) {
     return (
       <div className="flex min-h-screen flex-col bg-muted/30">
         <header className="absolute left-0 top-0 z-10 flex w-full items-center justify-center px-6 py-5 sm:px-8">
@@ -203,9 +192,9 @@ const RegisterPage = () => {
                   <Button
                     type="submit"
                     className="w-full h-12 text-base font-bold rounded-xl transition-all hover:scale-[1.01] active:scale-[0.99]"
-                    disabled={isLoading}
+                    disabled={registerMutation.isPending}
                   >
-                    {isLoading ? (
+                    {registerMutation.isPending ? (
                       <div className="flex items-center justify-center gap-2">
                         <Loader2 className="h-5 w-5 animate-spin" />
                         <span>Creating Account...</span>

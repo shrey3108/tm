@@ -4,8 +4,8 @@
  */
 
 import { useCallback } from "react";
-import { adminSkillService } from "@/apis/admin";
 import type { SkillRead } from "@/types/admin";
+import { useCreateSkillMutation, useUpdateSkillMutation } from "@/hooks/mutations/admin/useSkill";
 import {
   Button,
   Input,
@@ -42,6 +42,8 @@ const DEFAULT_SKILL_VALUES: SkillCreateFormValues = {
 
 const CreateSkillModal = ({ show, handleClose, onSkillSaved, skill }: CreateSkillModalProps) => {
   const isEditMode = !!skill;
+  const createSkillMutation = useCreateSkillMutation();
+  const updateSkillMutation = useUpdateSkillMutation();
 
   const mapItemToValues = useCallback(
     (s: SkillRead): SkillCreateFormValues => ({
@@ -51,18 +53,15 @@ const CreateSkillModal = ({ show, handleClose, onSkillSaved, skill }: CreateSkil
     [],
   );
 
-  const onSubmit = useCallback(
-    async (data: SkillCreateFormValues) => {
-      if (isEditMode && skill) {
-        await adminSkillService.updateSkill(skill.id, data);
-      } else {
-        await adminSkillService.createSkill(data);
-      }
-      onSkillSaved();
-      handleClose();
-    },
-    [isEditMode, skill, onSkillSaved, handleClose],
-  );
+  const onSubmit = async (data: SkillCreateFormValues) => {
+    if (isEditMode && skill) {
+      await updateSkillMutation.mutateAsync({ id: skill.id, data });
+    } else {
+      await createSkillMutation.mutateAsync(data);
+    }
+    onSkillSaved();
+    handleClose();
+  };
 
   const formModal = useFormModal<SkillCreateFormValues, SkillRead>({
     schema: skillCreateSchema,

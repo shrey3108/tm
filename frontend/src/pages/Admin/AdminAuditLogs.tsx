@@ -3,18 +3,18 @@
  * Displays a history of user actions and system events.
  */
 import { useState, useEffect } from "react";
-import { adminAnalyticsService } from "@/apis/admin";
 import type { AuditLogRead } from "@/types/admin";
 import AppPageShell from "@/components/shared/AppPageShell";
 import { DataTable } from "@/components/shared/DataTable";
 import { DateDisplay } from "@/components/shared/DateDisplay";
 import PageHeader from "@/components/shared/PageHeader";
 import ErrorDisplay from "@/components/shared/ErrorDisplay";
-import { useAdminData, useDebouncedValue } from "@/hooks";
+import { useDebouncedValue } from "@/hooks";
 import { ArrowUpDown } from "lucide-react";
 import type { ColumnDef, PaginationState } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { toTitleCase } from "@/lib/utils";
+import { useAuditLogs } from "@/hooks/queries/admin/useAuditLogs";
 
 const AdminAuditLogs = () => {
   const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
@@ -22,31 +22,22 @@ const AdminAuditLogs = () => {
     pageSize: 10,
   });
   const [searchValue, setSearchValue] = useState("");
+  const [overallTotal, setOverallTotal] = useState(0);
+
 
   const debouncedSearch = useDebouncedValue(searchValue)
 
-  const {
-    data: logs,
-    total,
-    loading,
-    error,
-    fetchData,
-  } = useAdminData<AuditLogRead>(
-    () => adminAnalyticsService.getAuditLogs(pageIndex * pageSize, pageSize, debouncedSearch),
-    { fetchOnMount: false }
-  );
+  const { data: logs, error, loading, refetch, total } = useAuditLogs(pageIndex * pageSize, pageSize, debouncedSearch)
 
-  // Refetch data when pagination or search changes
-  useEffect(() => {
-    fetchData();
-  }, [pageIndex, pageSize, debouncedSearch, fetchData]);
 
-  const [overallTotal, setOverallTotal] = useState(0);
   useEffect(() => {
-    if (!debouncedSearch) {
-      setOverallTotal(total);
+    if (!debouncedSearch && total !== overallTotal) {
+      queueMicrotask(() => {
+        setOverallTotal(total);
+      });
     }
-  }, [total, debouncedSearch]);
+  }, [total, debouncedSearch, overallTotal]);
+
 
   // Handle search with pagination reset
   const handleSearchChange = (value: string) => {
@@ -132,7 +123,7 @@ const AdminAuditLogs = () => {
       <PageHeader title="Audit Logs" />
 
       {error && !logs.length ? (
-        <ErrorDisplay message={error} onRetry={fetchData} />
+        <ErrorDisplay message={error.message} onRetry={refetch} />
       ) : (
         <DataTable
           columns={columns}

@@ -3,7 +3,7 @@
  * Displays all prompts used by the system with ability to view their content.
  */
 import { useState, useEffect } from "react";
-import { adminPromptService } from "@/apis/admin";
+
 import type { PromptRead } from "@/types/admin";
 import AppPageShell from "@/components/shared/AppPageShell";
 import PageHeader from "@/components/shared/PageHeader";
@@ -32,8 +32,9 @@ import {
     DialogDescription,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { useAdminData, useDebouncedValue } from "@/hooks";
+import { useDebouncedValue } from "@/hooks";
 import { ErrorDisplay } from "@/components/shared";
+import { usePrompts } from "@/hooks/queries/admin/usePrompts";
 
 
 const AdminPrompts = () => {
@@ -46,38 +47,45 @@ const AdminPrompts = () => {
     const [isViewModalOpen, setIsViewModalOpen] = useState(false);
     const [selectedStages, setSelectedStages] = useState<string[]>([]);
     const [allStages, setAllStages] = useState<string[]>([]);
-    const debouncedSearch = useDebouncedValue(search)
-    // Reset to first page when search changes
-    useEffect(() => {
-        setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-    }, [debouncedSearch]);
-    const { data: prompts, loading, error, fetchData, total } = useAdminData(() => adminPromptService.getAllPrompts(pageIndex * pageSize, pageSize, debouncedSearch), { fetchOnMount: false });
+    const [isCopied, setIsCopied] = useState(false);
+    const [overallTotal, setOverallTotal] = useState(0);
 
-    // Collect all unique stages from the response data over time
-    useEffect(() => {
-        if (prompts.length > 0) {
-            const currentStages = prompts.map(p => p.stage).filter(Boolean);
-            setAllStages(prev => {
-                const combined = Array.from(new Set([...prev, ...currentStages]));
-                return combined.sort();
-            });
-        }
-    }, [prompts]);
+    const debouncedSearch = useDebouncedValue(search);
+
+    const { data: prompts, loading, error, refetch, total } = usePrompts(pageIndex * pageSize, pageSize, debouncedSearch)
+
+
     const handleViewClick = (prompt: PromptRead) => {
         setSelectedPrompt(prompt);
         setIsViewModalOpen(true);
     };
 
-    const [isCopied, setIsCopied] = useState(false);
+
+
+    // Collect all unique stages from the response data over time
     useEffect(() => {
-        fetchData();
-    }, [pageIndex, pageSize, debouncedSearch, fetchData]);
-    const [overallTotal, setOverallTotal] = useState(0);
-    useEffect(() => {
-        if (!debouncedSearch) {
-            setOverallTotal(total);
+        if (prompts.length > 0) {
+            const currentStages = prompts.map(p => p.stage).filter(Boolean);
+            const hasNewStages = currentStages.some(s => !allStages.includes(s));
+            if (hasNewStages) {
+                queueMicrotask(() => {
+                    setAllStages(prev => {
+                        const combined = Array.from(new Set([...prev, ...currentStages]));
+                        return combined.sort();
+                    });
+                });
+            }
         }
-    }, [total, debouncedSearch]);
+    }, [prompts, allStages]);
+
+
+    useEffect(() => {
+        if (!search && overallTotal !== total) {
+            queueMicrotask(() => {
+                setOverallTotal(total);
+            });
+        }
+    }, [search, total, overallTotal]);
 
     const columns: ColumnDef<PromptRead>[] = [
         {
@@ -191,7 +199,7 @@ const AdminPrompts = () => {
 
 
                 {error && !prompts.length ? (
-                    <ErrorDisplay message={error} onRetry={fetchData} />
+                    <ErrorDisplay message={error.message} onRetry={refetch} />
                 ) :
                     <DataTable
                         columns={columns}

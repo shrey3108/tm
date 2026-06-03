@@ -2,12 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import { startOfDay, endOfDay } from "date-fns";
 import type { UnifiedCandidate } from "@/types/candidate";
 import { toTitleCase } from "@/lib/utils";
-import { adminLocationService } from "@/apis/admin/location";
-import jobService from "@/apis/job";
 import { slugify } from "@/utils/slug";
 import { DEFAULT_PASSING_THRESHOLD, HR_DECISION_OPTIONS, RESUME_SCREENING_RESULT } from "@/constants";
 import type { DateRange } from "react-day-picker";
 import { useDebouncedValue } from "./useDebounced";
+import { useJobTitle } from "./queries/jobs";
+import { useAdminLocations } from "./queries/admin/useLocation";
 
 export interface CandidateActiveFilters {
   status: string[];
@@ -99,32 +99,27 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
     }
   };
 
-  // Fetch job titles — only when the job-filter column is visible
+  const { data: jobs } = useJobTitle(debouncedJobSearch, fetchJobTitles);
   useEffect(() => {
-    if (!fetchJobTitles) return;
-    jobService.getJobTitles(debouncedJobSearch)
-      .then((response) => {
-        const jobsArray = Array.isArray(response) ? response : (response as any)?.data ?? [];
-        setAvailableJobs(
-          jobsArray.map((j: any) => ({
-            id: j.id,
-            title: j.title?.trim() || "Untitled",
-            slug: slugify(j.title || ""),
-          }))
-        );
-      })
-      .catch((err) => console.error("Failed to fetch jobs for filter:", err));
-  }, [debouncedJobSearch, fetchJobTitles]);
+    if (jobs) {
+      const jobsArray = Array.isArray(jobs) ? jobs : (jobs as any)?.data ?? [];
+      setAvailableJobs(
+        jobsArray.map((j: any) => ({
+          id: j.id,
+          title: j.title?.trim() || "Untitled",
+          slug: slugify(j.title || ""),
+        }))
+      );
+    }
+  }, [jobs])
 
+  const { data: locations } = useAdminLocations(0, 500, debouncedLocationSearch);
   useEffect(() => {
-    adminLocationService
-      .getAllLocations(0, 500, debouncedLocationSearch)
-      .then((response) => {
-        const names = response.data.map((loc) => toTitleCase(loc.name.trim()));
-        setFetchedLocations(names);
-      })
-      .catch((err) => console.error("Failed to fetch jobs for filter:", err));
-  }, [debouncedLocationSearch]);
+    if (locations) {
+      const names = locations.map((loc) => toTitleCase(loc.name.trim()));
+      setFetchedLocations(names);
+    }
+  }, [locations]);
 
 
 

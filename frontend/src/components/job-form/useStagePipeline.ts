@@ -1,9 +1,16 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { adminJobService } from "@/apis/admin/job";
-import { adminStageTemplateService } from "@/apis/admin/stageTemplate";
-import { jobStageService } from "@/apis/jobStage";
-import type { JobStageConfig, StageTemplate } from "@/types/stage";
+import type { JobStageConfig } from "@/types/stage";
+
+// TanStack Query Hooks
+import { useJobStage } from "@/hooks/queries/admin/useJobStage";
+import { useJobStages } from "@/hooks/queries/jobs/useJob";
+import {
+  useAddStageMutation,
+  useRemoveStageMutation,
+  useSetupDefaultStagesMutation,
+  useReorderStagesMutation,
+} from "@/hooks/mutations/jobs/useJobMutations";
 
 interface UseStagePipelineOptions {
   /** Job ID — null in create mode before the job is saved */
@@ -22,67 +29,54 @@ const toStagePayload = (s: JobStageConfig) => ({
 
 export const useStagePipeline = ({ jobId, onChange }: UseStagePipelineOptions) => {
   const [stages, setStages] = useState<JobStageConfig[]>([]);
-  const [templates, setTemplates] = useState<StageTemplate[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAdding, setIsAdding] = useState(false);
-  const [isSettingDefaults, setIsSettingDefaults] = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [selectedTemplateIds, setSelectedTemplateIds] = useState<string[]>([]);
 
-  const fetchStages = useCallback(async () => {
-    if (!jobId) return;
-    try {
-      const data = await adminJobService.getJobStages(jobId);
-      setStages(data.sort((a, b) => a.stage_order - b.stage_order));
-    } catch (error) {
-      console.error("Failed to fetch job stages:", error);
-      toast.error("Failed to load interview stages");
-    }
-  }, [jobId]);
+  // TanStack Queries
+  const { data: templates, loading: templatesLoading } = useJobStage(0, 100);
+  const { data: dbStages, loading: stagesLoading, refetch: refetchStages } = useJobStages(jobId);
 
-  const fetchTemplates = useCallback(async () => {
-    try {
-      const data = await adminStageTemplateService.getAllTemplates();
-      setTemplates(data.data);
-      return data.data;
-    } catch (error) {
-      console.error("Failed to fetch templates:", error);
-      return [];
-    }
-  }, []);
+  const isLoading = templatesLoading || (!!jobId && stagesLoading);
 
+  // TanStack Mutations
+  const addStageMutation = useAddStageMutation();
+  const removeStageMutation = useRemoveStageMutation();
+  const setupDefaultsMutation = useSetupDefaultStagesMutation();
+  const reorderStagesMutation = useReorderStagesMutation();
+
+  const isAdding = addStageMutation.isPending;
+  const isSettingDefaults = setupDefaultsMutation.isPending;
+
+  // Sync DB stages to local state when jobId is present
   useEffect(() => {
-    const init = async () => {
-      setIsLoading(true);
-      const [, fetchedTemplates] = await Promise.all([fetchStages(), fetchTemplates()]);
+    if (jobId && dbStages) {
+      setStages([...dbStages].sort((a, b) => a.stage_order - b.stage_order));
+    }
+  }, [jobId, dbStages]);
 
-      // Auto-populate default stages in create mode if stages are empty
-      if (!jobId && stages.length === 0 && fetchedTemplates.length > 0) {
-        const defaultTemplates = fetchedTemplates
-          .filter((t) => t.is_default)
-          .sort((a, b) => (a.default_order || 0) - (b.default_order || 0)); // TBD: on backend response 
+  // Auto-populate default stages in create mode if stages are empty
+  useEffect(() => {
+    if (!jobId && stages.length === 0 && templates.length > 0) {
+      const defaultTemplates = templates
+        .filter((t) => t.is_default)
+        .sort((a, b) => (a.default_order || 0) - (b.default_order || 0)); // TBD: on backend response 
 
-        if (defaultTemplates.length > 0) {
-          const newStages: JobStageConfig[] = defaultTemplates.map((template, index) => ({
-            id: crypto.randomUUID(),
-            job_id: "",
-            template_id: template.id,
-            stage_order: index + 1,
-            is_mandatory: true,
-            template: template,
-            config: template.config || { evaluation_criteria: [] },
-          }));
-          setStages(newStages);
-          onChange?.(newStages.map(toStagePayload));
-        }
+      if (defaultTemplates.length > 0) {
+        const newStages: JobStageConfig[] = defaultTemplates.map((template, index) => ({
+          id: crypto.randomUUID(),
+          job_id: "",
+          template_id: template.id,
+          stage_order: index + 1,
+          is_mandatory: true,
+          template: template,
+          config: template.config || { evaluation_criteria: [] },
+        }));
+        setStages(newStages);
+        onChange?.(newStages.map(toStagePayload));
       }
-
-      setIsLoading(false);
-    };
-    init();
-    // Only run on mount to avoid infinite loops with onChange/stages
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [jobId]);
+  }, [jobId, templates]);
 
   // Templates not yet added to this job
   const availableTemplates = templates.filter(
@@ -115,27 +109,24 @@ export const useStagePipeline = ({ jobId, onChange }: UseStagePipelineOptions) =
       return;
     }
 
-    setIsAdding(true);
     try {
       // Add stages in parallel since explicit
       await Promise.all(
         selectedTemplates.map((template, i) =>
-          adminJobService.addStageToJob(jobId, {
-            template_id: template.id,
-            stage_order: stages.length + i + 1,
-            is_mandatory: true,
-          }),
-        ),
+          addStageMutation.mutateAsync({
+            jobId,
+            templateId: template.id,
+            stageOrder: stages.length + i + 1,
+          })
+        )
       );
 
       toast.success(`${selectedTemplates.length} stage(s) added to pipeline`);
       setSelectedTemplateIds([]);
-      await fetchStages();
+      await refetchStages();
     } catch (error) {
       console.error("Failed to add stages:", error);
       toast.error("Failed to add all stages");
-    } finally {
-      setIsAdding(false);
     }
   };
 
@@ -152,9 +143,9 @@ export const useStagePipeline = ({ jobId, onChange }: UseStagePipelineOptions) =
 
     setRemovingId(configId);
     try {
-      await adminJobService.removeStageFromJob(jobId, configId);
+      await removeStageMutation.mutateAsync({ jobId, configId });
       toast.success("Stage removed from pipeline");
-      await fetchStages();
+      await refetchStages();
     } catch (error) {
       console.error("Failed to remove stage:", error);
       toast.error("Failed to remove stage");
@@ -172,21 +163,18 @@ export const useStagePipeline = ({ jobId, onChange }: UseStagePipelineOptions) =
       return;
     }
 
-    setIsSettingDefaults(true);
     try {
       // Remove all existing stages in parallel first to ensure a clean default setup
       if (stages.length > 0) {
-        await Promise.all(stages.map((s) => adminJobService.removeStageFromJob(jobId, s.id)));
+        await Promise.all(stages.map((s) => removeStageMutation.mutateAsync({ jobId, configId: s.id })));
       }
 
-      await jobStageService.setupDefaultStages(jobId);
+      await setupDefaultsMutation.mutateAsync(jobId);
       toast.success("Default pipeline configured");
-      await fetchStages();
+      await refetchStages();
     } catch (error) {
       console.error("Failed to setup defaults:", error);
       toast.error("Failed to setup default pipeline");
-    } finally {
-      setIsSettingDefaults(false);
     }
   };
 
@@ -202,14 +190,12 @@ export const useStagePipeline = ({ jobId, onChange }: UseStagePipelineOptions) =
 
     // Persist via API
     try {
-      await adminJobService.reorderJobStages(jobId, {
-        stage_ids: updated.map((s) => s.id),
-      });
+      await reorderStagesMutation.mutateAsync({ jobId, stageIds: updated.map((s) => s.id) });
       toast.success("Pipeline reordered");
     } catch (error) {
       console.error("Failed to reorder stages:", error);
       toast.error("Failed to reorder — reverting");
-      await fetchStages(); // rollback
+      await refetchStages(); // rollback
     }
   };
 
@@ -229,3 +215,4 @@ export const useStagePipeline = ({ jobId, onChange }: UseStagePipelineOptions) =
     applyReorder,
   };
 };
+

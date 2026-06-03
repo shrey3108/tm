@@ -1,8 +1,8 @@
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import { Field } from "@/components/ui/field";
 import { toast } from "sonner";
 import { extractErrorMessage } from "@/utils/error";
-import { transcriptService } from "@/apis/transcript";
+import { useUploadTranscriptMutation } from "@/hooks/mutations/jobs/useTranscriptMutation";
 import type { Job } from "@/types/job";
 import { cn } from "@/lib/utils";
 import { PERMISSIONS } from "@/lib/permissions";
@@ -37,7 +37,7 @@ export function TranscriptUpload({
   // label = "Transcribe",
   disabled,
 }: TranscriptUploadProps) {
-  const [isUploading, setIsUploading] = useState(false);
+  const { mutateAsync: uploadTranscript, isPending: isUploading } = useUploadTranscriptMutation();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -49,16 +49,14 @@ export function TranscriptUpload({
       return;
     }
 
-    setIsUploading(true);
     try {
-      const response = await transcriptService.uploadTranscript(stageId, Array.from(files));
+      const response = await uploadTranscript({ stageId, files: Array.from(files) });
       toast.success(response.message || "Transcripts uploaded successfully!");
       if (onSuccess) onSuccess();
     } catch (error) {
       const errorMessage = extractErrorMessage(error);
       toast.error(errorMessage || "Failed to upload transcripts");
     } finally {
-      setIsUploading(false);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }

@@ -3,7 +3,6 @@
  * including its description, required skills, and hiring stages.
  */
 
-import jobService from "@/apis/job";
 import { InfoLabel } from "@/components/shared";
 import { DateDisplay } from "@/components/shared/DateDisplay";
 import { Badge } from "@/components/ui/badge";
@@ -12,8 +11,9 @@ import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/componen
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Separator } from "@/components/ui/separator";
+import { useJobVersion } from "@/hooks/queries/jobs";
 import { cn } from "@/lib/utils";
-import type { Job, JobVersionDetail } from "@/types/job";
+import type { Job } from "@/types/job";
 import { slugify } from "@/utils/slug";
 import { Check, Edit2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -89,12 +89,16 @@ const InfoSection = ({
  */
 export function JobInfoModal({ isOpen, onClose, job }: JobInfoModalProps) {
   const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null);
-  const [selectedVersion, setSelectedVersion] = useState<JobVersionDetail | null>(null);
-  const [isLoadingVersion, setIsLoadingVersion] = useState(false);
   const navigate = useNavigate();
   const sortedVersions = useMemo(() => {
     return [...(job?.job_versions || [])].sort((a, b) => b.version_num - a.version_num);
   }, [job?.job_versions]);
+
+  // Fetch selected version using TanStack Query
+  const { data: selectedVersion, loading: isLoadingVersion } = useJobVersion(
+    selectedVersionId,
+    isOpen && !!selectedVersionId
+  );
 
   useEffect(() => {
     if (isOpen && job) {
@@ -107,36 +111,12 @@ export function JobInfoModal({ isOpen, onClose, job }: JobInfoModalProps) {
             : sortedVersions[0].id,
         );
       } else {
-        // Fallback to current job data if no versions
-        setSelectedVersion({
-          id: "current",
-          job_id: job.id,
-          version_number: job.version || 1,
-          title: job.title,
-          jd_text: job.jd_text,
-          jd_json: job.jd_json,
-          custom_extraction_fields: job.custom_extraction_fields || null,
-          created_at: job.created_at,
-        });
+        setSelectedVersionId(null);
       }
     } else {
       setSelectedVersionId(null);
-      setSelectedVersion(null);
     }
   }, [isOpen, job]);
-
-  useEffect(() => {
-    if (selectedVersionId && job) {
-      if (selectedVersionId === "current") return;
-
-      setIsLoadingVersion(true);
-      jobService
-        .getJobVersion(selectedVersionId)
-        .then((data) => setSelectedVersion(data))
-        .catch((err) => console.error("Failed to fetch version:", err))
-        .finally(() => setIsLoadingVersion(false));
-    }
-  }, [selectedVersionId, job]);
 
   if (!job) return null;
 

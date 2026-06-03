@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import AppPageHeader from "@/components/shared/AppPageHeader";
 import type { Job } from "@/types/job";
 import { TranscriptUpload } from "./TranscriptUpload";
+import { ProjectSubmissionDialog } from "./ProjectSubmissionDialog";
 
 interface StageCandidatesHeaderProps {
   /** Associated job for the candidate stage view */
@@ -35,6 +37,7 @@ export const StageCandidatesHeader = ({
   isUploaded,
   stageName
 }: StageCandidatesHeaderProps) => {
+  const [isProjectSubmissionDialogOpen, setIsProjectSubmissionDialogOpen] = useState(false);
 
   return (
     <AppPageHeader
@@ -62,17 +65,35 @@ export const StageCandidatesHeader = ({
           </Button>
 
           {stageName !== "Resume Screening" && (
-            <TranscriptUpload
-              stageId={stageId}
-              className="w-auto m-0 shrink-0"
-              job={job!}
-              disabled={isUploaded}
-              onSuccess={onSuccess}
-            />
+            stageName === "Technical Practical Round" ? (
+              <>
+                <Button
+                  variant="outline"
+                  className="rounded-xl border border-muted-foreground/10 px-5 font-semibold text-center h-9"
+                  onClick={() => setIsProjectSubmissionDialogOpen(true)}
+                >
+                  Project Submission
+                </Button>
+                <ProjectSubmissionDialog
+                  isOpen={isProjectSubmissionDialogOpen}
+                  onOpenChange={setIsProjectSubmissionDialogOpen}
+                  candidateName={candidateName || "Candidate"}
+                />
+              </>
+            ) : (
+              <TranscriptUpload
+                stageId={stageId}
+                className="w-auto m-0 shrink-0"
+                job={job!}
+                disabled={isUploaded}
+                onSuccess={onSuccess}
+              />
+            )
           )}
         </>
       }
     />
   );
 };
+
 
