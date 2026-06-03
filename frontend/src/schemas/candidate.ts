@@ -47,7 +47,8 @@ export const ProjectSubmissionSchema = z.object({
     ),
   pdfFile: z
     .any()
-    .refine((file) => file instanceof File, "PDF file is required")
+    .optional()
+    .refine((file) => !file || file instanceof File, "Must be a valid file")
     .refine(
       (file) => !file || file.size <= 5 * 1024 * 1024,
       "File size must be less than 5MB"

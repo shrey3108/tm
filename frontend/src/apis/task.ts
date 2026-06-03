@@ -41,4 +41,27 @@ export const taskService = {
     const response = await client.delete<DeleteJobTaskResponse>(`/jobs/${jobId}/task`);
     return response.data;
   },
+
+  /**
+   * Uploads a candidate-specific task PDF/DOCX and triggers skills extraction.
+   * @param candidateId - The UUID of the candidate
+   * @param file - The task file to upload
+   * @returns Promise resolving to the candidate task details
+   */
+  uploadCandidateTask: async (candidateId: string, file: File): Promise<CandidateTaskRead> => {
+    const formData = new FormData();
+    formData.append("task_file", file);
+    const response = await client.post<CandidateTaskRead>(`/candidates/${candidateId}/task`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data;
+  },
 };
+
+export interface CandidateTaskRead {
+  task_file_path: string | null;
+  task_skills: string[];
+  is_custom_task: boolean;
+}

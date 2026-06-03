@@ -21,6 +21,7 @@ interface StageCandidatesHeaderProps {
   /** The ID of the stage */
   stageId: string | undefined;
   stageName: string | undefined;
+  candidateId?: string;
 }
 
 /**
@@ -35,7 +36,8 @@ export const StageCandidatesHeader = ({
   onSuccess,
   stageId,
   isUploaded,
-  stageName
+  stageName,
+  candidateId,
 }: StageCandidatesHeaderProps) => {
   const [isProjectSubmissionDialogOpen, setIsProjectSubmissionDialogOpen] = useState(false);
 
@@ -71,6 +73,7 @@ export const StageCandidatesHeader = ({
                   variant="outline"
                   className="rounded-xl border border-muted-foreground/10 px-5 font-semibold text-center h-9"
                   onClick={() => setIsProjectSubmissionDialogOpen(true)}
+                  disabled={isUploaded}
                 >
                   Project Submission
                 </Button>
@@ -78,6 +81,10 @@ export const StageCandidatesHeader = ({
                   isOpen={isProjectSubmissionDialogOpen}
                   onOpenChange={setIsProjectSubmissionDialogOpen}
                   candidateName={candidateName || "Candidate"}
+                  candidateId={candidateId}
+                  stageId={stageId}
+                  onSuccess={onSuccess}
+                  job={job!}
                 />
               </>
             ) : (

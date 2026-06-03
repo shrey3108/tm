@@ -1,5 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { candidateDecisionApi } from "@/apis/candidateDecision";
+import { taskService } from "@/apis/task";
+import { candidateStageService } from "@/apis/candidateStage";
 import type { CandidateDecisionFormValues } from "@/schemas/candidate";
 import { QUERY_KEYS } from "@/constants/queryKeys";
 
@@ -25,6 +27,50 @@ export function useSubmitDecisionMutation() {
       // Invalidate timeline queries
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.CANDIDATES.TIMELINE, variables.candidate_id],
+      });
+    },
+  });
+}
+
+/**
+ * Mutation hook to upload candidate-specific task.
+ */
+export function useUploadCandidateTaskMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ candidateId, file }: { candidateId: string; file: File }) =>
+      taskService.uploadCandidateTask(candidateId, file),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.CANDIDATES.DETAILS],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.CANDIDATES.TIMELINE, variables.candidateId],
+      });
+    },
+  });
+}
+
+/**
+ * Mutation hook to trigger background GitHub evaluation.
+ */
+export function useEvaluateGithubMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ stageId, githubUrl }: { stageId: string; githubUrl: string }) =>
+      candidateStageService.evaluateGithub(stageId, githubUrl),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.CANDIDATES.EVALUATION],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.CANDIDATES.EVALUATION_HISTORY],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.CANDIDATES.TIMELINE],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.JOBS.CANDIDATES],
       });
     },
   });

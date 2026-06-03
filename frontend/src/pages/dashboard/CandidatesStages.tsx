@@ -80,6 +80,7 @@ export default function CandidatesStages() {
           fetchHistory();
         }}
         stageId={instanceId as string}
+        candidateId={candidate?.id}
         stageName={currentStage}
       />
       <div className="flex overflow-hidden">
