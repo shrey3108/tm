@@ -1,5 +1,6 @@
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { QUERY_KEYS } from "@/constants/queryKeys";
+import { QUERY_CONFIG } from "@/constants/queryConfig";
 import { crossMatchApi } from "@/apis/crossMatch";
 
 /**
@@ -18,7 +19,7 @@ export const useCandidateCrossJobMatch = (
         queryKey: [QUERY_KEYS.CANDIDATES.CROSS_JOB_MATCH, resumeId, skip, limit],
         queryFn: () => crossMatchApi.getCrossMatches(resumeId, skip, limit),
         placeholderData: keepPreviousData,
-        staleTime: 1000 * 60, // 1 minute
+        staleTime: QUERY_CONFIG.CANDIDATE_CROSS_JOB_MATCH.staleTime,
         refetchInterval
     })
 

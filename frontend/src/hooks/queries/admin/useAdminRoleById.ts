@@ -1,6 +1,7 @@
 import { adminRoleService } from "@/apis/admin";
 import { useQuery } from "@tanstack/react-query";
 import { QUERY_KEYS } from "@/constants/queryKeys";
+import { QUERY_CONFIG } from "@/constants/queryConfig";
 
 /**
  * Hook for fetching a single role by ID with its permissions.
@@ -10,7 +11,7 @@ export const useAdminRoleById = (roleId?: string | null) => {
   const res = useQuery({
     queryKey: [QUERY_KEYS.ADMIN.ROLES, "detail", roleId],
     queryFn: () => adminRoleService.getRoleById(roleId!),
-    staleTime: 1000 * 60, // 1 minute
+    staleTime: QUERY_CONFIG.ADMIN_ROLE_DETAIL.staleTime,
     enabled: !!roleId,
   });
 

@@ -1,6 +1,7 @@
 import { adminPermissionService } from "@/apis/admin";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { QUERY_KEYS } from "@/constants/queryKeys";
+import { QUERY_CONFIG } from "@/constants/queryConfig";
 
 /**
  * Hook for fetching all permissions.
@@ -11,7 +12,7 @@ export const useAdminPermissions = ({ isEnable = true }: { isEnable?: boolean } 
     queryKey: [QUERY_KEYS.ADMIN.PERMISSIONS],
     queryFn: () => adminPermissionService.getAllPermissions(),
     placeholderData: keepPreviousData,
-    staleTime: 1000 * 60, // 1 minute
+    staleTime: QUERY_CONFIG.ADMIN_PERMISSIONS.staleTime,
     enabled: isEnable,
   });
 

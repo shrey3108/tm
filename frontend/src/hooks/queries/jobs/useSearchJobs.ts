@@ -1,6 +1,7 @@
 import jobService from "@/apis/job";
 import { useQuery } from "@tanstack/react-query";
 import { QUERY_KEYS } from "@/constants/queryKeys";
+import { QUERY_CONFIG } from "@/constants/queryConfig";
 
 /**
  * Hook for searching jobs.
@@ -11,7 +12,7 @@ export function useSearchJobsQuery(query: string, options?: { enabled?: boolean 
   return useQuery({
     queryKey: [QUERY_KEYS.JOBS.LIST, "search", query],
     queryFn: () => jobService.searchJobs(query),
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: QUERY_CONFIG.SEARCH_JOBS.staleTime,
     ...options,
     enabled: (options?.enabled ?? true) && !!query.trim(),
   });

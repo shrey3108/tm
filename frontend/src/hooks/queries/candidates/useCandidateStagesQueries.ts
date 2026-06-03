@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { QUERY_KEYS } from "@/constants/queryKeys";
+import { QUERY_CONFIG } from "@/constants/queryConfig";
 import jobService from "@/apis/job";
 import { jobStageService } from "@/apis/jobStage";
 import { candidateStageService } from "@/apis/candidateStage";
@@ -61,7 +62,7 @@ export function useResolvedJobAndCandidate(
       return found;
     },
     enabled: !!resolvedJob?.id && !!candidateNameSlug && !stateCandidate,
-    staleTime: 1000 * 60 * 1,
+    staleTime: QUERY_CONFIG.CANDIDATE_STAGES.staleTime,
   });
 
   const resolvedCandidate = candidateSearchQuery.data || stateCandidate;
@@ -85,7 +86,7 @@ export function useJobStagesQuery(jobId: string | null | undefined) {
     queryKey: [QUERY_KEYS.CANDIDATES.JOB_STAGES, jobId],
     queryFn: () => jobStageService.getJobStages(jobId!),
     enabled: !!jobId,
-    staleTime: 1000 * 60 * 1,
+    staleTime: QUERY_CONFIG.CANDIDATE_STAGES.staleTime,
   });
 }
 
@@ -100,7 +101,7 @@ export function useCandidateEvaluationQuery(
     queryKey: [QUERY_KEYS.CANDIDATES.EVALUATION, instanceId],
     queryFn: () => candidateStageService.getEvaluation(instanceId!),
     enabled: !!instanceId,
-    staleTime: 1000 * 60 * 1,
+    staleTime: QUERY_CONFIG.CANDIDATE_STAGES.staleTime,
     refetchInterval: isPolling ? 5000 : false,
   });
 }
@@ -113,7 +114,7 @@ export function useCandidateEvaluationHistoryQuery(instanceId: string | null | u
     queryKey: [QUERY_KEYS.CANDIDATES.EVALUATION_HISTORY, instanceId],
     queryFn: () => candidateStageService.getEvaluationHistory(instanceId!),
     enabled: !!instanceId,
-    staleTime: 1000 * 60 * 1,
+    staleTime: QUERY_CONFIG.CANDIDATE_STAGES.staleTime,
   });
 }
 
@@ -125,7 +126,7 @@ export function useCandidateTranscriptsQuery(candidateId: string | null | undefi
     queryKey: [QUERY_KEYS.CANDIDATES.TRANSCRIPTS, candidateId],
     queryFn: () => transcriptService.getCandidateTranscripts(candidateId!),
     enabled: !!candidateId,
-    staleTime: 1000 * 60 * 1,
+    staleTime: QUERY_CONFIG.CANDIDATE_STAGES.staleTime,
   });
 }
 
@@ -146,7 +147,7 @@ export function useHrDecisionHistoryQuery(
         stageConfigId || undefined
       ),
     enabled: !!candidateId,
-    staleTime: 1000 * 60 * 1,
+    staleTime: QUERY_CONFIG.CANDIDATE_STAGES.staleTime,
   });
 }
 
@@ -164,7 +165,7 @@ export function useCandidateDetailsQuery(
       return response.data?.[0] ?? null;
     },
     enabled: !!jobId && !!candidateId,
-    staleTime: 1000 * 60 * 1,
+    staleTime: QUERY_CONFIG.CANDIDATE_STAGES.staleTime,
   });
 }
 
@@ -179,7 +180,7 @@ export function useCandidateTimelineQuery(
     queryKey: [QUERY_KEYS.CANDIDATES.TIMELINE, candidateId, jobId],
     queryFn: () => adminCandidateService.getCandidateTimeline(candidateId!, jobId),
     enabled: !!candidateId,
-    staleTime: 1000 * 60 * 1,
+    staleTime: QUERY_CONFIG.CANDIDATE_STAGES.staleTime,
   });
 }
 
@@ -193,7 +194,7 @@ export function useTranscriptQuery(transcriptId: string | null | undefined) {
     queryKey: [QUERY_KEYS.CANDIDATES.TRANSCRIPT, transcriptId],
     queryFn: () => transcriptService.getTranscript(transcriptId!),
     enabled: !!transcriptId,
-    staleTime: 1000 * 60 * 5,
+    staleTime: QUERY_CONFIG.CANDIDATE_TRANSCRIPT.staleTime,
   });
 }
 

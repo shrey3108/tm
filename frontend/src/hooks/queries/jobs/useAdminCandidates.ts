@@ -2,6 +2,7 @@ import { adminCandidateService } from "@/apis/admin";
 import { resumeService } from "@/apis/resume";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { QUERY_KEYS } from "@/constants/queryKeys";
+import { QUERY_CONFIG } from "@/constants/queryConfig";
 import type { CandidateActiveFilters } from "@/hooks/useCandidateTableFilters";
 import type { CandidateResponse } from "@/types/resume";
 
@@ -65,7 +66,7 @@ export const useAdminCandidates = (
       return result;
     },
     placeholderData: keepPreviousData,
-    staleTime: 1000 * 60, // 1 minute
+    staleTime: QUERY_CONFIG.ADMIN_CANDIDATES.staleTime,
   });
 
   return {

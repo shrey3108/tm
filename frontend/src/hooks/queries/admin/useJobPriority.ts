@@ -1,7 +1,7 @@
 import { adminJobPriorityService } from "@/apis/admin";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { QUERY_KEYS } from "@/constants/queryKeys";
-
+import { QUERY_CONFIG } from "@/constants/queryConfig";
 /**
  * @param skip number of records to skip
  * @param limit number of records to fetch
@@ -12,7 +12,7 @@ export const useJobPriorities = (skip: number = 0, limit: number = 10, q: string
         queryKey: [QUERY_KEYS.ADMIN.JOB_PRIORITIES, skip, limit, q],
         queryFn: () => adminJobPriorityService.getAllPriorities(skip, limit, q),
         placeholderData: keepPreviousData,
-        staleTime: 1000 * 60 // 1 minute
+        staleTime: QUERY_CONFIG.PRIORITY.staleTime
     })
 
     return {

@@ -1,6 +1,7 @@
 import jobService from "@/apis/job";
 import { useQuery } from "@tanstack/react-query";
 import { QUERY_KEYS } from "@/constants/queryKeys";
+import { QUERY_CONFIG } from "@/constants/queryConfig";
 import { slugify } from "@/utils/slug";
 import { adminJobService } from "@/apis/admin/job";
 
@@ -9,7 +10,7 @@ export const useJob = (jobId: string | null | undefined) => {
     queryKey: [QUERY_KEYS.JOBS.DETAIL, jobId],
     queryFn: () => jobService.getJob(jobId!),
     enabled: !!jobId,
-    staleTime: 1000 * 60, // 1 minute
+    staleTime: QUERY_CONFIG.JOB_DETAIL.staleTime,
   });
 
   return {
@@ -24,7 +25,7 @@ export const useJobTitle = (q?: string, isEnable?: boolean) => {
   const res = useQuery({
     queryKey: [QUERY_KEYS.JOBS.DETAIL, q],
     queryFn: () => jobService.getJobTitles(q),
-    staleTime: 1000 * 60, // 1 minute
+    staleTime: QUERY_CONFIG.JOB_DETAIL.staleTime,
     enabled: isEnable
   });
 
@@ -76,7 +77,7 @@ export const useJobStages = (jobId: string | null | undefined) => {
     queryKey: [QUERY_KEYS.CANDIDATES.JOB_STAGES, jobId],
     queryFn: () => adminJobService.getJobStages(jobId!),
     enabled: !!jobId,
-    staleTime: 1000 * 60, // 1 minute
+    staleTime: QUERY_CONFIG.JOB_DETAIL.staleTime,
   });
 
   return {
@@ -92,7 +93,7 @@ export const useJobVersion = (versionId: string | null, enabled: boolean) => {
   const res = useQuery({
     queryKey: [QUERY_KEYS.JOBS.JOB_VERSION, versionId],
     queryFn: () => jobService.getJobVersion(versionId!),
-    staleTime: 1000 * 60, // 1 minute
+    staleTime: QUERY_CONFIG.JOB_DETAIL.staleTime,
     enabled: enabled
   });
 

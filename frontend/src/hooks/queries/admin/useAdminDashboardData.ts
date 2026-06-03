@@ -1,6 +1,7 @@
 import { adminAnalyticsService } from "@/apis/admin";
 import { useQuery } from "@tanstack/react-query";
 import { QUERY_KEYS } from "@/constants/queryKeys";
+import { QUERY_CONFIG } from "@/constants/queryConfig";
 
 export const useAdminDashboardData = () => {
   const res = useQuery({
@@ -12,7 +13,7 @@ export const useAdminDashboardData = () => {
       ]);
       return { analytics, report };
     },
-    staleTime: 1000 * 60, // 1 minute
+    staleTime: QUERY_CONFIG.ADMIN_DASHBOARD.staleTime,
   });
 
   return {

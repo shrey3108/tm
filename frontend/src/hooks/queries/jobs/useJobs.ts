@@ -1,6 +1,7 @@
 import jobService from "@/apis/job";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { QUERY_KEYS } from "@/constants/queryKeys";
+import { QUERY_CONFIG } from "@/constants/queryConfig";
 
 export const useJobs = (
   skip: number = 0,
@@ -15,7 +16,7 @@ export const useJobs = (
     queryKey: [QUERY_KEYS.JOBS.LIST, skip, limit, filters],
     queryFn: () => jobService.getJobs(skip, limit, filters),
     placeholderData: keepPreviousData,
-    staleTime: 1000 * 60, // 1 minute
+    staleTime: QUERY_CONFIG.JOBS_LIST.staleTime,
   });
 
   return {

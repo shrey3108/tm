@@ -1,6 +1,7 @@
 import jobService from "@/apis/job";
 import { useQuery } from "@tanstack/react-query";
 import { QUERY_KEYS } from "@/constants/queryKeys";
+import { QUERY_CONFIG } from "@/constants/queryConfig";
 
 export const useJobStats = (
   jobId: string | null | undefined,
@@ -13,7 +14,7 @@ export const useJobStats = (
     queryKey: [QUERY_KEYS.JOBS.STATS, jobId, filters],
     queryFn: () => jobService.getJobStats(jobId!, filters),
     enabled: !!jobId,
-    staleTime: 1000 * 60, // 1 minute
+    staleTime: QUERY_CONFIG.JOB_STATS.staleTime,
   });
 
   return {

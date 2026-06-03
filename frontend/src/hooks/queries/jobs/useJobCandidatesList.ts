@@ -1,6 +1,7 @@
 import jobService from "@/apis/job";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { QUERY_KEYS } from "@/constants/queryKeys";
+import { QUERY_CONFIG } from "@/constants/queryConfig";
 
 export interface CandidateFilters {
   query?: string;
@@ -36,7 +37,7 @@ export const useJobCandidatesList = (
       ),
     enabled: !!jobId,
     placeholderData: keepPreviousData,
-    staleTime: 1000 * 60, // 1 minute
+    staleTime: QUERY_CONFIG.JOB_CANDIDATES_LIST.staleTime,
     refetchInterval: (query) => {
       const candidates = query.state.data?.data;
       if (Array.isArray(candidates)) {
