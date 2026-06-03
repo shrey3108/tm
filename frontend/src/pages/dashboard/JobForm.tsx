@@ -31,6 +31,8 @@ import { useJobPriorities } from "@/hooks/queries/admin/useJobPriority";
 import { useJobPosition } from "@/hooks/queries/admin/useJobPosition";
 import { useJobBySlugOrId } from "@/hooks/queries/jobs/useJob";
 import { useCreateJobMutation, useUpdateJobMutation } from "@/hooks/mutations/jobs/useJobMutations";
+import { useJobTask } from "@/hooks/queries/jobs/useJobTask";
+import { useUploadJobTaskMutation, useDeleteJobTaskMutation } from "@/hooks/mutations/jobs/useJobTaskMutations";
 
 
 export default function CreateJob() {
@@ -51,15 +53,25 @@ export default function CreateJob() {
   const jobId = job?.id || null;
   const jobSkills = (job?.skills as SkillBase[]) || [];
 
+  const jobTaskQuery = useJobTask(jobId);
+  const taskData = jobTaskQuery.data;
+  console.log(taskData);
   const isInitialLoading =
     deptsLoading ||
     prioritiesLoading ||
     positionsLoading ||
-    (isEditMode && jobQuery.loading);
+    (isEditMode && (jobQuery.loading || jobTaskQuery.loading));
 
   const createJobMutation = useCreateJobMutation();
   const updateJobMutation = useUpdateJobMutation();
-  const isSubmitting = createJobMutation.isPending || updateJobMutation.isPending;
+  const uploadJobTaskMutation = useUploadJobTaskMutation();
+  const deleteJobTaskMutation = useDeleteJobTaskMutation();
+
+  const isSubmitting =
+    createJobMutation.isPending ||
+    updateJobMutation.isPending ||
+    uploadJobTaskMutation.isPending ||
+    deleteJobTaskMutation.isPending;
 
   const form = useForm<JobCreateFormValues>({
     resolver: zodResolver(jobCreateSchema) as any,
@@ -103,20 +115,33 @@ export default function CreateJob() {
         priority_id: job.priority_id || "",
         position_id: job.position_id || "",
         processing_version: job.version || undefined,
+        project_document: taskData?.task_file_path || undefined,
       });
     }
-  }, [job, form]);
+  }, [job, taskData, form]);
 
-  const onSubmit = (values: JobCreateFormValues) => {
+  const onSubmit = async (values: JobCreateFormValues) => {
+    const { project_document, ...formValues } = values as any;
+
     if (isEditMode && jobId) {
       // Omit stages from update payload as they are managed via specialized endpoints
-      const { stages, ...updatePayload } = values as any;
+      const { stages, ...updatePayload } = formValues;
       updateJobMutation.mutate(
         { jobId, data: updatePayload },
         {
-          onSuccess: () => {
-            toast.success("Job updated successfully!");
-            navigate("/dashboard/jobs");
+          onSuccess: async () => {
+            try {
+              if (project_document instanceof File) {
+                await uploadJobTaskMutation.mutateAsync({ jobId, file: project_document });
+              } else if (!project_document && taskData?.task_file_path) {
+                await deleteJobTaskMutation.mutateAsync(jobId);
+              }
+              toast.success("Job updated successfully!");
+              navigate("/dashboard/jobs");
+            } catch (error) {
+              console.error("Failed to update task document:", error);
+              toast.error("Job updated, but failed to update task document.");
+            }
           },
           onError: (error) => {
             const errorMessage = extractErrorMessage(error);
@@ -126,14 +151,22 @@ export default function CreateJob() {
         }
       );
     } else {
-      // For creation, values.stages is either:
+      // For creation, formValues.stages is either:
       // - null (auto-setup 3 default rounds in backend)
       // - [] (no stages created)
       // - Array of {template_id, stage_order, is_mandatory, config}
-      createJobMutation.mutate(values as any, {
-        onSuccess: () => {
-          toast.success("Job created successfully!");
-          navigate("/dashboard/jobs");
+      createJobMutation.mutate(formValues, {
+        onSuccess: async (newJob: any) => {
+          try {
+            if (project_document instanceof File && newJob?.id) {
+              await uploadJobTaskMutation.mutateAsync({ jobId: newJob.id, file: project_document });
+            }
+            toast.success("Job created successfully!");
+            navigate("/dashboard/jobs");
+          } catch (error) {
+            console.error("Failed to upload task document:", error);
+            toast.error("Job created, but failed to upload task document.");
+          }
         },
         onError: (error) => {
           const errorMessage = extractErrorMessage(error);
@@ -183,7 +216,11 @@ export default function CreateJob() {
                 jobId={jobId}
                 onChange={(stages) => form.setValue("stages" as any, stages)}
               />
-              <MoreJobSetting jobId={jobId} versions={job?.job_versions as JobVersionMinimal[]} />
+              <MoreJobSetting
+                jobId={jobId}
+                versions={job?.job_versions as JobVersionMinimal[]}
+                taskSkills={taskData?.task_skills}
+              />
 
               {/* Form Actions */}
               <div className="flex flex-wrap items-center justify-center gap-4 border-t pt-8">

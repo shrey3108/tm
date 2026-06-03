@@ -4,3 +4,4 @@ export * from "./useJob";
 export * from "./useJobCandidatesList";
 export * from "./useJobStats";
 export * from "./useAdminCandidates";
+export * from "./useJobTask";
