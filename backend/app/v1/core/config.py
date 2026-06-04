@@ -183,6 +183,10 @@ class Settings(BaseSettings):
         default="uploads/resumes",
         description="Directory where uploaded resumes are stored",
     )
+    TASK_UPLOAD_DIR: str = Field(
+        default="uploads/tasks",
+        description="Directory where uploaded candidate and job tasks are stored",
+    )
     TRANSCRIPT_UPLOAD_DIR: str = Field(
         default="uploads/transcripts",
         description="Directory where uploaded interview transcripts are stored",
