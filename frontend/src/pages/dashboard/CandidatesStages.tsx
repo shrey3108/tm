@@ -42,7 +42,6 @@ export default function CandidatesStages() {
     candidateData,
     showAllSkills,
     setShowAllSkills,
-    refetchTimeline,
     isDetailsModalOpen,
     setIsDetailsModalOpen,
     evaluationHistory,
@@ -94,13 +93,9 @@ export default function CandidatesStages() {
             selectedStage={currentStage}
             job={job || undefined}
             candidate={candidate || undefined}
-            refetch={refetchTimeline}
             currentStage={currentStage}
             stageId={instanceId}
             isPolling={isPolling}
-            fetchHistory={fetchHistory}
-            setIsPolling={setIsPolling}
-            setIsJobModalOpen={setIsJobModalOpen}
             onTranscriptDisableChange={setIsTranscriptDisabled}
           />
 
