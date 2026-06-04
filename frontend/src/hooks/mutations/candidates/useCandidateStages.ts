@@ -47,6 +47,9 @@ export function useUploadCandidateTaskMutation() {
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.CANDIDATES.TIMELINE, variables.candidateId],
       });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.CANDIDATES.TRANSCRIPTS, variables.candidateId],
+      });
     },
   });
 }

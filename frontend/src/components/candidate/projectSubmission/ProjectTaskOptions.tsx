@@ -39,7 +39,7 @@ export function ProjectTaskOptions({
         >
             <RadioGroupItem value="existing" className="mt-0.5" />
             <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold leading-none text-foreground">Use Default Task</p>
+                <p className="text-sm font-medium leading-none text-foreground">Use Default Task</p>
             </div>
         </Label>
         <Label
@@ -50,7 +50,7 @@ export function ProjectTaskOptions({
         >
             <RadioGroupItem value="new" className="mt-0.5" />
             <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold leading-none text-foreground">Upload New Task</p>
+                <p className="text-sm font-medium leading-none text-foreground">Upload New Task</p>
             </div>
         </Label>
     </RadioGroup>

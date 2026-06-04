@@ -22,7 +22,7 @@ export interface EvaluationRead {
   interview_id?: string | null;
   transcript_id?: string | null;
   candidate_stage_id: string;
-  evaluation_data: Record<string, any>;
+  evaluation_data: Record<string, any> | Record<string, Array<Record<string, Criteria>>>;
   overall_score?: number | null;
   recommendation?: string | null;
   sim_jd_resume?: number | null;

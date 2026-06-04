@@ -161,7 +161,7 @@ export function useCandidatesStages() {
 
   // 7. Transcript History Query
   const { data: transcriptHistoryData, refetch: refetchHistory } =
-    useCandidateTranscriptsQuery(candidate?.id);
+    useCandidateTranscriptsQuery(candidate?.id, evaluation?.transcript_id);
   const transcriptHistory = transcriptHistoryData ?? [];
 
   // 8. HR Decision History Query
@@ -223,24 +223,24 @@ export function useCandidatesStages() {
 
   const transformedOverall = evaluation
     ? {
-        stage_score: evaluation.overall_score || 0,
-        recommendation: evaluation.recommendation || "N/A",
-        overall_summary: evaluation.highlights?.overall_summary || "No summary available.",
-        strength_summary: evaluation.highlights?.strengths || ["N/A"],
-        weakness_summary: evaluation.highlights?.weaknesses || ["N/A"],
-        followups: evaluation.highlights?.suggested_followups || ["N/A"],
-        percentage: Math.round((evaluation.overall_score || 0) * 20),
-      }
+      stage_score: evaluation.overall_score || 0,
+      recommendation: evaluation.recommendation || "N/A",
+      overall_summary: evaluation.highlights?.overall_summary || "No summary available.",
+      strength_summary: evaluation.highlights?.strengths || ["N/A"],
+      weakness_summary: evaluation.highlights?.weaknesses || ["N/A"],
+      followups: evaluation.highlights?.suggested_followups || ["N/A"],
+      percentage: Math.round((evaluation.overall_score || 0) * 20),
+    }
     : null;
 
   const isResumeScreening = currentStage === "Resume Screening";
   const filteredHistory = isResumeScreening
     ? hrDecisionHistory?.filter(
-        (item: HrDecisionHistoryItem) => item.stage_config_id == null || item?.stage_name === "Resume Screening"
-      )
+      (item: HrDecisionHistoryItem) => item.stage_config_id == null || item?.stage_name === "Resume Screening"
+    )
     : hrDecisionHistory?.filter(
-        (item: HrDecisionHistoryItem) => item.stage_config_id !== null && item.stage_config_id === configId
-      );
+      (item: HrDecisionHistoryItem) => item.stage_config_id !== null && item.stage_config_id === configId
+    );
 
   const latestDecision = filteredHistory ? filteredHistory[0] : hrDecisionHistory[0];
   const canTakeDecision = !latestDecision || latestDecision.decision.toLowerCase() === "may be";

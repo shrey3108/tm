@@ -88,6 +88,7 @@ export function StageEvaluationView({
           hrDecisionHistory={hrDecisionHistory}
           transcriptHistory={transcriptHistory}
           onTranscriptClick={onTranscriptClick}
+          transcript_id={evaluation.transcript_id}
         />
       </div>
     </>

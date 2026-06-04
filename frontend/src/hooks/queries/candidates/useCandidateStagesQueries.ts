@@ -121,11 +121,11 @@ export function useCandidateEvaluationHistoryQuery(instanceId: string | null | u
 /**
  * Hook to query transcript history.
  */
-export function useCandidateTranscriptsQuery(candidateId: string | null | undefined) {
+export function useCandidateTranscriptsQuery(candidateId: string | null | undefined, transcriptId: string | null | undefined = null) {
   return useQuery({
-    queryKey: [QUERY_KEYS.CANDIDATES.TRANSCRIPTS, candidateId],
+    queryKey: [QUERY_KEYS.CANDIDATES.TRANSCRIPTS, candidateId, transcriptId],
     queryFn: () => transcriptService.getCandidateTranscripts(candidateId!),
-    enabled: !!candidateId,
+    enabled: !!candidateId && !!transcriptId,
     staleTime: QUERY_CONFIG.CANDIDATE_STAGES.staleTime,
   });
 }

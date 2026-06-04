@@ -33,6 +33,7 @@ export function EvaluationCard({
   // confidence,
   className,
 }: EvaluationCardProps) {
+
   return (
     <AccordionItem value={title} className={cn(className)}>
       <AccordionTrigger className={"hover:no-underline px-2 py-2"}>
@@ -40,7 +41,7 @@ export function EvaluationCard({
           <h3 className="text-sm font-bold capitalize tracking-tight">
             {title.replace(/_/g, " ")}
           </h3>
-          <div className="flex items-center gap-1 text-foreground">
+          <div className="flex items-center gap-2 text-foreground">
             <span className="font-bold capitalize">Score</span>
             <span className="text-sm font-semibold">({score}/{maxScore})</span>
           </div>
@@ -57,6 +58,5 @@ export function EvaluationCard({
         </div>
       </AccordionContent>
     </AccordionItem>
-
   );
 }

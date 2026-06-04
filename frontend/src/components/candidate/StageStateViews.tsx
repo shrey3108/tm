@@ -34,7 +34,7 @@ export function PollingState() {
       <div className="text-center space-y-1">
         <h3 className="text-xl font-black uppercase tracking-tight">AI Analysis in Progress</h3>
         <p className="text-muted-foreground max-w-xs mx-auto">
-          We're analyzing the transcript and generating insights. This usually takes 90-120 seconds.
+          Your request has been queued and is now being analyzed. Results will be available shortly.
         </p>
       </div>
     </div>

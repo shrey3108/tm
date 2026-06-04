@@ -142,7 +142,7 @@ export function ProjectSubmissionDialog({
                 name="repoUrl"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-sm font-semibold">GitHub / GitLab URL</FormLabel>
+                    <FormLabel className="text-base font-semibold">GitHub / GitLab URL</FormLabel>
                     <FormControl>
                       <Input
                         type="url"
@@ -161,7 +161,7 @@ export function ProjectSubmissionDialog({
                 name="pdfFile"
                 render={() => (
                   <FormItem className="space-y-3">
-                    <FormLabel className="text-sm font-semibold">Project Requirement Document</FormLabel>
+                    <FormLabel className="text-base font-semibold">Project Requirement Document</FormLabel>
 
                     {jobTask?.task_file_path && (
                       <ProjectTaskOptions
