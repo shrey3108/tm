@@ -225,7 +225,53 @@ class Evaluation(Base):
                         # Final fallback if still missing
                         if "evidence" not in details:
                             details["evidence"] = []
-                            
+
+        # Check if there are keys matching "(JD Skills)" or "(Task Skills)"
+        has_grouped_skills = any("(JD Skills)" in k or "(Task Skills)" in k for k in criteria.keys())
+        
+        if has_grouped_skills:
+            jd_skills_list = []
+            task_skills_list = []
+            
+            # We want to preserve the order:
+            ordered_base_names = [
+                "Debug approach",
+                "Logical thinking",
+                "Code structure clarity",
+                "Problem-solving ability",
+                "Implementation accuracy",
+                "Security compliance",
+                "Documentation quality"
+            ]
+            
+            # Group by category
+            for base_name in ordered_base_names:
+                jd_key = f"{base_name} (JD Skills)"
+                task_key = f"{base_name} (Task Skills)"
+                
+                if jd_key in criteria:
+                    jd_skills_list.append({base_name: criteria[jd_key]})
+                if task_key in criteria:
+                    task_skills_list.append({base_name: criteria[task_key]})
+                    
+            # Fallback for any other custom keys that contain (JD Skills) or (Task Skills)
+            for k, v in criteria.items():
+                if "(JD Skills)" in k:
+                    base_name = k.replace(" (JD Skills)", "").strip()
+                    # Check if already added
+                    if not any(base_name in item for item in jd_skills_list):
+                        jd_skills_list.append({base_name: v})
+                elif "(Task Skills)" in k:
+                    base_name = k.replace(" (Task Skills)", "").strip()
+                    # Check if already added
+                    if not any(base_name in item for item in task_skills_list):
+                        task_skills_list.append({base_name: v})
+                        
+            return {
+                "JD Skills": jd_skills_list,
+                "Task Skills": task_skills_list
+            }
+
         # Sort/order keys to guarantee perfect side-by-side grid alignment (PostgreSQL JSONB scrambles insertion order)
         ordered_keys = [
             "Debug approach (JD Skills)",
