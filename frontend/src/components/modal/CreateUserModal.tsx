@@ -111,7 +111,6 @@ const CreateUserModal = ({ show, handleClose, onUserSaved, user }: CreateUserMod
 
   const { data: roles, loading } = useAdminRoles({ isEnable: show });
 
-
   return (
     <Dialog open={show} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto overflow-x-hidden">
@@ -178,7 +177,7 @@ const CreateUserModal = ({ show, handleClose, onUserSaved, user }: CreateUserMod
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {roles.map((role) => (
+                        {roles.filter(role => role.name !== "superadmin").map((role) => (
                           <SelectItem key={role.id} value={role.id}>
                             {role.name}
                           </SelectItem>

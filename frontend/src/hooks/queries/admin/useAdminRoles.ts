@@ -15,10 +15,6 @@ export const useAdminRoles = ({ skip = 0, limit = 10, q = "", isEnable = true }:
     placeholderData: keepPreviousData,
     staleTime: QUERY_CONFIG.ADMIN_ROLES.staleTime,
     enabled: isEnable,
-    select: ((data) => ({
-      data: data.data.filter((role) => role.name.toLowerCase() !== "superadmin"), // remove super admin
-      total: data.total - 1
-    }))
   });
 
   return {
