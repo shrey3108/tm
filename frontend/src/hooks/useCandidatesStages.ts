@@ -230,7 +230,7 @@ export function useCandidatesStages() {
       weakness_summary: evaluation.highlights?.weaknesses || ["N/A"],
       followups: evaluation.highlights?.suggested_followups || ["N/A"],
       percentage: Math.round((evaluation.overall_score || 0) * 20),
-    }
+    } as const
     : null;
 
   const isResumeScreening = currentStage === "Resume Screening";
