@@ -6,6 +6,7 @@ export const INFO = {
 } as const;
 
 export const ALLOWED_TRANSCRIPT_FILE_TYPES = [".docx", ".pdf", ".txt"];
+export const ALLOWED_TASK_FILE_TYPES = [".docx", ".pdf"];
 
 export const RESUME_SCREENING_RESULT = {
   PASS: "Pass",

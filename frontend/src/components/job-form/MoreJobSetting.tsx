@@ -8,6 +8,7 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/comp
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { JDPreviewModal } from "./JDPreviewModal";
+import { ALLOWED_TASK_FILE_TYPES } from "@/constants";
 
 export interface MoreJobSettingProps {
     jobId: string | null;
@@ -112,7 +113,7 @@ export function MoreJobSetting({ versions, taskSkills }: MoreJobSettingProps) {
                         </div>
                         <div>
                             <h2 className="text-lg font-semibold tracking-tight text-foreground">Project Requirement Documentation</h2>
-                            <p className="text-xs text-muted-foreground">Upload guidelines or requirement details for the candidates (PDF, max 5MB)</p>
+                            <p className="text-xs text-muted-foreground">Upload guidelines or requirement details for the candidates ({ALLOWED_TASK_FILE_TYPES.join(" ")}, max 5MB)</p>
                         </div>
                     </div>
 
@@ -149,7 +150,7 @@ export function MoreJobSetting({ versions, taskSkills }: MoreJobSettingProps) {
                                         >
                                             <input
                                                 type="file"
-                                                accept="application/pdf"
+                                                accept={ALLOWED_TASK_FILE_TYPES.join(",")}
                                                 className="hidden"
                                                 onChange={(e) => {
                                                     const file = e.target.files?.[0];
@@ -191,7 +192,7 @@ export function MoreJobSetting({ versions, taskSkills }: MoreJobSettingProps) {
                                                     <div className="text-center">
                                                         <p className="text-sm font-medium">Click to upload</p>
                                                         <p className="text-xs text-muted-foreground mt-1">
-                                                            PDF files only (Max 5MB)
+                                                            {ALLOWED_TASK_FILE_TYPES.join(", ")} files only (Max 5MB)
                                                         </p>
                                                     </div>
                                                 </>

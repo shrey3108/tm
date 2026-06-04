@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import AppPageHeader from "@/components/shared/AppPageHeader";
 import type { Job } from "@/types/job";
 import { TranscriptUpload } from "./TranscriptUpload";
-import { ProjectSubmissionDialog } from "./ProjectSubmissionDialog";
+import { ProjectSubmissionDialog } from "./projectSubmission/ProjectSubmissionDialog";
 
 interface StageCandidatesHeaderProps {
   /** Associated job for the candidate stage view */

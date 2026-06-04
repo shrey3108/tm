@@ -12,8 +12,6 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Form,
   FormField,
@@ -21,7 +19,6 @@ import {
   FormLabel,
   FormControl,
   FormMessage,
-  FormDescription,
 } from "@/components/ui/form";
 import { FileIcon, Loader2, Upload, X } from "lucide-react";
 import { ProjectSubmissionSchema, type ProjectSubmissionFormValues } from "@/schemas/candidate";
@@ -32,6 +29,8 @@ import {
 import { extractErrorMessage } from "@/utils/error";
 import { useJobTask } from "@/hooks/queries/jobs";
 import type { Job } from "@/types/job";
+import { ALLOWED_TASK_FILE_TYPES } from "@/constants";
+import { ProjectTaskOptions } from "./ProjectTaskOptions";
 
 interface ProjectSubmissionDialogProps {
   isOpen: boolean;
@@ -42,7 +41,7 @@ interface ProjectSubmissionDialogProps {
   job: Job | null;
   onSuccess?: () => void;
 }
-
+export type TaskOption = "existing" | "new";
 export function ProjectSubmissionDialog({
   isOpen,
   onOpenChange,
@@ -52,13 +51,12 @@ export function ProjectSubmissionDialog({
   job,
   onSuccess,
 }: ProjectSubmissionDialogProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const { mutateAsync: uploadCandidateTask } = useUploadCandidateTaskMutation();
-  const { mutateAsync: evaluateGithub } = useEvaluateGithubMutation();
+  const { mutateAsync: uploadCandidateTask, isPending: isUploading } = useUploadCandidateTaskMutation();
+  const { mutateAsync: evaluateGithub, isPending: isEvaluating } = useEvaluateGithubMutation();
   const { data: jobTask } = useJobTask(job?.id);
-  const [taskOption, setTaskOption] = useState<"existing" | "new">("new");
+  const [taskOption, setTaskOption] = useState<TaskOption>("new");
 
   useEffect(() => {
     if (isOpen) {
@@ -87,18 +85,6 @@ export function ProjectSubmissionDialog({
     }
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    const file = e.dataTransfer.files?.[0];
-    if (file) {
-      form.setValue("pdfFile", file, { shouldValidate: true });
-    }
-  };
-
   const handleClearFile = (e: React.MouseEvent) => {
     e.stopPropagation();
     form.setValue("pdfFile", undefined, { shouldValidate: true });
@@ -117,7 +103,6 @@ export function ProjectSubmissionDialog({
       return;
     }
 
-    setIsSubmitting(true);
     try {
       if (taskOption === "new" && data.pdfFile) {
         toast.info("Uploading project requirement file...");
@@ -134,14 +119,12 @@ export function ProjectSubmissionDialog({
     } catch (error) {
       const errorMsg = extractErrorMessage(error);
       toast.error(errorMsg || "Failed to submit details. Please try again.");
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-[700px] max-h-[90vh] flex flex-col p-0 overflow-hidden bg-card/95 backdrop-blur-xl border-muted-foreground/20 shadow-2xl rounded-2xl">
+      <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-[700px] h-[93vh] flex flex-col p-0 bg-card/95 backdrop-blur-xl border-muted-foreground/20 shadow-2xl rounded-2xl">
         <DialogHeader className="p-3 pb-2 border-b border-muted-foreground/10">
           <DialogTitle className="text-xl font-bold tracking-tight">
             Technical Practical Round Submission
@@ -168,9 +151,6 @@ export function ProjectSubmissionDialog({
                         {...field}
                       />
                     </FormControl>
-                    <FormDescription className="text-xs text-muted-foreground">
-                      Provide the public repository link for the practical assignment.
-                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -184,47 +164,12 @@ export function ProjectSubmissionDialog({
                     <FormLabel className="text-sm font-semibold">Project Requirement Document</FormLabel>
 
                     {jobTask?.task_file_path && (
-                      <RadioGroup
-                        value={taskOption}
-                        onValueChange={(val) => {
-                          const option = val as "existing" | "new";
-                          setTaskOption(option);
-                          if (option === "existing") {
-                            form.setValue("pdfFile", undefined, { shouldValidate: true });
-                            if (fileInputRef.current) fileInputRef.current.value = "";
-                          }
-                        }}
-                        className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-2"
-                      >
-                        <Label
-                          className={`flex items-start gap-2 p-3 rounded-2xl border text-left cursor-pointer transition-all font-normal ${taskOption === "existing"
-                            ? "border-primary bg-primary/5 ring-1 ring-primary/30"
-                            : "border-muted-foreground/15 bg-transparent hover:bg-muted/5"
-                            }`}
-                        >
-                          <RadioGroupItem value="existing" className="mt-0.5" />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold leading-none text-foreground">Use Default Task</p>
-                            <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
-                              Use the task file already configured for this job.
-                            </p>
-                          </div>
-                        </Label>
-                        <Label
-                          className={`flex items-start gap-2 p-3 rounded-2xl border text-left cursor-pointer transition-all font-normal ${taskOption === "new"
-                            ? "border-primary bg-primary/5 ring-1 ring-primary/30"
-                            : "border-muted-foreground/15 bg-transparent hover:bg-muted/5"
-                            }`}
-                        >
-                          <RadioGroupItem value="new" className="mt-0.5" />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold leading-none text-foreground">Upload New Task</p>
-                            <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
-                              Upload a candidate-specific project document.
-                            </p>
-                          </div>
-                        </Label>
-                      </RadioGroup>
+                      <ProjectTaskOptions
+                        form={form}
+                        taskOption={taskOption}
+                        setTaskOption={setTaskOption}
+                        fileInputRef={fileInputRef}
+                      />
                     )}
 
                     <FormControl>
@@ -241,17 +186,15 @@ export function ProjectSubmissionDialog({
                         </div>
                       ) : (
                         <div
-                          onDragOver={handleDragOver}
-                          onDrop={handleDrop}
                           onClick={() => fileInputRef.current?.click()}
                           className="border-2 border-dashed border-muted-foreground/25 hover:border-primary/50 dark:hover:border-primary/40 rounded-2xl p-6 flex flex-col items-center justify-center gap-2 cursor-pointer bg-muted/5 hover:bg-muted/10 transition-colors relative"
                         >
                           <input
                             type="file"
                             ref={fileInputRef}
-                            accept="application/pdf"
                             className="hidden"
                             onChange={handleFileChange}
+                            accept={ALLOWED_TASK_FILE_TYPES.join(",")}
                           />
 
                           {selectedFile ? (
@@ -281,9 +224,9 @@ export function ProjectSubmissionDialog({
                                 <Upload className="h-5 w-5" />
                               </div>
                               <div className="text-center">
-                                <p className="text-sm font-medium">Click to upload or drag & drop</p>
+                                <p className="text-sm font-medium">Click to upload</p>
                                 <p className="text-xs text-muted-foreground mt-1">
-                                  PDF files only (Max 5MB)
+                                  {ALLOWED_TASK_FILE_TYPES.join(" ")} files only (Max 5MB)
                                 </p>
                               </div>
                             </>
@@ -297,25 +240,25 @@ export function ProjectSubmissionDialog({
               />
             </div>
 
-            <DialogFooter className="p-6 border-t border-muted-foreground/10 bg-muted/20 gap-2 flex items-center justify-end">
+            <DialogFooter className="p-6 border-t border-muted-foreground/10 bg-muted/20 gap-2 flex items-center justify-end rounded-2xl">
               <Button
                 type="button"
-                variant="ghost"
+                variant="outline"
                 className="rounded-xl"
                 onClick={() => {
                   form.reset();
                   onOpenChange(false);
                 }}
-                disabled={isSubmitting}
+                disabled={isUploading || isEvaluating}
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
                 className="rounded-xl px-6 font-semibold"
-                disabled={isSubmitting || (taskOption === "new" && !selectedFile)}
+                disabled={isUploading || isEvaluating || (taskOption === "new" && !selectedFile) || !form.formState.isValid}
               >
-                {isSubmitting ? (
+                {isUploading || isEvaluating ? (
                   <span className="flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     Submitting...
