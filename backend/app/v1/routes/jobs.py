@@ -480,5 +480,52 @@ async def delete_job_task(
     return {"message": "Task deleted successfully."}
 
 
+@router.get(
+    "/{job_id}/task/file",
+    status_code=status.HTTP_200_OK,
+)
+async def download_job_task_file(
+    job_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: UserRead = Depends(check_permission("jobs:access")),
+):
+    """Download/view the job's default task description file."""
+    from fastapi import HTTPException
+    from fastapi.responses import FileResponse
+    from app.v1.db.models.jobs import Job
+    from app.v1.core.storage import resolve_storage_path
+    import os
+
+    # 1. Fetch Job from DB
+    job = await db.get(Job, job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    if not job.task_file_path:
+        raise HTTPException(status_code=404, detail="No task file uploaded for this Job")
+
+    # 2. Resolve Path
+    abs_path = resolve_storage_path(job.task_file_path)
+    if not abs_path.is_file():
+        raise HTTPException(status_code=404, detail="Task file not found on disk")
+
+    filename = os.path.basename(job.task_file_path)
+    # Determine media type based on extension
+    media_type = "application/octet-stream"
+    if filename.lower().endswith(".pdf"):
+        media_type = "application/pdf"
+    elif filename.lower().endswith(".docx"):
+        media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    elif filename.lower().endswith(".doc"):
+        media_type = "application/msword"
+
+    return FileResponse(
+        path=abs_path,
+        filename=filename,
+        media_type=media_type
+    )
+
+
+
 
 

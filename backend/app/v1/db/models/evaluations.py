@@ -157,35 +157,85 @@ class Evaluation(Base):
                 for sym in symbols_to_remove:
                     summary = summary.replace(sym, "")
                 
-                # Replace multiple newlines with a clean inline separator to prevent paragraph collapse
-                lines = [line.strip() for line in summary.split("\n") if line.strip()]
-                cleaned_summary = " ── ".join(lines)
-                
-                # Clean up any leftover dividers or spaces
-                while "  " in cleaned_summary:
-                    cleaned_summary = cleaned_summary.replace("  ", " ")
-                while " ── ── " in cleaned_summary:
-                    cleaned_summary = cleaned_summary.replace(" ── ── ", " ── ")
-                while "====" in cleaned_summary:
-                    cleaned_summary = cleaned_summary.replace("====", "")
-                
-                data["overall_summary"] = cleaned_summary.strip(" -=")
+                if "──" in summary:
+                    parts = summary.split("──")
+                    structured_summary = []
+                    for part in parts:
+                        part_str = part.strip()
+                        if "Job Description (JD):" in part_str or "ALIGNMENT BREAKDOWN: Job Description (JD):" in part_str:
+                            clean_text = part_str.replace("ALIGNMENT BREAKDOWN:", "").replace("Job Description (JD):", "").strip()
+                            structured_summary.append({"JD Alignment": clean_text})
+                        elif "Task/Project:" in part_str:
+                            clean_text = part_str.replace("Task/Project:", "").strip()
+                            structured_summary.append({"Project Requirements": clean_text})
+                        elif "Architecture:" in part_str:
+                            clean_text = part_str.replace("Architecture:", "").strip()
+                            structured_summary.append({"Architecture": clean_text})
+                        elif "Code Quality:" in part_str:
+                            clean_text = part_str.replace("Code Quality:", "").strip()
+                            structured_summary.append({"Code Quality": clean_text})
+                        elif "Security Risks:" in part_str:
+                            clean_text = part_str.replace("Security Risks:", "").strip()
+                            structured_summary.append({"Security Risks": clean_text})
+                        elif part_str:
+                            structured_summary.append({"Summary": part_str})
+                    
+                    if structured_summary:
+                        data["overall_summary"] = structured_summary
+                else:
+                    lines = [line.strip() for line in summary.split("\n") if line.strip()]
+                    cleaned_summary = " ── ".join(lines)
+                    while "  " in cleaned_summary:
+                        cleaned_summary = cleaned_summary.replace("  ", " ")
+                    while " ── ── " in cleaned_summary:
+                        cleaned_summary = cleaned_summary.replace(" ── ── ", " ── ")
+                    while "====" in cleaned_summary:
+                        cleaned_summary = cleaned_summary.replace("====", "")
+                    data["overall_summary"] = cleaned_summary.strip(" -=")
 
-            # Clean list strengths, weaknesses, followups to remove headers and emojis
+            # Clean and group list strengths, weaknesses, followups
             for key in ["strengths", "weaknesses", "suggested_followups"]:
                 items = data.get(key) or []
-                cleaned_items = []
-                for item in items:
-                    if isinstance(item, str):
-                        # Filter out raw header bullets if they exist (old format compatibility)
-                        trimmed = item.strip()
-                        if trimmed.startswith("[") and trimmed.endswith("]") and ("Strengths" in trimmed or "Weaknesses" in trimmed or "Followup" in trimmed):
-                            continue
-                        # Remove emojis
-                        for sym in ["❌", "✅", "📐", "⚠️", "✨", "📌", "🎯"]:
-                            item = item.replace(sym, "")
-                        cleaned_items.append(item.strip())
-                data[key] = cleaned_items
+                
+                # Check if any item contains "[JD Alignment]" or "[Project Requirements]"
+                has_alignment = any(isinstance(item, str) and ("[JD Alignment]" in item or "[Project Requirements]" in item) for item in items)
+                
+                if not has_alignment:
+                    cleaned_items = []
+                    for item in items:
+                        if isinstance(item, str):
+                            trimmed = item.strip()
+                            if trimmed.startswith("[") and trimmed.endswith("]") and ("Strengths" in trimmed or "Weaknesses" in trimmed or "Followup" in trimmed):
+                                continue
+                            for sym in ["❌", "✅", "📐", "⚠️", "✨", "📌", "🎯"]:
+                                item = item.replace(sym, "")
+                            cleaned_items.append(item.strip())
+                    data[key] = cleaned_items
+                else:
+                    jd_items = []
+                    proj_items = []
+                    for item in items:
+                        if isinstance(item, str):
+                            trimmed = item.strip()
+                            if trimmed.startswith("[") and trimmed.endswith("]") and ("Strengths" in trimmed or "Weaknesses" in trimmed or "Followup" in trimmed):
+                                continue
+                            for sym in ["❌", "✅", "📐", "⚠️", "✨", "📌", "🎯"]:
+                                trimmed = trimmed.replace(sym, "")
+                            trimmed = trimmed.strip()
+                            
+                            if "[JD Alignment]" in trimmed:
+                                clean_text = trimmed.replace("[JD Alignment]", "").strip()
+                                jd_items.append(clean_text)
+                            elif "[Project Requirements]" in trimmed:
+                                clean_text = trimmed.replace("[Project Requirements]", "").strip()
+                                proj_items.append(clean_text)
+                            else:
+                                jd_items.append(trimmed)
+                    
+                    data[key] = [
+                        {"JD Alignment": jd_items},
+                        {"Project Requirements": proj_items}
+                    ]
 
         return data
 

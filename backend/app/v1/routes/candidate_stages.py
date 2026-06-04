@@ -423,4 +423,3 @@ async def evaluate_candidate_github_repo(
         "status": "processing",
         "evaluation_id": eval_id,
     }
-
