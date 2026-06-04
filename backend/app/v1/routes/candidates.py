@@ -367,3 +367,57 @@ async def get_job_and_candidate_task_skills(
         candidate_id=candidate_id,
         job_id=job_id,
     )
+
+
+@router.get(
+    "/{candidate_id}/task/file",
+    status_code=status.HTTP_200_OK,
+)
+async def download_candidate_task_file(
+    candidate_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: UserRead = Depends(check_permission("candidates:access")),
+) -> Any:
+    """
+    Download/view the candidate's custom task file.
+    Returns FileResponse/RedirectResponse if candidate's custom task exists, otherwise returns None (null).
+    """
+    from fastapi.responses import FileResponse, RedirectResponse
+    from app.v1.db.models.candidates import Candidate
+    from app.v1.core.storage import resolve_storage_path
+    import os
+
+    # 1. Fetch Candidate from DB
+    candidate = await db.get(Candidate, candidate_id)
+    if not candidate:
+        raise HTTPException(status_code=404, detail="Candidate not found")
+
+    # 2. Get task file path (only custom task, no fallback)
+    task_file_path = candidate.task_file_path
+    if not task_file_path:
+        return None
+
+    # 3. Handle URL (e.g. GitHub URL or external link)
+    if task_file_path.startswith(("http://", "https://")):
+        return RedirectResponse(url=task_file_path)
+
+    # 4. Resolve local file path
+    abs_path = resolve_storage_path(task_file_path)
+    if not abs_path.is_file():
+        return None
+
+    filename = os.path.basename(task_file_path)
+    media_type = "application/octet-stream"
+    if filename.lower().endswith(".pdf"):
+        media_type = "application/pdf"
+    elif filename.lower().endswith(".docx"):
+        media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    elif filename.lower().endswith(".doc"):
+        media_type = "application/msword"
+
+    return FileResponse(
+        path=abs_path,
+        filename=filename,
+        media_type=media_type
+    )
+
