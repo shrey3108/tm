@@ -11,6 +11,7 @@ from sqlalchemy.orm import selectinload
 
 from app.v1.core.config import settings
 from app.v1.core.extractor import DocumentParser
+from app.v1.core.storage import resolve_storage_path, to_storage_relative_path
 from app.v1.db.models.candidates import Candidate
 
 logger = logging.getLogger(__name__)
@@ -32,7 +33,7 @@ class CandidateTaskService:
             )
 
         # 2. Setup upload directory and save file
-        tasks_dir = Path("uploads/tasks")
+        tasks_dir = resolve_storage_path(settings.TASK_UPLOAD_DIR)
         tasks_dir.mkdir(parents=True, exist_ok=True)
         
         # Save task PDF/DOCX to local filesystem
@@ -44,12 +45,12 @@ class CandidateTaskService:
             )
             
         file_name = f"candidate_{candidate_id}{file_extension}"
-        file_path = tasks_dir / file_name
+        target_path = tasks_dir / file_name
+        stored_file_path = to_storage_relative_path(target_path)
         
         try:
             content = await task_file.read()
-            with open(file_path, "wb") as f:
-                f.write(content)
+            target_path.write_bytes(content)
         except Exception as e:
             logger.error("Failed to save candidate task file to disk: %s", e)
             raise HTTPException(
@@ -59,7 +60,7 @@ class CandidateTaskService:
 
         # 3. Update database with file path and reset skills while background processing starts
         try:
-            candidate.task_file_path = str(file_path)
+            candidate.task_file_path = stored_file_path
             candidate.task_skills = None  # Clear while processing in background
             
             db.add(candidate)
@@ -80,7 +81,7 @@ class CandidateTaskService:
         # 5. Dispatch background Celery task (runtime import avoids circular dependency)
         from app.v1.services.admin.job_tasks import extract_candidate_task_skills_task
         logger.info("Triggering background Celery task for candidate skill extraction: %s", candidate_id)
-        extract_candidate_task_skills_task.delay(str(candidate_id), str(file_path))
+        extract_candidate_task_skills_task.delay(str(candidate_id), stored_file_path)
 
         return candidate
 
@@ -208,7 +209,7 @@ Output Format Example (JSON ONLY):
         # 2. Delete task file from disk if it exists
         if candidate.task_file_path:
             try:
-                file_path = Path(candidate.task_file_path)
+                file_path = resolve_storage_path(candidate.task_file_path)
                 if file_path.exists() and file_path.is_file():
                     file_path.unlink()
             except Exception as e:

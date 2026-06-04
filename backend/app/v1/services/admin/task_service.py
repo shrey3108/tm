@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.v1.core.config import settings
 from app.v1.core.extractor import DocumentParser
+from app.v1.core.storage import resolve_storage_path, to_storage_relative_path
 from app.v1.db.models.jobs import Job
 from app.v1.repository.job_repository import job_repository
 
@@ -29,7 +30,7 @@ class TaskService:
             )
 
         # 2. Setup upload directory and save file
-        tasks_dir = Path("uploads/tasks")
+        tasks_dir = resolve_storage_path(settings.TASK_UPLOAD_DIR)
         tasks_dir.mkdir(parents=True, exist_ok=True)
         
         # Save task PDF to local filesystem
@@ -41,12 +42,12 @@ class TaskService:
             )
             
         file_name = f"task_{job_id}{file_extension}"
-        file_path = tasks_dir / file_name
+        target_path = tasks_dir / file_name
+        stored_file_path = to_storage_relative_path(target_path)
         
         try:
             content = await task_file.read()
-            with open(file_path, "wb") as f:
-                f.write(content)
+            target_path.write_bytes(content)
         except Exception as e:
             logger.error("Failed to save task file to disk: %s", e)
             raise HTTPException(
@@ -56,7 +57,7 @@ class TaskService:
 
         # 3. Update database with file path and reset skills while background processing starts
         try:
-            job.task_file_path = str(file_path)
+            job.task_file_path = stored_file_path
             job.task_skills = None  # Clear while processing in background
             
             db.add(job)
@@ -79,7 +80,7 @@ class TaskService:
         # 5. Dispatch background Celery task (runtime import avoids circular dependecy)
         from app.v1.services.admin.job_tasks import extract_task_skills_task
         logger.info("Triggering background Celery task for skill extraction: %s", job_id)
-        extract_task_skills_task.delay(str(job_id), str(file_path))
+        extract_task_skills_task.delay(str(job_id), stored_file_path)
 
         return job
 
@@ -209,7 +210,7 @@ Output Format Example (JSON ONLY):
         # 2. Delete task file from disk if it exists
         if job.task_file_path:
             try:
-                file_path = Path(job.task_file_path)
+                file_path = resolve_storage_path(job.task_file_path)
                 if file_path.exists() and file_path.is_file():
                     file_path.unlink()
             except Exception as e:

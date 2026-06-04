@@ -15,6 +15,7 @@ from app.v1.db.models.resumes import Resume
 from app.v1.db.models.candidates import Candidate
 from app.v1.db.models.cross_job_matches import CrossJobMatch
 from app.v1.db.models.files import File
+from app.v1.utils.text import extract_heuristic_info, standardize_to_resume_spaced
 
 
 
@@ -266,7 +267,7 @@ async def _run_resume_pipeline(
                     return
                 # --------------------------------------------------
 
-                from app.v1.utils.text import extract_heuristic_info, standardize_to_resume_spaced
+
                 
                 # Helper to check if a value is effectively missing
                 def is_missing(val):
