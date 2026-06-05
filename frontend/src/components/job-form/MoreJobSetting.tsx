@@ -3,12 +3,16 @@ import { useFormContext } from "react-hook-form";
 import type { JobVersionMinimal } from "@/types/job";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Eye, History, FileText, Upload, X } from "lucide-react";
+import { Eye, History, FileText, Upload, ExternalLink, Trash } from "lucide-react";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { JDPreviewModal } from "./JDPreviewModal";
 import { ALLOWED_TASK_FILE_TYPES } from "@/constants";
+import { useDownloadJobTask } from "@/hooks/queries/jobs";
+import { useDeleteJobTaskMutation } from "@/hooks/mutations/jobs/useJobTaskMutations";
+import { toast } from "sonner";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 
 export interface MoreJobSettingProps {
     jobId: string | null;
@@ -16,16 +20,41 @@ export interface MoreJobSettingProps {
     taskSkills?: string[] | null;
 }
 
-export function MoreJobSetting({ versions, taskSkills }: MoreJobSettingProps) {
-    const { control } = useFormContext();
+export function MoreJobSetting({ versions, taskSkills, jobId }: MoreJobSettingProps) {
+    const { control, setValue } = useFormContext();
     const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const { data: jobTaskBlob } = useDownloadJobTask(jobId);
+    const { mutate: deleteJobTaskMutation } = useDeleteJobTaskMutation();
 
     const handleViewJD = (versionId: string) => {
         setIsDialogOpen(true);
         setSelectedVersionId(versionId);
+    };
+
+    const handleViewJobTask = () => {
+        if (!jobTaskBlob) return;
+        const url = URL.createObjectURL(jobTaskBlob);
+        window.open(url, "_blank");
+    };
+
+    const handleDeleteJobTask = () => {
+        if (!jobId) return;
+        deleteJobTaskMutation(jobId, {
+            onSuccess: () => {
+                setValue("project_document", undefined);
+                if (fileInputRef.current) {
+                    fileInputRef.current.value = "";
+                }
+                toast.success("Project requirement documentation deleted successfully.");
+            },
+            onError: (error) => {
+                console.error("Failed to delete task document:", error);
+                toast.error("Failed to delete project requirement documentation.");
+            }
+        });
     };
 
     const handleClearFile = (e: React.MouseEvent, onChange: (...event: any[]) => void) => {
@@ -79,9 +108,9 @@ export function MoreJobSetting({ versions, taskSkills }: MoreJobSettingProps) {
                                                     </div>
                                                     <Button
                                                         type="button"
-                                                        variant="ghost"
+                                                        variant="outline"
                                                         size="sm"
-                                                        className="h-8 px-2 text-xs font-semibold border border-muted rounded-xl hover:text-primary transition-colors"
+                                                        className="h-8 px-2 text-xs"
                                                         onClick={(e) => {
                                                             e.stopPropagation();
                                                             handleViewJD(version.id);
@@ -103,7 +132,7 @@ export function MoreJobSetting({ versions, taskSkills }: MoreJobSettingProps) {
                     </div>
                 )}
 
-                {hasVersions && <div className="border-t border-muted/20 my-6"></div>}
+                {hasVersions && <div className="border-t border-muted/20 my-2"></div>}
 
                 {/* Project Requirement Documentation Section */}
                 <div className="space-y-6">
@@ -170,19 +199,43 @@ export function MoreJobSetting({ versions, taskSkills }: MoreJobSettingProps) {
                                                         <p className="text-sm font-medium truncate font-sans">
                                                             {getFileName(selectedFile)}
                                                         </p>
-                                                        <p className="text-xs text-muted-foreground">
-                                                            {typeof selectedFile === "string" ? "Already Uploaded" : `${(selectedFile.size / (1024 * 1024)).toFixed(2)} MB`}
-                                                        </p>
                                                     </div>
-                                                    <Button
-                                                        type="button"
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground animate-in fade-in"
-                                                        onClick={(e) => handleClearFile(e, field.onChange)}
-                                                    >
-                                                        <X className="h-4 w-4" />
-                                                    </Button>
+                                                    {typeof selectedFile === "string" ? (
+                                                        <>
+                                                            <Button
+                                                                type="button"
+                                                                variant="outline"
+                                                                size="sm"
+                                                                className="rounded-lg gap-1.5 text-xs"
+                                                                onClick={handleViewJobTask}
+                                                                disabled={!jobTaskBlob}
+                                                            >
+                                                                <ExternalLink className="h-3.5 w-3.5" />
+                                                                View
+                                                            </Button>
+                                                            <Button
+                                                                type="button"
+                                                                variant="outline"
+                                                                size="sm"
+                                                                className="rounded-lg gap-1.5 text-xs"
+                                                                onClick={handleDeleteJobTask}
+                                                            >
+                                                                <Trash className="h-3.5 w-3.5" />
+                                                                Delete
+                                                            </Button>
+                                                        </>
+                                                    ) : (
+                                                        <Button
+                                                            type="button"
+                                                            variant="outline"
+                                                            size="sm"
+                                                            className="rounded-lg gap-1.5 text-xs"
+                                                            onClick={(e) => handleClearFile(e, field.onChange)}
+                                                        >
+                                                            <Trash className="h-3.5 w-3.5" />
+                                                            Clear
+                                                        </Button>
+                                                    )}
                                                 </div>
                                             ) : (
                                                 <>
@@ -206,22 +259,24 @@ export function MoreJobSetting({ versions, taskSkills }: MoreJobSettingProps) {
                     />
 
                     {taskSkills && taskSkills.length > 0 && (
-                        <div className="space-y-2 mt-4 animate-in fade-in duration-300">
-                            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                                Extracted Skills from Task Document
-                            </h3>
-                            <div className="flex flex-wrap gap-1.5">
-                                {taskSkills.map((skill, index) => (
-                                    <Badge
-                                        key={index}
-                                        variant="secondary"
-                                        className="px-2.5 py-0.5 text-xs font-medium bg-secondary/60 text-secondary-foreground"
-                                    >
-                                        {skill}
-                                    </Badge>
-                                ))}
-                            </div>
-                        </div>
+                        <Accordion className="w-full" >
+                            <AccordionItem value="task-skills" >
+                                <AccordionTrigger className={"hover:no-underline px-2 py-2"}>Extracted Skills from Task Document</AccordionTrigger>
+                                <AccordionContent>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {taskSkills.map((skill, index) => (
+                                            <Badge
+                                                key={index}
+                                                variant="secondary"
+                                                className="px-2.5 py-0.5 text-xs font-medium bg-secondary/60 text-secondary-foreground"
+                                            >
+                                                {skill}
+                                            </Badge>
+                                        ))}
+                                    </div>
+                                </AccordionContent>
+                            </AccordionItem>
+                        </Accordion>
                     )}
                 </div>
             </CardContent>
@@ -232,6 +287,6 @@ export function MoreJobSetting({ versions, taskSkills }: MoreJobSettingProps) {
                 onOpenChange={setIsDialogOpen}
                 versionId={selectedVersionId}
             />
-        </Card>
+        </Card >
     );
 }

@@ -20,14 +20,14 @@ import {
   FormControl,
   FormMessage,
 } from "@/components/ui/form";
-import { FileIcon, Loader2, Upload, X } from "lucide-react";
+import { ExternalLink, FileIcon, Loader2, Upload, X } from "lucide-react";
 import { ProjectSubmissionSchema, type ProjectSubmissionFormValues } from "@/schemas/candidate";
 import {
   useUploadCandidateTaskMutation,
   useEvaluateGithubMutation,
 } from "@/hooks/mutations/candidates/useCandidateStages";
 import { extractErrorMessage } from "@/utils/error";
-import { useJobTask } from "@/hooks/queries/jobs";
+import { useDownloadCandidateTask, useDownloadJobTask, useJobTask } from "@/hooks/queries/jobs";
 import type { Job } from "@/types/job";
 import { ALLOWED_TASK_FILE_TYPES } from "@/constants";
 import { ProjectTaskOptions } from "./ProjectTaskOptions";
@@ -56,6 +56,15 @@ export function ProjectSubmissionDialog({
   const { mutateAsync: uploadCandidateTask, isPending: isUploading } = useUploadCandidateTaskMutation();
   const { mutateAsync: evaluateGithub, isPending: isEvaluating } = useEvaluateGithubMutation();
   const { data: jobTask } = useJobTask(job?.id);
+
+  const { data: _candidateTask } = useDownloadCandidateTask(candidateId);
+  const { data: jobTaskBlob } = useDownloadJobTask(job?.id);
+
+  const handleViewJobTask = () => {
+    if (!jobTaskBlob) return;
+    const url = URL.createObjectURL(jobTaskBlob);
+    window.open(url, "_blank");
+  };
   const [taskOption, setTaskOption] = useState<TaskOption>("new");
 
   useEffect(() => {
@@ -179,10 +188,21 @@ export function ProjectSubmissionDialog({
                             <FileIcon className="h-5 w-5" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs text-muted-foreground mt-0.5">
+                            <p className="text-xs text-muted-foreground">
                               Thier is already task file.
                             </p>
                           </div>
+                          {jobTaskBlob ? <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="rounded-lg gap-1.5 text-xs"
+                            onClick={handleViewJobTask}
+                            disabled={!jobTaskBlob}
+                          >
+                            <ExternalLink className="h-3.5 w-3.5" />
+                            View
+                          </Button> : null}
                         </div>
                       ) : (
                         <div

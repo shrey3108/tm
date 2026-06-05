@@ -14,6 +14,9 @@ export function useUploadJobTaskMutation() {
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.JOBS.TASK, variables.jobId],
       });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.JOBS.TASK_DOWNLOAD, variables.jobId],
+      });
     },
   });
 }
@@ -28,6 +31,9 @@ export function useDeleteJobTaskMutation() {
     onSuccess: (_data, jobId) => {
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.JOBS.TASK, jobId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.JOBS.TASK_DOWNLOAD, jobId],
       });
     },
   });

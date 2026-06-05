@@ -22,3 +22,37 @@ export const useJobTask = (jobId: string | null | undefined) => {
     refetch: res.refetch,
   };
 };
+
+export const useDownloadCandidateTask = (candidateId: string | null | undefined) => {
+  const res = useQuery({
+    queryKey: [QUERY_KEYS.JOBS.TASK_DOWNLOAD, candidateId],
+    queryFn: () => taskService.downloadCandidateTask(candidateId!),
+    enabled: !!candidateId,
+    staleTime: QUERY_CONFIG.JOB_DETAIL.staleTime,
+  });
+
+  return {
+    data: res.data ?? null,
+    loading: res.isLoading,
+    error: res.error,
+    refetch: res.refetch,
+  };
+};
+
+export const useDownloadJobTask = (jobId: string | null | undefined) => {
+  const res = useQuery({
+    queryKey: [QUERY_KEYS.JOBS.TASK_DOWNLOAD, jobId],
+    queryFn: () => taskService.downloadJobTask(jobId!),
+    enabled: !!jobId,
+    staleTime: QUERY_CONFIG.JOB_DETAIL.staleTime,
+  });
+
+  return {
+    data: res.data ?? null,
+    loading: res.isLoading,
+    error: res.error,
+    refetch: res.refetch,
+  };
+};
+
+

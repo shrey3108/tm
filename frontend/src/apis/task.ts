@@ -58,6 +58,32 @@ export const taskService = {
     });
     return response.data;
   },
+  /**
+     * Download a candidate-specific task PDF/DOCX.
+     * @param candidateId - The UUID of the candidate
+     * @returns Promise resolving to the file Blob
+     */
+  downloadCandidateTask: async (candidateId: string): Promise<Blob> => {
+    const response = await client.get(`/candidates/${candidateId}/task/file`, {
+      responseType: "blob",
+      headers: { "Content-Type": undefined },
+    });
+    const contentType = response.headers["content-type"] || "application/octet-stream"; // content type from response headers other wise octet-stream handle all binary type files.
+    return new Blob([response.data], { type: contentType });
+  },
+  /**
+     * Download the default job task PDF/DOCX.
+     * @param jobId - The UUID of the job
+     * @returns Promise resolving to the file Blob
+     */
+  downloadJobTask: async (jobId: string): Promise<Blob> => {
+    const response = await client.get(`/jobs/${jobId}/task/file`, {
+      responseType: "blob",
+      headers: { "Content-Type": undefined },
+    });
+    const contentType = response.headers["content-type"] || "application/octet-stream";
+    return new Blob([response.data], { type: contentType });
+  },
 };
 
 export interface CandidateTaskRead {
