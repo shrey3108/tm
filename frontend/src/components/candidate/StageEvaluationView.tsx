@@ -41,21 +41,25 @@ export function StageEvaluationView({
   const versionNumber =
     evaluationHistory.length -
     Math.max(0, evaluationHistory.findIndex((h) => h.id === evaluation.id));
+  const latestHrDecision = hrDecisionHistory[0]?.decision.toLowerCase();
+  const canTakeDecision = !latestHrDecision || latestHrDecision.includes("may be") || latestHrDecision === "maybe";
 
   return (
     <>
       <div className="flex items-center justify-end px-4 mb-2 gap-3">
-        <Button
-          variant="outline"
-          onClick={() =>
-            window.scroll({
-              top: document.body.scrollHeight,
-              behavior: "smooth",
-            })
-          }
-        >
-          Go to Actions
-        </Button>
+        {canTakeDecision && (
+          <Button
+            variant="outline"
+            onClick={() =>
+              window.scroll({
+                top: document.body.scrollHeight,
+                behavior: "smooth",
+              })
+            }
+          >
+            Go to Actions
+          </Button>
+        )}
         <Button
           variant="outline"
           size="sm"

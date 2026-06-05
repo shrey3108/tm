@@ -115,7 +115,7 @@ export default function CandidatesStages() {
               ) : (
                 <LoadingState message="Loading candidate details..." />
               )
-            ) : isLoadingEvaluation ? (
+            ) : isLoadingEvaluation && !isPolling ? (
               <LoadingState message="Fetching evaluation data..." />
             ) : isPolling ? (
               <PollingState />
