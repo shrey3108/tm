@@ -232,10 +232,13 @@ class Evaluation(Base):
                             else:
                                 jd_items.append(trimmed)
                     
-                    data[key] = [
-                        {"JD Alignment": jd_items},
-                        {"Project Requirements": proj_items}
-                    ]
+                    if key == "suggested_followups":
+                        data[key] = jd_items + proj_items
+                    else:
+                        data[key] = [
+                            {"JD Alignment": jd_items},
+                            {"Project Requirements": proj_items}
+                        ]
 
         return data
 
@@ -316,7 +319,67 @@ class Evaluation(Base):
                     # Check if already added
                     if not any(base_name in item for item in task_skills_list):
                         task_skills_list.append({base_name: v})
-                        
+
+            # Retrieve highlights and extract strengths, weaknesses, suggested_followups
+            highlights = self.highlights
+            jd_strengths = []
+            task_strengths = []
+            jd_weaknesses = []
+            task_weaknesses = []
+            combined_followups = []
+            jd_summary = ""
+            task_summary = ""
+
+            if isinstance(highlights, dict):
+                # Extract overall_summary
+                overall_summary = highlights.get("overall_summary")
+                if isinstance(overall_summary, list):
+                    for item in overall_summary:
+                        if isinstance(item, dict):
+                            if "JD Alignment" in item:
+                                jd_summary = item["JD Alignment"]
+                            elif "Project Requirements" in item:
+                                task_summary = item["Project Requirements"]
+                elif isinstance(overall_summary, str):
+                    jd_summary = overall_summary
+                    task_summary = overall_summary
+
+                # Extract strengths
+                strengths = highlights.get("strengths") or []
+                if strengths and isinstance(strengths[0], dict):
+                    for item in strengths:
+                        if "JD Alignment" in item:
+                            jd_strengths = item["JD Alignment"]
+                        elif "Project Requirements" in item:
+                            task_strengths = item["Project Requirements"]
+                else:
+                    jd_strengths = strengths
+
+                # Extract weaknesses
+                weaknesses = highlights.get("weaknesses") or []
+                if weaknesses and isinstance(weaknesses[0], dict):
+                    for item in weaknesses:
+                        if "JD Alignment" in item:
+                            jd_weaknesses = item["JD Alignment"]
+                        elif "Project Requirements" in item:
+                            task_weaknesses = item["Project Requirements"]
+                else:
+                    jd_weaknesses = weaknesses
+
+                # Extract suggested_followups (already combined as a flat list from highlights)
+                combined_followups = highlights.get("suggested_followups") or []
+
+            # Append overall_summary, strengths, weaknesses, and suggested_followups directly to the respective lists
+            jd_skills_list.append({"overall_summary": jd_summary})
+            jd_skills_list.append({"strengths": jd_strengths})
+            jd_skills_list.append({"weaknesses": jd_weaknesses})
+            jd_skills_list.append({"suggested_followups": combined_followups})
+            
+            task_skills_list.append({"overall_summary": task_summary})
+            task_skills_list.append({"strengths": task_strengths})
+            task_skills_list.append({"weaknesses": task_weaknesses})
+            task_skills_list.append({"suggested_followups": combined_followups})
+
             return {
                 "JD Skills": jd_skills_list,
                 "Task Skills": task_skills_list
