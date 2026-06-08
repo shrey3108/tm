@@ -5,11 +5,12 @@ import type { Criteria } from "@/types/candidateStage";
 
 
 
-export type NestedEvaluationData = Record<string, Array<Record<string, Criteria>>>;
+export type CriteriaVal = Criteria | string | string[];
+export type NestedEvaluationData = Record<string, Array<Record<string, CriteriaVal>>>;
 
 interface EvaluationGridProps {
   /** Record of evaluation category name to evaluation data */
-  data: Record<string, Criteria> | NestedEvaluationData;
+  data: Record<string, CriteriaVal> | NestedEvaluationData | Record<string, string> | Record<string, Array<string>>;
 }
 
 /**
@@ -50,7 +51,7 @@ export function EvaluationGrid({ data }: EvaluationGridProps) {
   const flatItems = useMemo(() => {
     if (isSpecialStage) return [];
 
-    const typedData = data as Record<string, Criteria>;
+    const typedData = data as Record<string, CriteriaVal>;
     return Object.entries(typedData || {}).map(([key, value]) => ({
       key,
       criteria: value,
@@ -74,16 +75,41 @@ export function EvaluationGrid({ data }: EvaluationGridProps) {
             </div>
             {/* Content section containing accordions */}
             <div className="px-2 py-2 bg-card/30 flex flex-col gap-2">
-              {items.map(({ name, criteria }) => (
-                <Accordion key={name} className="w-full" multiple>
-                  <EvaluationCard
-                    title={name}
-                    reasoning={criteria?.reasoning || ""}
-                    score={criteria?.score || 0}
-                    confidence={criteria?.confidence || 0}
-                  />
-                </Accordion>
-              ))}
+              {items.map(({ name, criteria }) => {
+                /* Possible values
+                  // 1.  
+                {
+                    "score": number,
+                    "reasoning": string,
+                    "evidence": [string],
+                    "confidence": number
+                  }
+                    // 2. overall_summary
+                  string
+                  // 3.  weaknesses,suggested_followups, strengths
+                  string[]
+                */
+                const isString = typeof criteria === "string";
+                const isArray = Array.isArray(criteria);
+                const isCriteriaObj = criteria && typeof criteria === "object" && !isArray;
+
+                const score = isCriteriaObj && typeof (criteria as Criteria).score === "number" ? (criteria as Criteria).score : null;
+                const reasoning = isCriteriaObj ? (criteria as Criteria).reasoning : (isString ? (criteria as string) : "");
+                const listItems = isArray ? (criteria as string[]) : undefined;
+                const confidence = isCriteriaObj && typeof (criteria as Criteria).confidence === "number" ? (criteria as Criteria).confidence : undefined;
+
+                return (
+                  <Accordion key={name} className="w-full" multiple>
+                    <EvaluationCard
+                      title={name}
+                      reasoning={reasoning}
+                      score={score}
+                      confidence={confidence}
+                      listItems={listItems}
+                    />
+                  </Accordion>
+                );
+              })}
             </div>
           </div>
         ))}
@@ -93,16 +119,28 @@ export function EvaluationGrid({ data }: EvaluationGridProps) {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-2 items-start">
-      {flatItems.map(({ key, criteria }) => (
-        <Accordion key={key} className="w-full" multiple>
-          <EvaluationCard
-            title={key}
-            reasoning={criteria?.reasoning || ""}
-            score={criteria?.score || 0}
-            confidence={criteria?.confidence || 0}
-          />
-        </Accordion>
-      ))}
+      {flatItems.map(({ key, criteria }) => {
+        const isString = typeof criteria === "string";
+        const isArray = Array.isArray(criteria);
+        const isCriteriaObj = criteria && typeof criteria === "object" && !isArray;
+
+        const score = isCriteriaObj && typeof (criteria as Criteria).score === "number" ? (criteria as Criteria).score : null;
+        const reasoning = isCriteriaObj ? (criteria as Criteria).reasoning : (isString ? (criteria as string) : "");
+        const listItems = isArray ? (criteria as string[]) : undefined;
+        const confidence = isCriteriaObj && typeof (criteria as Criteria).confidence === "number" ? (criteria as Criteria).confidence : undefined;
+
+        return (
+          <Accordion key={key} className="w-full" multiple>
+            <EvaluationCard
+              title={key}
+              reasoning={reasoning}
+              score={score}
+              confidence={confidence}
+              listItems={listItems}
+            />
+          </Accordion>
+        );
+      })}
     </div>
   );
 }

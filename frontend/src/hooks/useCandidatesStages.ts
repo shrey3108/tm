@@ -221,17 +221,60 @@ export function useCandidatesStages() {
     ? `${candidate.first_name} ${candidate.last_name}`
     : params.candidateName || "Candidate";
 
-  const transformedOverall = evaluation
-    ? {
+  const transformedOverall = useMemo(() => {
+    if (!evaluation) return null;
+
+    // Helper to extract nested list or string values from evaluation_data
+    let extractedSummary = "";
+    let extractedStrengths: string[] = [];
+    let extractedWeaknesses: string[] = [];
+    let extractedFollowups: string[] = [];
+
+    const evalData = evaluation.evaluation_data;
+    if (evalData && typeof evalData === "object") {
+      Object.values(evalData).forEach((val) => {
+        if (Array.isArray(val)) {
+          val.forEach((item) => {
+            if (item && typeof item === "object" && !Array.isArray(item)) {
+              if ("overall_summary" in item && typeof item.overall_summary === "string") {
+                extractedSummary = item.overall_summary;
+              }
+              if ("strengths" in item && Array.isArray(item.strengths)) {
+                extractedStrengths = item.strengths;
+              }
+              if ("weaknesses" in item && Array.isArray(item.weaknesses)) {
+                extractedWeaknesses = item.weaknesses;
+              }
+              if ("suggested_followups" in item && Array.isArray(item.suggested_followups)) {
+                extractedFollowups = item.suggested_followups;
+              }
+            }
+          });
+        }
+      });
+    }
+
+    const overall_summary = evaluation.highlights?.overall_summary || extractedSummary || "No summary available.";
+    const strength_summary = (evaluation.highlights?.strengths && evaluation.highlights.strengths.length > 0)
+      ? evaluation.highlights.strengths
+      : (extractedStrengths.length > 0 ? extractedStrengths : ["N/A"]);
+    const weakness_summary = (evaluation.highlights?.weaknesses && evaluation.highlights.weaknesses.length > 0)
+      ? evaluation.highlights.weaknesses
+      : (extractedWeaknesses.length > 0 ? extractedWeaknesses : ["N/A"]);
+    const followups = (evaluation.highlights?.suggested_followups && evaluation.highlights.suggested_followups.length > 0)
+      ? evaluation.highlights.suggested_followups
+      : (extractedFollowups.length > 0 ? extractedFollowups : ["N/A"]);
+
+    return {
       stage_score: evaluation.overall_score || 0,
       recommendation: evaluation.recommendation || "N/A",
-      overall_summary: evaluation.highlights?.overall_summary || "No summary available.",
-      strength_summary: evaluation.highlights?.strengths || ["N/A"],
-      weakness_summary: evaluation.highlights?.weaknesses || ["N/A"],
-      followups: evaluation.highlights?.suggested_followups || ["N/A"],
+      overall_summary,
+      strength_summary,
+      weakness_summary,
+      followups,
       percentage: Math.round((evaluation.overall_score || 0) * 20),
-    } as const
-    : null;
+    } as const;
+  }, [evaluation]);
 
   const isResumeScreening = currentStage === "Resume Screening";
   const filteredHistory = isResumeScreening
