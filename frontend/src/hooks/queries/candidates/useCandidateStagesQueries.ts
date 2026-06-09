@@ -184,11 +184,6 @@ export function useCandidateTimelineQuery(
     // TODO: NOTE: Remove this after GEP complete
     select: (data) => {
       if (!data || !data.events) return data;
-      /*
-        - Temporary pass all the candidate who in "Technical Practical Round"
-        - 1. if canidate already in failed in any previous stage, return as it is
-        - 2. if canidate in "Technical Practical Round", auto pass this stage and all subsequent stages
-      */
 
       // 1. Check if the candidate has been marked as failed by HR in any round
       const failKeywords = ["fail", "failed"];
@@ -201,7 +196,18 @@ export function useCandidateTimelineQuery(
         return data;
       }
 
-      // 2. Find the index of the "Technical Practical Round"
+      // 2. Check if the candidate passed "HR Screening Round"
+      const hrScreeningEvent = data.events.find(
+        (event) => event.title?.toLowerCase() === "hr screening round"
+      );
+      const hrScreeningPassed = hrScreeningEvent && hrScreeningEvent.hr_decision === "pass"
+
+
+      if (!hrScreeningPassed) {
+        return data;
+      }
+
+      // 3. Find the index of the "Technical Practical Round"
       const techIndex = data.events.findIndex(
         (event) => event.title === "Technical Practical Round"
       );
@@ -210,7 +216,7 @@ export function useCandidateTimelineQuery(
         return data;
       }
 
-      // 3. Pass all stages till "Technical Practical Round"
+      // 4. Pass all stages till "Technical Practical Round"
       const updatedEvents = data.events.map((event, idx) => {
         if (idx <= techIndex) {
           return {
@@ -226,7 +232,7 @@ export function useCandidateTimelineQuery(
         return event;
       });
 
-      // 4. Update current_stage if the original current_stage is one of the auto-passed stages
+      // 5. Update current_stage if the original current_stage is one of the auto-passed stages
       let updatedCurrentStage = data.current_stage;
       const currentStageIndex = data.events.findIndex(
         (event) => event.title === data.current_stage

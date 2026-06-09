@@ -88,7 +88,7 @@ export default function AdminJobStageForm() {
                 name,
                 description: description || "",
                 default_config: {
-                    criteria_ids: config?.evaluation_criteria.map(({ id }) => id) || [],
+                    criteria_ids: config?.evaluation_criteria?.map(({ id }) => id) || [],
                 },
                 is_default: is_default || false,
                 default_order: default_order ?? 0,
