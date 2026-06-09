@@ -321,6 +321,15 @@ export const jobCriteriaCreateSchema = jobCriteriaBaseSchema.extend({
   is_active: z.boolean().default(true),
   apply_to_all: z.boolean().default(true),
   job_ids: z.array(z.string()).optional().default([]),
+  prompt_text: descriptionSchema(),
+});
+
+/**
+ * Schema for enhancing job criteria.
+ */
+export const enhanceJobCriteriaSchema = z.object({
+  name: z.string().trim().min(3, "Name must be at least 3 characters long"),
+  description: z.string().trim().min(10, "Description must be at least 10 characters long"),
 });
 
 /** Type inferred from jobCriteriaCreateSchema. */

@@ -42,3 +42,12 @@ export function useDeleteCriterionMutation() {
     },
   });
 }
+
+/**
+ * Hook for enhancing a criterion prompt.
+ */
+export function useEnhanceCriterionPromptMutation() {
+  return useMutation({
+    mutationFn: (data: { name: string, description: string }) => adminCriteriaService.enhanceCriterionPrompt(data),
+  });
+}
