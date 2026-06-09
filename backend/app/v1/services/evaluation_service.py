@@ -323,12 +323,14 @@ class EvaluationService:
         for key, details in criteria_map.items():
             # Robust matching: compare normalized versions
             criterion_name_match = None
+            matched_criterion_obj = None
             normalized_key = str(key).lower().replace(" ", "").replace("_", "")
             
-            for crit_name in criteria_names:
-                normalized_crit = str(crit_name).lower().replace(" ", "").replace("_", "")
+            for crit_id, crit_obj in criteria_objs.items():
+                normalized_crit = str(crit_obj.name).lower().replace(" ", "").replace("_", "")
                 if normalized_crit == normalized_key:
-                    criterion_name_match = crit_name
+                    criterion_name_match = crit_obj.name
+                    matched_criterion_obj = crit_obj
                     break
             
             if criterion_name_match:
@@ -336,7 +338,8 @@ class EvaluationService:
                     "score": details.get("score", 0) if isinstance(details, dict) else 0,
                     "reasoning": details.get("reasoning", "") if isinstance(details, dict) else str(details),
                     "confidence": details.get("confidence", 0.0) if isinstance(details, dict) else 0.0,
-                    "evidence": evidence_snippets.get(criterion_name_match, [])
+                    "evidence": evidence_snippets.get(criterion_name_match, []),
+                    "prompt_text": matched_criterion_obj.prompt_text if matched_criterion_obj else None
                 }
             else:
                 logger.warning(f"Could not map LLM criteria key '{key}' back to any active criteria.")
