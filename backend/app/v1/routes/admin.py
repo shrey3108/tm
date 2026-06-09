@@ -698,7 +698,7 @@ async def enhance_criterion_prompt(
     """Enhance a rough criterion prompt text using LLM."""
     try:
         enhanced = await prompt_enhancer_service.enhance_prompt(
-            request.name, request.prompt_text
+            request.name, request.description
         )
         return CriterionEnhanceResponse(enhanced_prompt=enhanced)
     except Exception as e:

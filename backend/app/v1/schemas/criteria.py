@@ -66,7 +66,7 @@ class StageCriterionRead(BaseModel):
 
 class CriterionEnhanceRequest(BaseModel):
     name: str = Field(..., description="Name of the criterion")
-    prompt_text: str = Field(..., description="The rough description/prompt to enhance")
+    description: str = Field(..., description="A rough description of what this criterion evaluates. AI will convert it into a professional rubric.")
 
 
 class CriterionEnhanceResponse(BaseModel):
