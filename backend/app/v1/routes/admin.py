@@ -35,7 +35,7 @@ from app.v1.schemas.job_stage import (
 from app.v1.schemas.response import PaginatedData
 from app.v1.schemas.user import UserRead
 from app.v1.schemas.prompt import PromptsList, PromptRead
-from app.v1.schemas.criteria import CriterionRead, CriterionCreate, CriterionUpdate
+from app.v1.schemas.criteria import CriterionRead, CriterionCreate, CriterionUpdate, CriterionEnhanceRequest, CriterionEnhanceResponse, CriterionVersionRead
 from app.v1.db.models.criteria import Criterion
 from sqlalchemy import select, func
 from fastapi import HTTPException
@@ -487,7 +487,7 @@ async def create_criterion(
 ):
     """Create a new evaluation criterion."""
     existing = await db.execute(
-        select(Criterion).where(Criterion.name == criterion_in.name)
+        select(Criterion).where(func.lower(Criterion.name) == func.lower(criterion_in.name.strip()))
     )
     if existing.scalar_one_or_none():
         raise HTTPException(
@@ -495,21 +495,29 @@ async def create_criterion(
             detail=f"Criterion with name '{criterion_in.name}' already exists.",
         )
 
-    # 🌟 MAGIC: Enhance the prompt text using LLM
-    if criterion_in.prompt_text and len(criterion_in.prompt_text) > 0:
-        enhanced_prompt = await prompt_enhancer_service.enhance_prompt(
-            criterion_in.name, criterion_in.prompt_text
-        )
-        criterion_in.prompt_text = enhanced_prompt
+
 
     criterion = Criterion(**criterion_in.model_dump())
     db.add(criterion)
+    await db.flush()  # Get the ID without committing
+
+    # 📸 Save version 1 snapshot
+    from app.v1.db.models.criterion_versions import CriterionVersion
+    version_snapshot = CriterionVersion(
+        criterion_id=criterion.id,
+        version_number=1,
+        name=criterion.name,
+        description=criterion.description,
+        prompt_text=criterion.prompt_text,
+    )
+    db.add(version_snapshot)
+
     await db.commit()
     await db.refresh(criterion)
-    
+
     # Invalidate cache
     await cache.clear(pattern="criteria:list:*")
-    
+
     return criterion
 
 
@@ -524,26 +532,76 @@ async def update_criterion(
     criterion = await db.get(Criterion, criterion_id)
     if not criterion:
         raise HTTPException(status_code=404, detail="Criterion not found")
-
-    # 🌟 MAGIC: Enhance the prompt text if it is being updated
-    if criterion_update.prompt_text and len(criterion_update.prompt_text) > 0:
-        name_to_use = criterion_update.name if criterion_update.name else criterion.name
-        enhanced_prompt = await prompt_enhancer_service.enhance_prompt(
-            name_to_use, criterion_update.prompt_text
+    if criterion_update.name and criterion_update.name.strip().lower() != criterion.name.lower():
+        existing = await db.execute(
+            select(Criterion).where(
+                func.lower(Criterion.name) == func.lower(criterion_update.name.strip())
+            )
         )
-        criterion_update.prompt_text = enhanced_prompt
+        if existing.scalar_one_or_none():
+            raise HTTPException(
+                status_code=400,
+                detail=f"Criterion with name '{criterion_update.name}' already exists.",
+            )
 
+    # Detect version-worthy changes (name, description, prompt_text)
+    version_fields = ["name", "description", "prompt_text"]
     update_data = criterion_update.model_dump(exclude_unset=True)
+    version_worthy = any(
+        k in update_data and update_data[k] != getattr(criterion, k)
+        for k in version_fields
+    )
+
     for field, value in update_data.items():
         setattr(criterion, field, value)
 
+    if version_worthy:
+        # 📸 Increment version and save snapshot
+        criterion.version = (criterion.version or 1) + 1
+        from app.v1.db.models.criterion_versions import CriterionVersion
+        version_snapshot = CriterionVersion(
+            criterion_id=criterion.id,
+            version_number=criterion.version,
+            name=criterion.name,
+            description=criterion.description,
+            prompt_text=criterion.prompt_text,
+        )
+        db.add(version_snapshot)
+
     await db.commit()
     await db.refresh(criterion)
-    
+
     # Invalidate cache
     await cache.clear(pattern="criteria:list:*")
-    
+
     return criterion
+
+
+@router.get("/criteria/{criterion_id}", response_model=CriterionRead)
+async def get_criterion(
+    criterion_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    admin: UserRead = Depends(check_permission("jobs:access")),
+):
+    """Get a specific evaluation criterion by ID."""
+    criterion = await db.get(Criterion, criterion_id)
+    if not criterion:
+        raise HTTPException(status_code=404, detail="Criterion not found")
+    return criterion
+
+
+@router.get("/criteria/versions/{version_id}", response_model=CriterionVersionRead)
+async def get_criterion_version(
+    version_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    admin: UserRead = Depends(check_permission("jobs:access")),
+):
+    """Get a specific criterion version snapshot by its unique ID."""
+    from app.v1.db.models.criterion_versions import CriterionVersion
+    version_snapshot = await db.get(CriterionVersion, version_id)
+    if not version_snapshot:
+        raise HTTPException(status_code=404, detail="Criterion version snapshot not found")
+    return version_snapshot
 
 
 @router.delete("/criteria/{criterion_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -628,3 +686,24 @@ async def delete_criterion(
     await cache.clear(pattern="criteria:list:*")
     
     return None
+
+
+@router.post(
+    "/criteria/enhance", response_model=CriterionEnhanceResponse
+)
+async def enhance_criterion_prompt(
+    request: CriterionEnhanceRequest,
+    admin: UserRead = Depends(check_permission("jobs:manage")),
+):
+    """Enhance a rough criterion prompt text using LLM."""
+    try:
+        enhanced = await prompt_enhancer_service.enhance_prompt(
+            request.name, request.description
+        )
+        return CriterionEnhanceResponse(enhanced_prompt=enhanced)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to enhance prompt: {str(e)}"
+        )
+
