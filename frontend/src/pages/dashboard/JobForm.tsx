@@ -55,7 +55,7 @@ export default function CreateJob() {
 
   const jobTaskQuery = useJobTask(jobId);
   const taskData = jobTaskQuery.data;
-  console.log(taskData);
+
   const isInitialLoading =
     deptsLoading ||
     prioritiesLoading ||

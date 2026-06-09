@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import { formatFileSize } from "@/utils/converters";
 import { useRecentUploads } from "@/hooks/queries/admin/useRecentUpload";
+import { capitalize } from "@/lib/utils";
 
 
 export type FileSizeUnit = "Auto" | "B" | "KB" | "MB";
@@ -84,7 +85,7 @@ const AdminRecentUploads = () => {
         </Button>
       ),
       cell: ({ row }) => (
-        <span className="font-medium text-foreground ">{row.original.file_name || "N/A"}</span>
+        <span className="font-medium text-foreground text-wrap">{row.original.file_name || "N/A"}</span>
       ),
     },
     // {
@@ -122,9 +123,8 @@ const AdminRecentUploads = () => {
       cell: ({ row }) => (
         <span
           className="font-medium text-foreground "
-          title={row.original.uploader_name || "N/A"}
         >
-          {row.original.uploader_name || "N/A"}
+          {capitalize(row.original.uploader_name || "N/A")}
         </span>
       ),
     },
@@ -140,10 +140,9 @@ const AdminRecentUploads = () => {
       },
       cell: ({ row }) => (
         <span
-          className="font-medium text-foreground "
-          title={row.original.candidate_name || "N/A"}
+          className="font-medium text-foreground"
         >
-          {row.original.candidate_name || "N/A"}
+          {capitalize((row.original.candidate_name)?.toLowerCase() || "N/A")}
         </span>
       ),
     },

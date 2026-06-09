@@ -181,6 +181,70 @@ export function useCandidateTimelineQuery(
     queryFn: () => adminCandidateService.getCandidateTimeline(candidateId!, jobId),
     enabled: !!candidateId,
     staleTime: QUERY_CONFIG.CANDIDATE_STAGES.staleTime,
+    // TODO: NOTE: Remove this after GEP complete
+    select: (data) => {
+      if (!data || !data.events) return data;
+      /*
+        - Temporary pass all the candidate who in "Technical Practical Round"
+        - 1. if canidate already in failed in any previous stage, return as it is
+        - 2. if canidate in "Technical Practical Round", auto pass this stage and all subsequent stages
+      */
+
+      // 1. Check if the candidate has been marked as failed by HR in any round
+      const failKeywords = ["fail", "failed"];
+      const hasFail = data.events.some((event) => {
+        const decision = event.hr_decision?.toLowerCase() ?? "";
+        return failKeywords.some((k) => decision.includes(k));
+      }) || failKeywords.some((k) => (data.latest_decision?.toLowerCase() ?? "").includes(k));
+
+      if (hasFail) {
+        return data;
+      }
+
+      // 2. Find the index of the "Technical Practical Round"
+      const techIndex = data.events.findIndex(
+        (event) => event.title === "Technical Practical Round"
+      );
+
+      if (techIndex === -1) {
+        return data;
+      }
+
+      // 3. Pass all stages till "Technical Practical Round"
+      const updatedEvents = data.events.map((event, idx) => {
+        if (idx <= techIndex) {
+          return {
+            ...event,
+            result: "pass",
+            ai_result: "pass",
+            hr_decision: "pass",
+            score: event.score ?? 4,
+            ai_score: event.ai_score ?? 4,
+            hr_score: event.hr_score ?? 4,
+          };
+        }
+        return event;
+      });
+
+      // 4. Update current_stage if the original current_stage is one of the auto-passed stages
+      let updatedCurrentStage = data.current_stage;
+      const currentStageIndex = data.events.findIndex(
+        (event) => event.title === data.current_stage
+      );
+      if (currentStageIndex !== -1 && currentStageIndex <= techIndex) {
+        // Find the first stage after the Technical Practical Round
+        const nextStage = data.events[techIndex + 1];
+        if (nextStage) {
+          updatedCurrentStage = nextStage.title;
+        }
+      }
+
+      return {
+        ...data,
+        events: updatedEvents,
+        current_stage: updatedCurrentStage,
+      };
+    }
   });
 }
 
