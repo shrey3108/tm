@@ -24,8 +24,9 @@ async def enrich_stage_configs(
     is_list = isinstance(items, list)
     objects = items if is_list else [items]
     
-    # 1. Collect all criteria IDs that need fetching
+    # 1. Collect all criteria IDs and potential names that need fetching
     all_criteria_ids = set()
+    all_criteria_names = set()
     for obj in objects:
         config = getattr(obj, "default_config", None) or getattr(obj, "config", None)
         if isinstance(config, dict) and "criteria_ids" in config:
@@ -33,13 +34,16 @@ async def enrich_stage_configs(
             for cid in ids:
                 try:
                     if isinstance(cid, str):
-                        all_criteria_ids.add(uuid.UUID(cid))
+                        try:
+                            all_criteria_ids.add(uuid.UUID(cid))
+                        except ValueError:
+                            all_criteria_names.add(cid.lower())
                     elif isinstance(cid, uuid.UUID):
                         all_criteria_ids.add(cid)
                 except ValueError:
                     continue
 
-    if not all_criteria_ids:
+    if not all_criteria_ids and not all_criteria_names:
         return items
 
     # 2. Fetch all criteria (IDs and names) to build lookups
@@ -65,8 +69,15 @@ async def enrich_stage_configs(
                 evaluation_criteria = []
                 for cid in ids:
                     cid_str = str(cid)
-                    name = criteria_map_by_id.get(cid_str, "Unknown Criterion")
-                    evaluation_criteria.append({"id": cid_str, "name": name})
+                    # Try lookup by UUID first
+                    if cid_str in criteria_map_by_id:
+                        evaluation_criteria.append({"id": cid_str, "name": criteria_map_by_id[cid_str]})
+                    # Try lookup by name
+                    elif cid_str.lower() in criteria_map_by_name:
+                        matched_id = criteria_map_by_name[cid_str.lower()]
+                        evaluation_criteria.append({"id": matched_id, "name": cid_str})
+                    else:
+                        evaluation_criteria.append({"id": None, "name": cid_str})
                 
                 new_config["evaluation_criteria"] = evaluation_criteria
                 has_changes = True
