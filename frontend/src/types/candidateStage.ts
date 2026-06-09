@@ -29,6 +29,8 @@ export interface EvaluationRead {
   id: string;
   interview_id?: string | null;
   transcript_id?: string | null;
+  version?: number;
+  result?: string;
   candidate_stage_id: string;
   evaluation_data: Record<string, any> | Record<string, Array<Record<string, Criteria>>>;
   overall_score?: number | null;

@@ -11,6 +11,7 @@ import { slugify, unSlugify } from "@/utils/slug";
 import { useJob, useJobTitle } from "@/hooks/queries/jobs";
 import type { Job } from "@/types/job";
 import type { CandidateAnalysis } from "@/types/admin";
+import { getCorrectCurrentStage } from "@/lib/utils";
 
 /**
  * Hook to resolve Job and Candidate from URL slugs if state is not available.
@@ -193,7 +194,10 @@ export function useCandidateTimelineQuery(
       }) || failKeywords.some((k) => (data.latest_decision?.toLowerCase() ?? "").includes(k));
 
       if (hasFail) {
-        return data;
+        return {
+          ...data,
+          current_stage: getCorrectCurrentStage(data)
+        };
       }
 
       // 2. Check if the candidate passed "HR Screening Round"
@@ -204,7 +208,10 @@ export function useCandidateTimelineQuery(
 
 
       if (!hrScreeningPassed) {
-        return data;
+        return {
+          ...data,
+          current_stage: getCorrectCurrentStage(data)
+        };
       }
 
       // 3. Find the index of the "Technical Practical Round"
@@ -213,7 +220,10 @@ export function useCandidateTimelineQuery(
       );
 
       if (techIndex === -1) {
-        return data;
+        return {
+          ...data,
+          current_stage: getCorrectCurrentStage(data)
+        };
       }
 
       // 4. Pass all stages till "Technical Practical Round"
@@ -222,11 +232,12 @@ export function useCandidateTimelineQuery(
           return {
             ...event,
             result: "pass",
-            ai_result: "pass",
+            ai_result: event.ai_result !== "pending" ? event.ai_result : "pass",
             hr_decision: "pass",
             score: event.score ?? 4,
             ai_score: event.ai_score ?? 4,
             hr_score: event.hr_score ?? 4,
+            event_date: new Date()
           };
         }
         return event;

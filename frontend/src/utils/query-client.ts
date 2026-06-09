@@ -10,7 +10,11 @@ export const queryClient = new QueryClient({
         queries: {
             staleTime: 1000 * 60 * 5, // 5 Minutes
             gcTime: 1000 * 60 * 10, //  10 Minutes
-            retry: 2,
+            retry: 1,
+            // TODO: REMOVE AFTER GEP
+            refetchOnWindowFocus: false,
+            refetchOnMount: false,
+            refetchOnReconnect: false,
         }
     }
 });

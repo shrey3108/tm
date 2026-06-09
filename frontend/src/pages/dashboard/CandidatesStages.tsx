@@ -145,7 +145,11 @@ export default function CandidatesStages() {
             !isPolling &&
             !isLoadingHistory &&
             canTakeDecision &&
-            (isResumeScreening ? !!candidateData : !!evaluation) && (
+            (isResumeScreening ? !!candidateData : !!evaluation)
+            // TODO: REMOVE AFTER GEP
+            &&
+            currentStage !== "Technical Practical Round" &&
+            (
               <PermissionGuard permissions={PERMISSIONS.CANDIDATES_DECIDE} hideWhenDenied>
                 <ActionButtons
                   onAction={handleAction}

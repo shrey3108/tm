@@ -25,6 +25,7 @@ export interface HrDecisionHistoryItem {
   candidate_id: string;
   stage_config_id: string | null;
   user_id: string;
+  job_id?: string
   decision: CandidateDecisionFormValues["decision"];
   notes: string | null;
   decided_at: string;

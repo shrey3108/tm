@@ -22,6 +22,7 @@ import {
 } from "./queries/candidates";
 import { useSubmitDecisionMutation } from "./mutations/candidates/useCandidateStages";
 import { QUERY_KEYS } from "@/constants/queryKeys";
+import { TEMP_TECHNICAL_ROUND_HR_DECISION, TEMP_TECHNICAL_ROUND_RESPONSE } from "@/constants/temp";
 
 /**
  * A comprehensive hook for managing the state and logic of the Candidate Stages view.
@@ -111,7 +112,7 @@ export function useCandidatesStages() {
     setSelectedEvaluationVersion(null);
   }, [instanceId, currentStage]);
 
-  const evaluation = selectedEvaluationVersion || evaluationData || null;
+  let evaluation = selectedEvaluationVersion || evaluationData || null;
   const error = evaluationError ? extractErrorMessage(evaluationError) : "";
 
   // 5. Invalidate evaluation related queries when AI polling finishes successfully
@@ -168,7 +169,8 @@ export function useCandidatesStages() {
   const queryStageId = currentStage === "Resume Screening" ? undefined : configId;
   const { data: hrDecisionHistoryResponse, refetch: refetchHrDecisionHistory } =
     useHrDecisionHistoryQuery(candidate?.id, job?.id, queryStageId);
-  const hrDecisionHistory = hrDecisionHistoryResponse?.decisions ?? [];
+  // TODO: CHNAGE TO CONST AFTER GEP
+  let hrDecisionHistory = hrDecisionHistoryResponse?.decisions ?? [];
 
   const form = useForm<CandidateDecisionFormValues>({
     resolver: zodResolver(candidateDecisionSchema),
@@ -287,6 +289,10 @@ export function useCandidatesStages() {
 
   const latestDecision = filteredHistory ? filteredHistory[0] : hrDecisionHistory[0];
   const canTakeDecision = !latestDecision || latestDecision.decision.toLowerCase() === "may be";
+  if (currentStage === "Technical Practical Round" && !evaluation && error) {
+    evaluation = TEMP_TECHNICAL_ROUND_RESPONSE
+    hrDecisionHistory = TEMP_TECHNICAL_ROUND_HR_DECISION
+  }
 
   return {
     job,
