@@ -33,7 +33,7 @@ export interface UnifiedCandidate {
 
 export interface TimelineEvent {
   event_type: "stage" | "decision";
-  event_date: string;
+  event_date: string | Date;
   title: string;
   description?: string | null;
   result?: string | null;
