@@ -19,115 +19,7 @@ logger = logging.getLogger(__name__)
 class CandidateTaskService:
     """Service to handle candidate-specific custom task files and skill extraction."""
 
-    async def upload_and_extract_candidate_task_skills(
-        self, db: AsyncSession, candidate_id: uuid.UUID, task_file: UploadFile
-    ) -> Candidate:
-        # 1. Verify Candidate exists
-        stmt = select(Candidate).options(selectinload(Candidate.applied_job)).where(Candidate.id == candidate_id)
-        result = await db.execute(stmt)
-        candidate = result.scalar_one_or_none()
-        if not candidate:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Candidate not found.",
-            )
 
-        # 2. Setup upload directory and save file
-        tasks_dir = resolve_storage_path(settings.TASK_UPLOAD_DIR)
-        tasks_dir.mkdir(parents=True, exist_ok=True)
-        
-        # Save task PDF/DOCX to local filesystem
-        file_extension = Path(task_file.filename).suffix.lower()
-        if file_extension not in [".pdf", ".docx", ".doc"]:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Unsupported file format: {file_extension}. Only PDF, DOC, and DOCX are allowed.",
-            )
-            
-        file_name = f"candidate_{candidate_id}{file_extension}"
-        target_path = tasks_dir / file_name
-        stored_file_path = to_storage_relative_path(target_path)
-        
-        try:
-            content = await task_file.read()
-            target_path.write_bytes(content)
-        except Exception as e:
-            logger.error("Failed to save candidate task file to disk: %s", e)
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to save uploaded file.",
-            )
-
-        # 3. Update database with file path and reset skills while background processing starts
-        try:
-            candidate.task_file_path = stored_file_path
-            candidate.task_skills = None  # Clear while processing in background
-            
-            db.add(candidate)
-            await db.commit()
-            await db.refresh(candidate)
-        except Exception as e:
-            logger.error("Database update failed for candidate task details upload: %s", e)
-            await db.rollback()
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to update database with candidate task file details.",
-            )
-
-        # 4. Clear candidate-related caches
-        from app.v1.core.cache import cache
-        await cache.clear(pattern="candidates:*")
-
-        # 5. Dispatch background Celery task (runtime import avoids circular dependency)
-        from app.v1.services.admin.job_tasks import extract_candidate_task_skills_task
-        logger.info("Triggering background Celery task for candidate skill extraction: %s", candidate_id)
-        extract_candidate_task_skills_task.delay(str(candidate_id), stored_file_path)
-
-        return candidate
-
-    async def extract_candidate_skills_from_file_and_update(
-        self, db: AsyncSession, candidate_id: uuid.UUID, file_path: Path
-    ) -> list[str]:
-        """Runs in background worker: parses text from document, calls LLM, and updates db."""
-        # 1. Verify Candidate exists
-        stmt = select(Candidate).where(Candidate.id == candidate_id)
-        result = await db.execute(stmt)
-        candidate = result.scalar_one_or_none()
-        if not candidate:
-            logger.error("Candidate not found for background extraction: %s", candidate_id)
-            return []
-
-        # 2. Parse text from the uploaded document
-        try:
-            raw_text = DocumentParser.extract_text(file_path)
-        except Exception as e:
-            logger.error("Failed to parse text from candidate task file in background: %s", e)
-            return []
-
-        if not raw_text or not raw_text.strip():
-            logger.error("The candidate task document contains no readable text: %s", file_path)
-            return []
-
-        # 3. Invoke LLM to extract required skills
-        logger.info("Extracting skills from candidate task description using LLM in background...")
-        extracted_skills = await self._extract_skills_from_text(raw_text)
-
-        # 4. Update Candidate record in database
-        try:
-            candidate.task_skills = extracted_skills
-            db.add(candidate)
-            await db.commit()
-            await db.refresh(candidate)
-        except Exception as e:
-            logger.error("Database update failed for candidate task details in background: %s", e)
-            await db.rollback()
-            return []
-
-        # 5. Clear caches
-        from app.v1.core.cache import cache
-        await cache.clear(pattern="candidates:*")
-
-        return extracted_skills
 
     async def _extract_skills_from_text(self, raw_text: str) -> list[str]:
         """Call LLM directly using openai client to extract a clean list of skills."""
@@ -195,47 +87,108 @@ Output Format Example (JSON ONLY):
             logger.error("LLM candidate task skill extraction failed: %s", e)
             return []
 
-    async def delete_candidate_task_skills(self, db: AsyncSession, candidate_id: uuid.UUID) -> Candidate:
-        # 1. Verify Candidate exists
-        stmt = select(Candidate).where(Candidate.id == candidate_id)
-        result = await db.execute(stmt)
-        candidate = result.scalar_one_or_none()
-        if not candidate:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Candidate not found.",
-            )
+    async def extract_paper_details_from_text(self, raw_text: str) -> dict:
+        """Call LLM directly using openai client to extract questions, project task description, and technical skills."""
+        system_prompt = (
+            "You are an expert technical recruiter, questions designer, and skill analyst.\n"
+            "Your task is to analyze a candidate task/assignment description and extract:\n"
+            "1. Exactly 5 technical interview questions suitable for evaluating candidates on this task.\n"
+            "2. A concise description/summary of the project task.\n"
+            "3. All relevant technical skills required to complete it.\n"
+            "CRITICAL:\n"
+            "1. You MUST output ONLY valid JSON format.\n"
+            "2. Your output MUST be a JSON object with exactly three keys:\n"
+            "   - 'questions': an array of exactly 5 strings (no more, no less).\n"
+            "   - 'project_task': a string representing the project description.\n"
+            "   - 'skills': an array of strings representing unique technical skill names.\n"
+            "3. Do NOT include any conversational text, explanations, or markdown formatting.\n"
+            "4. Be precise and clear."
+        )
+        
+        user_prompt = f"""
+Analyze the following task description and extract the required details:
 
-        # 2. Delete task file from disk if it exists
-        if candidate.task_file_path:
-            try:
-                file_path = resolve_storage_path(candidate.task_file_path)
-                if file_path.exists() and file_path.is_file():
-                    file_path.unlink()
-            except Exception as e:
-                logger.error("Failed to delete candidate task file: %s", e)
+TASK DESCRIPTION:
+{raw_text[:8000]}
 
-        # 3. Reset fields
+Output Format Example (JSON ONLY):
+{{
+  "questions": [
+    "Question 1?",
+    "Question 2?",
+    "Question 3?",
+    "Question 4?",
+    "Question 5?"
+  ],
+  "project_task": "Concise summary of the task.",
+  "skills": ["Skill1", "Skill2", "Skill3"]
+}}
+"""
+
         try:
-            candidate.task_file_path = None
-            candidate.task_skills = None
-            
-            db.add(candidate)
-            await db.commit()
-            await db.refresh(candidate)
-        except Exception as e:
-            logger.error("Database update failed for candidate task details delete: %s", e)
-            await db.rollback()
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to remove candidate task details from the database.",
+            base_url = settings.OLLAMA_URL
+            if not base_url.endswith("/"):
+                base_url += "/"
+            if "/v1" not in base_url:
+                base_url += "v1"
+
+            client = openai.AsyncOpenAI(
+                base_url=base_url,
+                api_key=settings.OLLAMA_API_KEY or "ollama"
+            )
+            response = await client.chat.completions.create(
+                model=settings.OLLAMA_MODEL,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                response_format={"type": "json_object"},
+                temperature=0.0
             )
 
-        # Clear caches
-        from app.v1.core.cache import cache
-        await cache.clear(pattern="candidates:*")
+            response_text = response.choices[0].message.content or "{}"
+            response_text = response_text.strip()
+            
+            if response_text.startswith("```json"):
+                response_text = response_text[7:]
+            if response_text.startswith("```"):
+                response_text = response_text[3:]
+            if response_text.endswith("```"):
+                response_text = response_text[:-3]
+            response_text = response_text.strip()
 
-        return candidate
+            data = json.loads(response_text)
+            
+            questions = data.get("questions", [])
+            if not isinstance(questions, list):
+                questions = []
+            if len(questions) != 5:
+                # Fallback to pad or truncate to exactly 5 questions
+                if len(questions) < 5:
+                    questions.extend([f"Technical Question {i}" for i in range(len(questions) + 1, 6)])
+                else:
+                    questions = questions[:5]
+            
+            project_task = data.get("project_task") or ""
+            skills = data.get("skills", [])
+            if not isinstance(skills, list):
+                skills = []
+            
+            cleaned_skills = sorted(list(set([str(skill).strip() for skill in skills if skill])))
+            
+            return {
+                "questions": questions,
+                "project_task": str(project_task).strip(),
+                "skills": cleaned_skills
+            }
+
+        except Exception as e:
+            logger.error("LLM task paper details extraction failed: %s", e)
+            return {
+                "questions": [f"Technical Question {i}" for i in range(1, 6)],
+                "project_task": "",
+                "skills": []
+            }
 
     async def get_candidate_task_skills(self, db: AsyncSession, candidate_id: uuid.UUID) -> dict:
         # 1. Verify Candidate exists
@@ -252,9 +205,19 @@ Output Format Example (JSON ONLY):
         task_skills = candidate.task_skills
         is_custom_task = False
 
-        if not task_file_path and candidate.applied_job:
-            task_file_path = candidate.applied_job.task_file_path
-            task_skills = candidate.applied_job.task_skills
+        if not task_file_path:
+            from app.v1.db.models.candidate_test_paper import CandidateTestPaper
+            stmt_paper = select(CandidateTestPaper).where(CandidateTestPaper.candidate_id == candidate_id)
+            res_paper = await db.execute(stmt_paper)
+            test_paper = res_paper.scalar_one_or_none()
+            
+            if test_paper and test_paper.task_file_path:
+                task_file_path = test_paper.task_file_path
+                task_skills = test_paper.task_skills
+                is_custom_task = True
+            elif candidate.applied_job:
+                task_file_path = candidate.applied_job.task_file_path
+                task_skills = candidate.applied_job.task_skills
         else:
             is_custom_task = True if task_file_path else False
 
@@ -295,8 +258,15 @@ Output Format Example (JSON ONLY):
         # 4. Fallback logic for candidate task skills
         task_skills = candidate.task_skills
         if not candidate.task_file_path:
-            # Fallback to job default task skills
-            task_skills = job.task_skills or []
+            from app.v1.db.models.candidate_test_paper import CandidateTestPaper
+            stmt_paper = select(CandidateTestPaper).where(CandidateTestPaper.candidate_id == candidate_id)
+            res_paper = await db.execute(stmt_paper)
+            test_paper = res_paper.scalar_one_or_none()
+            if test_paper and test_paper.task_file_path:
+                task_skills = test_paper.task_skills or []
+            else:
+                # Fallback to job default task skills
+                task_skills = job.task_skills or []
         else:
             task_skills = task_skills or []
 

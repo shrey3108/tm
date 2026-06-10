@@ -104,26 +104,52 @@ def extract_task_skills_task(job_id_str: str, file_path_str: str):
             pass
 
 
-async def extract_candidate_task_skills_logic(candidate_id_str: str, file_path_str: str):
-    """Logic to extract skills from an uploaded candidate task description file and update the database."""
+async def extract_paper_task_skills_logic(paper_id_str: str, file_path_str: str):
+    """Logic to extract skills from a QuestionSetPaper's task file and update the database."""
     import uuid
     from pathlib import Path
+    from app.v1.db.models.question_set_paper import QuestionSetPaper
     from app.v1.services.admin.candidate_task_service import candidate_task_service
-    
-    candidate_id = uuid.UUID(candidate_id_str)
+
+    paper_id = uuid.UUID(paper_id_str)
     file_path = Path(file_path_str)
-    
+
     async with async_session_maker() as session:
-        await candidate_task_service.extract_candidate_skills_from_file_and_update(session, candidate_id, file_path)
+        paper = await session.get(QuestionSetPaper, paper_id)
+        if not paper:
+            _log.error(f"QuestionSetPaper not found for background extraction: {paper_id}")
+            return
+
+        try:
+            from app.v1.core.extractor import DocumentParser
+            raw_text = DocumentParser.extract_text(file_path)
+        except Exception as e:
+            _log.error(f"Failed to parse text from paper task file in background: {e}")
+            return
+
+        if not raw_text or not raw_text.strip():
+            _log.error(f"The paper task document contains no readable text: {file_path}")
+            return
+
+        _log.info(f"Extracting details from paper task document using LLM: {paper_id}")
+        extracted_data = await candidate_task_service.extract_paper_details_from_text(raw_text)
+
+        paper.questions = extracted_data["questions"]
+        paper.project_task = extracted_data["project_task"]
+        paper.task_skills = extracted_data["skills"]
+        
+        session.add(paper)
+        await session.commit()
+        _log.info(f"Successfully updated paper {paper_id} with extracted details: {extracted_data}")
 
 
-@celery_app.task(name="extract_candidate_task_skills_task")
-def extract_candidate_task_skills_task(candidate_id_str: str, file_path_str: str):
-    """Celery task wrapper for candidate task PDF skill extraction."""
+@celery_app.task(name="extract_paper_task_skills_task")
+def extract_paper_task_skills_task(paper_id_str: str, file_path_str: str):
+    """Celery task wrapper for predefined paper task PDF skill extraction."""
     try:
-        asyncio.run(extract_candidate_task_skills_logic(candidate_id_str, file_path_str))
+        asyncio.run(extract_paper_task_skills_logic(paper_id_str, file_path_str))
     except Exception as exc:
-        _log.exception(f"Failed to run extract_candidate_task_skills_task for candidate {candidate_id_str}")
+        _log.exception(f"Failed to run extract_paper_task_skills_task for paper {paper_id_str}")
     finally:
         try:
             loop = asyncio.get_event_loop()
@@ -133,5 +159,6 @@ def extract_candidate_task_skills_task(candidate_id_str: str, file_path_str: str
                 asyncio.run(engine.dispose())
         except Exception:
             pass
+
 
 
