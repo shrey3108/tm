@@ -160,6 +160,9 @@ class EvaluationService:
             # Config structure in JSONB: {"active_criteria": [{"id": "...", "weight": 20}, ...]}
             config = cs.job_stage.config or {}
             active_criteria_configs = config.get("active_criteria", [])
+            if not active_criteria_configs:
+                # Fallback to evaluation_criteria key if active_criteria is empty or missing
+                active_criteria_configs = config.get("evaluation_criteria", [])
             logger.info(f"Initial active_criteria_configs from stage config: {len(active_criteria_configs)}")
 
         if not active_criteria_configs:
@@ -230,7 +233,14 @@ class EvaluationService:
             criterion = c_config.get("obj")
             
             if not criterion:
-                criterion = await db.get(Criterion, uuid.UUID(criterion_id))
+                try:
+                    criterion = await db.get(Criterion, uuid.UUID(criterion_id))
+                except ValueError:
+                    # Fallback for plain text name strings saved as IDs
+                    result = await db.execute(
+                        select(Criterion).where(func.lower(Criterion.name) == criterion_id.lower())
+                    )
+                    criterion = result.scalar_one_or_none()
             
             if criterion:
                 criteria_objs[criterion_id] = criterion
