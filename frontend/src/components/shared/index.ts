@@ -30,3 +30,5 @@ export { DataTable } from "@/components/shared/DataTable";
 export { ToastProvider, useToast } from "@/components/shared/ToastProvider";
 export { CandidatesDistributionChart } from "@/components/shared/BarChart";
 export { default as InfoLabel } from "@/components/shared/InfoLabel";
+export { SearchableSelect } from "@/components/shared/SearchableSelect";
+

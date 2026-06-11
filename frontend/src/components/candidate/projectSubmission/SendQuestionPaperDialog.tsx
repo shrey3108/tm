@@ -45,11 +45,12 @@ export function SendQuestionPaperDialog({
     loading: loadingAssigned,
     refetch: refetchAssigned,
   } = useCandidateTestPaper(isBulkMode ? undefined : candidateId);
-
+  // console.log(assignedPaper);
   const { data: candidateDetails } = useCandidateDetailsQuery(
     isBulkMode ? undefined : job?.id,
     isBulkMode ? undefined : candidateId
   );
+  // console.log(candidateDetails);
 
   const { data: predefinedPapers, loading: loadingPredefined } = useQuestionSetPapers({
     jobId: job?.id,
@@ -284,8 +285,7 @@ export function SendQuestionPaperDialog({
 
   };
 
-  // const selectedPredefinedPaper = predefinedPapers?.find((p) => p.id === selectedPaperId);
-  console.log('selectedCandidates', selectedCandidates);
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-3xl md:max-w-4xl lg:max-w-5xl max-h-[90vh] flex flex-col p-0 overflow-hidden bg-card/95 backdrop-blur-xl border-muted-foreground/20 shadow-2xl rounded-2xl h-[600px] gap-2">

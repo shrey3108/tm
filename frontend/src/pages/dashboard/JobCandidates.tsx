@@ -398,7 +398,8 @@ export default function JobCandidates() {
           isOpen={isSendQuestionPaperDialogOpen}
           onOpenChange={setIsSendQuestionPaperDialogOpen}
           job={job}
-          candidateName=""
+          candidateName={selectedCandidates?.[0]?.first_name || ""}
+          candidateId={selectedCandidates?.[0]?.id}
           selectedCandidates={selectedCandidates}
           onSuccess={() => {
             fetchData();

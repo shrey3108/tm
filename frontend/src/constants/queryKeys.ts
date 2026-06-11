@@ -45,6 +45,7 @@ export const QUERY_KEYS = {
   TASK_PAPERS: {
     LIST: "taskPapersList",
     DETAIL: "taskPaperDetail",
+    DOWNLOAD: "taskPaperDownload",
     ASSIGNED: "candidateTaskPaperAssigned",
     TASK_METADATA: "candidateTaskMetadata",
     SKILLS: "jobAndCandidateSkills",
