@@ -90,35 +90,36 @@ Output Format Example (JSON ONLY):
     async def extract_paper_details_from_text(self, raw_text: str) -> dict:
         """Call LLM directly using openai client to extract questions, project task description, and technical skills."""
         system_prompt = (
-            "You are an expert technical recruiter, questions designer, and skill analyst.\n"
-            "Your task is to analyze a candidate task/assignment description and extract:\n"
-            "1. Exactly 5 technical interview questions suitable for evaluating candidates on this task.\n"
+            "You are an expert technical recruiter and data extractor.\n"
+            "Your task is to analyze a candidate task/assignment description (which is formatted in Markdown) and extract:\n"
+            "1. All technical interview questions found in the document exactly as written (verbatim).\n"
             "2. A concise description/summary of the project task.\n"
             "3. All relevant technical skills required to complete it.\n"
-            "CRITICAL:\n"
+            "CRITICAL RULES:\n"
             "1. You MUST output ONLY valid JSON format.\n"
             "2. Your output MUST be a JSON object with exactly three keys:\n"
-            "   - 'questions': an array of exactly 5 strings (no more, no less).\n"
+            "   - 'questions': an array of strings representing the questions.\n"
             "   - 'project_task': a string representing the project description.\n"
             "   - 'skills': an array of strings representing unique technical skill names.\n"
-            "3. Do NOT include any conversational text, explanations, or markdown formatting.\n"
-            "4. Be precise and clear."
+            "3. IMPORTANT FOR QUESTIONS: Extract the questions VERBATIM. Do NOT rephrase them. "
+            "If a question is preceded by a Problem Statement, Table Structure, Sample Data, Code, or any other context, "
+            "you MUST include all of that context and markdown tables as part of the question string. "
+            "Do not split a question from its associated context or tables. Treat the context and the question as one single logical block.\n"
+            "4. Do NOT invent or hallucinate any questions. If there are 3 questions, output 3. If there are 10, output 10.\n"
+            "5. Do NOT include any conversational text, explanations, or markdown formatting outside the JSON."
         )
         
         user_prompt = f"""
-Analyze the following task description and extract the required details:
+Analyze the following task description and extract the required details. Remember to preserve context like tables and code blocks inside the question strings.
 
 TASK DESCRIPTION:
-{raw_text[:8000]}
+{raw_text[:10000]}
 
 Output Format Example (JSON ONLY):
 {{
   "questions": [
-    "Question 1?",
-    "Question 2?",
-    "Question 3?",
-    "Question 4?",
-    "Question 5?"
+    "Write a Python function that takes two strings as input...",
+    "**Problem Statement:**\\nYou are given a table...\\n\\n| Column | Type |\\n|---|---|\\n...\\n\\nQuestion: Write an SQL query..."
   ],
   "project_task": "Concise summary of the task.",
   "skills": ["Skill1", "Skill2", "Skill3"]
@@ -162,12 +163,6 @@ Output Format Example (JSON ONLY):
             questions = data.get("questions", [])
             if not isinstance(questions, list):
                 questions = []
-            if len(questions) != 5:
-                # Fallback to pad or truncate to exactly 5 questions
-                if len(questions) < 5:
-                    questions.extend([f"Technical Question {i}" for i in range(len(questions) + 1, 6)])
-                else:
-                    questions = questions[:5]
             
             project_task = data.get("project_task") or ""
             skills = data.get("skills", [])
@@ -210,6 +205,14 @@ Output Format Example (JSON ONLY):
             stmt_paper = select(CandidateTestPaper).where(CandidateTestPaper.candidate_id == candidate_id)
             res_paper = await db.execute(stmt_paper)
             test_paper = res_paper.scalar_one_or_none()
+            
+            if not test_paper and candidate.applied_job_id:
+                stmt_job = select(CandidateTestPaper).where(
+                    CandidateTestPaper.job_id == candidate.applied_job_id,
+                    CandidateTestPaper.candidate_id.is_(None)
+                )
+                res_job = await db.execute(stmt_job)
+                test_paper = res_job.scalar_one_or_none()
             
             if test_paper and test_paper.task_file_path:
                 task_file_path = test_paper.task_file_path
@@ -262,6 +265,15 @@ Output Format Example (JSON ONLY):
             stmt_paper = select(CandidateTestPaper).where(CandidateTestPaper.candidate_id == candidate_id)
             res_paper = await db.execute(stmt_paper)
             test_paper = res_paper.scalar_one_or_none()
+            
+            if not test_paper and candidate.applied_job_id:
+                stmt_job = select(CandidateTestPaper).where(
+                    CandidateTestPaper.job_id == candidate.applied_job_id,
+                    CandidateTestPaper.candidate_id.is_(None)
+                )
+                res_job = await db.execute(stmt_job)
+                test_paper = res_job.scalar_one_or_none()
+                
             if test_paper and test_paper.task_file_path:
                 task_skills = test_paper.task_skills or []
             else:
