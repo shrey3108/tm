@@ -27,8 +27,8 @@ export function SendQuestionPaperFooter({
   onAssign,
   onSendEmail,
 }: SendQuestionPaperFooterProps) {
-  // @ts-ignore
-  const _isAssignDisabled =
+
+  const isAssignDisabled =
     isAssignPending ||
     (mode === "predefined" && !selectedPaperId) ||
     (mode === "custom" &&
@@ -41,8 +41,8 @@ export function SendQuestionPaperFooter({
         variant="outline"
         className="rounded-xl"
         onClick={onCancel}
-        // disabled={isAssignPending || isSendEmailPending}
-        disabled={true} // temp
+        disabled={isAssignPending || isSendEmailPending}
+      // disabled={true} // temp
       >
         Cancel
       </Button>
@@ -52,7 +52,7 @@ export function SendQuestionPaperFooter({
           type="button"
           className="rounded-xl px-3 font-semibold gap-1.5"
           onClick={onSendEmail}
-          disabled={true} // temp
+          disabled={isAssignDisabled}
 
         >
           {isSendEmailPending ? (
@@ -72,7 +72,7 @@ export function SendQuestionPaperFooter({
           type="button"
           className="rounded-xl px-3 font-semibold gap-1.5"
           onClick={onAssign}
-          disabled={true} // temp
+          disabled={isAssignDisabled}
         >
           {isAssignPending ? (
             <>

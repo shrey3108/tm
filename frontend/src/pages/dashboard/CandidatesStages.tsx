@@ -11,10 +11,11 @@ import { PERMISSIONS } from "@/lib/permissions";
 import { CandidateDetailsModal } from "@/components/modal/CandidateDetailsModal";
 import { ResumeScreeningView } from "@/components/candidate/ResumeScreeningView";
 import { StageEvaluationView } from "@/components/candidate/StageEvaluationView";
-import { LoadingState, PollingState, EmptyState } from "@/components/candidate/StageStateViews";
+import { PollingState, EmptyState } from "@/components/candidate/StageStateViews";
 import { useCandidatesStages } from "@/hooks/useCandidatesStages";
+import LoadingSpinner from "@/components/shared/LoadingSpinner";
 
-/**
+/** 
  * The main page component for viewing and managing a candidate's progress through interview stages.
  * Orchestrates the display of resume screening, interview evaluations, and action buttons
  * for HR decisions. It uses the `useCandidatesStages` hook to manage its internal state.
@@ -113,10 +114,10 @@ export default function CandidatesStages() {
                   onShowMoreClick={() => setIsDetailsModalOpen(true)}
                 />
               ) : (
-                <LoadingState message="Loading candidate details..." />
+                <LoadingSpinner message="Loading candidate details..." />
               )
             ) : isLoadingEvaluation && !isPolling ? (
-              <LoadingState message="Fetching evaluation data..." />
+              <LoadingSpinner message="Fetching evaluation data..." />
             ) : isPolling ? (
               <PollingState />
             ) : evaluation ? (

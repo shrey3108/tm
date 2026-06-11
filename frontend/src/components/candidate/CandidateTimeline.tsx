@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { Clock, Loader2, ChevronRight } from "lucide-react";
+import { Clock, ChevronRight } from "lucide-react";
 import { useCandidateTimelineQuery } from "@/hooks/queries/candidates";
 import type { TimelineEvent } from "@/types/candidate";
 import type { Job } from "@/types/job";
@@ -42,7 +42,7 @@ export function CandidateTimeline({
   isPolling,
   onTranscriptDisableChange,
 }: CandidateTimelineProps) {
-  const { data: events, isLoading } = useCandidateTimelineQuery(candidateId, jobId);
+  const { data: events } = useCandidateTimelineQuery(candidateId, jobId);
   const [selectedEvent, setSelectedEvent] = useState<TimelineEvent | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -70,17 +70,6 @@ export function CandidateTimeline({
   };
 
   if (events?.events.length === 0) return null;
-
-  if (isLoading) {
-    return (
-      <div className={cn("w-full py-6 flex flex-col items-center justify-center min-h-[150px] gap-3", className)}>
-        <Loader2 className="h-6 w-6 animate-spin text-primary/60" />
-        <span className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground animate-pulse">
-          Synchronizing Timeline...
-        </span>
-      </div>
-    );
-  }
 
   return (
     <div className={cn("w-full py-2", className)}>
