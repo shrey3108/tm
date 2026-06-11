@@ -8,13 +8,15 @@
  * All optional fields (location, applied_at, phone) safely fall back to "N/A".
  */
 
-import type { PaginationState, OnChangeFn } from "@tanstack/react-table";
+import { useMemo } from "react";
+import type { PaginationState, OnChangeFn, ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/shared/DataTable";
 import { useCandidateTableFilters, type CandidateActiveFilters } from "@/hooks/useCandidateTableFilters";
 import { useCandidateTableColumns } from "./CandidateTableColumns";
 import { CandidateTableFilters } from "./CandidateTableFilters";
 import type { UnifiedCandidate } from "@/types/candidate";
 import type { DateRange } from "react-day-picker";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export interface CandidateTableProps<T extends UnifiedCandidate> {
   candidates: T[];
@@ -36,6 +38,9 @@ export interface CandidateTableProps<T extends UnifiedCandidate> {
   stageOptions?: { id: string; name: string }[];
   activitySessions?: [number, { start_date: string; end_date: string }][];
   initialDateRange?: DateRange | undefined;
+  rowSelection?: Record<string, boolean>;
+  onRowSelectionChange?: OnChangeFn<Record<string, boolean>>;
+  showCheckboxes?: boolean;
 }
 
 export function CandidateTable<T extends UnifiedCandidate>({
@@ -58,6 +63,9 @@ export function CandidateTable<T extends UnifiedCandidate>({
   stageOptions: stageOptionsProp,
   activitySessions,
   initialDateRange,
+  rowSelection,
+  onRowSelectionChange,
+  showCheckboxes = false,
 }: CandidateTableProps<T>) {
   const {
     nameFilter,
@@ -104,6 +112,37 @@ export function CandidateTable<T extends UnifiedCandidate>({
     passing_threshold,
     showJobContext,
   });
+
+  const columnsWithSelection = useMemo(() => {
+    if (!showCheckboxes) return columns;
+
+    const selectColumn: ColumnDef<T> = {
+      id: "select",
+      header: ({ table }) => (
+        <div className="flex items-center justify-center pl-2.5 pr-1.5">
+          <Checkbox
+            checked={table.getIsAllPageRowsSelected()}
+            indeterminate={!table.getIsAllPageRowsSelected() && table.getIsSomePageRowsSelected()}
+            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+            aria-label="Select all"
+          />
+        </div>
+      ),
+      cell: ({ row }) => (
+        <div className="flex items-center justify-center pl-2.5 pr-1.5" onClick={(e) => e.stopPropagation()}>
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(value) => row.toggleSelected(!!value)}
+            aria-label="Select row"
+          />
+        </div>
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    };
+
+    return [selectColumn, ...columns];
+  }, [columns, showCheckboxes]);
 
   return (
     <div className="w-full space-y-3">
@@ -153,7 +192,7 @@ export function CandidateTable<T extends UnifiedCandidate>({
       />
 
       <DataTable
-        columns={columns}
+        columns={columnsWithSelection}
         data={filteredCandidates}
         headerActions={headerActions}
         isServerSide={isServerSide}
@@ -162,6 +201,8 @@ export function CandidateTable<T extends UnifiedCandidate>({
         pageCount={pageCount}
         onPaginationChange={onPaginationChange}
         emptyMessage={emptyMessage}
+        rowSelection={rowSelection}
+        onRowSelectionChange={onRowSelectionChange}
       />
     </div>
   );

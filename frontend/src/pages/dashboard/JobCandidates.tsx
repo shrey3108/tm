@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button, Input } from "@/components/";
 import { RotateCw, Layers } from "lucide-react";
@@ -18,6 +18,7 @@ import type { PaginationState } from "@tanstack/react-table";
 import type { CandidateActiveFilters } from "@/hooks/useCandidateTableFilters";
 import { slugify } from "@/utils/slug";
 import type { DateRange } from "react-day-picker";
+import { SendQuestionPaperDialog } from "@/components/candidate/projectSubmission/SendQuestionPaperDialog";
 
 /**
  * Page component for managing job candidates with toggle between candidates list and analytics views.
@@ -97,6 +98,32 @@ export default function JobCandidates() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isJobModalOpen, setIsJobModalOpen] = useState(false);
 
+  const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
+  const [isSendQuestionPaperDialogOpen, setIsSendQuestionPaperDialogOpen] = useState(false);
+
+  // Reset rowSelection when filters or pagination changes
+  useEffect(() => {
+    setRowSelection({});
+  }, [pageIndex, pageSize, activeFilters]);
+
+  // Compute showCheckboxes: Stage has Technical Practical Round and HR Decision is Pending
+  const showCheckboxes = useMemo(() => {
+    const selectedStageConfigs = job?.stages?.filter((s) => activeFilters.stage_id?.includes(s.id)) || [];
+    const hasTechnicalPracticalRoundSelected = selectedStageConfigs.some(
+      (s) => s.template?.name === "Technical Practical Round"
+    );
+    const isHrDecisionPendingSelected = activeFilters.hr_decision?.includes("pending");
+    return !!(hasTechnicalPracticalRoundSelected && isHrDecisionPendingSelected);
+  }, [job?.stages, activeFilters.stage_id, activeFilters.hr_decision]);
+
+  // Compute selected candidates
+  const selectedCandidates = useMemo(() => {
+    return Object.keys(rowSelection)
+      .filter((key) => rowSelection[key])
+      .map((key) => candidates[Number(key)])
+      .filter(Boolean);
+  }, [rowSelection, candidates]);
+
   const [modalInitialTab, _setModalInitialTab] = useState<"analysis" | "jd" | "cross-job-match">("analysis");
   const handleFiltersChange = (filters: CandidateActiveFilters) => {
     setActiveFilters(filters);
@@ -122,6 +149,9 @@ export default function JobCandidates() {
         setJdVersion={setJdVersion}
         viewMode={viewMode}
         setViewMode={setViewMode}
+        showSendQuestionPaper={showCheckboxes}
+        onSendQuestionPaperClick={() => setIsSendQuestionPaperDialogOpen(true)}
+        isSendQuestionPaperDisabled={selectedCandidates.length === 0}
       />
 
       <div className="relative min-h-[400px]">
@@ -184,6 +214,9 @@ export default function JobCandidates() {
                       activitySessions={activitySession}
                       onFiltersChange={handleFiltersChange}
                       initialDateRange={activeFilters.dateRange as DateRange | undefined}
+                      rowSelection={rowSelection}
+                      onRowSelectionChange={setRowSelection}
+                      showCheckboxes={showCheckboxes}
                       headerActions={
                         <PermissionGuard permissions={PERMISSIONS.JOBS_MANAGE} hideWhenDenied>
                           <Button
@@ -360,6 +393,20 @@ export default function JobCandidates() {
         isLoading={isDeleting}
         error={deleteError}
       />
+      {isSendQuestionPaperDialogOpen && (
+        <SendQuestionPaperDialog
+          isOpen={isSendQuestionPaperDialogOpen}
+          onOpenChange={setIsSendQuestionPaperDialogOpen}
+          job={job}
+          candidateName=""
+          selectedCandidates={selectedCandidates}
+          onSuccess={() => {
+            fetchData();
+            setRowSelection({});
+            setIsSendQuestionPaperDialogOpen(false);
+          }}
+        />
+      )}
     </AppPageShell>
   );
 }
