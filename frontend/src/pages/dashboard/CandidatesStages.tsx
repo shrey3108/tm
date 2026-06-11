@@ -62,6 +62,7 @@ export default function CandidatesStages() {
     handleSelectHistoryVersion,
     fetchHistory,
     fetchHrDecisionHistory,
+    handlePaperChange,
     setRefetchTimeline,
   } = useCandidatesStages();
 
@@ -79,6 +80,7 @@ export default function CandidatesStages() {
           setIsPolling(true);
           fetchHistory();
         }}
+        onPaperChange={handlePaperChange}
         stageId={instanceId as string}
         candidateId={candidate?.id}
         stageName={currentStage}

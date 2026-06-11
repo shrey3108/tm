@@ -168,6 +168,9 @@ export function SendQuestionPaperDialog({
       let payload: CandidateTestPaperAssign = {
         candidate_id: candidateId,
         mode,
+        job_id: job?.id,
+        position_id: job?.position_id,
+        source_paper_ids: mode === "random" ? predefinedPapers.map((paper) => paper.id) : []
       };
 
       if (mode === "predefined") {

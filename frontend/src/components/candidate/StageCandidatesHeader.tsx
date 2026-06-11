@@ -19,6 +19,8 @@ interface StageCandidatesHeaderProps {
   isUploaded: boolean;
   /** Callback for successful transcript upload */
   onSuccess: () => void;
+  /** Callback for successful paper assignment/change */
+  onPaperChange?: () => void;
   /** The ID of the stage */
   stageId: string | undefined;
   stageName: string | undefined;
@@ -35,6 +37,7 @@ export const StageCandidatesHeader = ({
   onBack,
   onInfoClick,
   onSuccess,
+  onPaperChange,
   stageId,
   isUploaded,
   stageName,
@@ -102,7 +105,7 @@ export const StageCandidatesHeader = ({
                   candidateName={candidateName || "Candidate"}
                   candidateId={candidateId}
                   job={job}
-                  onSuccess={onSuccess}
+                  onSuccess={onPaperChange || onSuccess}
                 />
               </>
             ) : (

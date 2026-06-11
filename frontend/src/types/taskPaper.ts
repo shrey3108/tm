@@ -31,7 +31,8 @@ export interface CandidateTestPaperRead {
 export interface CandidateTestPaperAssign {
   candidate_id?: string;
   job_id?: string;
-  candidate_email?: string;
+  position_id?: string;
+  source_paper_ids?: string[]
   mode: "predefined" | "random" | "custom";
   paper_id?: string;
   questions?: string[];

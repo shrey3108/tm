@@ -183,11 +183,18 @@ export const taskService = {
    */
   getCandidateTestPaper: async (
     candidateId: string
-  ): Promise<CandidateTestPaperRead> => {
-    const response = await client.get<CandidateTestPaperRead>(
-      `/task-papers/assigned/${candidateId}`
-    );
-    return response.data;
+  ): Promise<CandidateTestPaperRead | null> => {
+    try {
+      const response = await client.get<CandidateTestPaperRead>(
+        `/task-papers/assigned/${candidateId}`
+      );
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        return null;
+      }
+      throw error;
+    }
   },
 
   /**
