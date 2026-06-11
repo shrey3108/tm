@@ -28,6 +28,7 @@ export default function QuestionsBank() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedJobId, setSelectedJobId] = useState<string>("");
   const [selectedPositionId, setSelectedPositionId] = useState<string>("");
+  const [isUploading, setIsUploading] = useState<boolean>(false);
 
   // Fetch jobs list
   const { data: jobs, loading: loadingJobs } = useJobTitle("", true);
@@ -70,34 +71,41 @@ export default function QuestionsBank() {
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
       if (!activeJobId || !activePositionId) {
         toast.error("Please select both a job and a position level first.");
         return;
       }
-      const file = files[0];
-      uploadMutation.mutate(
-        {
-          jobId: activeJobId,
-          positionId: activePositionId,
-          file,
-        },
-        {
-          onSuccess: () => {
-            toast.success(`Successfully uploaded and triggered AI extraction for '${file.name}'!`);
-            refetchPapers();
-            if (fileInputRef.current) {
-              fileInputRef.current.value = "";
-            }
-          },
-          onError: (err) => {
-            const error = err as ApiErrorResponse;
-            toast.error(error.response?.data?.detail || "Failed to upload question set paper.");
-          },
+
+      setIsUploading(true);
+      const fileList = Array.from(files);
+
+      const uploadPromises = fileList.map(async (file) => {
+        try {
+          await uploadMutation.mutateAsync({
+            jobId: activeJobId,
+            positionId: activePositionId,
+            file,
+          });
+          toast.success(`Successfully uploaded and triggered AI extraction for '${file.name}'!`);
+        } catch (err) {
+          const error = err as ApiErrorResponse;
+          toast.error(
+            error.response?.data?.detail || 
+            `Failed to upload '${file.name}'.`
+          );
         }
-      );
+      });
+
+      await Promise.all(uploadPromises);
+
+      refetchPapers();
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      setIsUploading(false);
     }
   };
 
@@ -189,18 +197,19 @@ export default function QuestionsBank() {
           <div className="flex items-end shrink-0 md:self-end">
             <Button
               onClick={handleUploadClick}
-              disabled={!activeJobId || !activePositionId || uploadMutation.isPending}
+              disabled={!activeJobId || !activePositionId || isUploading}
               variant="outline"
               className="rounded-xl border border-muted-foreground/10 px-5 font-semibold text-center h-9"
             >
               <Upload className="h-4 w-4 mr-2" />
-              {uploadMutation.isPending ? "Uploading..." : "Upload new set"}
+              {isUploading ? "Uploading..." : "Upload new set"}
             </Button>
             <input
               type="file"
               ref={fileInputRef}
               onChange={handleFileChange}
               accept=".pdf,.doc,.docx"
+              multiple
               className="hidden"
             />
           </div>
