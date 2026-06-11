@@ -76,6 +76,12 @@ class CandidateTestPaper(Base):
         nullable=True,
     )
 
+    email_sent_count: Mapped[int] = mapped_column(
+        default=0,
+        server_default="0",
+        nullable=False,
+    )
+
     # TIMESTAMPS
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

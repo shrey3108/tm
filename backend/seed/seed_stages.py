@@ -27,11 +27,12 @@ STAGE_TEMPLATES = [
         "default_config": {
             "type": "video",
             "evaluation_criteria": [
-                "Problem-solving ability",
-                "Logical thinking",
-                "Code structure clarity",
-                "Debug approach",
-                "Implementation accuracy",
+                "performance",
+                "architecture",
+                "code_quality",
+                "correctness",
+                "security",
+                "documentation",
             ],
         },
     },
