@@ -22,7 +22,7 @@ import {
 } from "./queries/candidates";
 import { useSubmitDecisionMutation } from "./mutations/candidates/useCandidateStages";
 import { QUERY_KEYS } from "@/constants/queryKeys";
-import { TEMP_TECHNICAL_ROUND_HR_DECISION, TEMP_TECHNICAL_ROUND_RESPONSE } from "@/constants/temp";
+// import { TEMP_TECHNICAL_ROUND_HR_DECISION, TEMP_TECHNICAL_ROUND_RESPONSE } from "@/constants/temp";
 
 /**
  * A comprehensive hook for managing the state and logic of the Candidate Stages view.
@@ -289,10 +289,10 @@ export function useCandidatesStages() {
 
   const latestDecision = filteredHistory ? filteredHistory[0] : hrDecisionHistory[0];
   const canTakeDecision = !latestDecision || latestDecision.decision.toLowerCase() === "may be";
-  if (currentStage === "Technical Practical Round" && !evaluation && error) {
-    evaluation = TEMP_TECHNICAL_ROUND_RESPONSE
-    hrDecisionHistory = TEMP_TECHNICAL_ROUND_HR_DECISION
-  }
+  // if (currentStage === "Technical Practical Round" && !evaluation && error) {
+  //   evaluation = TEMP_TECHNICAL_ROUND_RESPONSE
+  //   hrDecisionHistory = TEMP_TECHNICAL_ROUND_HR_DECISION
+  // }
 
   return {
     job,

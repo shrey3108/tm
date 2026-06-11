@@ -148,7 +148,7 @@ export default function CandidatesStages() {
             (isResumeScreening ? !!candidateData : !!evaluation)
             // TODO: REMOVE AFTER GEP
             &&
-            currentStage !== "Technical Practical Round" &&
+            // currentStage !== "Technical Practical Round" &&
             (
               <PermissionGuard permissions={PERMISSIONS.CANDIDATES_DECIDE} hideWhenDenied>
                 <ActionButtons
