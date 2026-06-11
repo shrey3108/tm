@@ -59,3 +59,6 @@ export const PRIORITY_TIMELINE_COLOR = [
   { min: 51, max: 75, color: "bg-[#fcd34d]" },
   { min: 76, max: 100, color: "bg-[#f87171]" },
 ] as const;
+
+
+export const UPLOAD_TASK_FILE_TYPES = [".docx", ".pdf"]

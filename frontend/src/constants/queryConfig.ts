@@ -12,7 +12,6 @@
 const minutes = (m: number) => 1000 * 60 * m;
 
 export const QUERY_CONFIG = {
-    // ── Admin ──
     RECENT_UPLOADS: {
         staleTime: minutes(1),
         gcTime: minutes(2),
@@ -97,8 +96,9 @@ export const QUERY_CONFIG = {
     CANDIDATE_TRANSCRIPT: {
         staleTime: minutes(5),
     },
-
-
+    TASK_PAPER: {
+        staleTime: minutes(1),
+    },
     AUTH_USER: {
         staleTime: minutes(5),
     },

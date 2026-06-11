@@ -24,6 +24,7 @@ const JobCandidates = lazy(() => import("@/pages/dashboard/JobCandidates"));
 const ProfilePage = lazy(() => import("@/pages/Profile"));
 const CandidatesStages = lazy(() => import("@/pages/dashboard/CandidatesStages"));
 const TranscriptPage = lazy(() => import("@/pages/dashboard/TranscriptPage"));
+const QuestionsBank = lazy(() => import("@/pages/dashboard/QuestionsBank"));
 
 // Admin pages 
 const AdminDashboard = lazy(() => import("@/pages/Admin/AdminDashboard"));
@@ -128,6 +129,14 @@ const AppRoutes = () => {
               </Route>
             </Route>
           </Route>
+          <Route
+            path="questions-bank"
+            element={
+              <RoleRoute requiredPermissions={PERMISSIONS.JOBS_ACCESS}>
+                <QuestionsBank />
+              </RoleRoute>
+            }
+          />
           <Route path="profile" element={<ProfilePage />} />
           {/* Admin Routes */}
           <Route

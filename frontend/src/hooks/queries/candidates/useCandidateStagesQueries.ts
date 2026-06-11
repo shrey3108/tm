@@ -182,6 +182,13 @@ export function useCandidateTimelineQuery(
     queryFn: () => adminCandidateService.getCandidateTimeline(candidateId!, jobId),
     enabled: !!candidateId,
     staleTime: QUERY_CONFIG.CANDIDATE_STAGES.staleTime,
+    select: (data) => {
+      return {
+        ...data,
+        current_stage: getCorrectCurrentStage(data)
+      };
+    }
+    /*
     // TODO: NOTE: Remove this after GEP complete
     select: (data) => {
       if (!data || !data.events) return data;
@@ -262,6 +269,7 @@ export function useCandidateTimelineQuery(
         current_stage: updatedCurrentStage,
       };
     }
+    */
   });
 }
 

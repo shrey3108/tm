@@ -26,3 +26,6 @@ from app.v1.db.models.transcript_chunks import TranscriptChunk  # noqa: F401
 from app.v1.db.models.job_priorities import JobPriority  # noqa: F401
 from app.v1.db.models.job_positions import JobPosition  # noqa: F401
 from app.v1.db.models.system_settings import SystemSetting  # noqa: F401
+from app.v1.db.models.question_set_paper import QuestionSetPaper  # noqa: F401
+from app.v1.db.models.candidate_test_paper import CandidateTestPaper  # noqa: F401
+

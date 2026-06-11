@@ -42,4 +42,11 @@ export const QUERY_KEYS = {
     TASK: "jobTask",
     TASK_DOWNLOAD: "candidateTaskDownload"
   },
+  TASK_PAPERS: {
+    LIST: "taskPapersList",
+    DETAIL: "taskPaperDetail",
+    ASSIGNED: "candidateTaskPaperAssigned",
+    TASK_METADATA: "candidateTaskMetadata",
+    SKILLS: "jobAndCandidateSkills",
+  },
 } as const;

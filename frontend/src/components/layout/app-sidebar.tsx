@@ -159,6 +159,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           url: "/dashboard/admin/criteria-stages/positions",
           permission: PERMISSIONS.ADMIN_ACCESS,
         },
+        {
+          title: "Questions Bank",
+          url: "/dashboard/questions-bank",
+          permission: PERMISSIONS.JOBS_ACCESS,
+        },
       ],
     },
     {

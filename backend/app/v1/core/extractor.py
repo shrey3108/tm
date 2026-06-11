@@ -42,53 +42,22 @@ class DocumentParser:
 
     @staticmethod
     def extract_text(file_path: str | Path) -> str:
-        """Extract text from a given file path based on its extension.
-
-        Args:
-            file_path: Absolute or relative path to the document file.
-
-        Returns:
-            The extracted text as a single string.
-
-        Raises:
-            FileNotFoundError: If the file does not exist.
-            ValueError: If the file format is unsupported.
+        """Extract text from a document using Docling to preserve markdown structure and tables.
         """
+        from docling.document_converter import DocumentConverter
+        
         # Robust path resolution for Windows/Unix compatibility
         path = resolve_storage_path(file_path).resolve()
         
         if not path.is_file():
             raise FileNotFoundError(f"File not found or is not a file: {path}")
 
-        ext = path.suffix.lower()
-
-        if ext == ".pdf":
-            return DocumentParser._extract_from_pdf(path)
-        elif ext in [".docx", ".doc"]:
-            return DocumentParser._extract_from_docx(path)
-        else:
-            raise ValueError(f"Unsupported file format: {ext}")
-
-    @staticmethod
-    def _extract_from_pdf(file_path: Path) -> str:
-        """Extract text from a PDF document using PyMuPDF."""
-        pages_text = []
         try:
-            with pymupdf.open(file_path) as doc:
-                for page in doc:
-                    pages_text.append(page.get_text())
+            converter = DocumentConverter()
+            result = converter.convert(str(path))
+            return result.document.export_to_markdown()
         except Exception as e:
-            raise RuntimeError(f"Error parsing PDF: {str(e)}")
-
-        return "".join(pages_text)
-
-    @staticmethod
-    def _extract_from_docx(file_path: Path) -> str:
-        """Extract text from a DOCX document."""
-        try:
-            return docx2txt.process(str(file_path))
-        except Exception as e:
-            raise RuntimeError(f"Error parsing DOCX: {str(e)}")
+            raise RuntimeError(f"Error parsing document with Docling: {str(e)}")
 
 
 class ResumeLLMExtractor:

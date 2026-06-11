@@ -1,22 +1,4 @@
-import { Loader2, FileText } from "lucide-react";
-
-interface LoadingStateProps {
-  /** Optional message to display during loading. Defaults to "Loading..." */
-  message?: string;
-}
-
-/**
- * Displays a loading spinner with an optional message.
- * Used across the candidate stages to indicate background data fetching.
- */
-export function LoadingState({ message = "Loading..." }: LoadingStateProps) {
-  return (
-    <div className="flex flex-col items-center justify-center py-20 gap-4">
-      <Loader2 className="h-10 w-10 animate-spin text-primary" />
-      <p className="text-muted-foreground font-bold">{message}</p>
-    </div>
-  );
-}
+import { FileText } from "lucide-react";
 
 /**
  * Displays a specialized polling state for AI analysis.

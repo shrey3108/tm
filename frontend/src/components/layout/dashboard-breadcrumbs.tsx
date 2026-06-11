@@ -60,6 +60,7 @@ const ROUTE_META: Record<string, { label: string; icon?: LucideIcon }> = {
   criteria: { label: "Job Criteria", icon: ListChecks },
   stages: { label: "Job Stages", icon: Layers },
   positions: { label: "Job Positions", icon: User },
+  "questions-bank": { label: "Questions Bank", icon: ListChecks },
 };
 
 /**

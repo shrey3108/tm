@@ -4,7 +4,8 @@ import AppPageHeader from "@/components/shared/AppPageHeader";
 import type { Job } from "@/types/job";
 import { TranscriptUpload } from "./TranscriptUpload";
 import { ProjectSubmissionDialog } from "./projectSubmission/ProjectSubmissionDialog";
-
+import { SendQuestionPaperDialog } from "./projectSubmission/SendQuestionPaperDialog";
+import { SendIcon } from "lucide-react";
 interface StageCandidatesHeaderProps {
   /** Associated job for the candidate stage view */
   job: Job | null;
@@ -40,6 +41,7 @@ export const StageCandidatesHeader = ({
   candidateId,
 }: StageCandidatesHeaderProps) => {
   const [isProjectSubmissionDialogOpen, setIsProjectSubmissionDialogOpen] = useState(false);
+  const [isSendQuestionPaperDialogOpen, setIsSendQuestionPaperDialogOpen] = useState(false);
 
   return (
     <AppPageHeader
@@ -71,6 +73,14 @@ export const StageCandidatesHeader = ({
               <>
                 <Button
                   variant="outline"
+                  className="rounded-xl border border-muted-foreground/10 font-semibold text-center h-9"
+                  onClick={() => setIsSendQuestionPaperDialogOpen(true)}
+                  disabled={isUploaded}
+                >
+                  <SendIcon className="h-4 w-4" /> Send Question Paper
+                </Button>
+                <Button
+                  variant="outline"
                   className="rounded-xl border border-muted-foreground/10 px-5 font-semibold text-center h-9"
                   onClick={() => setIsProjectSubmissionDialogOpen(true)}
                   disabled={isUploaded}
@@ -85,6 +95,14 @@ export const StageCandidatesHeader = ({
                   stageId={stageId}
                   onSuccess={onSuccess}
                   job={job!}
+                />
+                <SendQuestionPaperDialog
+                  isOpen={isSendQuestionPaperDialogOpen}
+                  onOpenChange={setIsSendQuestionPaperDialogOpen}
+                  candidateName={candidateName || "Candidate"}
+                  candidateId={candidateId}
+                  job={job}
+                  onSuccess={onSuccess}
                 />
               </>
             ) : (
