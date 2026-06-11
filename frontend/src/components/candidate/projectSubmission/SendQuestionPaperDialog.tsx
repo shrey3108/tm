@@ -23,6 +23,7 @@ interface SendQuestionPaperDialogProps {
   candidateId?: string;
   job: Job | null;
   onSuccess?: () => void;
+  selectedCandidates?: any[];
 }
 
 type AssignmentMode = "predefined" | "random" | "custom";
@@ -34,15 +35,21 @@ export function SendQuestionPaperDialog({
   candidateId,
   job,
   onSuccess,
+  selectedCandidates,
 }: SendQuestionPaperDialogProps) {
+  const isBulkMode = selectedCandidates && selectedCandidates.length > 1;
+
   // Queries
   const {
     data: assignedPaper,
     loading: loadingAssigned,
     refetch: refetchAssigned,
-  } = useCandidateTestPaper(candidateId);
+  } = useCandidateTestPaper(isBulkMode ? undefined : candidateId);
 
-  const { data: candidateDetails } = useCandidateDetailsQuery(job?.id, candidateId);
+  const { data: candidateDetails } = useCandidateDetailsQuery(
+    isBulkMode ? undefined : job?.id,
+    isBulkMode ? undefined : candidateId
+  );
 
   const { data: predefinedPapers, loading: loadingPredefined } = useQuestionSetPapers({
     jobId: job?.id,
@@ -61,11 +68,20 @@ export function SendQuestionPaperDialog({
   const [customQuestions, setCustomQuestions] = useState<string[]>([]);
   const [customProjectTask, setCustomProjectTask] = useState<string>("");
 
+  // Bulk mode states
+  const [bulkAssignedPaper, setBulkAssignedPaper] = useState<any | null>(null);
+  const [assignedPapersList, setAssignedPapersList] = useState<any[]>([]);
+
+  // Consolidated assigned paper
+  const finalAssignedPaper = isBulkMode ? bulkAssignedPaper : assignedPaper;
+
   // Reset custom questions and task description when dialog opens
   useEffect(() => {
     if (isOpen) {
       setCustomQuestions([]);
       setCustomProjectTask("");
+      setBulkAssignedPaper(null);
+      setAssignedPapersList([]);
     }
   }, [isOpen]);
 
@@ -84,9 +100,61 @@ export function SendQuestionPaperDialog({
 
 
   const handleAssign = async () => {
-    const email = candidateDetails?.email;
-    if (!email) {
-      toast.error("Candidate email is required to assign a test paper.");
+    if (isBulkMode) {
+      if (!selectedCandidates || selectedCandidates.length === 0) {
+        toast.error("No candidates selected.");
+        return;
+      }
+      const missingEmails = selectedCandidates.filter((c) => !c.email);
+      if (missingEmails.length > 0) {
+        toast.error(
+          `The following candidates are missing an email address: ${missingEmails
+            .map((c) => `${c.first_name || ""} ${c.last_name || ""}`.trim() || "Unknown")
+            .join(", ")}`
+        );
+        return;
+      }
+
+      if (mode === "predefined" && !selectedPaperId) {
+        toast.error("Please select a predefined question set paper template.");
+        return;
+      } else if (mode === "custom") {
+        if (customQuestions.length !== 5) {
+          toast.error("Please select exactly 5 questions.");
+          return;
+        }
+        if (!customProjectTask.trim()) {
+          toast.error("Please provide a project task description.");
+          return;
+        }
+      }
+
+      try {
+        toast.info(`Assigning test paper to ${selectedCandidates.length} candidates...`);
+        const assignPromises = selectedCandidates.map(async (candidate) => {
+          let payload: CandidateTestPaperAssign = {
+            candidate_id: candidate.id,
+            mode,
+          };
+          if (mode === "predefined") {
+            payload.paper_id = selectedPaperId;
+          } else if (mode === "custom") {
+            payload.questions = customQuestions.map((q) => q.trim());
+            payload.project_task = customProjectTask.trim();
+          }
+          return await assignMutation.mutateAsync(payload);
+        });
+
+        const results = await Promise.all(assignPromises);
+        toast.success("Test paper successfully assigned to all candidates!");
+        if (results.length > 0) {
+          setBulkAssignedPaper(results[0]);
+          setAssignedPapersList(results);
+        }
+        if (onSuccess) onSuccess();
+      } catch (err: any) {
+        toast.error(err?.response?.data?.detail || "Failed to assign test papers.");
+      }
       return;
     }
 
@@ -131,6 +199,35 @@ export function SendQuestionPaperDialog({
   };
 
   const handleSendEmail = async () => {
+    if (isBulkMode) {
+      if (!selectedCandidates || selectedCandidates.length === 0) {
+        toast.error("No candidates selected.");
+        return;
+      }
+
+      try {
+        toast.info(`Sending test paper via email to ${selectedCandidates.length} candidates...`);
+        const sendPromises = selectedCandidates.map(async (candidate) => {
+          const matchedPaper = assignedPapersList.find((paper) => paper.candidate_id === candidate.id);
+          const paperId = matchedPaper?.id;
+          const email = candidate.email;
+          if (paperId && email) {
+            return await sendEmailMutation.mutateAsync({
+              candidate_email: email,
+              paper_id: paperId,
+            });
+          }
+        });
+
+        await Promise.all(sendPromises);
+        toast.success(`Successfully sent test paper emails to all candidates!`);
+        onOpenChange(false);
+      } catch (err: any) {
+        toast.error(err?.response?.data?.detail || "Failed to send emails.");
+      }
+      return;
+    }
+
     const email = candidateDetails?.email;
     if (!email) {
       toast.error("Candidate email is missing.");
@@ -155,6 +252,24 @@ export function SendQuestionPaperDialog({
   };
 
   const handleUnassign = async () => {
+    if (isBulkMode) {
+      if (!selectedCandidates || selectedCandidates.length === 0) return;
+      try {
+        toast.info("Removing assignments...");
+        const deletePromises = selectedCandidates.map((candidate) =>
+          deleteMutation.mutateAsync(candidate.id)
+        );
+        await Promise.all(deletePromises);
+        toast.success("Assignments removed successfully.");
+        setBulkAssignedPaper(null);
+        setAssignedPapersList([]);
+        if (onSuccess) onSuccess();
+      } catch (err: any) {
+        toast.error(err?.response?.data?.detail || "Failed to remove assignments.");
+      }
+      return;
+    }
+
     if (!candidateId) return;
 
     try {
@@ -170,7 +285,7 @@ export function SendQuestionPaperDialog({
   };
 
   // const selectedPredefinedPaper = predefinedPapers?.find((p) => p.id === selectedPaperId);
-
+  console.log('selectedCandidates', selectedCandidates);
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-3xl md:max-w-4xl lg:max-w-5xl max-h-[90vh] flex flex-col p-0 overflow-hidden bg-card/95 backdrop-blur-xl border-muted-foreground/20 shadow-2xl rounded-2xl h-[600px] gap-2">
@@ -180,10 +295,12 @@ export function SendQuestionPaperDialog({
           <DialogTitle className="text-xl font-bold tracking-tight flex items-center gap-2">
             <FileQuestion className="h-4 w-4 text-primary" />
             {/* Send Question Paper */}
-            {assignedPaper
+            {finalAssignedPaper
               ? `Send Question Paper to `
               : `Send Question Paper to`}
-            <span className=" text-foreground capitalize">{candidateName}</span>
+            <span className=" text-foreground capitalize">
+              {isBulkMode ? `${selectedCandidates.length} Candidates` : selectedCandidates && selectedCandidates?.length > 0 ? `${selectedCandidates?.map((c) => c.first_name).join(", ")}` : candidateName}
+            </span>
           </DialogTitle>
           {/* <DialogDescription className="text-muted-foreground text-sm">
             {assignedPaper
@@ -197,10 +314,10 @@ export function SendQuestionPaperDialog({
         <div className="flex-1 overflow-y-auto p-0.5 min-h-0">
           {loadingAssigned ? (
             <LoadingSpinner message="Checking candidate's test paper assignment..." />
-          ) : assignedPaper ? (
+          ) : finalAssignedPaper ? (
             /* ASSIGNED VIEW */
             <AssignedPaperView
-              assignedPaper={assignedPaper}
+              assignedPaper={finalAssignedPaper}
               onUnassign={handleUnassign}
               isUnassigning={deleteMutation.isPending}
             />
@@ -274,7 +391,7 @@ export function SendQuestionPaperDialog({
         {/* Footer actions */}
         <SendQuestionPaperFooter
           onCancel={() => onOpenChange(false)}
-          hasAssignedPaper={!!assignedPaper}
+          hasAssignedPaper={!!finalAssignedPaper}
           mode={mode}
           selectedPaperId={selectedPaperId}
           customQuestions={customQuestions}
