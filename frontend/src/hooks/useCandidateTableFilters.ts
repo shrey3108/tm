@@ -42,7 +42,7 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
   isServerSide = false,
   onFiltersChange?: (filters: CandidateActiveFilters) => void,
   passingThreshold = DEFAULT_PASSING_THRESHOLD,
-  stageOptionsProp?: string[],
+  stageOptionsProp?: { id: string; name: string }[],
   activitySessionsData?: [number, { start_date: string; end_date: string }][],
   initialDateRange?: DateRange
 ) => {
@@ -203,7 +203,7 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
       }
       // Stage filter
       if (skip !== 'stage' && stageFilter.length > 0) {
-        const candidateStage = c.current_stage?.template_name || '';
+        const candidateStage = c.current_stage?.job_stage_id || '';
         if (!stageFilter.includes(candidateStage)) return false;
       }
       // Activity session filter
@@ -343,15 +343,19 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
       return stageOptionsProp;
     }
     const subset = isAnyFilterActive ? crossFilteredCandidates('stage') : candidates;
-    const set = new Set<string>();
+    const map = new Map<string, { id: string; name: string; order: number }>();
     subset.forEach((c) => {
-      const s = c.current_stage?.template_name;
-      if (s) set.add(s);
+      const id = c.current_stage?.job_stage_id;
+      const name = c.current_stage?.template_name;
+      const order = c.current_stage?.order ?? 0;
+      if (id && name) {
+        map.set(id, { id, name, order });
+      }
     });
-    const derived = Array.from(set).sort();
+    const derived = Array.from(map.values()).sort((a, b) => a.order - b.order || a.name.localeCompare(b.name));
 
     if (stageOptionsProp && stageOptionsProp.length > 0) {
-      return stageOptionsProp.filter(s => set.has(s));
+      return stageOptionsProp.filter(s => map.has(s.id));
     }
     return derived;
   }, [candidates, stageOptionsProp, isAnyFilterActive, debouncedNameFilter, statusFilter, locationFilter, jobFilter, dateRange, hrDecisionFilter, resultFilter, activitySessionFilter, hrScoreFilter, passingThreshold]);
@@ -440,7 +444,7 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
 
       // Stage filter (multi-select)
       if (stageFilter.length > 0) {
-        const candidateStage = c.current_stage?.template_name || "";
+        const candidateStage = c.current_stage?.job_stage_id || "";
         if (!stageFilter.includes(candidateStage)) return false;
       }
 

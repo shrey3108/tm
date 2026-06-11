@@ -33,7 +33,7 @@ export interface CandidateTableProps<T extends UnifiedCandidate> {
   showLocationFilter?: boolean;
   showStatusFilter?: boolean;
   onFiltersChange?: (filters: CandidateActiveFilters) => void;
-  stageOptions?: string[];
+  stageOptions?: { id: string; name: string }[];
   activitySessions?: [number, { start_date: string; end_date: string }][];
   initialDateRange?: DateRange | undefined;
 }
@@ -104,7 +104,7 @@ export function CandidateTable<T extends UnifiedCandidate>({
     passing_threshold,
     showJobContext,
   });
-
+  console.log(stageFilter, stageOptions, stageOptionsProp)
   return (
     <div className="w-full space-y-3">
       <CandidateTableFilters
