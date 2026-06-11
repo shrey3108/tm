@@ -126,7 +126,8 @@ async def get_question_set_papers(
     if position_id:
         query = query.where(QuestionSetPaper.position_id == position_id)
     result = await db.execute(query)
-    return result.scalars().all()
+    items = result.scalars().all()
+    return [QuestionSetPaperRead.model_validate(item) for item in items]
 
 
 @router.get("/{paper_id}", response_model=QuestionSetPaperRead)
@@ -143,9 +144,9 @@ async def get_question_set_paper(
     if not paper:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Predefined Question Set Paper not found.",
+            detail="Question set paper not found.",
         )
-    return paper
+    return QuestionSetPaperRead.model_validate(paper)
 
 
 @router.delete("/{paper_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -667,7 +668,7 @@ async def send_test_paper_email(
 
     return {
         "status": "success",
-        "message": f"Assigned test paper email successfully sent to shuklashrey31@gmail.com (intended for: {candidate.email}).",
+        "message": f"Assigned test paper email successfully sent to moxiyi8243@herojp.com (intended for: {candidate.email}).",
     }
 
 
