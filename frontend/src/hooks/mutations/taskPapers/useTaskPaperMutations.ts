@@ -20,7 +20,7 @@ export function useUploadQuestionSetPaperMutation() {
       jobId: string;
       positionId: string;
       file: File;
-    }) => taskService.uploadQuestionSetPaper(jobId, positionId, file),
+    }) => taskService.uploadQuestionSetPaper({ jobId, positionId, file }),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.TASK_PAPERS.LIST],

@@ -29,7 +29,9 @@ export interface CandidateTestPaperRead {
 }
 
 export interface CandidateTestPaperAssign {
-  candidate_email: string;
+  candidate_id?: string;
+  job_id?: string;
+  candidate_email?: string;
   mode: "predefined" | "random" | "custom";
   paper_id?: string;
   questions?: string[];

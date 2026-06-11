@@ -46,10 +46,10 @@ export default function QuestionsBank() {
     data: questionPapers,
     loading: loadingPapers,
     refetch: refetchPapers,
-  } = useQuestionSetPapers(
-    activeJobId || undefined,
-    activePositionId || undefined,
-    {
+  } = useQuestionSetPapers({
+    jobId: activeJobId || undefined,
+    positionId: activePositionId || undefined,
+    options: {
       refetchInterval: (query: unknown) => {
         const papers = (query as { state?: { data?: { questions?: string[] }[] } })?.state?.data;
         const hasProcessing = Array.isArray(papers) && papers.some(
@@ -58,7 +58,7 @@ export default function QuestionsBank() {
         return hasProcessing ? 3000 : false;
       }
     }
-  );
+  });
 
   // Mutations
   const uploadMutation = useUploadQuestionSetPaperMutation();

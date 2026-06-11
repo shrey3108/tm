@@ -95,11 +95,15 @@ export const taskService = {
   /**
    * Uploads a predefined test paper file (PDF or Word) for a specific job and position level.
    */
-  uploadQuestionSetPaper: async (
-    jobId: string,
-    positionId: string,
-    file: File
-  ): Promise<QuestionSetPaperRead[]> => {
+  uploadQuestionSetPaper: async ({
+    jobId,
+    positionId,
+    file,
+  }: {
+    jobId: string;
+    positionId: string;
+    file: File;
+  }): Promise<QuestionSetPaperRead[]> => {
     const formData = new FormData();
     formData.append("job_id", jobId);
     formData.append("position_id", positionId);

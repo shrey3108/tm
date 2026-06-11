@@ -8,6 +8,7 @@ import { useAssignTestPaperMutation, useSendTestPaperEmailMutation, useDeleteCan
 import { useCandidateDetailsQuery } from "@/hooks/queries/candidates";
 import type { Job } from "@/types/job";
 import { LoadingSpinner } from "@/components/shared";
+import type { CandidateTestPaperAssign } from "@/types/taskPaper";
 
 import { AssignedPaperView } from "./sendQuestionPaper/AssignedPaperView";
 import { PredefinedPaperForm } from "./sendQuestionPaper/PredefinedPaperForm";
@@ -43,11 +44,11 @@ export function SendQuestionPaperDialog({
 
   const { data: candidateDetails } = useCandidateDetailsQuery(job?.id, candidateId);
 
-  const { data: predefinedPapers, loading: loadingPredefined } = useQuestionSetPapers(
-    job?.id,
-    job?.position_id,
-    { enabled: isOpen && !!job?.id }
-  );
+  const { data: predefinedPapers, loading: loadingPredefined } = useQuestionSetPapers({
+    jobId: job?.id,
+    positionId: job?.position_id,
+    options: { enabled: isOpen && !!job?.id }
+  });
 
   // Mutations
   const assignMutation = useAssignTestPaperMutation();
@@ -90,8 +91,13 @@ export function SendQuestionPaperDialog({
     }
 
     try {
-      let payload: any = {
-        candidate_email: email,
+      if (!candidateId) {
+        toast.error("Candidate ID is required to assign a test paper.");
+        return;
+      }
+
+      let payload: CandidateTestPaperAssign = {
+        candidate_id: candidateId,
         mode,
       };
 
