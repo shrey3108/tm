@@ -223,7 +223,10 @@ async def send_candidate_task_email_via_smtp(
     # Send email synchronously in threadpool to avoid blocking event loop
     def send_sync():
         with smtplib.SMTP(smtp_host, smtp_port) as server:
-            server.starttls()
+            server.ehlo()
+            if server.has_extn('STARTTLS'):
+                server.starttls()
+                server.ehlo()
             if smtp_user and smtp_password:
                 server.login(smtp_user, smtp_password)
             server.sendmail(smtp_from, [target_recipient], msg.as_string())
