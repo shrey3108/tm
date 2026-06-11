@@ -395,6 +395,7 @@ async def test_task_papers_flow():
             bulk_payload_ids = {
                 "candidate_ids": [str(candidate_id)],
                 "paper_id": job_assigned["id"],
+                "force": True,
             }
             response = client.post(
                 "/api/v1/task-papers/send-email/bulk",
@@ -408,6 +409,7 @@ async def test_task_papers_flow():
             bulk_payload_emails = {
                 "candidate_emails": [candidate_email],
                 "paper_id": job_assigned["id"],
+                "force": True,
             }
             response = client.post(
                 "/api/v1/task-papers/send-email/bulk",
