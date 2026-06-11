@@ -399,11 +399,11 @@ export const CandidateTableFilters = ({
                   : "border-input bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground"
               )}
             >
-              <span className="truncate">
+              <span className="truncate capitalize">
                 {resultFilter.length === 0
                   ? "AI Result"
                   : resultFilter.length === 1
-                    ? resultOptions.find((d) => d.value === resultFilter[0])?.label ?? resultFilter[0]
+                    ? resultOptions.find((d) => d.value === resultFilter[0])?.label ?? resultFilter[0].replace("ed", "")
                     : `${resultFilter.length} Results`}
               </span>
               <ChevronDown className="h-3.5 w-3.5 opacity-60 shrink-0" />

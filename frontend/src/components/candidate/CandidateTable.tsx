@@ -104,7 +104,7 @@ export function CandidateTable<T extends UnifiedCandidate>({
     passing_threshold,
     showJobContext,
   });
-  console.log(stageFilter, stageOptions, stageOptionsProp)
+
   return (
     <div className="w-full space-y-3">
       <CandidateTableFilters
@@ -145,7 +145,7 @@ export function CandidateTable<T extends UnifiedCandidate>({
         hasActiveFilters={hasActiveFilters}
         clearFilters={clearFilters}
         resultCount={filteredCandidates.length}
-        totalCount={total != null && total !== candidates.length ? total : candidates.length}
+        totalCount={total || candidates.length}
         minDate={minDate}
         availableJobs={availableJobs}
         hrScoreFilter={hrScoreFilter}
