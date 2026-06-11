@@ -100,6 +100,7 @@ async def test_task_papers_flow():
         # Patch Celery task trigger and Document parsing & LLM extraction helpers to test logic synchronously
         with patch("app.v1.services.admin.job_tasks.extract_paper_task_skills_task.delay") as mock_delay, \
              patch("app.v1.core.extractor.DocumentParser.extract_text") as mock_extract_text, \
+             patch("app.v1.core.extractor.DocumentParser.extract_text_docling") as mock_extract_text_docling, \
              patch("app.v1.services.admin.candidate_task_service.candidate_task_service.extract_paper_details_from_text") as mock_llm_extract, \
              patch("app.v1.routes.task_papers.send_candidate_task_email_via_smtp") as mock_send_email:
 
@@ -136,6 +137,7 @@ async def test_task_papers_flow():
             from app.v1.services.admin.job_tasks import extract_paper_task_skills_logic
             
             mock_extract_text.return_value = "dummy text content for paper A"
+            mock_extract_text_docling.return_value = "dummy text content for paper A"
             mock_llm_extract.return_value = {
                 "questions": [
                     "Explain python generators.",
@@ -150,6 +152,7 @@ async def test_task_papers_flow():
             await extract_paper_task_skills_logic(str(paper_a_id), paper_a["task_file_path"])
 
             mock_extract_text.return_value = "dummy text content for paper B"
+            mock_extract_text_docling.return_value = "dummy text content for paper B"
             mock_llm_extract.return_value = {
                 "questions": [
                     "What is asyncio?",

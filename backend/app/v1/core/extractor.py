@@ -79,6 +79,24 @@ class DocumentParser:
         except Exception as e:
             raise RuntimeError(f"Error parsing DOCX: {str(e)}")
 
+    @staticmethod
+    def extract_text_docling(file_path: str | Path) -> str:
+        """Extract text from a document using Docling to preserve markdown structure and tables."""
+        from docling.document_converter import DocumentConverter
+        
+        # Robust path resolution for Windows/Unix compatibility
+        path = resolve_storage_path(file_path).resolve()
+        
+        if not path.is_file():
+            raise FileNotFoundError(f"File not found or is not a file: {path}")
+
+        try:
+            converter = DocumentConverter()
+            result = converter.convert(str(path))
+            return result.document.export_to_markdown()
+        except Exception as e:
+            raise RuntimeError(f"Error parsing document with Docling: {str(e)}")
+
 
 class ResumeLLMExtractor:
     """Handles structured extraction of resume information using LLMs."""

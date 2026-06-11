@@ -122,7 +122,7 @@ async def extract_paper_task_skills_logic(paper_id_str: str, file_path_str: str)
 
         try:
             from app.v1.core.extractor import DocumentParser
-            raw_text = DocumentParser.extract_text(file_path)
+            raw_text = DocumentParser.extract_text_docling(file_path)
         except Exception as e:
             _log.error(f"Failed to parse text from paper task file in background: {e}")
             return
