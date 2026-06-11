@@ -288,13 +288,12 @@ class Evaluation(Base):
             
             # We want to preserve the order:
             ordered_base_names = [
-                "Debug approach",
-                "Logical thinking",
-                "Code structure clarity",
-                "Problem-solving ability",
-                "Implementation accuracy",
-                "Security compliance",
-                "Documentation quality"
+                "performance",
+                "architecture",
+                "code_quality",
+                "correctness",
+                "security",
+                "documentation"
             ]
             
             # Group by category
@@ -387,26 +386,29 @@ class Evaluation(Base):
 
         # Sort/order keys to guarantee perfect side-by-side grid alignment (PostgreSQL JSONB scrambles insertion order)
         ordered_keys = [
-            "Debug approach (JD Skills)",
-            "Debug approach (Task Skills)",
+            "performance",
+            "performance (JD Skills)",
+            "performance (Task Skills)",
             
-            "Logical thinking (JD Skills)",
-            "Logical thinking (Task Skills)",
+            "architecture",
+            "architecture (JD Skills)",
+            "architecture (Task Skills)",
             
-            "Code structure clarity (JD Skills)",
-            "Code structure clarity (Task Skills)",
+            "code_quality",
+            "code_quality (JD Skills)",
+            "code_quality (Task Skills)",
             
-            "Problem-solving ability (JD Skills)",
-            "Problem-solving ability (Task Skills)",
+            "correctness",
+            "correctness (JD Skills)",
+            "correctness (Task Skills)",
             
-            "Implementation accuracy (JD Skills)",
-            "Implementation accuracy (Task Skills)",
+            "security",
+            "security (JD Skills)",
+            "security (Task Skills)",
             
-            "Security compliance (JD Skills)",
-            "Security compliance (Task Skills)",
-            
-            "Documentation quality (JD Skills)",
-            "Documentation quality (Task Skills)"
+            "documentation",
+            "documentation (JD Skills)",
+            "documentation (Task Skills)"
         ]
         
         sorted_criteria = {}

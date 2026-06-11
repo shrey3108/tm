@@ -36,6 +36,9 @@ dependencies = [
     "opentelemetry-exporter-otlp>=1.41.1",
     "openinference-instrumentation-openai>=0.1.47",
     "opentelemetry-instrumentation-fastapi>=0.62b1",
+    "docling",
+    "pypdf",
+    "reportlab",
 ]
 
 [[tool.uv.index]]
