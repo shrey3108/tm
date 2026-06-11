@@ -32,11 +32,11 @@ class CandidateTestPaper(Base):
         default=UUIDHelper.generate_uuid7,
     )
 
-    candidate_id: Mapped[uuid.UUID] = mapped_column(
+    candidate_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("candidates.id", ondelete="CASCADE"),
         unique=True,
-        nullable=False,
+        nullable=True,
     )
 
     job_id: Mapped[uuid.UUID] = mapped_column(

@@ -274,4 +274,12 @@ class Settings(BaseSettings):
         return self.REDIS_URL
 
 
+    # SMTP configurations
+    SMTP_HOST: str = Field(default="smtp.gmail.com", description="SMTP server hostname")
+    SMTP_PORT: int = Field(default=587, description="SMTP server port")
+    SMTP_USER: str = Field(default="", description="SMTP username")
+    SMTP_PASSWORD: str = Field(default="", description="SMTP password")
+    SMTP_FROM_EMAIL: str = Field(default="", description="Sender email address")
+
+
 settings = Settings()

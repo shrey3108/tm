@@ -21,6 +21,7 @@ if TYPE_CHECKING:
     from app.v1.db.models.hr_decisions import HrDecision
     from app.v1.db.models.candidate_stages import CandidateStage
     from app.v1.db.models.skills import Skill
+    from app.v1.db.models.candidate_test_paper import CandidateTestPaper
 
 
 class Candidate(Base):
@@ -150,6 +151,7 @@ class Candidate(Base):
     hr_decisions: Mapped[list["HrDecision"]] = relationship("HrDecision", back_populates="candidate", cascade="all, delete-orphan")
     stages: Mapped[list["CandidateStage"]] = relationship("CandidateStage", back_populates="candidate", cascade="all, delete-orphan")
     skills: Mapped[list["Skill"]] = relationship("Skill", secondary=candidate_skills)
+    test_paper: Mapped[Optional["CandidateTestPaper"]] = relationship("CandidateTestPaper", back_populates="candidate", cascade="all, delete-orphan", uselist=False)
 
     @property
     def location_name(self) -> str | None:
