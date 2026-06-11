@@ -115,3 +115,12 @@ export interface JobTitle {
   id: string;
   title: string;
 }
+
+export interface JobTask {
+  task_file_path: string | null;
+  task_skills: string[] | null;
+}
+
+export interface DeleteJobTaskResponse {
+  message: string;
+}

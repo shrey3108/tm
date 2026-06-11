@@ -12,13 +12,11 @@ import {
 } from "@/components/ui/sidebar"
 import {
   LogOut,
-
   Mail,
   Shield,
 } from "lucide-react"
-import { useAppDispatch, useAppSelector } from "@/store/hooks"
-import { authService } from "@/apis/auth"
-import { logout, selectCurrentUser } from "@/store/slices/authSlice"
+import { useAppSelector } from "@/store/hooks"
+import { selectCurrentUser } from "@/store/slices/authSlice"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -31,12 +29,13 @@ import { cn } from "@/lib/utils"
 import { ModeToggle } from "./shared/mode-toggle"
 import { Separator } from "@/components/ui/separator"
 import { useOutsideClick } from "@/hooks"
+import { useLogoutMutation } from "@/hooks/mutations/auth/useAuthMutations"
 
 export function NavUser() {
   const { state } = useSidebar()
   const navigate = useNavigate()
-  const dispatch = useAppDispatch()
   const user = useAppSelector(selectCurrentUser)
+  const logoutMutation = useLogoutMutation()
 
   const [showProfileCard, setShowProfileCard] = useState(false)
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false)
@@ -49,15 +48,8 @@ export function NavUser() {
 
   const isCollapsed = state === "collapsed"
 
-  const handleLogout = async () => {
-    try {
-      await authService.logout()
-    } catch (error) {
-      console.error("Logout failed:", error)
-    } finally {
-      dispatch(logout())
-      navigate("/login")
-    }
+  const handleLogout = () => {
+    logoutMutation.mutate()
   }
 
   if (!user) return null

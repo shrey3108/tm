@@ -3,18 +3,17 @@
  * Provides a search interface for querying jobs by title and description.
  */
 
-import React, { useState } from "react";
-import jobService from "@/apis/job";
-import type { Job } from "@/types/job";
+import { useState, useEffect } from "react";
 import SearchBar from "@/components/shared/SearchBar";
 import { extractErrorMessage } from "@/utils/error";
+import { useSearchJobsQuery } from "@/hooks/queries/jobs/useSearchJobs";
 
 /**
  * Props for the JobSearch component.
  */
 interface JobSearchProps {
   /** Callback when search results are returned */
-  onResultsFound: (jobs: Job[]) => void;
+  onResultsFound: (jobs: any[]) => void;
   /** Callback when search query is cleared */
   onClear: () => void;
   /** Callback when an error occurs during search */
@@ -29,33 +28,44 @@ interface JobSearchProps {
  */
 const JobSearch = ({ onResultsFound, onClear, onError, onSearching }: JobSearchProps) => {
   const [query, setQuery] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const { data, isFetching: isLoading, error, isSuccess } = useSearchJobsQuery(searchTerm, {
+    enabled: !!searchTerm.trim()
+  });
+
+  useEffect(() => {
+    onSearching(isLoading);
+  }, [isLoading, onSearching]);
+
+  useEffect(() => {
+    if (isSuccess && data) {
+      onResultsFound(data.data);
+    }
+  }, [isSuccess, data, onResultsFound]);
+
+  useEffect(() => {
+    if (error) {
+      const errorMessage = extractErrorMessage(error);
+      console.error(errorMessage || "Failed to search jobs:", error);
+      onError("Failed to search jobs. Please try again.");
+    }
+  }, [error, onError]);
 
   /**
    * Handles the search form submission.
-   * Calls the job service to search for matching jobs.
+   * Updates the search term to trigger the query.
    */
-  const handleSearch = async (e: React.SyntheticEvent) => {
+  const handleSearch = (e: React.SyntheticEvent) => {
     if (e) e.preventDefault();
 
     if (!query.trim()) {
       onClear();
+      setSearchTerm("");
       return;
     }
 
-    setIsLoading(true);
-    onSearching(true);
-    try {
-      const results = await jobService.searchJobs(query);
-      onResultsFound(results.data);
-    } catch (error) {
-      const errorMessage = extractErrorMessage(error)
-      console.error(errorMessage || "Failed to search jobs:", error);
-      onError("Failed to search jobs. Please try again.");
-    } finally {
-      setIsLoading(false);
-      onSearching(false);
-    }
+    setSearchTerm(query);
   };
 
   /**

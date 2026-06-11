@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Save, ArrowLeft } from "lucide-react";
+
+import { Save, ArrowLeft, Sparkle } from "lucide-react";
 import {
     Button,
     Form,
@@ -18,9 +19,16 @@ import {
 import { useToast } from "@/components/shared/ToastProvider";
 import AppPageShell from "@/components/shared/AppPageShell";
 import PageHeader from "@/components/shared/PageHeader";
-import { jobCriteriaCreateSchema, type JobCriteriaCreateFormValues } from "@/schemas/admin";
+import { enhanceJobCriteriaSchema, jobCriteriaCreateSchema, type JobCriteriaCreateFormValues } from "@/schemas/admin";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { adminCriteriaService } from "@/apis/admin";
+import {
+    useCreateCriterionMutation,
+    useEnhanceCriterionPromptMutation,
+    useUpdateCriterionMutation,
+} from "@/hooks/mutations/admin/useJobCriteria";
+import { useJobCriteria } from "@/hooks/queries/admin/useJobCriteria";
+import type { CriterionRead } from "@/types/admin";
+import { slugify } from "@/utils/slug";
 
 /**
  * Form page for creating or editing job evaluation criteria.
@@ -32,7 +40,14 @@ export default function AdminJobCriteriaForm() {
     const { slug } = useParams<{ slug?: string }>();
     const toast = useToast();
 
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const createMutation = useCreateCriterionMutation();
+    const updateMutation = useUpdateCriterionMutation();
+    const enhanceMutation = useEnhanceCriterionPromptMutation();
+    const isSubmitting = createMutation.isPending || updateMutation.isPending;
+
+    const { data: criteria, loading: isLoadingCriteria } = useJobCriteria(0, 100);
+    const criterion = criteria.find(c => slugify(c.name) === slug || c.id === (location.state as any)?.id);
+
     const [isEditMode, setIsEditMode] = useState(false);
 
     const form = useForm<JobCriteriaCreateFormValues>({
@@ -40,73 +55,92 @@ export default function AdminJobCriteriaForm() {
         defaultValues: {
             name: "",
             description: "",
+            prompt_text: "",
             is_active: true,
             apply_to_all: true,
             job_ids: [],
         },
     });
 
-
     useEffect(() => {
-        const fetchDetails = async (id: string) => {
-            try {
-                const criteria = await adminCriteriaService.getCriterionById(id);
-                form.reset({
-                    name: criteria.name,
-                    description: criteria.prompt_text || criteria.description || "",
-                    is_active: true, // Placeholder as backend doesn't have it
-                    apply_to_all: true,
-                    job_ids: [],
-                });
-            } catch (error) {
-                console.error("Failed to fetch criteria details:", error);
-                toast.error("Failed to load criteria details");
-            }
-        };
-
         const stateData = location.state as any;
+
+        const initializeForm = (c: CriterionRead) => {
+            form.reset({
+                name: c.name,
+                description: c.prompt_text || c.description || "",
+                prompt_text: c.prompt_text || "",
+                is_active: true,
+                apply_to_all: true,
+                job_ids: [],
+            });
+        };
 
         if (slug && slug !== "new") {
             setIsEditMode(true);
             if (stateData?.criteria) {
-                const criteria = stateData.criteria;
-                form.reset({
-                    name: criteria.name,
-                    description: criteria.prompt_text || criteria.description || "",
-                    is_active: true,
-                    apply_to_all: true,
-                    job_ids: [],
-                });
-            } else if (stateData?.id) {
-                fetchDetails(stateData.id);
+                initializeForm(stateData.criteria);
+            } else if (!isLoadingCriteria) {
+                if (criterion) {
+                    initializeForm(criterion);
+                } else {
+                    toast.error("Criteria not found");
+                    navigate("/dashboard/admin/criteria-stages/criteria");
+                }
             }
         }
-    }, [slug, location.state, form, toast]);
+    }, [slug, location.state, form, toast, navigate, criterion, isLoadingCriteria]);
 
     const onSubmit = async (values: JobCriteriaCreateFormValues) => {
-        setIsSubmitting(true);
         try {
             const payload = {
                 name: values.name,
                 description: values.description,
-                prompt_text: values.description, // Mapping description to prompt_text as well
+                prompt_text: values.prompt_text,
             };
 
             if (isEditMode) {
-                const id = (location.state as any)?.id;
+                const id = (location.state as any)?.id || criterion?.id;
                 if (!id) throw new Error("Missing criteria ID for update");
-                await adminCriteriaService.updateCriterion(id, payload);
+                await updateMutation.mutateAsync({ id, data: payload });
                 toast.success("Job criteria updated successfully");
             } else {
-                await adminCriteriaService.createCriterion(payload);
+                await createMutation.mutateAsync(payload);
                 toast.success("Job criteria created successfully");
             }
             navigate("/dashboard/admin/criteria-stages/criteria");
         } catch (error) {
             console.error("Failed to save criteria:", error);
             toast.error("Failed to save job criteria");
-        } finally {
-            setIsSubmitting(false);
+        }
+    };
+    const handleEnhance = async () => {
+        const name = form.getValues("name");
+        const description = form.getValues("description");
+
+        // Clear any previous custom errors before validating
+        form.clearErrors(["name", "description"]);
+
+        const validation = enhanceJobCriteriaSchema.safeParse({ name, description });
+        if (!validation.success) {
+            validation.error.issues.forEach((err) => {
+                const path = err.path[0] as "name" | "description";
+                form.setError(path, {
+                    type: "custom",
+                    message: err.message,
+                });
+            });
+            toast.error("Please fix the validation errors before enhancing.");
+            return;
+        }
+
+        try {
+            const enhancedDescription = await enhanceMutation.mutateAsync({ name, description });
+            form.setValue("prompt_text", enhancedDescription.enhanced_prompt);
+            toast.success("Prompt enhanced successfully!");
+        } catch (error) {
+            console.error("Failed to enhance criteria:", error);
+            toast.error("Failed to enhance job criteria");
         }
     };
 
@@ -161,17 +195,51 @@ export default function AdminJobCriteriaForm() {
                                 name="description"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Description</FormLabel>
+                                        <div className="flex items-center justify-between">
+                                            <FormLabel>Description</FormLabel>
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={handleEnhance}
+                                                disabled={enhanceMutation.isPending || isSubmitting}
+                                                className="text-xs gap-1"
+                                            >
+                                                <Sparkle className={`h-3.5 w-3.5 text-violet-600 dark:text-violet-400 ${enhanceMutation.isPending ? 'animate-spin' : 'animate-pulse'}`} />
+                                                {enhanceMutation.isPending ? "Enhancing..." : "Enhance with AI"}
+                                            </Button>
+                                        </div>
                                         <FormControl>
                                             <Textarea
                                                 placeholder="Describe what this criterion evaluates..."
                                                 className="min-h-[220px] resize-y"
                                                 {...field}
-                                            />
+                                            ></Textarea>
                                         </FormControl>
                                         <FormDescription>
                                             A detailed explanation of what the AI should look for.
                                         </FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="prompt_text"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Prompt Text</FormLabel>
+                                        <FormControl>
+                                            <Textarea
+                                                placeholder="Describe what this criterion evaluates..."
+                                                className="min-h-[220px] resize-y disabled:opacity-80"
+                                                {...field}
+                                                disabled
+                                            />
+                                        </FormControl>
+                                        {/* <FormDescription>
+                                            A detailed prompt of what the AI should look for.
+                                        </FormDescription> */}
                                         <FormMessage />
                                     </FormItem>
                                 )}
@@ -186,7 +254,7 @@ export default function AdminJobCriteriaForm() {
                                 >
                                     Cancel
                                 </Button>
-                                <Button type="submit" isLoading={isSubmitting} className="gap-2">
+                                <Button type="submit" isLoading={isSubmitting || enhanceMutation.isPending} className="gap-2">
                                     <Save className="h-4 w-4" />
                                     {isEditMode ? "Update Criteria" : "Create Criteria"}
                                 </Button>

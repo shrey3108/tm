@@ -2,12 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import { startOfDay, endOfDay } from "date-fns";
 import type { UnifiedCandidate } from "@/types/candidate";
 import { toTitleCase } from "@/lib/utils";
-import { adminLocationService } from "@/apis/admin/location";
-import jobService from "@/apis/job";
 import { slugify } from "@/utils/slug";
 import { DEFAULT_PASSING_THRESHOLD, HR_DECISION_OPTIONS, RESUME_SCREENING_RESULT } from "@/constants";
 import type { DateRange } from "react-day-picker";
 import { useDebouncedValue } from "./useDebounced";
+import { useJobTitle } from "./queries/jobs";
+import { useAdminLocations } from "./queries/admin/useLocation";
 
 export interface CandidateActiveFilters {
   status: string[];
@@ -42,7 +42,7 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
   isServerSide = false,
   onFiltersChange?: (filters: CandidateActiveFilters) => void,
   passingThreshold = DEFAULT_PASSING_THRESHOLD,
-  stageOptionsProp?: string[],
+  stageOptionsProp?: { id: string; name: string }[],
   activitySessionsData?: [number, { start_date: string; end_date: string }][],
   initialDateRange?: DateRange
 ) => {
@@ -99,32 +99,27 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
     }
   };
 
-  // Fetch job titles — only when the job-filter column is visible
+  const { data: jobs } = useJobTitle(debouncedJobSearch, fetchJobTitles);
   useEffect(() => {
-    if (!fetchJobTitles) return;
-    jobService.getJobTitles(debouncedJobSearch)
-      .then((response) => {
-        const jobsArray = Array.isArray(response) ? response : (response as any)?.data ?? [];
-        setAvailableJobs(
-          jobsArray.map((j: any) => ({
-            id: j.id,
-            title: j.title?.trim() || "Untitled",
-            slug: slugify(j.title || ""),
-          }))
-        );
-      })
-      .catch((err) => console.error("Failed to fetch jobs for filter:", err));
-  }, [debouncedJobSearch, fetchJobTitles]);
+    if (jobs) {
+      const jobsArray = Array.isArray(jobs) ? jobs : (jobs as any)?.data ?? [];
+      setAvailableJobs(
+        jobsArray.map((j: any) => ({
+          id: j.id,
+          title: j.title?.trim() || "Untitled",
+          slug: slugify(j.title || ""),
+        }))
+      );
+    }
+  }, [jobs])
 
+  const { data: locations } = useAdminLocations(0, 500, debouncedLocationSearch);
   useEffect(() => {
-    adminLocationService
-      .getAllLocations(0, 500, debouncedLocationSearch)
-      .then((response) => {
-        const names = response.data.map((loc) => toTitleCase(loc.name.trim()));
-        setFetchedLocations(names);
-      })
-      .catch((err) => console.error("Failed to fetch jobs for filter:", err));
-  }, [debouncedLocationSearch]);
+    if (locations) {
+      const names = locations.map((loc) => toTitleCase(loc.name.trim()));
+      setFetchedLocations(names);
+    }
+  }, [locations]);
 
 
 
@@ -208,7 +203,7 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
       }
       // Stage filter
       if (skip !== 'stage' && stageFilter.length > 0) {
-        const candidateStage = c.current_stage?.template_name || '';
+        const candidateStage = c.current_stage?.job_stage_id || '';
         if (!stageFilter.includes(candidateStage)) return false;
       }
       // Activity session filter
@@ -348,15 +343,19 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
       return stageOptionsProp;
     }
     const subset = isAnyFilterActive ? crossFilteredCandidates('stage') : candidates;
-    const set = new Set<string>();
+    const map = new Map<string, { id: string; name: string; order: number }>();
     subset.forEach((c) => {
-      const s = c.current_stage?.template_name;
-      if (s) set.add(s);
+      const id = c.current_stage?.job_stage_id;
+      const name = c.current_stage?.template_name;
+      const order = c.current_stage?.order ?? 0;
+      if (id && name) {
+        map.set(id, { id, name, order });
+      }
     });
-    const derived = Array.from(set).sort();
+    const derived = Array.from(map.values()).sort((a, b) => a.order - b.order || a.name.localeCompare(b.name));
 
     if (stageOptionsProp && stageOptionsProp.length > 0) {
-      return stageOptionsProp.filter(s => set.has(s));
+      return stageOptionsProp.filter(s => map.has(s.id));
     }
     return derived;
   }, [candidates, stageOptionsProp, isAnyFilterActive, debouncedNameFilter, statusFilter, locationFilter, jobFilter, dateRange, hrDecisionFilter, resultFilter, activitySessionFilter, hrScoreFilter, passingThreshold]);
@@ -445,7 +444,7 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
 
       // Stage filter (multi-select)
       if (stageFilter.length > 0) {
-        const candidateStage = c.current_stage?.template_name || "";
+        const candidateStage = c.current_stage?.job_stage_id || "";
         if (!stageFilter.includes(candidateStage)) return false;
       }
 

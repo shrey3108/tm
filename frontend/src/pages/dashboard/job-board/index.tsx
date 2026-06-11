@@ -1,5 +1,6 @@
-import jobService from "@/apis/job";
+
 import AppPageShell from "@/components/shared/AppPageShell";
+import { useDeleteJobMutation, useUpdateJobMutation } from "@/hooks/mutations/jobs/useJobMutations";
 import { DataTable } from "@/components/shared/DataTable";
 import type { Job } from "@/types/job";
 import { extractErrorMessage } from "@/utils/error";
@@ -13,10 +14,16 @@ import { JobBoardHeader } from "@/components/job-board/JobBoardHeader";
 import { JobDeleteDialog } from "@/components/job-board/JobDeleteDialog";
 import { getJobColumns } from "@/components/job-board/JobColumns";
 import { JobTableFilters } from "@/components/job-board/JobTableFilters";
-import { useJobTableFilters } from "@/hooks/useJobTableFilters";
+import {
+  useJobTableFilters,
+  useFilteredJobs,
+  useFilteredDepartmentOptions,
+  useFilteredStatusOptions,
+} from "@/hooks/useJobTableFilters";
 import { JobActivityModal } from "@/components/job-board/JobActivityModal";
 import type { PaginationState } from "@tanstack/react-table";
 import { useDebouncedValue } from "@/hooks";
+import { useJobs } from "@/hooks/queries/jobs";
 
 /**
  * JobBoard page component for the dashboard.
@@ -31,8 +38,8 @@ import { useDebouncedValue } from "@/hooks";
  */
 export default function JobBoard() {
   const navigate = useNavigate();
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [loading, setLoading] = useState(false);
+  const deleteMutation = useDeleteJobMutation();
+  const updateMutation = useUpdateJobMutation();
   const [loadingJobId, setLoadingJobId] = useState<string | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [jobToDelete, setJobToDelete] = useState<Job | null>(null);
@@ -42,7 +49,7 @@ export default function JobBoard() {
     pageIndex: 0,
     pageSize: 10,
   });
-  const [total, setTotal] = useState(0);
+
   const {
     titleFilter,
     setTitleFilter,
@@ -52,14 +59,12 @@ export default function JobBoard() {
     setDepartmentFilter,
     dateRange,
     setDateRange,
-    departmentOptions,
+    allDepartments,
     departmentSearch,
     setDepartmentSearch,
-    filteredJobs,
     hasActiveFilters,
     clearFilters,
-    minDate
-  } = useJobTableFilters(jobs);
+  } = useJobTableFilters();
 
   const debouncedTitle = useDebouncedValue(titleFilter, 500);
 
@@ -84,45 +89,40 @@ export default function JobBoard() {
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
   };
 
-  /** Fetches all jobs from the API and replaces the local job list. Shows a toast on failure. */
-  const fetchJobs = useCallback(async () => {
-    setLoading(true);
-    try {
-      const skip = pagination.pageIndex * pagination.pageSize;
-      const limit = pagination.pageSize;
-
-      let statusParam: boolean | boolean[] | undefined = undefined;
-      if (statusFilter.length > 0) {
-        statusParam = statusFilter.map((s) => s === "active");
-      }
-
-      let departmentIdParam: string | string[] | undefined = undefined;
-      if (departmentFilter.length > 0) {
-        departmentIdParam = departmentFilter;
-      }
-
-      const filters = {
-        q: debouncedTitle || undefined,
-        status: statusParam,
-        department_id: departmentIdParam,
-      };
-
-      const response = await jobService.getJobs(skip, limit, filters);
-      setJobs(response.data);
-      setTotal(response.total);
-    } catch (error) {
-      console.error("Failed to fetch jobs:", error);
-      const errorMessage = extractErrorMessage(error, "Failed to load jobs.");
-      toast.error(errorMessage);
-    } finally {
-      setLoading(false);
+  // Prepare filter params for useJobs query
+  const queryFilters = useMemo(() => {
+    let statusParam: boolean | boolean[] | undefined = undefined;
+    if (statusFilter.length > 0) {
+      statusParam = statusFilter.map((s) => s === "open");
     }
-  }, [pagination.pageIndex, pagination.pageSize, debouncedTitle, statusFilter, departmentFilter]);
+
+    let departmentIdParam: string | string[] | undefined = undefined;
+    if (departmentFilter.length > 0) {
+      departmentIdParam = departmentFilter;
+    }
+
+    return {
+      q: debouncedTitle || undefined,
+      status: statusParam,
+      department_id: departmentIdParam,
+    };
+  }, [debouncedTitle, statusFilter, departmentFilter]);
+
+  const { data: queryData, loading, total } = useJobs(
+    pagination.pageIndex * pagination.pageSize,
+    pagination.pageSize,
+    queryFilters
+  );
+
+  const jobsList = (queryData || []) as Job[];
+
+  const { filteredJobs, minDate } = useFilteredJobs(jobsList, dateRange);
+  const departmentOptions = useFilteredDepartmentOptions(jobsList, allDepartments, titleFilter, statusFilter, departmentFilter);
+  const statusOptions = useFilteredStatusOptions(jobsList, titleFilter);
 
   useEffect(() => {
-    fetchJobs();
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [fetchJobs]);
+  }, [pagination.pageIndex, pagination.pageSize]);
 
   /** Opens the delete-confirmation dialog for the given job. */
   const handleDeleteClick = (job: Job) => {
@@ -131,51 +131,46 @@ export default function JobBoard() {
   };
 
   /** Deletes the selected job via the API, refreshes the list, and closes the dialog. */
-  const handleDeleteConfirm = async () => {
+  const handleDeleteConfirm = () => {
     if (!jobToDelete) return;
 
-    try {
-      await jobService.deleteJob(jobToDelete.id);
-      toast.success("Job deleted successfully");
-      fetchJobs();
-    } catch (error) {
-      console.error("Failed to delete job:", error);
-      const errorMessage = extractErrorMessage(error, "Failed to delete job.");
-      toast.error(errorMessage);
-    } finally {
-      setIsDeleteDialogOpen(false);
-      setJobToDelete(null);
-    }
+    deleteMutation.mutate(jobToDelete.id, {
+      onSuccess: () => {
+        toast.success("Job deleted successfully");
+      },
+      onError: (error) => {
+        console.error("Failed to delete job:", error);
+        const errorMessage = extractErrorMessage(error, "Failed to delete job.");
+        toast.error(errorMessage);
+      },
+      onSettled: () => {
+        setIsDeleteDialogOpen(false);
+        setJobToDelete(null);
+      },
+    });
   };
 
   const handleToggleStatus = useCallback(
-    async (job: Job) => {
+    (job: Job) => {
       setLoadingJobId(job.id);
-      // Optimistic update
-      setJobs((prev) =>
-        prev.map((j) =>
-          j.id === job.id ? { ...j, is_active: !job.is_active } : j
-        )
+      updateMutation.mutate(
+        { jobId: job.id, data: { is_active: !job.is_active } },
+        {
+          onSuccess: () => {
+            toast.success(`Job ${!job.is_active ? "activated" : "deactivated"} successfully`);
+          },
+          onError: (error) => {
+            console.error("Failed to toggle job status:", error);
+            const errorMessage = extractErrorMessage(error, "Failed to update job status");
+            toast.error(errorMessage);
+          },
+          onSettled: () => {
+            setLoadingJobId(null);
+          },
+        }
       );
-
-      try {
-        await jobService.updateJob(job.id, { is_active: !job.is_active });
-        toast.success(`Job ${!job.is_active ? "activated" : "deactivated"} successfully`);
-      } catch (error) {
-        // Rollback on error
-        setJobs((prev) =>
-          prev.map((j) =>
-            j.id === job.id ? { ...j, is_active: job.is_active } : j
-          )
-        );
-        console.error("Failed to toggle job status:", error);
-        const errorMessage = extractErrorMessage(error, "Failed to update job status");
-        toast.error(errorMessage);
-      } finally {
-        setLoadingJobId(null);
-      }
     },
-    [],
+    [updateMutation],
   );
 
   /** Memoized column definitions that bind table row actions to navigation and mutation handlers. */
@@ -225,6 +220,7 @@ export default function JobBoard() {
             setTitleFilter={handleSetTitleFilter}
             statusFilter={statusFilter}
             setStatusFilter={handleSetStatusFilter}
+            statusOptions={statusOptions}
             departmentFilter={departmentFilter}
             setDepartmentFilter={handleSetDepartmentFilter}
             dateRange={dateRange}

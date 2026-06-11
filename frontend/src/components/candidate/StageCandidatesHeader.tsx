@@ -1,8 +1,11 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import AppPageHeader from "@/components/shared/AppPageHeader";
 import type { Job } from "@/types/job";
 import { TranscriptUpload } from "./TranscriptUpload";
-
+import { ProjectSubmissionDialog } from "./projectSubmission/ProjectSubmissionDialog";
+import { SendQuestionPaperDialog } from "./projectSubmission/SendQuestionPaperDialog";
+import { SendIcon } from "lucide-react";
 interface StageCandidatesHeaderProps {
   /** Associated job for the candidate stage view */
   job: Job | null;
@@ -19,6 +22,7 @@ interface StageCandidatesHeaderProps {
   /** The ID of the stage */
   stageId: string | undefined;
   stageName: string | undefined;
+  candidateId?: string;
 }
 
 /**
@@ -33,8 +37,11 @@ export const StageCandidatesHeader = ({
   onSuccess,
   stageId,
   isUploaded,
-  stageName
+  stageName,
+  candidateId,
 }: StageCandidatesHeaderProps) => {
+  const [isProjectSubmissionDialogOpen, setIsProjectSubmissionDialogOpen] = useState(false);
+  const [isSendQuestionPaperDialogOpen, setIsSendQuestionPaperDialogOpen] = useState(false);
 
   return (
     <AppPageHeader
@@ -62,17 +69,56 @@ export const StageCandidatesHeader = ({
           </Button>
 
           {stageName !== "Resume Screening" && (
-            <TranscriptUpload
-              stageId={stageId}
-              className="w-auto m-0 shrink-0"
-              job={job!}
-              disabled={isUploaded}
-              onSuccess={onSuccess}
-            />
+            stageName === "Technical Practical Round" ? (
+              <>
+                <Button
+                  variant="outline"
+                  className="rounded-xl border border-muted-foreground/10 font-semibold text-center h-9"
+                  onClick={() => setIsSendQuestionPaperDialogOpen(true)}
+                  disabled={isUploaded}
+                >
+                  <SendIcon className="h-4 w-4" /> Send Question Paper
+                </Button>
+                <Button
+                  variant="outline"
+                  className="rounded-xl border border-muted-foreground/10 px-5 font-semibold text-center h-9"
+                  onClick={() => setIsProjectSubmissionDialogOpen(true)}
+                  disabled={isUploaded}
+                >
+                  Project Submission
+                </Button>
+                <ProjectSubmissionDialog
+                  isOpen={isProjectSubmissionDialogOpen}
+                  onOpenChange={setIsProjectSubmissionDialogOpen}
+                  candidateName={candidateName || "Candidate"}
+                  candidateId={candidateId}
+                  stageId={stageId}
+                  onSuccess={onSuccess}
+                  job={job!}
+                />
+                <SendQuestionPaperDialog
+                  isOpen={isSendQuestionPaperDialogOpen}
+                  onOpenChange={setIsSendQuestionPaperDialogOpen}
+                  candidateName={candidateName || "Candidate"}
+                  candidateId={candidateId}
+                  job={job}
+                  onSuccess={onSuccess}
+                />
+              </>
+            ) : (
+              <TranscriptUpload
+                stageId={stageId}
+                className="w-auto m-0 shrink-0"
+                job={job!}
+                disabled={isUploaded}
+                onSuccess={onSuccess}
+              />
+            )
           )}
         </>
       }
     />
   );
 };
+
 

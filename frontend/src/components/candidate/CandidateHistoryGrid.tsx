@@ -12,6 +12,7 @@ interface CandidateHistoryGridProps {
   transcriptHistory: Transcript[];
   /** Callback when a transcript card is clicked */
   onTranscriptClick: (transcriptId: string) => void;
+  transcript_id: string | undefined | null
 }
 
 /**
@@ -22,6 +23,7 @@ export function CandidateHistoryGrid({
   hrDecisionHistory,
   transcriptHistory,
   onTranscriptClick,
+  transcript_id
 }: CandidateHistoryGridProps) {
   if (hrDecisionHistory.length === 0 && transcriptHistory.length === 0) {
     return null;
@@ -50,7 +52,7 @@ export function CandidateHistoryGrid({
       )}
 
       {/* Transcript History Column */}
-      {transcriptHistory.length > 0 && (
+      {transcript_id && transcriptHistory.length > 0 && (
         <section className="space-y-2 py-2">
           <div className="flex items-center gap-2 px-2 ">
             <div className="h-6 w-6 rounded-xl bg-primary/10 flex items-center justify-center">

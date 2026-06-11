@@ -6,11 +6,8 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useNavigate, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
-import { useAppDispatch } from "@/store/hooks";
-import { setCredentials } from "@/store/slices/authSlice";
-import { authService } from "@/apis/auth";
 import {
   Card,
   CardHeader,
@@ -31,13 +28,15 @@ import { loginSchema, type LoginFormValues } from "@/schemas/auth";
 import { extractErrorMessage } from "@/utils/error";
 import { INFO } from "@/constants";
 import { InputGroup, InputGroupInput, InputGroupAddon, InputGroupButton } from "@/components/ui/input-group";
+import { useLoginMutation } from "@/hooks/mutations/auth/useAuthMutations";
 
 const LoginPage = () => {
-  const navigate = useNavigate();
-  const dispatch = useAppDispatch();
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false)
+  const loginMutation = useLoginMutation();
+
+  const error = loginMutation.error
+    ? extractErrorMessage(loginMutation.error, "Failed to login. Please check your credentials.")
+    : null;
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -47,25 +46,8 @@ const LoginPage = () => {
     },
   });
 
-  const onSubmit = async (data: LoginFormValues) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await authService.login(data);
-      dispatch(
-        setCredentials({
-          user: response.user,
-          access_token: response.access_token,
-          refresh_token: response.refresh_token,
-        }),
-      );
-      navigate("/dashboard");
-    } catch (err: unknown) {
-      const errorMsg = extractErrorMessage(err, "Failed to login. Please check your credentials.");
-      setError(errorMsg);
-    } finally {
-      setIsLoading(false);
-    }
+  const onSubmit = (data: LoginFormValues) => {
+    loginMutation.mutate(data);
   };
 
   return (
@@ -157,9 +139,9 @@ const LoginPage = () => {
                     <Button
                       type="submit"
                       className="w-full h-12 text-base font-bold rounded-xl transition-all hover:scale-[1.01] active:scale-[0.99]"
-                      disabled={isLoading}
+                      disabled={loginMutation.isPending}
                     >
-                      {isLoading ? (
+                      {loginMutation.isPending ? (
                         <div className="flex items-center justify-center gap-2">
                           <Loader2 className="h-5 w-5 animate-spin" />
                           <span>Signing In...</span>

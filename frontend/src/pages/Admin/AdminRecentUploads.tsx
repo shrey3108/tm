@@ -4,14 +4,13 @@
  */
 
 import { useState, useEffect } from "react";
-import { adminAnalyticsService } from "@/apis/admin";
 import type { RecentUploadRead } from "@/types/admin";
 import AppPageShell from "@/components/shared/AppPageShell";
 import { DataTable } from "@/components/shared/DataTable";
 import { DateDisplay } from "@/components/shared/DateDisplay";
 import PageHeader from "@/components/shared/PageHeader";
 import ErrorDisplay from "@/components/shared/ErrorDisplay";
-import { useAdminData, useDebouncedValue } from "@/hooks";
+import { useDebouncedValue } from "@/hooks";
 import { ArrowUpDown } from "lucide-react";
 import type { ColumnDef, PaginationState } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
@@ -23,6 +22,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { formatFileSize } from "@/utils/converters";
+import { useRecentUploads } from "@/hooks/queries/admin/useRecentUpload";
+import { capitalize } from "@/lib/utils";
 
 
 export type FileSizeUnit = "Auto" | "B" | "KB" | "MB";
@@ -33,30 +34,20 @@ const AdminRecentUploads = () => {
     pageSize: 10,
   });
   const [searchValue, setSearchValue] = useState("");
-  const debouncedSearch = useDebouncedValue(searchValue)
-  const {
-    data: uploads,
-    total,
-    loading,
-    error,
-    fetchData,
-  } = useAdminData<RecentUploadRead>(
-    () => adminAnalyticsService.getRecentUploads(pageIndex * pageSize, pageSize, debouncedSearch),
-    { fetchOnMount: false },
-
-  );
-
-  // Refetch data when pagination or search changes
-  useEffect(() => {
-    fetchData();
-  }, [pageIndex, pageSize, debouncedSearch, fetchData]);
-
+  const [fileSizeUnit, setFileSizeUnit] = useState<FileSizeUnit>("Auto");
   const [overallTotal, setOverallTotal] = useState(0);
+
+  const debouncedSearch = useDebouncedValue(searchValue)
+
+  const { data: uploads, error, loading, refetch, total } = useRecentUploads(pageIndex * pageSize, pageSize, debouncedSearch)
+
   useEffect(() => {
-    if (!searchValue) {
-      setOverallTotal(total);
+    if (!debouncedSearch && total !== overallTotal) {
+      queueMicrotask(() => {
+        setOverallTotal(total);
+      });
     }
-  }, [total, debouncedSearch]);
+  }, [total, debouncedSearch, overallTotal]);
 
   // Handle search with pagination reset
   const handleSearchChange = (value: string) => {
@@ -64,7 +55,7 @@ const AdminRecentUploads = () => {
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
   };
 
-  const [fileSizeUnit, setFileSizeUnit] = useState<FileSizeUnit>("Auto");
+
 
   const columns: ColumnDef<RecentUploadRead>[] = [
     {
@@ -94,7 +85,7 @@ const AdminRecentUploads = () => {
         </Button>
       ),
       cell: ({ row }) => (
-        <span className="font-medium text-foreground ">{row.original.file_name || "N/A"}</span>
+        <span className="font-medium text-foreground text-wrap">{row.original.file_name || "N/A"}</span>
       ),
     },
     // {
@@ -132,9 +123,8 @@ const AdminRecentUploads = () => {
       cell: ({ row }) => (
         <span
           className="font-medium text-foreground "
-          title={row.original.uploader_name || "N/A"}
         >
-          {row.original.uploader_name || "N/A"}
+          {capitalize(row.original.uploader_name || "N/A")}
         </span>
       ),
     },
@@ -150,10 +140,9 @@ const AdminRecentUploads = () => {
       },
       cell: ({ row }) => (
         <span
-          className="font-medium text-foreground "
-          title={row.original.candidate_name || "N/A"}
+          className="font-medium text-foreground"
         >
-          {row.original.candidate_name || "N/A"}
+          {capitalize((row.original.candidate_name)?.toLowerCase() || "N/A")}
         </span>
       ),
     },
@@ -163,8 +152,8 @@ const AdminRecentUploads = () => {
   return (
     <AppPageShell width="wide">
       <PageHeader title="Recent Uploads" />
-      {error && !uploads.length ? (
-        <ErrorDisplay message={error} onRetry={fetchData} />
+      {error && !uploads?.length ? (
+        <ErrorDisplay message={error.message} onRetry={refetch} />
       ) : (
         <DataTable
           columns={columns}

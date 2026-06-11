@@ -1,5 +1,4 @@
-import { useState, useEffect } from "react";
-import { crossMatchApi } from "@/apis/crossMatch";
+import { useState } from "react";
 import { Search, ExternalLink, RefreshCw, Compass, ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,7 +18,8 @@ import { extractErrorMessage } from "@/utils/error";
 import { DEFAULT_PASSING_THRESHOLD } from "@/constants";
 import type { ColumnDef, PaginationState } from "@tanstack/react-table";
 import { DataTable } from "@/components/shared";
-import { useAdminData } from "@/hooks";
+import { useCandidateCrossJobMatch } from "@/hooks/queries/candidates/useCandidateCrossJobMatch";
+import { useTriggerCrossMatchMutation } from "@/hooks/mutations/candidates/useCandidateCrossJobMatchMutation";
 interface CrossMatchViewProps {
   resumeId?: string;
   candidateId?: string;
@@ -43,41 +43,23 @@ export function CrossMatchView({ resumeId, onClose }: CrossMatchViewProps) {
     pageSize: 10,
   });
 
-  const {
-    data: matches,
-    total,
-    loading,
-    fetchData: fetchMatches,
-  } = useAdminData<CrossJobMatchRead>(
-    () => crossMatchApi.getCrossMatches(resumeId!, pageIndex * pageSize, pageSize),
-    { fetchOnMount: false, initialLoading: !!resumeId }
+  const triggerCrossMatchMutation = useTriggerCrossMatchMutation();
+
+  const { data: matches, total, loading } = useCandidateCrossJobMatch(
+    resumeId!,
+    pageIndex * pageSize,
+    pageSize,
+    isPolling ? 6000 : false
   );
-
-  // Initial fetch and refetch on pagination change
-  useEffect(() => {
-    if (resumeId) {
-      fetchMatches();
-    }
-  }, [resumeId, pageIndex, pageSize, fetchMatches]);
-
-  // Polling logic: only active after a trigger, every 6 seconds
-  useEffect(() => {
-    if (!resumeId || !isPolling) return;
-    const interval = setInterval(() => {
-      fetchMatches();
-    }, 6000);
-    return () => clearInterval(interval);
-  }, [resumeId, isPolling, fetchMatches]);
 
   const handleTrigger = async () => {
     if (!resumeId) return;
     setIsPolling(true);
     try {
-      await crossMatchApi.triggerCrossMatch(resumeId);
+      await triggerCrossMatchMutation.mutateAsync(resumeId);
       toast.info("Cross Job Match triggered. Scanning all active jobs...");
-      fetchMatches();
     } catch (error) {
-      const errorMessage = extractErrorMessage(error)
+      const errorMessage = extractErrorMessage(error);
       toast.error(errorMessage || "Failed to trigger Cross Job Match.");
       setIsPolling(false);
     }

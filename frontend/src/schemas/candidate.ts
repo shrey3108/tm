@@ -28,3 +28,35 @@ export const candidateDecisionSchema = z.object({
  * Type inferred from candidateDecisionSchema.
  */
 export type CandidateDecisionFormValues = z.infer<typeof candidateDecisionSchema>;
+
+/**
+ * Schema for submitting a project (Technical Practical Round) for a candidate.
+ */
+export const ProjectSubmissionSchema = z.object({
+  /** The repository URL for the project */
+  repoUrl: z
+    .string()
+    .min(1, "URL is required")
+    .url("Must be a valid URL") // we can use direct z.url as well but this will also work
+    .refine(
+      (url) => {
+        const lowerUrl = url.toLowerCase();
+        return lowerUrl.includes("github.com") || lowerUrl.includes("gitlab.com");
+      },
+      { message: "URL must be a valid GitHub or GitLab link" }
+    ),
+  pdfFile: z
+    .any()
+    .optional()
+    .refine((file) => !file || file instanceof File, "Must be a valid file")
+    .refine(
+      (file) => !file || file.size <= 5 * 1024 * 1024,
+      "File size must be less than 5MB"
+    )
+    .refine(
+      (file) => !file || file.type === "application/pdf",
+      "Only PDF files are allowed"
+    ),
+});
+
+export type ProjectSubmissionFormValues = z.infer<typeof ProjectSubmissionSchema>;

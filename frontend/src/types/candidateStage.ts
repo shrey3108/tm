@@ -3,14 +3,22 @@
  */
 
 /**
- * Interface for the highlights of an candidate stage evaluation
+ * A categorized item is an object with a single key (category name) mapping to a value.
+ * Used for structured highlights grouped by sub-headings like "JD Alignment", "Architecture", etc.
+ */
+export type CategorizedStringItem = Record<string, string>;
+export type CategorizedStringArrayItem = Record<string, string[]>;
+
+/**
+ * Interface for the highlights of a candidate stage evaluation.
+ * Supports both simple format (string/string[]) and categorized format (array of {category: value} objects).
  */
 export interface Highlight {
-  overall_summary: string;
+  overall_summary: string | CategorizedStringItem[];
   recommendation: string;
-  strengths: string[];
-  weaknesses: string[];
-  suggested_followups: string[];
+  strengths: string[] | CategorizedStringArrayItem[];
+  weaknesses: string[] | CategorizedStringArrayItem[];
+  suggested_followups: string[] | CategorizedStringArrayItem[];
 }
 
 /**
@@ -21,8 +29,10 @@ export interface EvaluationRead {
   id: string;
   interview_id?: string | null;
   transcript_id?: string | null;
+  version?: number;
+  result?: string;
   candidate_stage_id: string;
-  evaluation_data: Record<string, any>;
+  evaluation_data: Record<string, any> | Record<string, Array<Record<string, Criteria>>>;
   overall_score?: number | null;
   recommendation?: string | null;
   sim_jd_resume?: number | null;
@@ -81,9 +91,9 @@ export interface Criteria {
 }
 
 export interface Highlights {
-  strengths: string[]
-  weaknesses: string[]
-  suggested_followups: string[]
-  overall_summary: string
+  strengths: string[] | CategorizedStringArrayItem[]
+  weaknesses: string[] | CategorizedStringArrayItem[]
+  suggested_followups: string[] | CategorizedStringArrayItem[]
+  overall_summary: string | CategorizedStringItem[]
   recommendation: string
 }

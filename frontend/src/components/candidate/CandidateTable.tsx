@@ -33,7 +33,7 @@ export interface CandidateTableProps<T extends UnifiedCandidate> {
   showLocationFilter?: boolean;
   showStatusFilter?: boolean;
   onFiltersChange?: (filters: CandidateActiveFilters) => void;
-  stageOptions?: string[];
+  stageOptions?: { id: string; name: string }[];
   activitySessions?: [number, { start_date: string; end_date: string }][];
   initialDateRange?: DateRange | undefined;
 }
@@ -145,7 +145,7 @@ export function CandidateTable<T extends UnifiedCandidate>({
         hasActiveFilters={hasActiveFilters}
         clearFilters={clearFilters}
         resultCount={filteredCandidates.length}
-        totalCount={total != null && total !== candidates.length ? total : candidates.length}
+        totalCount={total || candidates.length}
         minDate={minDate}
         availableJobs={availableJobs}
         hrScoreFilter={hrScoreFilter}

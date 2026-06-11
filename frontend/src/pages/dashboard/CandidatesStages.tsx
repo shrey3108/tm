@@ -11,10 +11,11 @@ import { PERMISSIONS } from "@/lib/permissions";
 import { CandidateDetailsModal } from "@/components/modal/CandidateDetailsModal";
 import { ResumeScreeningView } from "@/components/candidate/ResumeScreeningView";
 import { StageEvaluationView } from "@/components/candidate/StageEvaluationView";
-import { LoadingState, PollingState, EmptyState } from "@/components/candidate/StageStateViews";
+import { PollingState, EmptyState } from "@/components/candidate/StageStateViews";
 import { useCandidatesStages } from "@/hooks/useCandidatesStages";
+import LoadingSpinner from "@/components/shared/LoadingSpinner";
 
-/**
+/** 
  * The main page component for viewing and managing a candidate's progress through interview stages.
  * Orchestrates the display of resume screening, interview evaluations, and action buttons
  * for HR decisions. It uses the `useCandidatesStages` hook to manage its internal state.
@@ -42,7 +43,6 @@ export default function CandidatesStages() {
     candidateData,
     showAllSkills,
     setShowAllSkills,
-    refetchTimeline,
     isDetailsModalOpen,
     setIsDetailsModalOpen,
     evaluationHistory,
@@ -70,7 +70,7 @@ export default function CandidatesStages() {
   return (
     <AppPageShell width="full" className="p-0 overflow-hidden bg-background">
       <StageCandidatesHeader
-        job={job}
+        job={job || null}
         candidateName={candidateName}
         onBack={() => navigate(-1)}
         onInfoClick={() => setIsJobModalOpen(true)}
@@ -80,6 +80,7 @@ export default function CandidatesStages() {
           fetchHistory();
         }}
         stageId={instanceId as string}
+        candidateId={candidate?.id}
         stageName={currentStage}
       />
       <div className="flex overflow-hidden">
@@ -91,15 +92,11 @@ export default function CandidatesStages() {
             jobId={job?.id}
             onSelectStage={setCurrentStage}
             selectedStage={currentStage}
-            job={job}
-            candidate={candidate}
-            refetch={refetchTimeline}
+            job={job || undefined}
+            candidate={candidate || undefined}
             currentStage={currentStage}
             stageId={instanceId}
             isPolling={isPolling}
-            fetchHistory={fetchHistory}
-            setIsPolling={setIsPolling}
-            setIsJobModalOpen={setIsJobModalOpen}
             onTranscriptDisableChange={setIsTranscriptDisabled}
           />
 
@@ -117,10 +114,10 @@ export default function CandidatesStages() {
                   onShowMoreClick={() => setIsDetailsModalOpen(true)}
                 />
               ) : (
-                <LoadingState message="Loading candidate details..." />
+                <LoadingSpinner message="Loading candidate details..." />
               )
-            ) : isLoadingEvaluation ? (
-              <LoadingState message="Fetching evaluation data..." />
+            ) : isLoadingEvaluation && !isPolling ? (
+              <LoadingSpinner message="Fetching evaluation data..." />
             ) : isPolling ? (
               <PollingState />
             ) : evaluation ? (
@@ -149,7 +146,11 @@ export default function CandidatesStages() {
             !isPolling &&
             !isLoadingHistory &&
             canTakeDecision &&
-            (isResumeScreening ? !!candidateData : !!evaluation) && (
+            (isResumeScreening ? !!candidateData : !!evaluation)
+            // TODO: REMOVE AFTER GEP
+            &&
+            // currentStage !== "Technical Practical Round" &&
+            (
               <PermissionGuard permissions={PERMISSIONS.CANDIDATES_DECIDE} hideWhenDenied>
                 <ActionButtons
                   onAction={handleAction}
@@ -172,7 +173,7 @@ export default function CandidatesStages() {
       <JobInfoModal
         isOpen={isJobModalOpen}
         onClose={() => setIsJobModalOpen(false)}
-        job={job}
+        job={job || null}
       />
       {candidateData && (
         <CandidateDetailsModal

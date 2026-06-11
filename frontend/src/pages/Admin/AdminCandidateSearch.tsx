@@ -4,7 +4,6 @@
  */
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-import { adminCandidateService, adminJobService } from "@/apis/admin";
 import type { JobRead } from "@/types/admin";
 import type { CandidateResponse } from "@/types/resume";
 import AppPageShell from "@/components/shared/AppPageShell";
@@ -15,16 +14,16 @@ import CandidateSearchTable from "@/components/candidate/CandidateSearchTable";
 import QuickResumeUpload from "@/components/candidate/QuickResumeUpload";
 import {
   CandidateDetailsModal,
-  // CandidateAnalysisModal,
   DeleteModal,
 } from "@/components/modal";
 import { JobCandidatesSkeleton } from "@/components/candidate/JobCandidatesSkeleton";
-import { resumeService } from "@/apis/resume";
-import { useAdminData, useDeleteConfirmation } from "@/hooks";
+import { useDeleteConfirmation } from "@/hooks";
 import type { PaginationState } from "@tanstack/react-table";
 import { Button } from "@/components";
 import type { CandidateActiveFilters } from "@/hooks/useCandidateTableFilters";
 import { useToast } from "@/components/shared";
+import { useAdminCandidates, useJob } from "@/hooks/queries/jobs";
+import { useDeleteResumeMutation } from "@/hooks/mutations/jobs/useResumeMutation";
 
 
 const AdminCandidateSearch = () => {
@@ -61,77 +60,20 @@ const AdminCandidateSearch = () => {
     setPagination((prev) => (prev.pageIndex === 0 ? prev : { ...prev, pageIndex: 0 }));
   }, []);
 
-  const fetchCandidatesFn = useCallback(async () => {
-    const skip = pagination.pageIndex * pagination.pageSize;
-    const limit = pagination.pageSize;
-
-    let result: { data: CandidateResponse[]; total: number } = {
-      data: [],
-      total: 0,
-    };
-
-    const currentSearchQuery = filters.q || undefined;
-
-    if (jobId) {
-      if (currentSearchQuery?.trim()) {
-        result = await adminCandidateService.searchJobCandidates(
-          jobId,
-          currentSearchQuery,
-          skip,
-          limit,
-          filters // job ID is already in path, but others (status, city, etc) are useful
-        );
-      } else {
-        result = await adminCandidateService.getCandidatesForJob(
-          jobId,
-          skip,
-          limit,
-          filters
-        );
-      }
-
-      try {
-        const resumesData = await resumeService.getJobResumes(jobId);
-        result.data = result.data.map((candidate) => {
-          const resume = resumesData.resumes.find(
-            (r) => r.candidate_id === candidate.id,
-          );
-          return {
-            ...candidate,
-            resume_id: resume?.resume_id || candidate.resume_id,
-          };
-        });
-      } catch (err) {
-        console.error("Failed to fetch resume IDs for candidates:", err);
-      }
-    } else {
-      // Global search - optional query to show all candidates by default
-      result = await adminCandidateService.searchCandidates(
-        currentSearchQuery?.trim() || undefined,
-        skip,
-        limit,
-        filters,
-      );
-    }
-    return result;
-  }, [jobId, pagination.pageIndex, pagination.pageSize, filters]);
-
   const {
     data: candidates,
     total,
     loading,
-    error,
-    fetchData: fetchCandidates,
-  } = useAdminData<CandidateResponse>(
-    fetchCandidatesFn,
-    {
-      fetchOnMount: false,
-      // Start in a loading state so the skeleton renders immediately and
-      // CandidateSearchTable (which contains useCandidateTableFilters) never
-      // mounts before the first fetch completes, avoiding repeated hook effects.
-      initialLoading: true,
-    }
+    error: queryError,
+    refetch: fetchCandidates,
+  } = useAdminCandidates(
+    jobId,
+    pagination.pageIndex * pagination.pageSize,
+    pagination.pageSize,
+    filters
   );
+
+  const error = queryError ? queryError.message : null;
 
   useEffect(() => {
     if (!loading && isInitialLoad) {
@@ -139,28 +81,13 @@ const AdminCandidateSearch = () => {
     }
   }, [loading, isInitialLoad]);
 
-  const fetchJob = useCallback(async () => {
-    if (!jobId) return;
-    try {
-      const jobData = await adminJobService.getJobById(jobId);
-      setJob(jobData);
-    } catch (err) {
-      console.error("Failed to fetch job info:", err);
-    }
-  }, [jobId]);
+  const { data: jobData } = useJob(jobId);
 
   useEffect(() => {
-    if (jobId) {
-      fetchJob();
+    if (jobData) {
+      setJob(jobData as unknown as JobRead);
     }
-  }, [jobId, fetchJob]);
-
-
-
-  // Refetch when pagination or filters change (filters.q handled separately above).
-  useEffect(() => {
-    fetchCandidates();
-  }, [pagination.pageIndex, pagination.pageSize, filters, fetchCandidates]);
+  }, [jobData]);
 
   const handleShowMore = (candidate: CandidateResponse) => {
     setSelectedCandidate(candidate);
@@ -172,7 +99,7 @@ const AdminCandidateSearch = () => {
   //   setSelectedResumeId(candidate.resume_id || null);
   //   setShowAnalysisDetails(true);
   // };
-
+  const { mutateAsync: deleteResume } = useDeleteResumeMutation();
   const {
     showModal: showDeleteModal,
     handleDeleteClick,
@@ -187,7 +114,7 @@ const AdminCandidateSearch = () => {
       if (!candidate?.resume_id || !candidate.applied_job_id) {
         throw new Error("Cannot delete: Missing job context or resume ID.");
       }
-      await resumeService.deleteResume(candidate.applied_job_id, candidate.resume_id);
+      await deleteResume({ jobId: candidate.applied_job_id, resumeId: candidate.resume_id });
     },
     onSuccess: () => {
       fetchCandidates();

@@ -1,3 +1,4 @@
+import type { HiringTimelineResponse } from "@/types/candidate";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -24,4 +25,17 @@ export function toTitleCase(str: string): string {
     .split(" ")
     .map((word) => capitalize(word.toLowerCase()))
     .join(" ");
+}
+
+/**
+ * It returns the current stage title for a candidate based on the timeline events.
+ * If a stage has pending decisions (both AI and HR), it will be considered as the current stage
+ * otherwise it returns the current stage from the response
+ */
+export function getCorrectCurrentStage(d: HiringTimelineResponse) {
+  const firstPendingDecisionStage = d.events.find((e) => (e.hr_decision == null || e.hr_decision == "pending") && e.hr_score == null)
+  if (firstPendingDecisionStage?.title == d.current_stage) {
+    return d.current_stage
+  }
+  return firstPendingDecisionStage?.title || d.current_stage
 }

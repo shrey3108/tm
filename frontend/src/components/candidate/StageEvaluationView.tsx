@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { History } from "lucide-react";
 import { Badge } from "@/components";
 import { EvaluationGrid } from "@/components/candidate/EvaluationGrid";
-import { StageOverallSummary } from "@/components/candidate/StageOverallSummary";
+import { StageOverallSummary, type OverallSummaryData } from "@/components/candidate/StageOverallSummary";
 import { CandidateHistoryGrid } from "@/components/candidate/CandidateHistoryGrid";
 import type { EvaluationRead, EvaluationHistoryRead } from "@/types/candidateStage";
 import type { HrDecisionHistoryItem } from "@/apis/candidateDecision";
@@ -16,15 +16,7 @@ interface StageEvaluationViewProps {
   /** Callback to open the evaluation history modal. */
   onOpenHistory: () => void;
   /** Processed summary data for the overall stage performance. */
-  transformedOverall: {
-    stage_score: number;
-    recommendation: string;
-    overall_summary: string;
-    strength_summary: string[];
-    weakness_summary: string[];
-    followups: string[];
-    percentage: number;
-  } | null;
+  transformedOverall: OverallSummaryData | null;
   /** History of HR decisions for the candidate in this stage/job. */
   hrDecisionHistory: HrDecisionHistoryItem[];
   /** History of transcripts associated with this candidate. */
@@ -49,21 +41,25 @@ export function StageEvaluationView({
   const versionNumber =
     evaluationHistory.length -
     Math.max(0, evaluationHistory.findIndex((h) => h.id === evaluation.id));
+  const latestHrDecision = hrDecisionHistory[0]?.decision.toLowerCase();
+  const canTakeDecision = !latestHrDecision || latestHrDecision.includes("may be") || latestHrDecision === "maybe";
 
   return (
     <>
       <div className="flex items-center justify-end px-4 mb-2 gap-3">
-        <Button
-          variant="outline"
-          onClick={() =>
-            window.scroll({
-              top: document.body.scrollHeight,
-              behavior: "smooth",
-            })
-          }
-        >
-          Go to Actions
-        </Button>
+        {canTakeDecision && (
+          <Button
+            variant="outline"
+            onClick={() =>
+              window.scroll({
+                top: document.body.scrollHeight,
+                behavior: "smooth",
+              })
+            }
+          >
+            Go to Actions
+          </Button>
+        )}
         <Button
           variant="outline"
           size="sm"
@@ -88,6 +84,7 @@ export function StageEvaluationView({
           hrDecisionHistory={hrDecisionHistory}
           transcriptHistory={transcriptHistory}
           onTranscriptClick={onTranscriptClick}
+          transcript_id={evaluation.transcript_id}
         />
       </div>
     </>

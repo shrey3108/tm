@@ -1,6 +1,4 @@
-import { adminAnalyticsService } from "@/apis/admin";
-import type { AnalyticsSummary, HiringReport } from "@/types/admin";
-import { useAdminData } from "@/hooks/useAdminData";
+import { useAdminDashboardData } from "@/hooks/queries/admin/useAdminDashboardData";
 // import AppPageHeader from "@/components/shared/AppPageHeader";
 import AppPageShell from "@/components/shared/AppPageShell";
 import StatCard from "@/components/shared/StatCard";
@@ -12,29 +10,7 @@ import { Button } from "@/components/ui/button";
 import type { ColumnDef } from "@tanstack/react-table";
 import PageHeader from "@/components/shared/PageHeader";
 export default function AdminStats() {
-  const {
-    data: dashboardData,
-    loading,
-    error,
-    fetchData,
-  } = useAdminData<{ analytics: AnalyticsSummary; report: HiringReport }>(
-    async () => {
-      try {
-        const [analytics, report] = await Promise.all([
-          adminAnalyticsService.getAnalytics(),
-          adminAnalyticsService.getHiringReport(),
-        ]);
-        return [{ analytics, report }];
-      } catch (err) {
-        console.error("Failed to fetch admin stats:", err);
-        throw err;
-      }
-    },
-    { initialData: [] },
-  );
-
-  const analytics = dashboardData[0]?.analytics;
-  const report = dashboardData[0]?.report;
+  const { analytics, report, loading, error, refetch: fetchData, } = useAdminDashboardData();
 
   const llmParsedCount = report
     ? report.total_passed + report.total_failed + report.total_pending
@@ -83,7 +59,7 @@ export default function AdminStats() {
         title="Platform Statistics"
       />
 
-      {loading && dashboardData.length === 0 ? (
+      {loading && !analytics ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-pulse">
           {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
             <div key={i} className="h-32 bg-muted rounded-2xl" />
@@ -91,8 +67,8 @@ export default function AdminStats() {
         </div>
       ) : error ? (
         <div className="flex flex-col items-center justify-center py-20 text-center space-y-4 border rounded-3xl bg-destructive/5">
-          <p className="text-destructive font-medium">{error}</p>
-          <Button onClick={fetchData} variant="outline" className="rounded-xl">
+          <p className="text-destructive font-medium">{error instanceof Error ? error.message : String(error)}</p>
+          <Button onClick={() => fetchData()} variant="outline" className="rounded-xl">
             Retry Loading Stats
           </Button>
         </div>

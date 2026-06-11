@@ -2,7 +2,7 @@ import re
 import tempfile
 import os
 from typing import TypedDict
-from docling.document_converter import DocumentConverter
+from markitdown import MarkItDown
 
 
 class DialogueTurn(TypedDict):
@@ -249,10 +249,10 @@ def process_transcript_file(file_content: bytes, file_extension: str) -> dict:
         tmp_path = tmp.name
 
     try:
-        # 1. Extract markdown content via Docling
-        converter = DocumentConverter()
-        result = converter.convert(tmp_path)
-        raw_text = result.document.export_to_markdown()
+        # 1. Extract markdown content via MarkItDown
+        md = MarkItDown()
+        result = md.convert(tmp_path)
+        raw_text = result.text_content.lstrip('\ufeff')
         
         # 2. Sequential Cleaning Pipeline
         text = remove_markdown_garbage(raw_text)

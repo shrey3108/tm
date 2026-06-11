@@ -1,9 +1,9 @@
-import React, { useRef, useState } from "react";
-import { resumeService } from "@/apis/resume";
+import { useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/shared/ToastProvider";
 import { extractErrorMessage } from "@/utils/error";
 import PermissionGuard from "@/components/auth/PermissionGuard";
+import { useUploadResumeMutation } from "@/hooks/mutations/jobs/useResumeMutation";
 
 const UPLOAD_PERMISSION = "candidate:upload"; // temp fix
 
@@ -31,7 +31,7 @@ interface QuickResumeUploadProps {
  * A reusable component for quickly uploading a resume for a specific job.
  * Handles file selection, upload logic, and notifications.
  */
-const QuickResumeUpload: React.FC<QuickResumeUploadProps> = ({
+const QuickResumeUpload = ({
   jobId,
   onSuccess,
   variant = "outline",
@@ -39,10 +39,10 @@ const QuickResumeUpload: React.FC<QuickResumeUploadProps> = ({
   className = "",
   label = "Upload Resume",
   disabled = false,
-}) => {
+}: QuickResumeUploadProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [isUploading, setIsUploading] = useState(false);
   const toast = useToast();
+  const { mutateAsync: uploadResume, isPending: isUploading } = useUploadResumeMutation();
 
   /**
    * Triggers the hidden file input click.
@@ -66,9 +66,8 @@ const QuickResumeUpload: React.FC<QuickResumeUploadProps> = ({
       return;
     }
 
-    setIsUploading(true);
     try {
-      await resumeService.uploadResume(jobId, file);
+      await uploadResume({ jobId, file });
       toast.success("Resume uploaded successfully!");
       if (onSuccess) {
         onSuccess();
@@ -78,7 +77,6 @@ const QuickResumeUpload: React.FC<QuickResumeUploadProps> = ({
       const errorMessage = extractErrorMessage(error, "Failed to upload resume.");
       toast.error(errorMessage);
     } finally {
-      setIsUploading(false);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }

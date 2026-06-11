@@ -155,6 +155,23 @@ const jobBaseSchema = z.object({
   priority_start_date: z.string().optional().nullable(),
   /** Priority end date */
   priority_end_date: z.string().optional().nullable(),
+  /** Optional project requirement documentation PDF file (max size 5MB) */
+  // adujest as per backend api
+  project_document: z
+    .any()
+    .optional()
+    .refine(
+      (file) => !file || file instanceof File || typeof file === "string",
+      "Invalid file object"
+    )
+    .refine(
+      (file) => !file || typeof file === "string" || file.size <= 5 * 1024 * 1024,
+      "File size must be less than 5MB"
+    )
+    .refine(
+      (file) => !file || typeof file === "string" || file.type === "application/pdf",
+      "Only PDF files are allowed"
+    ),
 });
 
 /**
@@ -304,6 +321,15 @@ export const jobCriteriaCreateSchema = jobCriteriaBaseSchema.extend({
   is_active: z.boolean().default(true),
   apply_to_all: z.boolean().default(true),
   job_ids: z.array(z.string()).optional().default([]),
+  prompt_text: descriptionSchema(),
+});
+
+/**
+ * Schema for enhancing job criteria.
+ */
+export const enhanceJobCriteriaSchema = z.object({
+  name: z.string().trim().min(3, "Name must be at least 3 characters long"),
+  description: z.string().trim().min(10, "Description must be at least 10 characters long"),
 });
 
 /** Type inferred from jobCriteriaCreateSchema. */

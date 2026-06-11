@@ -3,20 +3,17 @@ import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog";
 import type { CandidateResponse } from "@/types/resume";
 import type { CandidateAnalysis } from "@/types/admin";
 import { toast } from "sonner";
-import { useState, useEffect } from "react";
-import { candidateDecisionApi } from "@/apis/candidateDecision";
-import type {
-  HrDecisionHistoryItem,
-  CandidateDecision,
-} from "@/apis/candidateDecision";
-import { adminJobService } from "@/apis/admin/job";
-import type { Job, JobVersionDetail } from "@/types/job";
+import { useState, useEffect, useMemo } from "react";
+import type { JobVersionDetail, JobVersionMinimal } from "@/types/job";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   candidateDecisionSchema,
   type CandidateDecisionFormValues,
 } from "@/schemas/candidate";
+import { useJob, useJobVersion } from "@/hooks/queries/jobs";
+import { useHrDecisionHistoryQuery } from "@/hooks/queries/candidates";
+import { useSubmitDecisionMutation } from "@/hooks/mutations/candidates/useCandidateStages";
 
 // Sub-components
 import { CandidateHeader } from "@/components/modal/candidate-details/CandidateHeader";
@@ -68,21 +65,11 @@ export function CandidateDetailsModal({
   passing_threshold,
 }: CandidateDetailsModalProps) {
   // console.log(candidate);
+  const submitDecisionMutation = useSubmitDecisionMutation();
   const [showAllSkills, setShowAllSkills] = useState(false);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
-  const [hrDecision, setHrDecision] =
-    useState<CandidateDecision | null>(null);
-  const [decisionHistory, setDecisionHistory] = useState<
-    HrDecisionHistoryItem[]
-  >([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [job, setJob] = useState<Job | null>(null);
-  const [selectedVersionData, setSelectedVersionData] =
-    useState<JobVersionDetail | null>(null);
+  const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<AnalysisTab>(initialTab);
-  const [isLoadingVersion, setIsLoadingVersion] = useState(false);
-  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
-  const [isLoadingJob, setIsLoadingJob] = useState(false);
 
   const form = useForm<CandidateDecisionFormValues>({
     resolver: zodResolver(candidateDecisionSchema),
@@ -94,58 +81,44 @@ export function CandidateDetailsModal({
 
   const { reset } = form;
 
-  // Sync activeTab with initialTab when modal opens
+  // Sync activeTab with initialTab and reset selectedVersionId when modal opens/changes candidate
   useEffect(() => {
     if (isOpen) {
       setActiveTab(initialTab || "analysis");
+      setSelectedVersionId(null);
     }
-  }, [isOpen, initialTab]);
+  }, [isOpen, initialTab, candidate?.id]);
 
-  const currentJobId = jobId || (candidate as any)?.applied_job_id;
+  const currentJobId = jobId || (candidate as { applied_job_id?: string | null })?.applied_job_id;
 
-  useEffect(() => {
-    if (isOpen && currentJobId) {
-      setIsLoadingJob(true);
-      adminJobService.getJobById(currentJobId).then((data) => {
-        setJob(data as unknown as Job);
-      }).finally(() => {
-        setIsLoadingJob(false);
-      });
-    } else {
-      setJob(null);
-      setIsLoadingJob(false);
-    }
-  }, [isOpen, jobId, (candidate as any)?.applied_job_id, currentJobId]);
+  // 1. Fetch job details using TanStack query hook
+  const { data: job, loading: isLoadingJob } = useJob(
+    isOpen && currentJobId ? currentJobId : null
+  );
 
-  useEffect(() => {
-    const appliedVersion = (candidate as any)?.applied_version_number;
-    if (!isOpen || !job) {
-      setIsLoadingVersion(false);
-      setSelectedVersionData(null);
-      return;
-    }
+  // 2. Fetch specific job version if version meta is found, using TanStack query hook
+  const appliedVersion = (candidate as { applied_version_number?: number | null })?.applied_version_number;
+  const versionMeta = isOpen && job && appliedVersion && job.job_versions
+    ? job.job_versions.find((v: JobVersionMinimal) => v.version_num === appliedVersion)
+    : null;
+  const activeVersionId = selectedVersionId || versionMeta?.id || null;
 
-    // If candidate has an applied version, fetch it.
-    if (appliedVersion && job.job_versions) {
-      const versionMeta = job.job_versions.find(
-        (v) => v.version_num === appliedVersion,
-      );
-      if (versionMeta) {
-        setIsLoadingVersion(true);
-        adminJobService
-          .getJobVersion(versionMeta.id)
-          .then((data) => setSelectedVersionData(data))
-          .finally(() => setIsLoadingVersion(false));
-        return;
-      }
+  const { data: fetchedVersionData, loading: isLoadingVersion } = useJobVersion(
+    activeVersionId,
+    !!activeVersionId
+  );
+
+  // Compute active version data with fallback logic
+  const selectedVersionData = useMemo<JobVersionDetail | null>(() => {
+    if (!isOpen || !job) return null;
+
+    if (activeVersionId) {
+      return fetchedVersionData;
     }
 
-    // If the job has no saved snapshots yet, or only a single version,
-    // fall back to the JD content already included on the job payload
-    // instead of showing an empty state.
     const versionCount = job.total_versions ?? job.job_versions?.length ?? 0;
     if (versionCount <= 1) {
-      setSelectedVersionData({
+      return {
         id: job.job_versions?.[0]?.id ?? job.id,
         job_id: job.id,
         version_number: job.job_versions?.[0]?.version_num ?? job.version ?? 1,
@@ -154,37 +127,26 @@ export function CandidateDetailsModal({
         jd_json: job.jd_json,
         custom_extraction_fields: job.custom_extraction_fields ?? null,
         created_at: job.created_at,
-      });
-      return;
+      };
     }
 
-    setSelectedVersionData(null);
-  }, [isOpen, job, (candidate as any)?.applied_version_number]);
+    return null;
+  }, [isOpen, job, activeVersionId, fetchedVersionData]);
 
-  useEffect(() => {
-    if (isOpen && candidate?.id) {
-      setIsLoadingHistory(true);
-      candidateDecisionApi
-        .getDecisionHistory(candidate.id, jobId)
-        .then((data) => {
-          setDecisionHistory(data.decisions);
-          // The first item in history is the latest decision
-          setHrDecision(
-            data.decisions.length > 0 ? data.decisions[0] : null,
-          );
-        })
-        .catch(() => {
-          setHrDecision(null);
-          setDecisionHistory([]);
-        })
-        .finally(() => {
-          setIsLoadingHistory(false);
-        });
-    } else {
-      setHrDecision(null);
-      setDecisionHistory([]);
-    }
-  }, [isOpen, candidate?.id]);
+  // 3. Fetch HR Decision History using TanStack query hook
+  const { data: decisionHistoryData, isLoading: isLoadingHistory } = useHrDecisionHistoryQuery(
+    isOpen && candidate?.id ? candidate.id : null,
+    currentJobId,
+    undefined
+  );
+
+  const decisionHistory = useMemo(() => {
+    return decisionHistoryData?.decisions ?? [];
+  }, [decisionHistoryData]);
+
+  const hrDecision = useMemo(() => {
+    return decisionHistory.length > 0 ? decisionHistory[0] : null;
+  }, [decisionHistory]);
 
   if (!candidate) return null;
 
@@ -204,39 +166,28 @@ export function CandidateDetailsModal({
   const submitFeedback = async (data: CandidateDecisionFormValues) => {
     if (!candidate?.id) return;
 
-    setIsSubmitting(true);
     try {
-      const result = await candidateDecisionApi.submitDecision({
+      await submitDecisionMutation.mutateAsync({
         candidate_id: candidate.id,
         decision: data.decision,
-        note: data.note,
+        note: data.note || undefined,
         score: data.score,
+        job_id: currentJobId || undefined,
       });
-      setHrDecision(result);
-      // Refresh history to include the new decision
-      const historyResponse = await candidateDecisionApi.getDecisionHistory(
-        candidate.id, jobId
-      );
-      setDecisionHistory(historyResponse.decisions);
+
       await onDecisionSubmitted?.();
       toast.success("Decision submitted successfully");
       setShowFeedbackModal(false);
-      form.reset({ note: "", score: 5 })
+      form.reset({ note: "", score: 5 });
     } catch (error) {
-      const errorMessage = extractErrorMessage(error)
+      const errorMessage = extractErrorMessage(error);
       toast.error(errorMessage || "Failed to submit decision");
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
   const handleVersionChange = (val: string | null) => {
     if (!val) return;
-    setIsLoadingVersion(true);
-    adminJobService
-      .getJobVersion(val)
-      .then((data) => setSelectedVersionData(data))
-      .finally(() => setIsLoadingVersion(false));
+    setSelectedVersionId(val);
   };
 
   const filterHrDecision = decisionHistory.filter(
@@ -308,7 +259,7 @@ export function CandidateDetailsModal({
         form={form}
         onSubmit={submitFeedback}
         candidateName={candidate.first_name || "candidate"}
-        isSubmitting={isSubmitting}
+        isSubmitting={submitDecisionMutation.isPending}
       />
     </Dialog>
   );

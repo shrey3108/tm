@@ -1,199 +1,140 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import { candidateDecisionSchema, type CandidateDecisionFormValues } from "@/schemas/candidate";
-import { candidateDecisionApi, type HrDecisionHistoryItem } from "@/apis/candidateDecision";
 import { extractErrorMessage } from "@/utils/error";
 import type { Job } from "@/types/job";
 import type { CandidateAnalysis } from "@/types/admin";
-import { candidateStageService } from "@/apis/candidateStage";
-import { transcriptService } from "@/apis/transcript";
 import type { EvaluationRead, EvaluationHistoryRead } from "@/types/candidateStage";
-import type { Transcript } from "@/types/transcript";
 import { slugify } from "@/utils/slug";
-import { jobStageService } from "@/apis/jobStage";
-import jobService from "@/apis/job";
+import type { HrDecisionHistoryItem } from "@/apis/candidateDecision";
+import {
+  useResolvedJobAndCandidate,
+  useJobStagesQuery,
+  useCandidateEvaluationQuery,
+  useCandidateEvaluationHistoryQuery,
+  useCandidateTranscriptsQuery,
+  useHrDecisionHistoryQuery,
+  useCandidateDetailsQuery,
+} from "./queries/candidates";
+import { useSubmitDecisionMutation } from "./mutations/candidates/useCandidateStages";
+import { QUERY_KEYS } from "@/constants/queryKeys";
+// import { TEMP_TECHNICAL_ROUND_HR_DECISION, TEMP_TECHNICAL_ROUND_RESPONSE } from "@/constants/temp";
 
 /**
  * A comprehensive hook for managing the state and logic of the Candidate Stages view.
- * Handles fetching candidate data, interview stages, evaluations, and transcript history.
- * Also manages polling for AI evaluation results and submitting HR decisions.
- * 
- * @returns An object containing all state and handler functions needed for the candidate stages UI.
+ * Handles fetching candidate data, interview stages, evaluations, and transcript history
+ * using TanStack Query.
  */
 export function useCandidatesStages() {
-  const { candidateName: candidateNameParam, stageSlug: stageSlugParam } = useParams<{
+  const params = useParams<{
     jobSlug: string;
     candidateName: string;
     stageSlug: string;
   }>();
 
   const location = useLocation();
+  const queryClient = useQueryClient();
 
-  const job = location.state?.job as Job;
-  const candidate = location.state?.candidate as CandidateAnalysis;
+  // 1. Resolve Job and Candidate (supports robust refresh via TanStack Query fallback)
+  const { job, candidate } = useResolvedJobAndCandidate(
+    params.jobSlug,
+    params.candidateName,
+    location.state?.job as Job | null,
+    location.state?.candidate as CandidateAnalysis | null
+  );
 
   const getInitialStage = () => {
-    if (stageSlugParam) {
-      return stageSlugParam === "resume-screening" ? "Resume Screening" : stageSlugParam.replace(/-/g, " ");
+    if (params.stageSlug) {
+      return params.stageSlug === "resume-screening" ? "Resume Screening" : params.stageSlug.replace(/-/g, " ");
     }
     return "Resume Screening";
   };
 
-  const [stages, setStages] = useState<{ stage: string; id: string }[]>([]);
   const [currentStage, setCurrentStage] = useState(getInitialStage());
+
+  // 2. Fetch job-specific stages using query
+  const { data: jobStagesRaw } = useJobStagesQuery(job?.id);
+  const stages = useMemo(() => {
+    const stageNames = [{ stage: "Resume Screening", id: "resume-screening" }];
+    if (jobStagesRaw) {
+      stageNames.push(
+        ...jobStagesRaw.map((stage) => ({ stage: stage.template.name, id: stage.id }))
+      );
+    }
+    return stageNames;
+  }, [jobStagesRaw]);
 
   // Sync currentStage with URL params
   useEffect(() => {
-    if (stageSlugParam) {
-      const stageName = stageSlugParam === "resume-screening" ? "Resume Screening" : stageSlugParam.replace(/-/g, " ");
-      const foundStage = stages.find((s) => slugify(s.stage) === stageSlugParam);
+    if (params.stageSlug) {
+      const stageName = params.stageSlug === "resume-screening" ? "Resume Screening" : params.stageSlug.replace(/-/g, " ");
+      const foundStage = stages.find((s) => slugify(s.stage) === params.stageSlug);
       if (foundStage) {
         setCurrentStage(foundStage.stage);
       } else {
         setCurrentStage(stageName);
       }
     }
-  }, [stageSlugParam, stages]);
+  }, [params.stageSlug, stages]);
 
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isJobModalOpen, setIsJobModalOpen] = useState(false);
-  const [_isLoadingStages, setIsLoadingStages] = useState(false);
-  const [evaluation, setEvaluation] = useState<EvaluationRead | null>(null);
-  const [isLoadingEvaluation, setIsLoadingEvaluation] = useState(false);
-  const [transcriptHistory, setTranscriptHistory] = useState<Transcript[]>([]);
-  const [hrDecisionHistory, setHrDecisionHistory] = useState<HrDecisionHistoryItem[]>([]);
-  const [error, setError] = useState("");
   const [isPolling, setIsPolling] = useState(false);
-  const [candidateData, setCandidateData] = useState<CandidateAnalysis | null>(null);
   const [showAllSkills, setShowAllSkills] = useState(false);
   const [refetchTimeline, setRefetchTimeline] = useState(0);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-  const [evaluationHistory, setEvaluationHistory] = useState<EvaluationHistoryRead[]>([]);
-  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [isTranscriptDisabled, setIsTranscriptDisabled] = useState(true);
 
-  useEffect(() => {
-    const fetchCandidateData = async () => {
-      if (!candidate?.id || !job?.id) return;
-      try {
-        const response = await jobService.getJobCandidates(job.id, undefined, 0, 1, candidate.id);
-        if (response.data && response.data.length > 0) {
-          setCandidateData(response.data[0]);
-        }
-      } catch (error) {
-        console.error("Failed to fetch candidate details:", error);
-      }
-    };
-    fetchCandidateData();
-  }, [candidate?.id, job?.id]);
-
-  useEffect(() => {
-    const fetchStages = async () => {
-      if (!job?.id) return;
-
-      setIsLoadingStages(true);
-      try {
-        const _stages = await jobStageService.getJobStages(job.id);
-        const stageNames = [
-          { stage: "Resume Screening", id: "resume-screening" },
-          ..._stages.map((stage) => ({ stage: stage.template.name, id: stage.id })),
-        ];
-        setStages(stageNames);
-
-        if (!currentStage && stageNames.length > 0) {
-          setCurrentStage(stageNames[0].stage);
-        }
-      } catch (error) {
-        console.error("Failed to fetch stages:", error);
-        toast.error("Failed to load interview stages");
-      } finally {
-        setIsLoadingStages(false);
-      }
-    };
-
-    fetchStages();
-  }, [job?.id]);
+  // 3. Candidate data query
+  const { data: candidateData } = useCandidateDetailsQuery(job?.id, candidate?.id);
 
   const candidateStage = candidate?.pipeline?.find((s) => s.template_name === currentStage);
   const instanceId = candidateStage?.stage_id;
   const configId = candidateStage?.job_stage_id;
 
-  const fetchEvaluation = async (showLoading = true) => {
-    if (currentStage === "Resume Screening" || !instanceId) {
-      setEvaluation(null);
-      return;
-    }
+  // 4. Candidate evaluation query (with polling supported)
+  const {
+    data: evaluationData,
+    isLoading: isLoadingEvaluationQuery,
+    error: evaluationError,
+  } = useCandidateEvaluationQuery(instanceId, isPolling);
 
-    if (showLoading) setIsLoadingEvaluation(true);
-    try {
-      await jobService.getJobCandidates(
-        job.id,
-        undefined,
-        0,
-        1,
-        candidate.id,
-        instanceId as string
-      );
+  // Selected history version override for evaluation view
+  const [selectedEvaluationVersion, setSelectedEvaluationVersion] = useState<EvaluationRead | null>(null);
 
-      const data = await candidateStageService.getEvaluation(instanceId as string);
-      setEvaluation(data);
-      setError("");
-
-      if (isPolling && data) {
-        setIsPolling(false);
-        toast.success("Evaluation generated successfully!");
-        fetchHistory();
-        fetchEvaluationHistory();
-        setRefetchTimeline((prev) => prev + 1);
-      }
-    } catch (error) {
-      const errorMessage = extractErrorMessage(error);
-      if (!isPolling) {
-        console.error("Failed to fetch evaluation:", errorMessage);
-        setError(errorMessage);
-        setEvaluation(null);
-      }
-    } finally {
-      if (showLoading) setIsLoadingEvaluation(false);
-    }
-  };
-
+  // Reset selected history version when switching stages
   useEffect(() => {
-    fetchEvaluation();
-    setIsPolling(false);
+    setSelectedEvaluationVersion(null);
   }, [instanceId, currentStage]);
 
-  useEffect(() => {
-    let interval: number;
-    if (isPolling && instanceId) {
-      interval = setInterval(() => {
-        fetchEvaluation(false);
-      }, 5000);
-    }
-    return () => clearInterval(interval);
-  }, [isPolling, instanceId]);
+  let evaluation = selectedEvaluationVersion || evaluationData || null;
+  const error = evaluationError ? extractErrorMessage(evaluationError) : "";
 
-  const fetchEvaluationHistory = async () => {
-    if (!instanceId || currentStage === "Resume Screening") return;
-    setIsLoadingHistory(true);
-    try {
-      const history = await candidateStageService.getEvaluationHistory(instanceId);
-      setEvaluationHistory(history);
-    } catch (error) {
-      console.error("Failed to fetch evaluation history:", error);
-    } finally {
-      setIsLoadingHistory(false);
-    }
-  };
-
+  // 5. Invalidate evaluation related queries when AI polling finishes successfully
   useEffect(() => {
-    fetchEvaluationHistory();
-  }, [instanceId, currentStage]);
+    if (isPolling && evaluationData) {
+      setIsPolling(false);
+      toast.success("Evaluation generated successfully!");
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CANDIDATES.TRANSCRIPTS, candidate?.id] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CANDIDATES.EVALUATION_HISTORY, instanceId] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CANDIDATES.TIMELINE, candidate?.id] });
+      setRefetchTimeline((prev) => prev + 1);
+    }
+  }, [isPolling, evaluationData, candidate?.id, instanceId, queryClient]);
+
+  const isLoadingEvaluation = isLoadingEvaluationQuery && !evaluationData;
+
+  // 6. Evaluation History Query
+  const { data: evaluationHistoryData, isLoading: isLoadingHistory } =
+    useCandidateEvaluationHistoryQuery(
+      currentStage === "Resume Screening" ? undefined : instanceId
+    );
+  const evaluationHistory = evaluationHistoryData ?? [];
 
   const handleSelectHistoryVersion = (version: EvaluationHistoryRead) => {
     const mappedEvaluation: EvaluationRead = {
@@ -201,46 +142,35 @@ export function useCandidatesStages() {
       interview_id: version.interview_id,
       transcript_id: version.transcript_id,
       candidate_stage_id: version.candidate_stage_id,
-      evaluation_data: (version.evaluation_data as any)?.criteria || version.evaluation_data,
+      evaluation_data: version.evaluation_data?.criteria || version.evaluation_data,
       overall_score: version.overall_score,
       recommendation: version.result,
       sim_jd_resume: version.sim_jd_resume,
       sim_jd_transcript: version.sim_jd_transcript,
       sim_resume_transcript: version.sim_resume_transcript,
       created_at: version.created_at,
-      highlights: version.highlights as any,
+      highlights: {
+        overall_summary: version.highlights?.overall_summary || "",
+        recommendation: version.highlights?.recommendation || "",
+        strengths: version.highlights?.strengths || [],
+        weaknesses: version.highlights?.weaknesses || [],
+        suggested_followups: version.highlights?.suggested_followups || [],
+      },
     };
-    setEvaluation(mappedEvaluation);
+    setSelectedEvaluationVersion(mappedEvaluation);
   };
 
-  const fetchHistory = async () => {
-    if (!candidate?.id) return;
-    try {
-      const history = await transcriptService.getCandidateTranscripts(candidate.id);
-      setTranscriptHistory(history);
-    } catch (error) {
-      console.error("Failed to fetch transcript history:", error);
-    }
-  };
+  // 7. Transcript History Query
+  const { data: transcriptHistoryData, refetch: refetchHistory } =
+    useCandidateTranscriptsQuery(candidate?.id, evaluation?.transcript_id);
+  const transcriptHistory = transcriptHistoryData ?? [];
 
-  useEffect(() => {
-    fetchHistory();
-  }, [candidate?.id]);
-
-  const fetchHrDecisionHistory = async () => {
-    if (!candidate?.id) return;
-    try {
-      const queryStageId = currentStage === "Resume Screening" ? undefined : configId;
-      const response = await candidateDecisionApi.getDecisionHistory(candidate.id, job?.id, queryStageId as string);
-      setHrDecisionHistory(response.decisions);
-    } catch (error) {
-      console.error("Failed to fetch HR decision history:", error);
-    }
-  };
-
-  useEffect(() => {
-    fetchHrDecisionHistory();
-  }, [candidate?.id, job?.id, currentStage, configId]);
+  // 8. HR Decision History Query
+  const queryStageId = currentStage === "Resume Screening" ? undefined : configId;
+  const { data: hrDecisionHistoryResponse, refetch: refetchHrDecisionHistory } =
+    useHrDecisionHistoryQuery(candidate?.id, job?.id, queryStageId);
+  // TODO: CHNAGE TO CONST AFTER GEP
+  let hrDecisionHistory = hrDecisionHistoryResponse?.decisions ?? [];
 
   const form = useForm<CandidateDecisionFormValues>({
     resolver: zodResolver(candidateDecisionSchema),
@@ -260,58 +190,109 @@ export function useCandidatesStages() {
     setShowFeedbackModal(true);
   };
 
+  // 9. Mutation for submitting feedback
+  const submitDecisionMutation = useSubmitDecisionMutation();
+  const isSubmitting = submitDecisionMutation.isPending;
+
   const submitFeedback = async (data: CandidateDecisionFormValues) => {
     if (!candidate?.id) {
       toast.error("Candidate information missing");
       return;
     }
-    setIsSubmitting(true);
 
     try {
-      await candidateDecisionApi.submitDecision({
+      await submitDecisionMutation.mutateAsync({
         candidate_id: candidate.id,
         decision: data.decision,
         note: data.note,
         stage_config_id: currentStage === "Resume Screening" ? undefined : (configId as string),
-        job_id: job.id,
+        job_id: job!.id,
         score: data.score,
       });
       form.reset({ note: "", score: 0 });
       toast.success("Decision submitted successfully");
       setShowFeedbackModal(false);
-      await fetchHrDecisionHistory();
+      setRefetchTimeline((prev) => prev + 1);
     } catch (error) {
       const errorMessage = extractErrorMessage(error);
       toast.error(errorMessage || "Failed to submit decision");
-    } finally {
-      setIsSubmitting(false);
-      setRefetchTimeline((prev) => prev + 1);
     }
   };
 
   const candidateName = candidate
     ? `${candidate.first_name} ${candidate.last_name}`
-    : candidateNameParam || "Candidate";
+    : params.candidateName || "Candidate";
 
-  const transformedOverall = evaluation
-    ? {
+  const transformedOverall = useMemo(() => {
+    if (!evaluation) return null;
+
+    // Helper to extract nested list or string values from evaluation_data
+    let extractedSummary = "";
+    let extractedStrengths: string[] = [];
+    let extractedWeaknesses: string[] = [];
+    let extractedFollowups: string[] = [];
+
+    const evalData = evaluation.evaluation_data;
+    if (evalData && typeof evalData === "object") {
+      Object.values(evalData).forEach((val) => {
+        if (Array.isArray(val)) {
+          val.forEach((item) => {
+            if (item && typeof item === "object" && !Array.isArray(item)) {
+              if ("overall_summary" in item && typeof item.overall_summary === "string") {
+                extractedSummary = item.overall_summary;
+              }
+              if ("strengths" in item && Array.isArray(item.strengths)) {
+                extractedStrengths = item.strengths;
+              }
+              if ("weaknesses" in item && Array.isArray(item.weaknesses)) {
+                extractedWeaknesses = item.weaknesses;
+              }
+              if ("suggested_followups" in item && Array.isArray(item.suggested_followups)) {
+                extractedFollowups = item.suggested_followups;
+              }
+            }
+          });
+        }
+      });
+    }
+
+    const overall_summary = evaluation.highlights?.overall_summary || extractedSummary || "No summary available.";
+    const strength_summary = (evaluation.highlights?.strengths && evaluation.highlights.strengths.length > 0)
+      ? evaluation.highlights.strengths
+      : (extractedStrengths.length > 0 ? extractedStrengths : ["N/A"]);
+    const weakness_summary = (evaluation.highlights?.weaknesses && evaluation.highlights.weaknesses.length > 0)
+      ? evaluation.highlights.weaknesses
+      : (extractedWeaknesses.length > 0 ? extractedWeaknesses : ["N/A"]);
+    const followups = (evaluation.highlights?.suggested_followups && evaluation.highlights.suggested_followups.length > 0)
+      ? evaluation.highlights.suggested_followups
+      : (extractedFollowups.length > 0 ? extractedFollowups : ["N/A"]);
+
+    return {
       stage_score: evaluation.overall_score || 0,
       recommendation: evaluation.recommendation || "N/A",
-      overall_summary: evaluation.highlights?.overall_summary || "No summary available.",
-      strength_summary: evaluation.highlights?.strengths || ["N/A"],
-      weakness_summary: evaluation.highlights?.weaknesses || ["N/A"],
-      followups: evaluation.highlights?.suggested_followups || ["N/A"],
+      overall_summary,
+      strength_summary,
+      weakness_summary,
+      followups,
       percentage: Math.round((evaluation.overall_score || 0) * 20),
-    }
-    : null;
+    } as const;
+  }, [evaluation]);
 
   const isResumeScreening = currentStage === "Resume Screening";
   const filteredHistory = isResumeScreening
-    ? hrDecisionHistory?.filter((item) => item.stage_config_id == null || item?.stage_name === "Resume Screening")
-    : hrDecisionHistory?.filter((item) => item.stage_config_id !== null && item.stage_config_id === configId);
+    ? hrDecisionHistory?.filter(
+      (item: HrDecisionHistoryItem) => item.stage_config_id == null || item?.stage_name === "Resume Screening"
+    )
+    : hrDecisionHistory?.filter(
+      (item: HrDecisionHistoryItem) => item.stage_config_id !== null && item.stage_config_id === configId
+    );
 
   const latestDecision = filteredHistory ? filteredHistory[0] : hrDecisionHistory[0];
   const canTakeDecision = !latestDecision || latestDecision.decision.toLowerCase() === "may be";
+  // if (currentStage === "Technical Practical Round" && !evaluation && error) {
+  //   evaluation = TEMP_TECHNICAL_ROUND_RESPONSE
+  //   hrDecisionHistory = TEMP_TECHNICAL_ROUND_HR_DECISION
+  // }
 
   return {
     job,
@@ -353,8 +334,14 @@ export function useCandidatesStages() {
     handleAction,
     submitFeedback,
     handleSelectHistoryVersion,
-    fetchHistory,
-    fetchHrDecisionHistory,
+    fetchHistory: () => {
+      refetchHistory();
+    },
+    fetchHrDecisionHistory: async () => {
+      await refetchHrDecisionHistory();
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CANDIDATES.TIMELINE, candidate?.id] });
+    },
     setRefetchTimeline,
   };
 }
+

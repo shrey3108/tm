@@ -102,7 +102,7 @@ export function FeedbackDialog({
                       </SelectTrigger>
                       <SelectContent className="rounded-xl border-muted-foreground/10 bg-popover/90 backdrop-blur-xl min-w-fit" >
                         {
-                          scoreRange.map((item) => (<SelectItem value={item.toString()}>{item} </SelectItem>))
+                          scoreRange.map((item) => (<SelectItem value={item.toString()} key={item}>{item} </SelectItem>))
                         }
                       </SelectContent>
                     </Select>

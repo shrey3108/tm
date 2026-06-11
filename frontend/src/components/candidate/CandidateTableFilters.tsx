@@ -53,7 +53,7 @@ interface CandidateTableFiltersProps {
   setJobSearch: (value: string) => void;
   stageFilter: string[];
   setStageFilter: (value: string[]) => void;
-  stageOptions: string[];
+  stageOptions: { id: string; name: string }[];
   hrDecisionOptions: { value: string; label: string }[];
   resultOptions: { value: string; label: string }[];
   hasActiveFilters: boolean;
@@ -399,11 +399,11 @@ export const CandidateTableFilters = ({
                   : "border-input bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground"
               )}
             >
-              <span className="truncate">
+              <span className="truncate capitalize">
                 {resultFilter.length === 0
                   ? "AI Result"
                   : resultFilter.length === 1
-                    ? resultOptions.find((d) => d.value === resultFilter[0])?.label ?? resultFilter[0]
+                    ? resultOptions.find((d) => d.value === resultFilter[0])?.label ?? resultFilter[0].replace("ed", "")
                     : `${resultFilter.length} Results`}
               </span>
               <ChevronDown className="h-3.5 w-3.5 opacity-60 shrink-0" />
@@ -521,7 +521,7 @@ export const CandidateTableFilters = ({
                 {stageFilter.length === 0
                   ? "Stages"
                   : stageFilter.length === 1
-                    ? stageFilter[0]
+                    ? (stageOptions.find((d) => d.id === stageFilter[0])?.name ?? "1 Stage")
                     : `${stageFilter.length} Stages`}
               </span>
               <ChevronDown className="h-3.5 w-3.5 opacity-60 shrink-0" />
@@ -537,20 +537,20 @@ export const CandidateTableFilters = ({
                   <div className="max-h-[240px] overflow-y-auto custom-scrollbar">
                     {stageOptions.map((s) => (
                       <DropdownMenuCheckboxItem
-                        key={s}
-                        checked={stageFilter.includes(s)}
+                        key={s.id}
+                        checked={stageFilter.includes(s.id)}
                         onSelect={(e) => e.preventDefault()}
                         onClick={() =>
                           setStageFilter(
-                            stageFilter.includes(s)
-                              ? stageFilter.filter((v) => v !== s)
-                              : [...stageFilter, s]
+                            stageFilter.includes(s.id)
+                              ? stageFilter.filter((v) => v !== s.id)
+                              : [...stageFilter, s.id]
                           )
                         }
                         className="rounded-lg pl-2 pr-6"
                         closeOnClick={true}
                       >
-                        {s}
+                        {s.name}
                       </DropdownMenuCheckboxItem>
                     ))}
                   </div>

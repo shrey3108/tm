@@ -94,4 +94,29 @@ export const candidateStageService = {
     );
     return response.data;
   },
+
+  /**
+   * Trigger background GitHub repository evaluation for the Technical Practical Round.
+   * @param id - UUID of the candidate stage.
+   * @param githubUrl - URL of the GitHub repository.
+   */
+  evaluateGithub: async (
+    id: string,
+    githubUrl: string
+  ): Promise<{
+    message: string;
+    candidate_stage_id: string;
+    github_url: string;
+    status: string;
+    evaluation_id: string;
+  }> => {
+    const response = await apiClient.post<{
+      message: string;
+      candidate_stage_id: string;
+      github_url: string;
+      status: string;
+      evaluation_id: string;
+    }>(`/candidate-stages/${id}/evaluate-github`, { github_url: githubUrl });
+    return response.data;
+  },
 };

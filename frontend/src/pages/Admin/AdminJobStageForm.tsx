@@ -18,9 +18,10 @@ import {
     Badge,
 } from "@/components";
 import { useWatch } from "react-hook-form";
-import { adminStageTemplateService } from "@/apis/admin/stageTemplate";
-import { adminCriteriaService } from "@/apis/admin/criteria";
-import type { CriterionRead } from "@/types/admin";
+import {
+    useCreateStageTemplateMutation,
+    useUpdateStageTemplateMutation,
+} from "@/hooks/mutations/admin/useJobStage";
 import type { StageTemplate } from "@/types/stage";
 import { slugify } from "@/utils/slug";
 import { cn } from "@/lib/utils";
@@ -29,6 +30,8 @@ import AppPageShell from "@/components/shared/AppPageShell";
 import PageHeader from "@/components/shared/PageHeader";
 import { stageTemplateCreateSchema, type StageTemplateCreateFormValues } from "@/schemas/admin";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useJobCriteria } from "@/hooks/queries/admin/useJobCriteria";
+import { useJobStage } from "@/hooks/queries/admin/useJobStage";
 
 
 /**
@@ -41,11 +44,14 @@ export default function AdminJobStageForm() {
     const { slug } = useParams<{ slug?: string }>();
     const toast = useToast();
 
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const createMutation = useCreateStageTemplateMutation();
+    const updateMutation = useUpdateStageTemplateMutation();
+    const isSubmitting = createMutation.isPending || updateMutation.isPending;
+
     const [isEditMode, setIsEditMode] = useState(false);
     const [criteriaSearch, setCriteriaSearch] = useState("");
-    const [criteria, setCriteria] = useState<CriterionRead[]>([]);
-    const [isLoadingCriteria, setIsLoadingCriteria] = useState(true);
+
+
 
     const form = useForm<StageTemplateCreateFormValues>({
         resolver: zodResolver(stageTemplateCreateSchema) as any,
@@ -69,33 +75,20 @@ export default function AdminJobStageForm() {
 
     const selectedCriteriaIds = (defaultConfig?.criteria_ids as string[]) || [];
 
-    useEffect(() => {
-        const fetchCriteria = async () => {
-            try {
-                const data = await adminCriteriaService.getAllCriteria();
-                setCriteria(data.data);
-
-            } catch (error) {
-                console.error("Failed to fetch criteria:", error);
-                toast.error("Failed to load evaluation criteria");
-            } finally {
-                setIsLoadingCriteria(false);
-            }
-        };
-        fetchCriteria();
-    }, [toast]);
+    const { data: criteria, loading: isLoadingCriteria } = useJobCriteria(0, 100);
+    const { data: stages, loading: isLoadingStages } = useJobStage(0, 100);
+    const template = stages.find(t => slugify(t.name) === slug);
 
     useEffect(() => {
         const stateData = location.state as any;
 
-        const initializeForm = (template: StageTemplate) => {
-            const { name, description, config, is_default, default_order } = template;
+        const initializeForm = (t: StageTemplate) => {
+            const { name, description, config, is_default, default_order } = t;
             form.reset({
                 name,
                 description: description || "",
                 default_config: {
-                    criteria_ids: config?.evaluation_criteria.map(({ id }) => id) || [],
-                    // is_active: config?.evaluation_criteria.is_active ?? true
+                    criteria_ids: config?.evaluation_criteria?.map(({ id }) => id) || [],
                 },
                 is_default: is_default || false,
                 default_order: default_order ?? 0,
@@ -106,27 +99,16 @@ export default function AdminJobStageForm() {
             setIsEditMode(true);
             if (stateData?.template) {
                 initializeForm(stateData.template);
-            } else {
-                // Fetch template by searching all templates (since we only have slug)
-                const fetchTemplate = async () => {
-                    try {
-                        const templates = await adminStageTemplateService.getAllTemplates();
-                        const template = templates.data.find(t => slugify(t.name) === slug);
-                        if (template) {
-                            initializeForm(template);
-                        } else {
-                            toast.error("Stage template not found");
-                            navigate("/dashboard/admin/criteria-stages/stages");
-                        }
-                    } catch (error) {
-                        console.error("Failed to fetch stage details:", error);
-                        toast.error("Failed to load stage details");
-                    }
-                };
-                fetchTemplate();
+            } else if (!isLoadingStages) {
+                if (template) {
+                    initializeForm(template);
+                } else {
+                    toast.error("Stage template not found");
+                    navigate("/dashboard/admin/criteria-stages/stages");
+                }
             }
         }
-    }, [slug, location.state, form, toast, navigate]);
+    }, [slug, location.state, form, toast, navigate, template, isLoadingStages]);
 
     const toggleCriteria = (criteriaId: string) => {
         const current = [...selectedCriteriaIds];
@@ -156,27 +138,22 @@ export default function AdminJobStageForm() {
     );
 
     const onSubmit = async (values: StageTemplateCreateFormValues) => {
-        setIsSubmitting(true);
         try {
             if (isEditMode) {
-                const templates = await adminStageTemplateService.getAllTemplates();
-                const template = templates.data.find(t => slugify(t.name) === slug);
                 if (template) {
-                    await adminStageTemplateService.updateTemplate(template.id, values as any);
+                    await updateMutation.mutateAsync({ id: template.id, data: values as any });
                     toast.success("Stage template updated successfully");
                 } else {
                     throw new Error("Template not found for update");
                 }
             } else {
-                await adminStageTemplateService.createTemplate(values as any);
+                await createMutation.mutateAsync(values as any);
                 toast.success("Stage template created successfully");
             }
             navigate("/dashboard/admin/criteria-stages/stages");
         } catch (error) {
             console.error("Failed to save stage template:", error);
             toast.error("Failed to save stage template");
-        } finally {
-            setIsSubmitting(false);
         }
     };
 

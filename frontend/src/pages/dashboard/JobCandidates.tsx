@@ -176,7 +176,7 @@ export default function JobCandidates() {
                       isServerSide={true}
                       showLocationFilter={true}
                       showStatusFilter={true}
-                      stageOptions={job?.stages?.map(s => s.template.name) || []}
+                      stageOptions={job?.stages?.map(s => ({ id: s.id, name: s.template.name })) || []}
                       pagination={{ pageIndex, pageSize }}
                       onPaginationChange={setPagination}
                       pageCount={Math.ceil(totalCandidates / pageSize)}
