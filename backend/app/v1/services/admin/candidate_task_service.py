@@ -18,9 +18,75 @@ logger = logging.getLogger(__name__)
 
 class CandidateTaskService:
     """Service to handle candidate-specific custom task files and skill extraction."""
+    async def upload_and_extract_candidate_task_skills(self, db: AsyncSession, candidate_id: uuid.UUID, task_file: UploadFile) -> Candidate:
+        # 1. Verify Candidate exists
+        stmt = select(Candidate).where(Candidate.id == candidate_id)
+        result = await db.execute(stmt)
+        candidate = result.scalar_one_or_none()
+        if not candidate:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Candidate not found.",
+            )
 
+        # 2. Save file
+        file_extension = Path(task_file.filename).suffix.lower()
+        if file_extension not in [".pdf", ".docx", ".doc"]:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Unsupported file format: {file_extension}. Only PDF, DOC, and DOCX are allowed.",
+            )
 
+        tasks_dir = resolve_storage_path(settings.TASK_UPLOAD_DIR)
+        tasks_dir.mkdir(parents=True, exist_ok=True)
+        file_name = f"candidate_task_{candidate_id}{file_extension}"
+        target_path = tasks_dir / file_name
+        stored_file_path = to_storage_relative_path(target_path)
 
+        try:
+            content = await task_file.read()
+            target_path.write_bytes(content)
+        except Exception as e:
+            logger.error("Failed to save candidate task file: %s", e)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to save the uploaded candidate task file.",
+            )
+
+        candidate.task_file_path = stored_file_path
+
+        # 3. Extract Text and Skills
+        raw_text = ""
+        try:
+            raw_text = DocumentParser().extract_text(target_path)
+        except Exception as e:
+            logger.error("Failed to parse candidate task file text: %s", e)
+            
+        if not raw_text.strip():
+            logger.error("The candidate task document contains no readable text: %s", target_path)
+            extracted_skills = []
+        else:
+            logger.info("Extracting skills from candidate task description using LLM in background...")
+            extracted_skills = await self._extract_skills_from_text(raw_text)
+
+        # 4. Update Candidate record in database
+        try:
+            candidate.task_skills = extracted_skills
+            db.add(candidate)
+            await db.commit()
+            await db.refresh(candidate)
+        except Exception as e:
+            logger.error("Database update failed for candidate task details: %s", e)
+            await db.rollback()
+
+        # 5. Clear caches
+        try:
+            from app.v1.core.cache import cache
+            await cache.clear(pattern="candidates:*")
+        except Exception:
+            pass
+
+        return candidate
     async def _extract_skills_from_text(self, raw_text: str) -> list[str]:
         """Call LLM directly using openai client to extract a clean list of skills."""
         system_prompt = (

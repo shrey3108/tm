@@ -105,21 +105,28 @@ class CandidateAdminService:
             dir_filter = and_(dir_filter, Candidate.id == candidate_id)
 
         if stage_id:
-
-            dir_filter = and_(
-                dir_filter,
-                select(1).select_from(CandidateStage).join(
-                    JobStageConfig, CandidateStage.job_stage_id == JobStageConfig.id
-                ).join(
-                    StageTemplate, JobStageConfig.template_id == StageTemplate.id
-                ).where(
-                    and_(
-                        CandidateStage.candidate_id == Candidate.id,
-                        CandidateStage.status.in_(["active", "completed", "failed"]),
-                        stage_filter
+            stage_exists = select(1).select_from(CandidateStage).join(
+                JobStageConfig, CandidateStage.job_stage_id == JobStageConfig.id
+            ).join(
+                StageTemplate, JobStageConfig.template_id == StageTemplate.id
+            ).where(
+                and_(
+                    CandidateStage.candidate_id == Candidate.id,
+                    CandidateStage.status.in_(["active", "completed", "failed", "pending"]),
+                    stage_filter
+                )
+            ).exists()
+            
+            if "resume screening" in stage_names:
+                dir_filter = and_(
+                    dir_filter,
+                    or_(
+                        stage_exists,
+                        ~Candidate.stages.any()
                     )
-                ).exists()
-            )
+                )
+            else:
+                dir_filter = and_(dir_filter, stage_exists)
 
         if city:
             from app.v1.db.models.locations import Location
@@ -245,20 +252,28 @@ class CandidateAdminService:
             xm_filter = and_(xm_filter, CrossJobMatch.candidate_id == candidate_id)
         
         if stage_id:
-            xm_filter = and_(
-                xm_filter,
-                select(1).select_from(CandidateStage).join(
-                    JobStageConfig, CandidateStage.job_stage_id == JobStageConfig.id
-                ).join(
-                    StageTemplate, JobStageConfig.template_id == StageTemplate.id
-                ).where(
-                    and_(
-                        CandidateStage.candidate_id == CrossJobMatch.candidate_id,
-                        CandidateStage.status.in_(["active", "completed", "pending", "failed"]),
-                        stage_filter
+            xm_stage_exists = select(1).select_from(CandidateStage).join(
+                JobStageConfig, CandidateStage.job_stage_id == JobStageConfig.id
+            ).join(
+                StageTemplate, JobStageConfig.template_id == StageTemplate.id
+            ).where(
+                and_(
+                    CandidateStage.candidate_id == CrossJobMatch.candidate_id,
+                    CandidateStage.status.in_(["active", "completed", "pending", "failed"]),
+                    stage_filter
+                )
+            ).exists()
+            
+            if "resume screening" in stage_names:
+                xm_filter = and_(
+                    xm_filter,
+                    or_(
+                        xm_stage_exists,
+                        ~Candidate.stages.any()
                     )
-                ).exists()
-            )
+                )
+            else:
+                xm_filter = and_(xm_filter, xm_stage_exists)
 
         xm_stmt = (
             select(CrossJobMatch)
