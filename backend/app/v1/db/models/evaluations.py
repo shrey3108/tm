@@ -115,8 +115,7 @@ class Evaluation(Base):
     transcript: Mapped[Optional["Transcript"]] = relationship("Transcript", foreign_keys=[transcript_id])
     candidate_stage: Mapped["CandidateStage"] = relationship("CandidateStage", foreign_keys=[candidate_stage_id])
 
-    @property
-    def highlights(self) -> dict | None:
+    def _get_full_highlights(self) -> dict | None:
         """Parses the highlights, with backward compatibility for old formats."""
         # 1. Try parsing recommendation column (New format stores JSON here)
         data = None
@@ -232,15 +231,25 @@ class Evaluation(Base):
                             else:
                                 jd_items.append(trimmed)
                     
-                    if key == "suggested_followups":
-                        data[key] = jd_items + proj_items
-                    else:
+                    if key == "suggested_followups" or key == "strengths" or key == "weaknesses":
                         data[key] = [
                             {"JD Alignment": jd_items},
                             {"Project Requirements": proj_items}
                         ]
 
         return data
+
+    @property
+    def highlights(self) -> dict | None:
+        """Returns the parsed highlights, but clears strengths, weaknesses, and followups to avoid duplication in UI."""
+        full = self._get_full_highlights()
+        if not full:
+            return None
+        res = full.copy()
+        res["strengths"] = []
+        res["weaknesses"] = []
+        res["suggested_followups"] = []
+        return res
 
     @property
     def structured_evaluation_data(self) -> dict:
@@ -320,7 +329,7 @@ class Evaluation(Base):
                         task_skills_list.append({base_name: v})
 
             # Retrieve highlights and extract strengths, weaknesses, suggested_followups
-            highlights = self.highlights
+            highlights = self._get_full_highlights()
             jd_strengths = []
             task_strengths = []
             jd_weaknesses = []
@@ -365,19 +374,30 @@ class Evaluation(Base):
                 else:
                     jd_weaknesses = weaknesses
 
-                # Extract suggested_followups (already combined as a flat list from highlights)
-                combined_followups = highlights.get("suggested_followups") or []
+                # Extract suggested_followups
+                jd_followups = []
+                task_followups = []
+                followups = highlights.get("suggested_followups") or []
+                if followups and isinstance(followups[0], dict):
+                    for item in followups:
+                        if "JD Alignment" in item:
+                            jd_followups = item["JD Alignment"]
+                        elif "Project Requirements" in item:
+                            task_followups = item["Project Requirements"]
+                else:
+                    jd_followups = followups
+                    task_followups = followups
 
             # Append overall_summary, strengths, weaknesses, and suggested_followups directly to the respective lists
             jd_skills_list.append({"overall_summary": jd_summary})
             jd_skills_list.append({"strengths": jd_strengths})
             jd_skills_list.append({"weaknesses": jd_weaknesses})
-            jd_skills_list.append({"suggested_followups": combined_followups})
+            jd_skills_list.append({"suggested_followups": jd_followups})
             
             task_skills_list.append({"overall_summary": task_summary})
             task_skills_list.append({"strengths": task_strengths})
             task_skills_list.append({"weaknesses": task_weaknesses})
-            task_skills_list.append({"suggested_followups": combined_followups})
+            task_skills_list.append({"suggested_followups": task_followups})
 
             return {
                 "JD Skills": jd_skills_list,
