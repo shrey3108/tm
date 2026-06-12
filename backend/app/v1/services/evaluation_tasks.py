@@ -434,10 +434,7 @@ def evaluate_candidate_practical_task(
             overall_summary_text = (
                 f"🎯 ALIGNMENT BREAKDOWN: "
                 f"Job Description (JD): {jd_decision_emoji} ({jd_scaled}/5.0) | {jd_review} ── "
-                f"Task/Project: {proj_decision_emoji} ({proj_scaled}/5.0) | {proj_review} ── "
-                f"📐 Architecture: {str(report.get('architecture_review', 'No architectural review provided.')).strip()} ── "
-                f"✨ Code Quality: {str(report.get('code_quality_review', 'No code quality review provided.')).strip()} ── "
-                f"⚠️ Security Risks: {', '.join(security_risks) if security_risks else 'No major security risks identified.'}"
+                f"Task/Project: {proj_decision_emoji} ({proj_scaled}/5.0) | {proj_review}"
             )
 
             highlights = {
