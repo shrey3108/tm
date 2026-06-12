@@ -60,6 +60,8 @@ interface DataTableProps<TData, TValue> {
   totalCount?: number;
   resultCount?: number;
   entityName?: string;
+  rowSelection?: Record<string, boolean>;
+  onRowSelectionChange?: OnChangeFn<Record<string, boolean>>;
 }
 
 
@@ -84,13 +86,17 @@ export function DataTable<TData, TValue>({
   totalCount,
   resultCount,
   entityName,
+  rowSelection,
+  onRowSelectionChange,
 }: DataTableProps<TData, TValue>) {
 
   const [sorting, setSorting] = useState<SortingState>(initialSorting);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [globalFilter, setGlobalFilter] = useState<string>("");
-  const [rowSelection, setRowSelection] = useState({});
+  const [internalRowSelection, setInternalRowSelection] = useState({});
+  const finalRowSelection = rowSelection !== undefined ? rowSelection : internalRowSelection;
+  const handleRowSelectionChange = onRowSelectionChange !== undefined ? onRowSelectionChange : setInternalRowSelection;
   const [internalPagination, setInternalPagination] = useState<PaginationState>({
     pageIndex,
     pageSize,
@@ -134,7 +140,7 @@ export function DataTable<TData, TValue>({
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
     onGlobalFilterChange: setGlobalFilter,
-    onRowSelectionChange: setRowSelection,
+    onRowSelectionChange: handleRowSelectionChange as any,
     // Add server-side pagination config
     manualPagination: isServerSide,
     pageCount: pageCount,
@@ -144,7 +150,7 @@ export function DataTable<TData, TValue>({
       columnFilters,
       columnVisibility,
       globalFilter,
-      rowSelection,
+      rowSelection: finalRowSelection,
       pagination: paginationState,
     },
   });

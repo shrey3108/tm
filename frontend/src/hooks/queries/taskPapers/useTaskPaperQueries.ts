@@ -109,3 +109,27 @@ export const useJobAndCandidateTaskSkills = (
     refetch: res.refetch,
   };
 };
+
+/**
+ * Hook to download a predefined test paper task file.
+ */
+export const useDownloadPaperTaskFile = (
+  paperId: string | null | undefined,
+  options?: Record<string, any>
+) => {
+  const res = useQuery({
+    queryKey: [QUERY_KEYS.TASK_PAPERS.DOWNLOAD, paperId],
+    queryFn: () => taskService.downloadPaperTaskFile(paperId!),
+    enabled: !!paperId,
+    staleTime: QUERY_CONFIG.TASK_PAPER.staleTime,
+    ...options,
+  });
+
+  return {
+    data: res.data ?? null,
+    loading: res.isLoading || res.isFetching,
+    error: res.error,
+    refetch: res.refetch,
+  };
+};
+

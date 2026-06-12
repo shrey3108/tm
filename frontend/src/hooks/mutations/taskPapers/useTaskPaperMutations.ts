@@ -53,6 +53,11 @@ export function useAssignTestPaperMutation() {
     mutationFn: (data: CandidateTestPaperAssign) =>
       taskService.assignTestPaperToCandidate(data),
     onSuccess: (data) => {
+      // Set query data immediately to update UI without delay
+      queryClient.setQueryData(
+        [QUERY_KEYS.TASK_PAPERS.ASSIGNED, data.candidate_id],
+        data
+      );
       // Invalidate queries for the specific candidate using the returned ID
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.TASK_PAPERS.ASSIGNED, data.candidate_id],
@@ -76,6 +81,11 @@ export function useDeleteCandidateTestPaperMutation() {
     mutationFn: (candidateId: string) =>
       taskService.deleteCandidateTestPaper(candidateId),
     onSuccess: (_data, candidateId) => {
+      // Set query data to null immediately
+      queryClient.setQueryData(
+        [QUERY_KEYS.TASK_PAPERS.ASSIGNED, candidateId],
+        null
+      );
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.TASK_PAPERS.ASSIGNED, candidateId],
       });

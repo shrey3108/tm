@@ -341,6 +341,9 @@ export function useCandidatesStages() {
       await refetchHrDecisionHistory();
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CANDIDATES.TIMELINE, candidate?.id] });
     },
+    handlePaperChange: () => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CANDIDATES.TIMELINE, candidate?.id] });
+    },
     setRefetchTimeline,
   };
 }

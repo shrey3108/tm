@@ -28,6 +28,12 @@ export function useSubmitDecisionMutation() {
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.CANDIDATES.TIMELINE, variables.candidate_id],
       });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.JOBS.CANDIDATES, variables.job_id],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.JOBS.STATS, variables.job_id],
+      });
     },
   });
 }
