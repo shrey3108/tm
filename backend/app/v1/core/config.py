@@ -143,6 +143,9 @@ class Settings(BaseSettings):
     OLLAMA_MODEL: str = Field(
         default="glm_5:cloud", description="Name of the Ollama model to use"
     )
+    ENHANCE_MODEL: str | None = Field(
+        default=None, description="Optional distinct model for prompt enhancement"
+    )
     OLLAMA_API_KEY: str = Field(
         default="d35ce7accc034bbc86f51347ae810ea6.mc4X9BO4XwHPR23bcHFtHWLV",
         description="API key for Ollama Cloud (if applicable)",

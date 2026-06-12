@@ -202,7 +202,13 @@ async def send_candidate_task_email_via_smtp(
     msg = MIMEMultipart()
     msg["From"] = smtp_from
     msg["To"] = target_recipient
-    msg["Subject"] = f"[TEST] Test Paper Assigned for {candidate.first_name or 'Candidate'} {candidate.last_name or ''} (intended for: {candidate.email})"
+    # Fetch job details for the subject
+    from app.v1.db.models.jobs import Job
+    job = await db.get(Job, candidate.applied_job_id) if candidate.applied_job_id else None
+    job_name = job.title if job else "Job"
+    job_position = job.position.name if job and job.position else "Position"
+
+    msg["Subject"] = f"[{job_position}-{job_name} Test Paper assigned for {candidate.first_name or 'Candidate'} {candidate.last_name or ''}]"
     
     msg.attach(MIMEText(html_body, "html"))
 

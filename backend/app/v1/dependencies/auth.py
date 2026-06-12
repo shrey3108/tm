@@ -69,7 +69,23 @@ async def get_current_user(
             detail="Refresh tokens cannot be used for this endpoint.",
         )
 
-    subject = payload.get("sub")
+    enc_data = payload.get("enc_data")
+    if enc_data:
+        try:
+            import json
+            from app.v1.core.security import get_fernet_cipher
+            cipher = get_fernet_cipher()
+            inner_payload = json.loads(cipher.decrypt(enc_data.encode()).decode("utf-8"))
+            subject = inner_payload.get("sub")
+        except Exception as exc:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid encrypted token.",
+            ) from exc
+    else:
+        # Fallback for old tokens
+        subject = payload.get("sub")
+
     if not subject:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
