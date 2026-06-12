@@ -311,6 +311,37 @@ export function SendQuestionPaperDialog({
               : `Configure and assign a question paper for `}
             <span className="font-semibold text-foreground capitalize">{candidateName}</span>.
           </DialogDescription> */}
+          <div className="flex gap-1">
+            <Button
+              type="button"
+              variant={mode === "predefined" ? "secondary" : "ghost"}
+              onClick={() => setMode("predefined")}
+              disabled={loadingPredefined || !predefinedPapers || predefinedPapers.length === 0}
+              className={`flex-1 rounded-lg font-semibold text-sm ${mode === "predefined" ? "shadow-sm" : "text-muted-foreground"
+                }`}
+            >
+              Predefined Paper
+            </Button>
+            <Button
+              type="button"
+              variant={mode === "random" ? "secondary" : "ghost"}
+              onClick={() => setMode("random")}
+              disabled={loadingPredefined || !predefinedPapers || predefinedPapers.length === 0}
+              className={`flex-1 rounded-lg font-semibold text-sm ${mode === "random" ? "shadow-sm" : "text-muted-foreground"
+                }`}
+            >
+              Randomized Paper
+            </Button>
+            <Button
+              type="button"
+              variant={mode === "custom" ? "secondary" : "ghost"}
+              onClick={() => setMode("custom")}
+              className={`flex-1 rounded-lg font-semibold text-sm ${mode === "custom" ? "shadow-sm" : "text-muted-foreground"
+                }`}
+            >
+              Custom Paper
+            </Button>
+          </div>
         </DialogHeader>
 
         {/* Content body */}
@@ -327,38 +358,6 @@ export function SendQuestionPaperDialog({
           ) : (
             /* UNASSIGNED VIEW / SELECTION & CREATION SHEET */
             <div className="space-y-1.5 animate-in fade-in duration-300">
-              {/* Tab Selector */}
-              <div className="flex rounded-xl bg-muted p-1 border border-border/20 shrink-0">
-                <Button
-                  type="button"
-                  variant={mode === "predefined" ? "secondary" : "ghost"}
-                  onClick={() => setMode("predefined")}
-                  disabled={loadingPredefined || !predefinedPapers || predefinedPapers.length === 0}
-                  className={`flex-1 rounded-lg  font-semibold text-sm ${mode === "predefined" ? "shadow-xs" : "text-muted-foreground"
-                    }`}
-                >
-                  Predefined Paper
-                </Button>
-                <Button
-                  type="button"
-                  variant={mode === "random" ? "secondary" : "ghost"}
-                  onClick={() => setMode("random")}
-                  disabled={loadingPredefined || !predefinedPapers || predefinedPapers.length === 0}
-                  className={`flex-1 rounded-lg  font-semibold text-sm ${mode === "random" ? "shadow-xs" : "text-muted-foreground"
-                    }`}
-                >
-                  Randomized Paper
-                </Button>
-                <Button
-                  type="button"
-                  variant={mode === "custom" ? "secondary" : "ghost"}
-                  onClick={() => setMode("custom")}
-                  className={`flex-1 rounded-lg font-semibold text-sm ${mode === "custom" ? "shadow-xs" : "text-muted-foreground"
-                    }`}
-                >
-                  Custom Paper
-                </Button>
-              </div>
 
               {/* Predefined Selection */}
               {mode === "predefined" && (
