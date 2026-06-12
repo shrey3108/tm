@@ -78,7 +78,7 @@ export const StageCandidatesHeader = ({
                   variant="outline"
                   className="rounded-xl border border-muted-foreground/10 font-semibold text-center h-9"
                   onClick={() => setIsSendQuestionPaperDialogOpen(true)}
-                  disabled={isUploaded}
+                  disabled={isUploaded || !job?.is_active}
                 >
                   <SendIcon className="h-4 w-4" /> Send Question Paper
                 </Button>
@@ -86,7 +86,7 @@ export const StageCandidatesHeader = ({
                   variant="outline"
                   className="rounded-xl border border-muted-foreground/10 px-5 font-semibold text-center h-9"
                   onClick={() => setIsProjectSubmissionDialogOpen(true)}
-                  disabled={isUploaded}
+                  disabled={isUploaded || !job?.is_active}
                 >
                   Project Submission
                 </Button>
@@ -113,7 +113,7 @@ export const StageCandidatesHeader = ({
                 stageId={stageId}
                 className="w-auto m-0 shrink-0"
                 job={job!}
-                disabled={isUploaded}
+                disabled={isUploaded || !job?.is_active}
                 onSuccess={onSuccess}
               />
             )
