@@ -18,6 +18,141 @@ from app.v1.utils.pdf_generator import generate_candidate_task_pdf_file
 
 logger = logging.getLogger(__name__)
 
+def markdown_to_html(text: str) -> str:
+    import html
+    lines = text.split("\n")
+    html_lines = []
+    
+    in_table = False
+    table_headers = None
+    table_rows = []
+    
+    in_list = False
+    
+    def render_table(headers, rows):
+        if not headers and not rows:
+            return ""
+        tbl = '<table style="border-collapse: collapse; width: 100%; margin: 15px 0; font-size: 13px; font-family: inherit; border: 1px solid #e2e8f0;">'
+        if headers:
+            tbl += '<thead style="background-color: #f8fafc; border-bottom: 2px solid #e2e8f0;"><tr>'
+            for h in headers:
+                tbl += f'<th style="padding: 10px 12px; font-weight: 600; color: #334155; border: 1px solid #e2e8f0; text-align: left;">{html.escape(h.strip())}</th>'
+            tbl += '</tr></thead>'
+        tbl += '<tbody>'
+        for r in rows:
+            tbl += '<tr style="border-bottom: 1px solid #e2e8f0;">'
+            for cell in r:
+                tbl += f'<td style="padding: 8px 12px; color: #475569; border: 1px solid #e2e8f0; text-align: left;">{html.escape(cell.strip())}</td>'
+            tbl += '</tr>'
+        tbl += '</tbody></table>'
+        return tbl
+
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        stripped = line.strip()
+        
+        # Check if it is a table row
+        if stripped.startswith("|") and stripped.endswith("|"):
+            if in_list:
+                html_lines.append('</ul>')
+                in_list = False
+                
+            cells = [c.strip() for c in line.split("|")]
+            if len(cells) > 1 and cells[0] == "":
+                cells = cells[1:]
+            if len(cells) > 0 and cells[-1] == "":
+                cells = cells[:-1]
+                
+            is_separator = all(all(char in "- :" for char in cell) for cell in cells) if cells else False
+            
+            if is_separator:
+                i += 1
+                continue
+                
+            if not in_table:
+                in_table = True
+                table_headers = cells
+                table_rows = []
+            else:
+                table_rows.append(cells)
+            i += 1
+            continue
+        else:
+            if in_table:
+                html_lines.append(render_table(table_headers, table_rows))
+                in_table = False
+                table_headers = None
+                table_rows = []
+                
+        # Parse headers
+        if stripped.startswith(("## ", "### ")):
+            if in_list:
+                html_lines.append('</ul>')
+                in_list = False
+                
+            is_h2 = stripped.startswith("## ")
+            header_text = stripped[3:] if is_h2 else stripped[4:]
+            header_text = header_text.replace("**", "")
+            
+            if header_text.startswith("· "):
+                header_text = header_text[2:]
+                bullet_prefix = "· "
+            else:
+                bullet_prefix = ""
+                
+            font_size = "15px" if is_h2 else "13.5px"
+            font_weight = "700" if is_h2 else "600"
+            border_style = "border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;" if is_h2 else ""
+            
+            html_lines.append(f'<div style="font-weight: {font_weight}; font-size: {font_size}; color: #1e3a8a; margin-top: 15px; margin-bottom: 8px; {border_style}">{bullet_prefix}{html.escape(header_text)}</div>')
+            
+        elif stripped.startswith(("- ", "* ")):
+            item_text = stripped[2:]
+            parts = item_text.split("**")
+            formatted_item = ""
+            for idx, part in enumerate(parts):
+                if idx % 2 == 1:
+                    formatted_item += f'<strong>{html.escape(part)}</strong>'
+                else:
+                    formatted_item += html.escape(part)
+            
+            if not in_list:
+                html_lines.append('<ul style="margin: 5px 0 10px 0; padding-left: 20px; list-style-type: disc;">')
+                in_list = True
+            html_lines.append(f'<li style="margin-bottom: 4px; color: #475569; font-size: 13.5px; line-height: 1.5;">{formatted_item}</li>')
+        else:
+            if in_list:
+                html_lines.append('</ul>')
+                in_list = False
+                
+            parts = line.split("**")
+            formatted_line = ""
+            for idx, part in enumerate(parts):
+                if idx % 2 == 1:
+                    formatted_line += f'<strong>{html.escape(part)}</strong>'
+                else:
+                    formatted_line += html.escape(part)
+            html_lines.append(formatted_line)
+        i += 1
+        
+    if in_table:
+        html_lines.append(render_table(table_headers, table_rows))
+    if in_list:
+        html_lines.append('</ul>')
+        
+    output = ""
+    for line in html_lines:
+        if line.startswith(("<table", "<div", "<li", "<ul", "</ul>")):
+            output += line + "\n"
+        elif line.strip() == "":
+            output += "<br/>\n"
+        else:
+            output += line + "<br/>\n"
+            
+    return output
+
+
 async def send_candidate_task_email_via_smtp(
     candidate: Candidate,
     test_paper: CandidateTestPaper,
@@ -27,6 +162,19 @@ async def send_candidate_task_email_via_smtp(
     temp_file_to_delete = None
     attachment_path = None
     attachment_name = None
+    
+    # Get Job and Position details to display in the email
+    from app.v1.db.models.jobs import Job
+    
+    job_title = ""
+    if candidate.applied_job_id:
+        job = await db.get(Job, candidate.applied_job_id)
+        if job:
+            job_title = job.title
+            if job.position:
+                job_title = f"{job.title} ({job.position.name})"
+
+    job_info_str = f" for the <strong>{job_title}</strong> position" if job_title else ""
     
     task_file_path = candidate.task_file_path or test_paper.task_file_path
     is_modified = True
@@ -68,13 +216,15 @@ async def send_candidate_task_email_via_smtp(
             details_html += '<div class="details-title">Assigned Questions:</div>'
             details_html += '<ol class="questions-list">'
             for q in test_paper.questions:
-                details_html += f'<li>{q}</li>'
+                q_html = markdown_to_html(q)
+                details_html += f'<li style="margin-bottom: 15px;"><div style="font-family: inherit;">{q_html}</div></li>'
             details_html += '</ol>'
         if test_paper.project_task:
             if test_paper.questions:
                 details_html += '<br>'
             details_html += '<div class="details-title">Project Task:</div>'
-            details_html += f'<div style="font-size: 14px; line-height: 1.5; color: #4b5563; white-space: pre-wrap;">{test_paper.project_task}</div>'
+            task_html = markdown_to_html(test_paper.project_task)
+            details_html += f'<div style="font-size: 14px; line-height: 1.5; color: #4b5563;">{task_html}</div>'
         if external_url:
             if test_paper.questions or test_paper.project_task:
                 details_html += '<br>'
@@ -169,7 +319,7 @@ async def send_candidate_task_email_via_smtp(
           <div class="content">
             <div class="greeting">Hello {candidate.first_name or "Candidate"},</div>
             <div class="message">
-              We are pleased to invite you to take the next step in our interview process. A test paper <strong>"{test_paper.name}"</strong> has been assigned to you.
+              We are pleased to invite you to take the next step in our interview process{job_info_str}. A test paper <strong>"{test_paper.name}"</strong> has been assigned to you.
             </div>
             
             {details_html}
