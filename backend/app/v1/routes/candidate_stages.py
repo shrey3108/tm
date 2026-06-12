@@ -65,7 +65,7 @@ async def get_candidate_stage_evaluation(
                     "suggested_followups": []
                 }
             }
-        if stage and stage.status in ["pending", "processing", "in_progress", "scheduled"]:
+        if stage and stage.status == "processing":
             from fastapi.responses import JSONResponse
             return JSONResponse(
                 status_code=202, 
