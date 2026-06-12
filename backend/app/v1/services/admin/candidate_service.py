@@ -196,22 +196,53 @@ class CandidateAdminService:
             }
             hr_decision = [decision_map.get(d.lower(), d.lower()) for d in hr_decision]
                 
+            latest_decision_stmt = select(func.lower(HrDecision.decision)).where(HrDecision.candidate_id == Candidate.id)
+            
+            if stage_id:
+                decision_stage_filter = or_()
+                if stage_ids:
+                    decision_stage_filter = or_(decision_stage_filter, HrDecision.stage_config_id.in_(stage_ids))
+                if stage_names:
+                    decision_stage_filter = or_(
+                        decision_stage_filter,
+                        exists().where(
+                            and_(
+                                JobStageConfig.id == HrDecision.stage_config_id,
+                                JobStageConfig.template_id == StageTemplate.id,
+                                func.lower(StageTemplate.name).in_(stage_names)
+                            )
+                        )
+                    )
+                    if "resume screening" in stage_names:
+                        decision_stage_filter = or_(decision_stage_filter, HrDecision.stage_config_id.is_(None))
+                
+                latest_decision_stmt = latest_decision_stmt.where(decision_stage_filter)
+
             latest_decision_subq = (
-                select(func.lower(HrDecision.decision))
-                .where(HrDecision.candidate_id == Candidate.id)
+                latest_decision_stmt
                 .order_by(HrDecision.decided_at.desc())
                 .limit(1)
                 .scalar_subquery()
             )
             
             if "pending" in hr_decision:
-                # Include candidates where the latest decision is 'pending' OR no decision exists at all
-                dir_stmt = dir_stmt.where(
-                    or_(
-                        latest_decision_subq.in_(hr_decision),
-                        latest_decision_subq.is_(None)
+                # Include candidates where the latest decision (for the selected stage if given) is 'pending' OR no decision exists at all
+                pending_conditions = [
+                    latest_decision_subq.in_(hr_decision),
+                    latest_decision_subq.is_(None)
+                ]
+                
+                # If globally filtering for pending (no stage specified), include candidates currently active in a stage
+                if not stage_id:
+                    pending_conditions.append(
+                        or_(
+                            Candidate.current_status.ilike("%(Active)%"),
+                            Candidate.current_status.ilike("%Pending%"),
+                            Candidate.current_status.is_(None)
+                        )
                     )
-                )
+                    
+                dir_stmt = dir_stmt.where(or_(*pending_conditions))
             else:
                 dir_stmt = dir_stmt.where(latest_decision_subq.in_(hr_decision))
 

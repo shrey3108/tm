@@ -56,6 +56,13 @@ async def get_candidate_stage_evaluation(
                     "suggested_followups": []
                 }
             }
+        if stage and stage.status in ["pending", "processing", "in_progress", "scheduled"]:
+            from fastapi.responses import JSONResponse
+            return JSONResponse(
+                status_code=202, 
+                content={"status": "processing", "detail": "Evaluation is currently processing"}
+            )
+            
         raise HTTPException(status_code=404, detail="Evaluation not found for this candidate stage")
     return evaluation
 
