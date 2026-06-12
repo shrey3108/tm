@@ -65,7 +65,7 @@ export const StageCandidatesHeader = ({
           <Button
             variant="secondary"
             size="sm"
-            className="h-9 rounded-xl border border-muted-foreground/10 px-4 shrink-0"
+            className="h-9 rounded-xl border border-muted-foreground/10 px-4 shrink-0 font-semibold"
             onClick={onInfoClick}
           >
             JD

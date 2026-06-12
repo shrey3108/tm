@@ -15,6 +15,10 @@ from app.v1.db.session import get_db
 from app.v1.dependencies import check_permission
 from app.v1.db.models.question_set_paper import QuestionSetPaper
 from app.v1.db.models.candidate_test_paper import CandidateTestPaper
+from app.v1.db.models.candidate_test_paper_history import CandidateTestPaperHistory
+from app.v1.db.models.candidate_stages import CandidateStage
+from app.v1.db.models.job_stage_configs import JobStageConfig
+from app.v1.db.models.stage_templates import StageTemplate
 from app.v1.services.email_service import send_candidate_task_email_via_smtp
 from app.v1.utils.pdf_generator import generate_candidate_task_pdf_file
 from app.v1.db.models.candidates import Candidate
@@ -27,6 +31,7 @@ from app.v1.schemas.task_papers import (
     CandidateTestPaperAssign,
     CandidateTestPaperEmailSend,
     CandidateTestPaperBulkEmailSend,
+    CandidateTestPaperHistoryRead,
 )
 from app.v1.schemas.user import UserRead
 from app.v1.schemas.upload import CandidateTaskRead, JobCandidateSkillsRead
@@ -34,7 +39,32 @@ from app.v1.services.admin.candidate_task_service import candidate_task_service
 from app.v1.utils.uuid import UUIDHelper
 from app.v1.core.decorators import cache_response
 
+
 router = APIRouter()
+
+
+async def get_candidate_active_job_id(db: AsyncSession, candidate: Candidate) -> Optional[uuid.UUID]:
+    """Resolve the candidate's active job ID.
+    Looks up CandidateStage for an active Technical Practical Round stage.
+    Falls back to candidate.applied_job_id if no active stage exists.
+    """
+    stmt = (
+        select(JobStageConfig.job_id)
+        .join(CandidateStage, CandidateStage.job_stage_id == JobStageConfig.id)
+        .join(StageTemplate, JobStageConfig.template_id == StageTemplate.id)
+        .where(
+            CandidateStage.candidate_id == candidate.id,
+            CandidateStage.status == "active",
+            StageTemplate.name == "Technical Practical Round"
+        )
+        .limit(1)
+    )
+    res = await db.execute(stmt)
+    active_job_id = res.scalar_one_or_none()
+    if active_job_id:
+        return active_job_id
+    return candidate.applied_job_id
+
 
 
 @router.post("/upload", response_model=list[QuestionSetPaperRead], status_code=status.HTTP_201_CREATED)
@@ -242,21 +272,39 @@ async def assign_test_paper_to_candidate(
 
         candidate_id = candidate.id
 
-        if not candidate.applied_job_id:
+        # Verify if Technical Practical Round is completed
+        stmt_stage = (
+            select(CandidateStage)
+            .join(JobStageConfig, CandidateStage.job_stage_id == JobStageConfig.id)
+            .join(StageTemplate, JobStageConfig.template_id == StageTemplate.id)
+            .where(
+                CandidateStage.candidate_id == candidate_id,
+                StageTemplate.name == "Technical Practical Round"
+            )
+        )
+        res_stage = await db.execute(stmt_stage)
+        stages = res_stage.scalars().all()
+        if any(s.status == "completed" for s in stages):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot assign or modify test paper after the candidate has completed the Technical Practical Round.",
+            )
+
+        job_id = await get_candidate_active_job_id(db, candidate)
+        if not job_id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Candidate does not have an associated job.",
             )
 
         # Fetch candidate's job position level
-        job = await db.get(Job, candidate.applied_job_id)
+        job = await db.get(Job, job_id)
         if not job or not job.position_id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Candidate's job does not have an experience level position configured.",
             )
 
-        job_id = candidate.applied_job_id
         position_id = job.position_id
 
         # Delete any existing test paper assignment for this candidate to prevent unique constraint conflicts
@@ -389,6 +437,20 @@ async def assign_test_paper_to_candidate(
         task_skills=assigned_skills,
     )
     db.add(new_paper)
+
+    if candidate_id:
+        history_entry = CandidateTestPaperHistory(
+            candidate_id=candidate_id,
+            job_id=job_id,
+            name=assigned_name,
+            questions=assigned_questions,
+            project_task=assigned_task,
+            task_file_path=assigned_file_path,
+            task_skills=assigned_skills,
+            user_id=user.id,
+        )
+        db.add(history_entry)
+
     await db.commit()
     await db.refresh(new_paper)
     return new_paper
@@ -405,23 +467,109 @@ async def get_candidate_test_paper(
     res = await db.execute(stmt)
     paper = res.scalar_one_or_none()
     
+    is_candidate_specific = (paper is not None)
+
     if not paper:
+        # Check if candidate has reached the Technical Practical Round before falling back
+        stmt_stage = (
+            select(CandidateStage)
+            .join(JobStageConfig, CandidateStage.job_stage_id == JobStageConfig.id)
+            .join(StageTemplate, JobStageConfig.template_id == StageTemplate.id)
+            .where(
+                CandidateStage.candidate_id == candidate_id,
+                StageTemplate.name == "Technical Practical Round",
+                CandidateStage.status.in_(["active", "completed"])
+            )
+        )
+        res_stage = await db.execute(stmt_stage)
+        stages = res_stage.scalars().all()
+        if not stages:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No test paper assigned. Candidate has not reached the Technical Practical Round yet.",
+            )
+
         # Fallback to job-level default test paper!
         candidate = await db.get(Candidate, candidate_id)
-        if candidate and candidate.applied_job_id:
-            stmt_job = select(CandidateTestPaper).where(
-                CandidateTestPaper.job_id == candidate.applied_job_id,
-                CandidateTestPaper.candidate_id.is_(None)
-            )
-            res_job = await db.execute(stmt_job)
-            paper = res_job.scalar_one_or_none()
+        if candidate:
+            job_id = await get_candidate_active_job_id(db, candidate)
+            if job_id:
+                stmt_job = select(CandidateTestPaper).where(
+                    CandidateTestPaper.job_id == job_id,
+                    CandidateTestPaper.candidate_id.is_(None)
+                )
+                res_job = await db.execute(stmt_job)
+                paper = res_job.scalar_one_or_none()
+
+
 
     if not paper:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="No test paper assigned to this candidate.",
         )
+
+    # Set default values for comparison fields
+    paper.job_default_paper_changed = False
+    paper.job_default_paper_name = None
+    paper.job_default_paper_id = None
+
+    if is_candidate_specific:
+        # Check if job-level default paper is different
+        candidate = await db.get(Candidate, candidate_id)
+        if candidate:
+            job_id = await get_candidate_active_job_id(db, candidate)
+            if job_id:
+                stmt_job = select(CandidateTestPaper).where(
+                    CandidateTestPaper.job_id == job_id,
+                    CandidateTestPaper.candidate_id.is_(None)
+                )
+                res_job = await db.execute(stmt_job)
+                job_paper = res_job.scalar_one_or_none()
+                if job_paper:
+                    if (paper.name != job_paper.name or 
+                        paper.project_task != job_paper.project_task or 
+                        paper.task_file_path != job_paper.task_file_path):
+                        paper.job_default_paper_changed = True
+                        paper.job_default_paper_name = job_paper.name
+                        paper.job_default_paper_id = job_paper.id
+
     return paper
+
+
+@router.get("/assigned/{candidate_id}/history", response_model=list[CandidateTestPaperHistoryRead])
+async def get_candidate_test_paper_history(
+    candidate_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    user: UserRead = Depends(check_permission("candidates:access")),
+):
+    """Retrieve the assignment and email log history for the candidate."""
+    stmt = (
+        select(CandidateTestPaperHistory)
+        .where(CandidateTestPaperHistory.candidate_id == candidate_id)
+        .order_by(CandidateTestPaperHistory.assigned_at.desc())
+    )
+    res = await db.execute(stmt)
+    history_records = res.scalars().all()
+    return history_records
+
+
+@router.get("/assigned/job/{job_id}/history", response_model=list[CandidateTestPaperHistoryRead])
+async def get_job_test_paper_history(
+    job_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    user: UserRead = Depends(check_permission("candidates:access")),
+):
+    """Retrieve the assignment and email log history for all candidates under a specific job."""
+    stmt = (
+        select(CandidateTestPaperHistory)
+        .where(CandidateTestPaperHistory.job_id == job_id)
+        .order_by(CandidateTestPaperHistory.assigned_at.desc())
+    )
+    res = await db.execute(stmt)
+    history_records = res.scalars().all()
+    return history_records
+
 
 
 @router.delete("/assigned/{candidate_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -431,6 +579,24 @@ async def delete_candidate_test_paper(
     user: UserRead = Depends(check_permission("candidates:decide")),
 ):
     """Unassign/delete the candidate's test paper."""
+    # Verify if Technical Practical Round is completed
+    stmt_stage = (
+        select(CandidateStage)
+        .join(JobStageConfig, CandidateStage.job_stage_id == JobStageConfig.id)
+        .join(StageTemplate, JobStageConfig.template_id == StageTemplate.id)
+        .where(
+            CandidateStage.candidate_id == candidate_id,
+            StageTemplate.name == "Technical Practical Round"
+        )
+    )
+    res_stage = await db.execute(stmt_stage)
+    stages = res_stage.scalars().all()
+    if any(s.status == "completed" for s in stages):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot assign or modify test paper after the candidate has completed the Technical Practical Round.",
+        )
+
     stmt = select(CandidateTestPaper).where(CandidateTestPaper.candidate_id == candidate_id)
     res = await db.execute(stmt)
     paper = res.scalar_one_or_none()
@@ -551,13 +717,38 @@ async def download_candidate_task_file(
     res_paper = await db.execute(stmt_paper)
     test_paper = res_paper.scalar_one_or_none()
     
-    if not test_paper and candidate.applied_job_id:
-        stmt_job = select(CandidateTestPaper).where(
-            CandidateTestPaper.job_id == candidate.applied_job_id,
-            CandidateTestPaper.candidate_id.is_(None)
+    if not test_paper:
+        # Check if candidate has reached the Technical Practical Round before falling back
+        stmt_stage = (
+            select(CandidateStage)
+            .join(JobStageConfig, CandidateStage.job_stage_id == JobStageConfig.id)
+            .join(StageTemplate, JobStageConfig.template_id == StageTemplate.id)
+            .where(
+                CandidateStage.candidate_id == candidate_id,
+                StageTemplate.name == "Technical Practical Round",
+                CandidateStage.status.in_(["active", "completed"])
+            )
         )
-        res_job = await db.execute(stmt_job)
-        test_paper = res_job.scalar_one_or_none()
+
+        res_stage = await db.execute(stmt_stage)
+        stages = res_stage.scalars().all()
+        if not stages:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No test paper assigned. Candidate has not reached the Technical Practical Round yet.",
+            )
+
+        candidate = await db.get(Candidate, candidate_id)
+        if candidate:
+            job_id = await get_candidate_active_job_id(db, candidate)
+            if job_id:
+                stmt_job = select(CandidateTestPaper).where(
+                    CandidateTestPaper.job_id == job_id,
+                    CandidateTestPaper.candidate_id.is_(None)
+                )
+                res_job = await db.execute(stmt_job)
+                test_paper = res_job.scalar_one_or_none()
+
 
     task_file_path = candidate.task_file_path or (test_paper.task_file_path if test_paper else None)
 
@@ -638,17 +829,66 @@ async def send_test_paper_email(
             detail=f"CandidateTestPaper with ID {email_data.paper_id} not found.",
         )
     if paper.candidate_id != candidate.id:
-        if not (paper.candidate_id is None and paper.job_id == candidate.applied_job_id):
+        job_id = await get_candidate_active_job_id(db, candidate)
+        if not (paper.candidate_id is None and paper.job_id == job_id):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="The specified test paper does not belong to this candidate.",
             )
 
-    if paper.email_sent_count > 0 and not email_data.force:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Email has already been sent to this candidate. Are you sure you want to send it again?",
+    # Clone/lock job-level paper for this candidate
+    if paper.candidate_id is None:
+        stmt_existing = select(CandidateTestPaper).where(
+            CandidateTestPaper.candidate_id == candidate.id,
+            CandidateTestPaper.job_id == paper.job_id
         )
+        res_existing = await db.execute(stmt_existing)
+        existing_paper = res_existing.scalar_one_or_none()
+        if existing_paper:
+            if existing_paper.email_sent_count > 0 and not email_data.force:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Email has already been sent to this candidate. Are you sure you want to send it again?",
+                )
+            existing_paper.name = paper.name
+            existing_paper.questions = paper.questions
+            existing_paper.project_task = paper.project_task
+            existing_paper.task_file_path = paper.task_file_path
+            existing_paper.task_skills = paper.task_skills
+            paper = existing_paper
+        else:
+            paper = CandidateTestPaper(
+                candidate_id=candidate.id,
+                job_id=paper.job_id,
+                position_id=paper.position_id,
+                name=paper.name,
+                questions=paper.questions,
+                project_task=paper.project_task,
+                task_file_path=paper.task_file_path,
+                task_skills=paper.task_skills,
+                email_sent_count=0
+            )
+            db.add(paper)
+            await db.flush()
+    else:
+        if paper.email_sent_count > 0 and not email_data.force:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Email has already been sent to this candidate. Are you sure you want to send it again?",
+            )
+
+    # Log this assignment/email in CandidateTestPaperHistory
+    history_entry = CandidateTestPaperHistory(
+        candidate_id=candidate.id,
+        job_id=paper.job_id,
+        name=paper.name,
+        questions=paper.questions,
+        project_task=paper.project_task,
+        task_file_path=paper.task_file_path,
+        task_skills=paper.task_skills,
+        user_id=user.id,
+    )
+    db.add(history_entry)
 
     try:
         await send_candidate_task_email_via_smtp(candidate, paper, db)
@@ -668,7 +908,7 @@ async def send_test_paper_email(
 
     return {
         "status": "success",
-        "message": f"Assigned test paper email successfully sent to moxiyi8243@herojp.com (intended for: {candidate.email}).",
+        "message": f"Assigned test paper email successfully sent to shreyshukla512@gmail.com (intended for: {candidate.email}).",
     }
 
 
@@ -719,7 +959,8 @@ async def send_bulk_test_paper_email(
     # 3. Validate paper ownership for each candidate
     for candidate in candidates:
         if paper.candidate_id != candidate.id:
-            if not (paper.candidate_id is None and paper.job_id == candidate.applied_job_id):
+            job_id = await get_candidate_active_job_id(db, candidate)
+            if not (paper.candidate_id is None and paper.job_id == job_id):
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=f"The specified test paper does not belong to candidate {candidate.email}.",
@@ -738,17 +979,65 @@ async def send_bulk_test_paper_email(
     failed_emails = []
     for candidate in candidates:
         try:
-            await send_candidate_task_email_via_smtp(candidate, paper, db)
+            current_paper = paper
+            if paper.candidate_id is None:
+                stmt_existing = select(CandidateTestPaper).where(
+                    CandidateTestPaper.candidate_id == candidate.id,
+                    CandidateTestPaper.job_id == paper.job_id
+                )
+                res_existing = await db.execute(stmt_existing)
+                existing_paper = res_existing.scalar_one_or_none()
+                if existing_paper:
+                    if existing_paper.email_sent_count > 0 and not email_data.force:
+                        raise HTTPException(
+                            status_code=status.HTTP_409_CONFLICT,
+                            detail=f"Email has already been sent to candidate {candidate.email}. Are you sure you want to send it again?",
+                        )
+                    existing_paper.name = paper.name
+                    existing_paper.questions = paper.questions
+                    existing_paper.project_task = paper.project_task
+                    existing_paper.task_file_path = paper.task_file_path
+                    existing_paper.task_skills = paper.task_skills
+                    current_paper = existing_paper
+                else:
+                    # Create a cloned candidate-specific test paper
+                    current_paper = CandidateTestPaper(
+                        candidate_id=candidate.id,
+                        job_id=paper.job_id,
+                        position_id=paper.position_id,
+                        name=paper.name,
+                        questions=paper.questions,
+                        project_task=paper.project_task,
+                        task_file_path=paper.task_file_path,
+                        task_skills=paper.task_skills,
+                        email_sent_count=0
+                    )
+                    db.add(current_paper)
+                    await db.flush()
+
+            # Record in history
+            history_entry = CandidateTestPaperHistory(
+                candidate_id=candidate.id,
+                job_id=current_paper.job_id,
+                name=current_paper.name,
+                questions=current_paper.questions,
+                project_task=current_paper.project_task,
+                task_file_path=current_paper.task_file_path,
+                task_skills=current_paper.task_skills,
+                user_id=user.id,
+            )
+            db.add(history_entry)
+
+            await send_candidate_task_email_via_smtp(candidate, current_paper, db)
+            current_paper.email_sent_count += 1
+            db.add(current_paper)
             sent_emails.append(candidate.email)
         except Exception as e:
             logger.exception(f"Failed to send bulk email to {candidate.email}: {e}")
             failed_emails.append({"email": candidate.email, "error": str(e)})
 
-    # Increment if any emails sent
-    if sent_emails:
-        paper.email_sent_count += 1
-        db.add(paper)
-        await db.commit()
+    # Commit transactions
+    await db.commit()
 
     if not sent_emails and failed_emails:
         raise HTTPException(
