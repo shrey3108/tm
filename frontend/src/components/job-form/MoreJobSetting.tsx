@@ -1,18 +1,18 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useFormContext } from "react-hook-form";
 import type { JobVersionMinimal } from "@/types/job";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Eye, History, FileText, Upload, ExternalLink, Trash } from "lucide-react";
+import { Eye, History } from "lucide-react";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { JDPreviewModal } from "./JDPreviewModal";
-import { ALLOWED_TASK_FILE_TYPES } from "@/constants";
-import { useDownloadJobTask } from "@/hooks/queries/jobs";
-import { useDeleteJobTaskMutation } from "@/hooks/mutations/jobs/useJobTaskMutations";
-import { toast } from "sonner";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+// import { ALLOWED_TASK_FILE_TYPES } from "@/constants";
+// import { useDownloadJobTask } from "@/hooks/queries/jobs";
+// import { useDeleteJobTaskMutation } from "@/hooks/mutations/jobs/useJobTaskMutations";
+// import { toast } from "sonner";
+// import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 
 export interface MoreJobSettingProps {
     jobId: string | null;
@@ -20,55 +20,55 @@ export interface MoreJobSettingProps {
     taskSkills?: string[] | null;
 }
 
-export function MoreJobSetting({ versions, taskSkills, jobId }: MoreJobSettingProps) {
-    const { control, setValue } = useFormContext();
+export function MoreJobSetting({ versions }: MoreJobSettingProps) {
+    const { control } = useFormContext();
     const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-    const fileInputRef = useRef<HTMLInputElement>(null);
-    const { data: jobTaskBlob } = useDownloadJobTask(jobId);
-    const { mutate: deleteJobTaskMutation } = useDeleteJobTaskMutation();
+    // const fileInputRef = useRef<HTMLInputElement>(null);
+    // const { data: jobTaskBlob } = useDownloadJobTask(jobId);
+    // const { mutate: deleteJobTaskMutation } = useDeleteJobTaskMutation();
 
     const handleViewJD = (versionId: string) => {
         setIsDialogOpen(true);
         setSelectedVersionId(versionId);
     };
 
-    const handleViewJobTask = () => {
-        if (!jobTaskBlob) return;
-        const url = URL.createObjectURL(jobTaskBlob);
-        window.open(url, "_blank");
-    };
+    // const handleViewJobTask = () => {
+    //     if (!jobTaskBlob) return;
+    //     const url = URL.createObjectURL(jobTaskBlob);
+    //     window.open(url, "_blank");
+    // };
 
-    const handleDeleteJobTask = () => {
-        if (!jobId) return;
-        deleteJobTaskMutation(jobId, {
-            onSuccess: () => {
-                setValue("project_document", undefined);
-                if (fileInputRef.current) {
-                    fileInputRef.current.value = "";
-                }
-                toast.success("Project requirement documentation deleted successfully.");
-            },
-            onError: (error) => {
-                console.error("Failed to delete task document:", error);
-                toast.error("Failed to delete project requirement documentation.");
-            }
-        });
-    };
+    // const handleDeleteJobTask = () => {
+    //     if (!jobId) return;
+    //     deleteJobTaskMutation(jobId, {
+    //         onSuccess: () => {
+    //             setValue("project_document", undefined);
+    //             if (fileInputRef.current) {
+    //                 fileInputRef.current.value = "";
+    //             }
+    //             toast.success("Project requirement documentation deleted successfully.");
+    //         },
+    //         onError: (error) => {
+    //             console.error("Failed to delete task document:", error);
+    //             toast.error("Failed to delete project requirement documentation.");
+    //         }
+    //     });
+    // };
 
-    const handleClearFile = (e: React.MouseEvent, onChange: (...event: any[]) => void) => {
-        e.stopPropagation();
-        onChange(undefined);
-        if (fileInputRef.current) {
-            fileInputRef.current.value = "";
-        }
-    };
+    // const handleClearFile = (e: React.MouseEvent, onChange: (...event: any[]) => void) => {
+    //     e.stopPropagation();
+    //     onChange(undefined);
+    //     if (fileInputRef.current) {
+    //         fileInputRef.current.value = "";
+    //     }
+    // };
 
     const hasVersions = versions && versions.length > 0;
 
     return (
-        <Card className="border-muted/40 shadow-sm overflow-hidden bg-card/50 backdrop-blur-sm">
+        hasVersions && <Card className="border-muted/40 shadow-sm overflow-hidden bg-card/50 backdrop-blur-sm">
             <CardContent className="p-6 space-y-6">
                 {hasVersions && (
                     <div className="space-y-6">
@@ -132,10 +132,10 @@ export function MoreJobSetting({ versions, taskSkills, jobId }: MoreJobSettingPr
                     </div>
                 )}
 
-                {hasVersions && <div className="border-t border-muted/20 my-2"></div>}
+                {/* {hasVersions && <div className="border-t border-muted/20 my-2"></div>} */}
 
                 {/* Project Requirement Documentation Section */}
-                <div className="space-y-6">
+                {/* <div className="space-y-6">
                     <div className="flex items-center gap-2 mb-2">
                         <div className="p-2 rounded-lg bg-primary/10 text-primary">
                             <FileText className="h-5 w-5" />
@@ -278,7 +278,7 @@ export function MoreJobSetting({ versions, taskSkills, jobId }: MoreJobSettingPr
                             </AccordionItem>
                         </Accordion>
                     )}
-                </div>
+                </div> */}
             </CardContent>
 
             {/* JD Preview Modal */}

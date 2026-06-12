@@ -6,6 +6,7 @@ import { TranscriptUpload } from "./TranscriptUpload";
 import { ProjectSubmissionDialog } from "./projectSubmission/ProjectSubmissionDialog";
 import { SendQuestionPaperDialog } from "./projectSubmission/SendQuestionPaperDialog";
 import { SendIcon } from "lucide-react";
+import { useCandidateTestPaper } from "@/hooks/queries/taskPapers/useTaskPaperQueries";
 interface StageCandidatesHeaderProps {
   /** Associated job for the candidate stage view */
   job: Job | null;
@@ -45,6 +46,7 @@ export const StageCandidatesHeader = ({
 }: StageCandidatesHeaderProps) => {
   const [isProjectSubmissionDialogOpen, setIsProjectSubmissionDialogOpen] = useState(false);
   const [isSendQuestionPaperDialogOpen, setIsSendQuestionPaperDialogOpen] = useState(false);
+  const { data: assignedPaper } = useCandidateTestPaper(candidateId);
 
   return (
     <AppPageHeader
@@ -80,13 +82,13 @@ export const StageCandidatesHeader = ({
                   onClick={() => setIsSendQuestionPaperDialogOpen(true)}
                   disabled={isUploaded || !job?.is_active}
                 >
-                  <SendIcon className="h-4 w-4" /> Send Question Paper
+                  <SendIcon className="h-4 w-4" /> Send Question Paper {`(${assignedPaper?.email_sent_count || 0})`}
                 </Button>
                 <Button
                   variant="outline"
                   className="rounded-xl border border-muted-foreground/10 px-5 font-semibold text-center h-9"
                   onClick={() => setIsProjectSubmissionDialogOpen(true)}
-                  disabled={isUploaded || !job?.is_active}
+                  disabled={isUploaded || !job?.is_active || assignedPaper?.email_sent_count == 0}
                 >
                   Project Submission
                 </Button>

@@ -400,6 +400,7 @@ export default function JobCandidates() {
           candidateName={selectedCandidates?.[0]?.first_name || ""}
           candidateId={selectedCandidates?.[0]?.id}
           selectedCandidates={selectedCandidates}
+          allCandidates={candidates}
           onSuccess={() => {
             fetchData();
             setRowSelection({});

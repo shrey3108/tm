@@ -4,6 +4,7 @@ import { QUERY_KEYS } from "@/constants/queryKeys";
 import type {
   CandidateTestPaperAssign,
   CandidateTestPaperEmailSend,
+  CandidateTestPaperBulkEmailSend,
 } from "@/types/taskPaper";
 
 /**
@@ -100,11 +101,51 @@ export function useDeleteCandidateTestPaperMutation() {
 }
 
 /**
+ * Hook to delete the default common test paper assigned to the job.
+ */
+export function useDeleteJobDefaultTestPaperMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (jobId: string) =>
+      taskService.deleteJobDefaultTestPaper(jobId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.TASK_PAPERS.ASSIGNED],
+      });
+    },
+  });
+}
+
+/**
  * Hook to trigger sending the notification email with assigned test details to the candidate.
  */
 export function useSendTestPaperEmailMutation() {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: CandidateTestPaperEmailSend) =>
       taskService.sendTestPaperEmail(data),
+    // invalidate 
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.TASK_PAPERS.ASSIGNED],
+      });
+    },
+  });
+}
+
+/**
+ * Hook to trigger sending the notification email with assigned test details in bulk.
+ */
+export function useSendBulkTestPaperEmailMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CandidateTestPaperBulkEmailSend) =>
+      taskService.sendBulkTestPaperEmail(data),
+    // invalidate 
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.TASK_PAPERS.ASSIGNED],
+      });
+    },
   });
 }

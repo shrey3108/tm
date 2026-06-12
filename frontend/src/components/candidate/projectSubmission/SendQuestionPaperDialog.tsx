@@ -1,10 +1,24 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { FileQuestion } from "lucide-react";
 import { useQuestionSetPapers, useCandidateTestPaper } from "@/hooks/queries/taskPapers/useTaskPaperQueries";
-import { useAssignTestPaperMutation, useSendTestPaperEmailMutation, useDeleteCandidateTestPaperMutation } from "@/hooks/mutations/taskPapers/useTaskPaperMutations";
+import {
+  useAssignTestPaperMutation,
+  useSendTestPaperEmailMutation,
+  useSendBulkTestPaperEmailMutation,
+  useDeleteCandidateTestPaperMutation,
+  useDeleteJobDefaultTestPaperMutation,
+} from "@/hooks/mutations/taskPapers/useTaskPaperMutations";
 import { useCandidateDetailsQuery } from "@/hooks/queries/candidates";
 import type { Job } from "@/types/job";
 import { LoadingSpinner } from "@/components/shared";
@@ -15,6 +29,7 @@ import { PredefinedPaperForm } from "./sendQuestionPaper/PredefinedPaperForm";
 import { RandomizedPaperView } from "./sendQuestionPaper/RandomizedPaperView";
 import { CustomPaperForm } from "./sendQuestionPaper/CustomPaperForm";
 import { SendQuestionPaperFooter } from "./sendQuestionPaper/SendQuestionPaperFooter";
+import { extractErrorMessage } from "@/utils/error";
 
 interface SendQuestionPaperDialogProps {
   isOpen: boolean;
@@ -24,6 +39,7 @@ interface SendQuestionPaperDialogProps {
   job: Job | null;
   onSuccess?: () => void;
   selectedCandidates?: any[];
+  allCandidates?: any[];
 }
 
 type AssignmentMode = "predefined" | "random" | "custom";
@@ -31,7 +47,7 @@ type AssignmentMode = "predefined" | "random" | "custom";
 export function SendQuestionPaperDialog({
   isOpen,
   onOpenChange,
-  candidateName,
+  candidateName: _candidateName,
   candidateId,
   job,
   onSuccess,
@@ -45,12 +61,10 @@ export function SendQuestionPaperDialog({
     loading: loadingAssigned,
     refetch: refetchAssigned,
   } = useCandidateTestPaper(isBulkMode ? undefined : candidateId);
-  // console.log(assignedPaper);
   const { data: candidateDetails } = useCandidateDetailsQuery(
     isBulkMode ? undefined : job?.id,
     isBulkMode ? undefined : candidateId
   );
-  // console.log(candidateDetails);
 
   const { data: predefinedPapers, loading: loadingPredefined } = useQuestionSetPapers({
     jobId: job?.id,
@@ -61,7 +75,9 @@ export function SendQuestionPaperDialog({
   // Mutations
   const assignMutation = useAssignTestPaperMutation();
   const sendEmailMutation = useSendTestPaperEmailMutation();
+  const sendBulkEmailMutation = useSendBulkTestPaperEmailMutation();
   const deleteMutation = useDeleteCandidateTestPaperMutation();
+  const deleteJobDefaultMutation = useDeleteJobDefaultTestPaperMutation();
 
   // Local state for assignment configuration
   const [mode, setMode] = useState<AssignmentMode>("predefined");
@@ -71,7 +87,8 @@ export function SendQuestionPaperDialog({
 
   // Bulk mode states
   const [bulkAssignedPaper, setBulkAssignedPaper] = useState<any | null>(null);
-  const [assignedPapersList, setAssignedPapersList] = useState<any[]>([]);
+  const [_assignedPapersList, setAssignedPapersList] = useState<any[]>([]);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
   // Consolidated assigned paper
   const finalAssignedPaper = isBulkMode ? bulkAssignedPaper : assignedPaper;
@@ -131,47 +148,45 @@ export function SendQuestionPaperDialog({
       }
 
       try {
-        toast.info(`Assigning test paper to ${selectedCandidates.length} candidates...`);
-        const assignPromises = selectedCandidates.map(async (candidate) => {
-          let payload: CandidateTestPaperAssign = {
-            candidate_id: candidate.id,
-            mode,
-          };
-          if (mode === "predefined") {
-            payload.paper_id = selectedPaperId;
-          } else if (mode === "custom") {
-            payload.questions = customQuestions.map((q) => q.trim());
-            payload.project_task = customProjectTask.trim();
-          }
-          return await assignMutation.mutateAsync(payload);
-        });
-
-        const results = await Promise.all(assignPromises);
-        toast.success("Test paper successfully assigned to all candidates!");
-        if (results.length > 0) {
-          setBulkAssignedPaper(results[0]);
-          setAssignedPapersList(results);
+        toast.info("Assigning test paper...");
+        let payload: CandidateTestPaperAssign = {
+          mode,
+          job_id: job?.id,
+          position_id: job?.position_id,
+          source_paper_ids: mode === "random" ? predefinedPapers.map((paper) => paper.id) : []
+        };
+        if (mode === "predefined") {
+          payload.paper_id = selectedPaperId;
+        } else if (mode === "custom") {
+          payload.questions = customQuestions.map((q) => q.trim());
+          payload.project_task = customProjectTask.trim();
         }
+
+        const result = await assignMutation.mutateAsync(payload);
+        toast.success("Test paper successfully assigned!");
+        setBulkAssignedPaper(result);
         if (onSuccess) onSuccess();
       } catch (err: any) {
-        toast.error(err?.response?.data?.detail || "Failed to assign test papers.");
+        toast.error(extractErrorMessage(err));
       }
       return;
     }
 
     try {
-      if (!candidateId) {
-        toast.error("Candidate ID is required to assign a test paper.");
-        return;
-      }
-
       let payload: CandidateTestPaperAssign = {
-        candidate_id: candidateId,
         mode,
         job_id: job?.id,
         position_id: job?.position_id,
         source_paper_ids: mode === "random" ? predefinedPapers.map((paper) => paper.id) : []
       };
+
+      if (selectedCandidates) {
+        if (!candidateId) {
+          toast.error("Candidate ID is required to assign a test paper.");
+          return;
+        }
+        payload.candidate_id = candidateId;
+      }
 
       if (mode === "predefined") {
         if (!selectedPaperId) {
@@ -194,50 +209,71 @@ export function SendQuestionPaperDialog({
 
       toast.info("Assigning test paper...");
       await assignMutation.mutateAsync(payload);
-      toast.success("Test paper successfully assigned to candidate!");
+      toast.success(
+        selectedCandidates
+          ? "Test paper successfully assigned to candidate!"
+          : "Default test paper successfully assigned to job!"
+      );
       refetchAssigned();
       if (onSuccess) onSuccess();
     } catch (err: any) {
-      toast.error(err?.response?.data?.detail || "Failed to assign test paper.");
+      toast.error(extractErrorMessage(err));
     }
   };
 
-  const handleSendEmail = async () => {
+  const executeSendEmail = async (force: boolean) => {
     if (isBulkMode) {
       if (!selectedCandidates || selectedCandidates.length === 0) {
         toast.error("No candidates selected.");
         return;
       }
 
-      try {
-        toast.info(`Sending test paper via email to ${selectedCandidates.length} candidates...`);
-        const sendPromises = selectedCandidates.map(async (candidate) => {
-          const matchedPaper = assignedPapersList.find((paper) => paper.candidate_id === candidate.id);
-          const paperId = matchedPaper?.id;
-          const email = candidate.email;
-          if (paperId && email) {
-            return await sendEmailMutation.mutateAsync({
-              candidate_email: email,
-              paper_id: paperId,
-            });
-          }
-        });
+      // Filter selected candidates to only include those in technical round and pending
+      const filteredSelected = selectedCandidates.filter((candidate) => {
+        const isTechnicalRound =
+          candidate.current_stage?.template_name?.toLowerCase().includes("technical") ||
+          candidate.current_stage?.template_name?.toLowerCase().includes("practical") ||
+          false;
+        const isPendingStatus =
+          candidate.current_stage?.status === "pending" ||
+          candidate.hr_decision === "pending" ||
+          candidate.current_stage?.hr_decision === "pending" ||
+          false;
+        return isTechnicalRound && isPendingStatus;
+      });
 
-        await Promise.all(sendPromises);
-        toast.success(`Successfully sent test paper emails to all candidates!`);
+      if (filteredSelected.length === 0) {
+        toast.error("No selected candidates are in Technical Practical Round with pending decision.");
+        return;
+      }
+
+      const filteredIds = filteredSelected.map((c) => c.id);
+
+      try {
+        toast.info(`Sending test paper via bulk email to ${filteredSelected.length} candidates...`);
+        await sendBulkEmailMutation.mutateAsync({
+          paper_id: finalAssignedPaper.id,
+          candidate_ids: filteredIds,
+          force,
+        });
+        toast.success("Successfully sent test paper emails in bulk!");
         onOpenChange(false);
       } catch (err: any) {
-        toast.error(err?.response?.data?.detail || "Failed to send emails.");
+        toast.error(extractErrorMessage(err));
       }
       return;
     }
 
-    const email = candidateDetails?.email;
+    // Single candidate flow (either selectedCandidates has 1 item, or undefined when opened from detail page)
+    const email = selectedCandidates && selectedCandidates.length === 1
+      ? selectedCandidates[0].email
+      : candidateDetails?.email;
+
     if (!email) {
       toast.error("Candidate email is missing.");
       return;
     }
-    if (!assignedPaper?.id) {
+    if (!finalAssignedPaper?.id) {
       toast.error("No assigned paper found to send.");
       return;
     }
@@ -246,12 +282,23 @@ export function SendQuestionPaperDialog({
       toast.info("Sending test paper via email...");
       await sendEmailMutation.mutateAsync({
         candidate_email: email,
-        paper_id: assignedPaper.id,
+        paper_id: finalAssignedPaper.id,
+        force,
       });
       toast.success(`Successfully sent test paper email to ${email}!`);
       onOpenChange(false);
     } catch (err: any) {
-      toast.error(err?.response?.data?.detail || "Failed to send email.");
+      const message = extractErrorMessage(err);
+      toast.error(message);
+    }
+  };
+
+  const handleSendEmail = async () => {
+    const isAlreadySent = finalAssignedPaper && finalAssignedPaper.email_sent_count && finalAssignedPaper.email_sent_count > 0;
+    if (isAlreadySent) {
+      setIsConfirmOpen(true);
+    } else {
+      await executeSendEmail(false);
     }
   };
 
@@ -274,12 +321,16 @@ export function SendQuestionPaperDialog({
       return;
     }
 
-    if (!candidateId) return;
-
     try {
       toast.info("Removing assignment...");
-      await deleteMutation.mutateAsync(candidateId);
-      toast.success("Assignment removed successfully.");
+      if (assignedPaper && !assignedPaper.candidate_id && job?.id) {
+        await deleteJobDefaultMutation.mutateAsync(job.id);
+        toast.success("Default test paper removed successfully from job.");
+      } else {
+        if (!candidateId) return;
+        await deleteMutation.mutateAsync(candidateId);
+        toast.success("Assignment removed successfully.");
+      }
       refetchAssigned();
       if (onSuccess) onSuccess();
     } catch (err: any) {
@@ -288,122 +339,161 @@ export function SendQuestionPaperDialog({
 
   };
 
-
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-3xl md:max-w-4xl lg:max-w-5xl max-h-[90vh] flex flex-col p-0 overflow-hidden bg-card/95 backdrop-blur-xl border-muted-foreground/20 shadow-2xl rounded-2xl h-[600px] gap-2">
+    <>
+      <Dialog open={isOpen} onOpenChange={onOpenChange}>
+        <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-3xl md:max-w-4xl lg:max-w-5xl max-h-[90vh] flex flex-col p-0 overflow-hidden bg-card/95 backdrop-blur-xl border-muted-foreground/20 shadow-2xl rounded-2xl h-[600px] gap-2">
 
-        {/* Header */}
-        <DialogHeader className="p-2.5 pb-1.5 border-b border-muted-foreground/10 shrink-0">
-          <DialogTitle className="text-xl font-bold tracking-tight flex items-center gap-2">
-            <FileQuestion className="h-4 w-4 text-primary" />
-            {/* Send Question Paper */}
-            {finalAssignedPaper
-              ? `Send Question Paper to `
-              : `Send Question Paper to`}
-            <span className=" text-foreground capitalize">
-              {isBulkMode ? `${selectedCandidates.length} Candidates` : selectedCandidates && selectedCandidates?.length > 0 ? `${selectedCandidates?.map((c) => c.first_name).join(", ")}` : candidateName}
-            </span>
-          </DialogTitle>
-          {/* <DialogDescription className="text-muted-foreground text-sm">
-            {assignedPaper
-              ? `Review the assigned question set and send email notification to `
-              : `Configure and assign a question paper for `}
-            <span className="font-semibold text-foreground capitalize">{candidateName}</span>.
-          </DialogDescription> */}
-          <div className="flex gap-1">
-            <Button
-              type="button"
-              variant={mode === "predefined" ? "secondary" : "ghost"}
-              onClick={() => setMode("predefined")}
-              disabled={loadingPredefined || !predefinedPapers || predefinedPapers.length === 0}
-              className={`flex-1 rounded-lg font-semibold text-sm ${mode === "predefined" ? "shadow-sm" : "text-muted-foreground"
-                }`}
-            >
-              Predefined Paper
-            </Button>
-            <Button
-              type="button"
-              variant={mode === "random" ? "secondary" : "ghost"}
-              onClick={() => setMode("random")}
-              disabled={loadingPredefined || !predefinedPapers || predefinedPapers.length === 0}
-              className={`flex-1 rounded-lg font-semibold text-sm ${mode === "random" ? "shadow-sm" : "text-muted-foreground"
-                }`}
-            >
-              Randomized Paper
-            </Button>
-            <Button
-              type="button"
-              variant={mode === "custom" ? "secondary" : "ghost"}
-              onClick={() => setMode("custom")}
-              className={`flex-1 rounded-lg font-semibold text-sm ${mode === "custom" ? "shadow-sm" : "text-muted-foreground"
-                }`}
-            >
-              Custom Paper
-            </Button>
+          {/* Header */}
+          <DialogHeader className="p-2.5 pb-1.5 border-b border-muted-foreground/10 shrink-0">
+            <DialogTitle className="text-xl font-bold tracking-tight flex items-center gap-2">
+              <FileQuestion className="h-4 w-4 text-primary" />
+              {selectedCandidates ? (
+                <>
+                  {finalAssignedPaper ? "Send Question Paper to " : "Send Question Paper to "}
+                  <span className="text-foreground capitalize">
+                    {isBulkMode
+                      ? `${selectedCandidates.length} Candidates`
+                      : `${selectedCandidates[0]?.first_name || ""} ${selectedCandidates[0]?.last_name || ""}`.trim()}
+                  </span>
+                </>
+              ) : (
+                <span className="text-foreground">Set Default Question Paper for All Candidates</span>
+              )}
+            </DialogTitle>
+            {/* <DialogDescription className="text-muted-foreground text-sm">
+              {assignedPaper
+                ? `Review the assigned question set and send email notification to `
+                : `Configure and assign a question paper for `}
+              <span className="font-semibold text-foreground capitalize">{candidateName}</span>.
+            </DialogDescription> */}
+            {!finalAssignedPaper && <div className="flex gap-1">
+              <Button
+                type="button"
+                variant={mode === "predefined" ? "secondary" : "ghost"}
+                onClick={() => setMode("predefined")}
+                disabled={loadingPredefined || !predefinedPapers || predefinedPapers.length === 0}
+                className={`flex-1 rounded-lg font-semibold text-sm ${mode === "predefined" ? "shadow-sm" : "text-muted-foreground"
+                  }`}
+              >
+                Predefined Paper
+              </Button>
+              <Button
+                type="button"
+                variant={mode === "random" ? "secondary" : "ghost"}
+                onClick={() => setMode("random")}
+                disabled={loadingPredefined || !predefinedPapers || predefinedPapers.length === 0}
+                className={`flex-1 rounded-lg font-semibold text-sm ${mode === "random" ? "shadow-sm" : "text-muted-foreground"
+                  }`}
+              >
+                Randomized Paper
+              </Button>
+              <Button
+                type="button"
+                variant={mode === "custom" ? "secondary" : "ghost"}
+                onClick={() => setMode("custom")}
+                className={`flex-1 rounded-lg font-semibold text-sm ${mode === "custom" ? "shadow-sm" : "text-muted-foreground"
+                  }`}
+              >
+                Custom Paper
+              </Button>
+            </div>}
+          </DialogHeader>
+
+          {/* Content body */}
+          <div className="flex-1 overflow-y-auto p-0.5 min-h-0">
+            {loadingAssigned ? (
+              <LoadingSpinner message="Checking candidate's test paper assignment..." />
+            ) : finalAssignedPaper ? (
+              /* ASSIGNED VIEW */
+              <AssignedPaperView
+                assignedPaper={finalAssignedPaper}
+                onUnassign={handleUnassign}
+                isUnassigning={deleteMutation.isPending}
+              />
+            ) : (
+              /* UNASSIGNED VIEW / SELECTION & CREATION SHEET */
+              <div className="space-y-1.5 animate-in fade-in duration-300">
+
+                {/* Predefined Selection */}
+                {mode === "predefined" && (
+                  <PredefinedPaperForm
+                    predefinedPapers={predefinedPapers || []}
+                    selectedPaperId={selectedPaperId}
+                    onSelectPaperId={setSelectedPaperId}
+                  />
+                )}
+
+                {/* Randomized Explanation */}
+                {mode === "random" && (
+                  <RandomizedPaperView
+                    jobTitle={job?.title}
+                    positionName={job?.position?.name}
+                  />
+                )}
+
+                {/* Custom Builder Form */}
+                {mode === "custom" && (
+                  <CustomPaperForm
+                    predefinedPapers={predefinedPapers || []}
+                    customQuestions={customQuestions}
+                    onCustomQuestionsChange={setCustomQuestions}
+                    customProjectTask={customProjectTask}
+                    onCustomProjectTaskChange={setCustomProjectTask}
+                  />
+                )}
+              </div>
+            )}
           </div>
-        </DialogHeader>
 
-        {/* Content body */}
-        <div className="flex-1 overflow-y-auto p-0.5 min-h-0">
-          {loadingAssigned ? (
-            <LoadingSpinner message="Checking candidate's test paper assignment..." />
-          ) : finalAssignedPaper ? (
-            /* ASSIGNED VIEW */
-            <AssignedPaperView
-              assignedPaper={finalAssignedPaper}
-              onUnassign={handleUnassign}
-              isUnassigning={deleteMutation.isPending}
-            />
-          ) : (
-            /* UNASSIGNED VIEW / SELECTION & CREATION SHEET */
-            <div className="space-y-1.5 animate-in fade-in duration-300">
+          {/* Footer actions */}
+          <SendQuestionPaperFooter
+            onCancel={() => onOpenChange(false)}
+            hasAssignedPaper={!!finalAssignedPaper}
+            mode={mode}
+            selectedPaperId={selectedPaperId}
+            customQuestions={customQuestions}
+            customProjectTask={customProjectTask}
+            isAssignPending={assignMutation.isPending}
+            isSendEmailPending={sendEmailMutation.isPending}
+            onAssign={handleAssign}
+            onSendEmail={handleSendEmail}
+          />
+        </DialogContent>
+      </Dialog>
 
-              {/* Predefined Selection */}
-              {mode === "predefined" && (
-                <PredefinedPaperForm
-                  predefinedPapers={predefinedPapers || []}
-                  selectedPaperId={selectedPaperId}
-                  onSelectPaperId={setSelectedPaperId}
-                />
-              )}
-
-              {/* Randomized Explanation */}
-              {mode === "random" && (
-                <RandomizedPaperView
-                  jobTitle={job?.title}
-                  positionName={job?.position?.name}
-                />
-              )}
-
-              {/* Custom Builder Form */}
-              {mode === "custom" && (
-                <CustomPaperForm
-                  predefinedPapers={predefinedPapers || []}
-                  customQuestions={customQuestions}
-                  onCustomQuestionsChange={setCustomQuestions}
-                  customProjectTask={customProjectTask}
-                  onCustomProjectTaskChange={setCustomProjectTask}
-                />
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Footer actions */}
-        <SendQuestionPaperFooter
-          onCancel={() => onOpenChange(false)}
-          hasAssignedPaper={!!finalAssignedPaper}
-          mode={mode}
-          selectedPaperId={selectedPaperId}
-          customQuestions={customQuestions}
-          customProjectTask={customProjectTask}
-          isAssignPending={assignMutation.isPending}
-          isSendEmailPending={sendEmailMutation.isPending}
-          onAssign={handleAssign}
-          onSendEmail={handleSendEmail}
-        />
-      </DialogContent>
-    </Dialog>
+      <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+        <AlertDialogContent className="max-w-md bg-card/95 backdrop-blur-xl border-muted-foreground/20 shadow-2xl rounded-2xl p-6">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-lg font-bold text-foreground">Confirm Re-sending Email</AlertDialogTitle>
+            <AlertDialogDescription className="text-sm text-muted-foreground leading-relaxed mt-2">
+              Email has already been sent to this candidate. Are you sure you want to send it again?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex justify-end gap-3 mt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsConfirmOpen(false)}
+              disabled={sendEmailMutation.isPending || sendBulkEmailMutation.isPending}
+              className="rounded-xl"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={async () => {
+                await executeSendEmail(true);
+                setIsConfirmOpen(false);
+              }}
+              disabled={sendEmailMutation.isPending || sendBulkEmailMutation.isPending}
+              className="rounded-xl font-semibold"
+            >
+              Confirm & Send
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

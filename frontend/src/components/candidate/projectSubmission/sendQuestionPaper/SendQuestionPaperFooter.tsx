@@ -35,16 +35,15 @@ export function SendQuestionPaperFooter({
       (customQuestions.length !== 5 || !customProjectTask.trim()));
 
   return (
-    <DialogFooter className="p-1 border-t border-muted-foreground/10 bg-muted/20 shrink-0 gap-2 flex items-center justify-end">
+    <DialogFooter className="p-1 border-t border-muted-foreground/10 bg-muted/20 shrink-0 gap-2 flex items-center justify-end flex-row">
       <Button
         type="button"
         variant="outline"
         className="rounded-xl"
         onClick={onCancel}
         disabled={isAssignPending || isSendEmailPending}
-      // disabled={true} // temp
       >
-        Cancel
+        {hasAssignedPaper ? "Close" : "Cancel"}
       </Button>
 
       {hasAssignedPaper ? (
