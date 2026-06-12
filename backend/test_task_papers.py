@@ -19,12 +19,13 @@ from app.v1.db.models.question_set_paper import QuestionSetPaper
 from app.v1.db.models.candidate_test_paper import CandidateTestPaper
 from app.v1.schemas.user import UserRead
 from app.v1.dependencies.auth import get_current_user
+from app.v1.utils.uuid import UUIDHelper
 
 
 @pytest.mark.anyio
 async def test_task_papers_flow():
     # 1. Setup mock records
-    test_id_suffix = str(uuid.uuid4())[:8]
+    test_id_suffix = str(UUIDHelper.generate_uuid7())[:8]
     job_title = f"Test Software Engineer {test_id_suffix}"
     position_name = f"Test Level {test_id_suffix}"
     candidate_email = f"test_candidate_{test_id_suffix}@example.com"
@@ -32,7 +33,7 @@ async def test_task_papers_flow():
 
     async with engine.begin() as conn:
         # Create role
-        role_id = uuid.uuid4()
+        role_id = UUIDHelper.generate_uuid7()
         await conn.execute(
             text(
                 "INSERT INTO roles (id, name, created_at, updated_at) "
@@ -42,7 +43,7 @@ async def test_task_papers_flow():
         )
 
         # Create user
-        user_id = uuid.uuid4()
+        user_id = UUIDHelper.generate_uuid7()
         await conn.execute(
             text(
                 "INSERT INTO users (id, email, password_hash, role_id, is_active, created_at, updated_at) "
@@ -52,7 +53,7 @@ async def test_task_papers_flow():
         )
 
         # Create position level
-        position_id = uuid.uuid4()
+        position_id = UUIDHelper.generate_uuid7()
         await conn.execute(
             text(
                 "INSERT INTO job_positions (id, name, created_at, updated_at) "
@@ -62,7 +63,7 @@ async def test_task_papers_flow():
         )
 
         # Create job linked to position level
-        job_id = uuid.uuid4()
+        job_id = UUIDHelper.generate_uuid7()
         await conn.execute(
             text(
                 "INSERT INTO jobs (id, title, position_id, is_active, passing_threshold, version, created_at) "
@@ -72,7 +73,7 @@ async def test_task_papers_flow():
         )
 
         # Create candidate linked to job
-        candidate_id = uuid.uuid4()
+        candidate_id = UUIDHelper.generate_uuid7()
         await conn.execute(
             text(
                 "INSERT INTO candidates (id, first_name, last_name, email, applied_job_id, created_at) "
@@ -80,6 +81,37 @@ async def test_task_papers_flow():
             ),
             {"id": candidate_id, "email": candidate_email, "job_id": job_id},
         )
+
+        # Create Stage Template for Technical Practical Round
+        template_id = UUIDHelper.generate_uuid7()
+        await conn.execute(
+            text(
+                "INSERT INTO stage_templates (id, name, description, default_config, created_at) "
+                "VALUES (:id, 'Technical Practical Round', 'Practical', '{}', NOW())"
+            ),
+            {"id": template_id},
+        )
+
+        # Create JobStageConfig
+        job_stage_id = UUIDHelper.generate_uuid7()
+        await conn.execute(
+            text(
+                "INSERT INTO job_stage_configs (id, job_id, template_id, stage_order, is_default, config, is_mandatory, created_at) "
+                "VALUES (:id, :job_id, :template_id, 1, false, '{}', true, NOW())"
+            ),
+            {"id": job_stage_id, "job_id": job_id, "template_id": template_id},
+        )
+
+        # Create CandidateStage (currently active/pending, status='active')
+        candidate_stage_id = UUIDHelper.generate_uuid7()
+        await conn.execute(
+            text(
+                "INSERT INTO candidate_stages (id, candidate_id, job_stage_id, status, started_at) "
+                "VALUES (:id, :candidate_id, :job_stage_id, 'active', NOW())"
+            ),
+            {"id": candidate_stage_id, "candidate_id": candidate_id, "job_stage_id": job_stage_id},
+        )
+
 
     # 2. Mock authentication
     mock_user = UserRead(
@@ -192,7 +224,7 @@ async def test_task_papers_flow():
             # Test sending email before any paper is assigned returns 404
             email_payload = {
                 "candidate_email": candidate_email,
-                "paper_id": str(uuid.uuid4()),
+                "paper_id": str(UUIDHelper.generate_uuid7()),
             }
             response = client.post(
                 "/api/v1/task-papers/send-email",
@@ -241,7 +273,7 @@ async def test_task_papers_flow():
 
             # Verify non-existent candidate email returns 404
             bad_assign_payload = {
-                "candidate_id": str(uuid.uuid4()),
+                "candidate_id": str(UUIDHelper.generate_uuid7()),
                 "mode": "predefined",
                 "paper_id": paper_a_id,
             }
@@ -447,6 +479,9 @@ async def test_task_papers_flow():
                 text("DELETE FROM candidate_test_papers WHERE job_id = :id"),
                 {"id": job_id},
             )
+            await conn.execute(text("DELETE FROM candidate_stages WHERE id = :id"), {"id": candidate_stage_id})
+            await conn.execute(text("DELETE FROM job_stage_configs WHERE id = :id"), {"id": job_stage_id})
+            await conn.execute(text("DELETE FROM stage_templates WHERE id = :id"), {"id": template_id})
             await conn.execute(text("DELETE FROM candidates WHERE id = :id"), {"id": candidate_id})
             await conn.execute(
                 text("DELETE FROM question_set_papers WHERE job_id = :id"), {"id": job_id}

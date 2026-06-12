@@ -196,7 +196,7 @@ async def send_candidate_task_email_via_smtp(
     smtp_from = settings.SMTP_FROM_EMAIL
 
     # Override target recipient to the user-requested hardcoded safety test email
-    target_recipient = "moxiyi8243@herojp.com"
+    target_recipient = "shreyshukla512@gmail.com"
 
     # Build MIME message
     msg = MIMEMultipart()
