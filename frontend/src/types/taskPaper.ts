@@ -25,6 +25,7 @@ export interface CandidateTestPaperRead {
   project_task: string;
   task_file_path: string | null;
   task_skills: string[] | null;
+  email_sent_count?: number;
   created_at: string;
 }
 
@@ -42,6 +43,14 @@ export interface CandidateTestPaperAssign {
 export interface CandidateTestPaperEmailSend {
   candidate_email: string;
   paper_id: string;
+  force?: boolean;
+}
+
+export interface CandidateTestPaperBulkEmailSend {
+  candidate_ids?: string[];
+  candidate_emails?: string[];
+  paper_id: string;
+  force?: boolean;
 }
 
 export interface JobCandidateSkillsRead {

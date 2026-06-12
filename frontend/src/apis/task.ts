@@ -5,6 +5,7 @@ import type {
   CandidateTestPaperRead,
   CandidateTestPaperAssign,
   CandidateTestPaperEmailSend,
+  CandidateTestPaperBulkEmailSend,
   JobCandidateSkillsRead,
 } from "@/types/taskPaper";
 
@@ -205,6 +206,13 @@ export const taskService = {
   },
 
   /**
+   * Deletes the default common test paper assigned to the job.
+   */
+  deleteJobDefaultTestPaper: async (jobId: string): Promise<void> => {
+    await client.delete(`/task-papers/assigned/job/${jobId}`);
+  },
+
+  /**
    * Returns task metadata (path, skills, custom flag) via candidate task service.
    */
   readCandidateTaskMetadata: async (
@@ -256,6 +264,21 @@ export const taskService = {
       "/task-papers/send-email",
       data
     );
+    return response.data;
+  },
+
+  /**
+   * Triggers a notification to multiple candidates containing the assigned paper in bulk.
+   */
+  sendBulkTestPaperEmail: async (
+    data: CandidateTestPaperBulkEmailSend
+  ): Promise<{ status: string; message: string; sent_to: string[]; failed: any[] }> => {
+    const response = await client.post<{
+      status: string;
+      message: string;
+      sent_to: string[];
+      failed: any[];
+    }>("/task-papers/send-email/bulk", data);
     return response.data;
   },
 };

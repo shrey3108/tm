@@ -40,7 +40,7 @@ export function PredefinedPaperForm({
   };
   return (
     <div className="space-y-1 animate-in fade-in duration-300">
-      <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+      <div className="flex sm:flex-row sm:items-center gap-1">
         <Label className="text-base font-bold text-foreground shrink-0">
           Select Question Set Template
         </Label>

@@ -69,17 +69,15 @@ export const JobCandidatesHeader = ({
       }
       breadcrumbActions={
         <>
-          {showSendQuestionPaper && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-9 rounded-xl border border-muted-foreground/10 px-4 shrink-0 font-semibold text-center flex items-center gap-2 hover:bg-muted/50"
-              onClick={onSendQuestionPaperClick}
-              disabled={isSendQuestionPaperDisabled}
-            >
-              <Send className="h-4 w-4" /> Send Question Paper
-            </Button>
-          )}
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-9 rounded-xl border border-muted-foreground/10 px-4 shrink-0 font-semibold text-center flex items-center gap-2 hover:bg-muted/50"
+            onClick={onSendQuestionPaperClick}
+            disabled={isSendQuestionPaperDisabled || !showSendQuestionPaper || !job?.is_active}
+          >
+            <Send className="h-4 w-4" /> Send Question Paper
+          </Button>
           <div className="bg-muted/50 p-1 rounded-lg flex items-center border border-border shrink-0 h-9">
             <button
               onClick={() => setViewMode("candidates")}

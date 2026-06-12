@@ -107,17 +107,40 @@ export function useCandidatesStages() {
   // Selected history version override for evaluation view
   const [selectedEvaluationVersion, setSelectedEvaluationVersion] = useState<EvaluationRead | null>(null);
 
-  // Reset selected history version when switching stages
+  // Reset selected history version and polling state when switching stages
   useEffect(() => {
     setSelectedEvaluationVersion(null);
+    setIsPolling(false);
   }, [instanceId, currentStage]);
 
-  let evaluation = selectedEvaluationVersion || evaluationData || null;
-  const error = evaluationError ? extractErrorMessage(evaluationError) : "";
+  // Check if response indicates the evaluation is processing
+  const isResponseProcessing = useMemo(() => {
+    if (evaluationData && (evaluationData as any).status === "processing") {
+      return true;
+    }
+    if (evaluationError && typeof evaluationError === "object" && "response" in evaluationError) {
+      const responseData = (evaluationError as any).response?.data;
+      if (responseData && responseData.status === "processing") {
+        return true;
+      }
+    }
+    return false;
+  }, [evaluationData, evaluationError]);
+
+  // Start polling if we receive a processing response
+  useEffect(() => {
+    if (isResponseProcessing && !isPolling) {
+      setIsPolling(true);
+    }
+  }, [isResponseProcessing, isPolling]);
+
+  const hasValidEvaluationData = evaluationData && (evaluationData as any).status !== "processing";
+  let evaluation = selectedEvaluationVersion || (hasValidEvaluationData ? evaluationData : null);
+  const error = (evaluationError && !isResponseProcessing) ? extractErrorMessage(evaluationError) : "";
 
   // 5. Invalidate evaluation related queries when AI polling finishes successfully
   useEffect(() => {
-    if (isPolling && evaluationData) {
+    if (isPolling && evaluationData && !isResponseProcessing) {
       setIsPolling(false);
       toast.success("Evaluation generated successfully!");
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CANDIDATES.TRANSCRIPTS, candidate?.id] });
@@ -125,7 +148,7 @@ export function useCandidatesStages() {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CANDIDATES.TIMELINE, candidate?.id] });
       setRefetchTimeline((prev) => prev + 1);
     }
-  }, [isPolling, evaluationData, candidate?.id, instanceId, queryClient]);
+  }, [isPolling, evaluationData, isResponseProcessing, candidate?.id, instanceId, queryClient]);
 
   const isLoadingEvaluation = isLoadingEvaluationQuery && !evaluationData;
 

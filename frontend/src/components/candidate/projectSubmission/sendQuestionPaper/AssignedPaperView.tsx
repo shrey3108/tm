@@ -36,23 +36,14 @@ export function AssignedPaperView({
       </div>
 
       {/* Questions List */}
-      <div className="space-y-1">
+      <div className="space-y-1 p-2">
         <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
           <CheckCircle2 className="h-4 w-4 text-green-500" />
           Interview Questions
         </h4>
         {assignedPaper.questions && assignedPaper.questions.length > 0 ? (
-          <ul className="space-y-3 pl-1">
-            {assignedPaper.questions.map((q, idx) => (
-              <li key={idx} className="flex items-start gap-1.5">
-                <span className="text-xs font-black text-primary select-none bg-primary/10 border border-primary/20 h-3 w-3 rounded-full flex items-center justify-center shrink-0 mt-0.5">
-                  {idx + 1}
-                </span>
-                <p className="text-sm font-medium text-foreground leading-relaxed">
-                  {q}
-                </p>
-              </li>
-            ))}
+          <ul className="pl-3 list-decimal">
+            {assignedPaper.questions.map((q, idx) => (<li key={idx}>{q}</li>))}
           </ul>
         ) : (
           <div className="flex items-center gap-2 text-sm text-muted-foreground italic pl-1">

@@ -133,3 +133,27 @@ export const useDownloadPaperTaskFile = (
   };
 };
 
+/**
+ * Hook to download the task file assigned to a candidate.
+ */
+export const useDownloadCandidateAssignedTaskFile = (
+  candidateId: string | null | undefined,
+  options?: Record<string, any>
+) => {
+  const res = useQuery({
+    queryKey: [QUERY_KEYS.TASK_PAPERS.DOWNLOAD, "assigned", candidateId],
+    queryFn: () => taskService.downloadCandidateAssignedTaskFile(candidateId!),
+    enabled: !!candidateId,
+    staleTime: QUERY_CONFIG.TASK_PAPER.staleTime,
+    ...options,
+  });
+
+  return {
+    data: res.data ?? null,
+    loading: res.isLoading || res.isFetching,
+    error: res.error,
+    refetch: res.refetch,
+  };
+};
+
+
