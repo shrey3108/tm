@@ -1,23 +1,33 @@
 import uuid
-from typing import Any
+from datetime import datetime, timezone
+from typing import Any, List
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.v1.core.config import settings
+from app.v1.core.logging import get_logger
 from app.v1.db.session import get_db
 from app.v1.db.models.evaluations import Evaluation
 from app.v1.db.models.candidate_stages import CandidateStage
 from app.v1.db.models.candidates import Candidate
 from app.v1.db.models.hr_decisions import HrDecision
 from app.v1.db.models.job_stage_configs import JobStageConfig
+from app.v1.db.models.jobs import Job
+from app.v1.db.models.stage_templates import StageTemplate
+from app.v1.db.models.candidate_test_paper import CandidateTestPaper
+from app.v1.db.models.candidate_test_paper_history import CandidateTestPaperHistory
 from app.v1.schemas.candidate_stages import StageOverrideCreate, StageDecisionCreate, EvaluationRead
 from app.v1.schemas.user import UserRead
 from app.v1.dependencies import check_permission
 from app.v1.services.admin_service import admin_service
 from app.v1.services.hr_decision_service import HRDecisionService
 from app.v1.schemas.hr_decision import HRDecisionCreate
+from app.v1.services.evaluation_tasks import evaluate_candidate_practical_task
 
 router = APIRouter(prefix="/candidate-stages", tags=["candidate-stages"])
 
@@ -38,7 +48,6 @@ async def get_candidate_stage_evaluation(
         # Check if the CandidateStage exists and has a cloning/processing error
         stage = await db.get(CandidateStage, id)
         if stage and stage.status == "failed" and isinstance(stage.evaluation_data, dict) and "error" in stage.evaluation_data:
-            from datetime import datetime, timezone
             # Construct a mock Evaluation dict with the error details conforming to EvaluationRead
             return {
                 "id": id,  # Use stage id as a dummy evaluation id
@@ -60,8 +69,6 @@ async def get_candidate_stage_evaluation(
     return evaluation
 
 
-from typing import List
-
 @router.get("/{id}/evaluation/history")
 async def get_candidate_stage_evaluation_history(
     id: uuid.UUID,
@@ -80,7 +87,6 @@ async def get_candidate_stage_evaluation_history(
     # Check if the CandidateStage is failed with an error and include it in history
     stage = await db.get(CandidateStage, id)
     if stage and stage.status == "failed" and isinstance(stage.evaluation_data, dict) and "error" in stage.evaluation_data:
-        from datetime import datetime, timezone
         # If there are existing evaluations, the next attempt version is max + 1, otherwise 1
         next_version = (evaluations_list[0].attempt_number + 1) if evaluations_list else 1
         
@@ -203,7 +209,6 @@ async def candidate_stage_decision(
     """Final HR decision for this candidate stage (Pass, Fail, May Be)."""
     
     # 1. Fetch CandidateStage to get candidate and job info
-    from app.v1.db.models.job_stage_configs import JobStageConfig
     query = (
         select(CandidateStage)
         .options(selectinload(CandidateStage.job_stage))
@@ -246,8 +251,6 @@ async def candidate_stage_decision(
         raise HTTPException(status_code=500, detail=f"Failed to record decision: {str(e)}")
 
 
-from pydantic import BaseModel
-
 class GitHubEvaluationRequest(BaseModel):
     github_url: str | None = None
 
@@ -259,10 +262,6 @@ async def evaluate_candidate_github_repo(
     user: UserRead = Depends(check_permission("candidates:decide")),
 ) -> Any:
     """Trigger background GitHub repository evaluation for the Technical Practical Round."""
-    from app.v1.db.models.job_stage_configs import JobStageConfig
-    from app.v1.db.models.jobs import Job
-    from app.v1.db.models.stage_templates import StageTemplate
-    from app.v1.services.evaluation_tasks import evaluate_candidate_practical_task
 
     # 1. Fetch CandidateStage with eager relationships
     stmt = (
@@ -312,25 +311,46 @@ async def evaluate_candidate_github_repo(
     # 4. Save/update candidate task_file_path with the solution repo URL
     candidate.task_file_path = github_url
 
-    # 5. Fallback logic for project skills
-    task_skills = candidate.task_skills
-    if not task_skills:
-        # Fallback to job default task skills
-        task_skills = job.task_skills or []
-    
+    # 5. Fetch all papers in CandidateTestPaperHistory for this candidate
+    stmt_history = select(CandidateTestPaperHistory).where(CandidateTestPaperHistory.candidate_id == candidate.id)
+    res_history = await db.execute(stmt_history)
+    history_records = res_history.scalars().all()
+
+    task_skills = []
+    if history_records:
+        # Combine and deduplicate skills from all history records
+        for hr in history_records:
+            if hr.task_skills:
+                task_skills.extend(hr.task_skills)
+        task_skills = list(set(task_skills))
+    else:
+        # Fallback to active CandidateTestPaper (if assigned but not emailed yet)
+        stmt_paper = select(CandidateTestPaper).where(CandidateTestPaper.candidate_id == candidate.id)
+        res_paper = await db.execute(stmt_paper)
+        test_paper = res_paper.scalar_one_or_none()
+
+        # Fallback to job-level default test paper
+        if not test_paper and candidate.applied_job_id:
+            stmt_job = select(CandidateTestPaper).where(
+                CandidateTestPaper.job_id == candidate.applied_job_id,
+                CandidateTestPaper.candidate_id.is_(None)
+            )
+            res_job = await db.execute(stmt_job)
+            test_paper = res_job.scalar_one_or_none()
+
+        if test_paper and test_paper.task_skills:
+            task_skills = test_paper.task_skills
+
     if not task_skills:
         raise HTTPException(
             status_code=400,
-            detail="Please upload a task description first (Job default task or Candidate custom task) before running the repository evaluation.",
+            detail="Please assign a test paper to the candidate first before running the repository evaluation.",
         )
 
     # 6. Get Job standard skills
     jd_skills = [skill.name for skill in job.skills] if job.skills else []
 
     # 7. Trigger microservice evaluation submit synchronously to detect duplicate/cloning errors immediately
-    from app.v1.core.config import settings
-    import httpx
-
     evaluator_url = settings.GITHUB_EVALUATOR_URL
     submit_url = f"{evaluator_url.rstrip('/')}/api/v1/repositories"
     # Prioritize settings.DEFAULT_RECRUITER_EMAIL from .env over user.email
@@ -366,7 +386,6 @@ async def evaluate_candidate_github_repo(
                 
                 if response.status_code == 409:
                     if eval_id:
-                        from app.v1.core.logging import get_logger
                         get_logger(__name__).info(f"Repository already submitted. Re-using evaluation ID: {eval_id}")
                     else:
                         raise HTTPException(status_code=409, detail=error_msg)

@@ -41,9 +41,29 @@ class CandidateTestPaperRead(BaseModel):
     task_skills: Optional[list[str]] = None
     email_sent_count: int = 0
     created_at: datetime
+    job_default_paper_changed: bool = False
+    job_default_paper_name: Optional[str] = None
+    job_default_paper_id: Optional[uuid.UUID] = None
 
     class Config:
         from_attributes = True
+
+
+class CandidateTestPaperHistoryRead(BaseModel):
+    id: uuid.UUID
+    candidate_id: uuid.UUID
+    job_id: uuid.UUID
+    name: str
+    questions: list[str]
+    project_task: str
+    task_file_path: Optional[str] = None
+    task_skills: Optional[list[str]] = None
+    assigned_at: datetime
+    user_id: Optional[uuid.UUID] = None
+
+    class Config:
+        from_attributes = True
+
 
 
 class CandidateTestPaperAssign(BaseModel):
