@@ -297,73 +297,85 @@ def evaluate_candidate_practical_task(
 
             criteria_data = {
                 # --- Performance ---
-                "performance": {
-                    "score": get_combined_score(jd_scores, proj_scores, "performance"),
-                    "reasoning": get_combined_reasoning(
-                        jd_align, proj_align, "performance",
-                        "Evaluated optimization and debugging approach for JD standard skills.",
-                        "Evaluated optimization and debugging approach for custom Task/Project skills."
-                    ),
+                "performance (JD Skills)": {
+                    "score": get_scaled(jd_scores, "performance"),
+                    "reasoning": get_reasoning(jd_align, "performance", "Evaluated optimization and debugging approach for JD standard skills."),
+                    "confidence": 0.9,
+                    "evidence": []
+                },
+                "performance (Task Skills)": {
+                    "score": get_scaled(proj_scores, "performance"),
+                    "reasoning": get_reasoning(proj_align, "performance", "Evaluated optimization and debugging approach for custom Task/Project skills."),
                     "confidence": 0.9,
                     "evidence": []
                 },
 
                 # --- Architecture ---
-                "architecture": {
-                    "score": get_combined_score(jd_scores, proj_scores, "architecture"),
-                    "reasoning": get_combined_reasoning(
-                        jd_align, proj_align, "architecture",
-                        "Evaluated architectural choices for JD standard skills.",
-                        "Evaluated architectural choices for custom Task/Project skills."
-                    ),
+                "architecture (JD Skills)": {
+                    "score": get_scaled(jd_scores, "architecture"),
+                    "reasoning": get_reasoning(jd_align, "architecture", "Evaluated architectural choices for JD standard skills."),
+                    "confidence": 0.9,
+                    "evidence": []
+                },
+                "architecture (Task Skills)": {
+                    "score": get_scaled(proj_scores, "architecture"),
+                    "reasoning": get_reasoning(proj_align, "architecture", "Evaluated architectural choices for custom Task/Project skills."),
                     "confidence": 0.9,
                     "evidence": []
                 },
 
                 # --- Code Quality ---
-                "code_quality": {
-                    "score": get_combined_score(jd_scores, proj_scores, "code_quality"),
-                    "reasoning": get_combined_reasoning(
-                        jd_align, proj_align, "code_quality",
-                        "Evaluated code formatting and quality for JD standard skills.",
-                        "Evaluated code formatting and quality for custom Task/Project skills."
-                    ),
+                "code_quality (JD Skills)": {
+                    "score": get_scaled(jd_scores, "code_quality"),
+                    "reasoning": get_reasoning(jd_align, "code_quality", "Evaluated code formatting and quality for JD standard skills."),
+                    "confidence": 0.9,
+                    "evidence": []
+                },
+                "code_quality (Task Skills)": {
+                    "score": get_scaled(proj_scores, "code_quality"),
+                    "reasoning": get_reasoning(proj_align, "code_quality", "Evaluated code formatting and quality for custom Task/Project skills."),
                     "confidence": 0.9,
                     "evidence": []
                 },
 
                 # --- Correctness ---
-                "correctness": {
-                    "score": get_combined_score(jd_scores, proj_scores, "correctness"),
-                    "reasoning": get_combined_reasoning(
-                        jd_align, proj_align, "correctness",
-                        "Evaluated specification implementation accuracy for JD standard skills.",
-                        "Evaluated specification implementation accuracy for custom Task/Project skills."
-                    ),
+                "correctness (JD Skills)": {
+                    "score": get_scaled(jd_scores, "correctness"),
+                    "reasoning": get_reasoning(jd_align, "correctness", "Evaluated specification implementation accuracy for JD standard skills."),
+                    "confidence": 0.9,
+                    "evidence": []
+                },
+                "correctness (Task Skills)": {
+                    "score": get_scaled(proj_scores, "correctness"),
+                    "reasoning": get_reasoning(proj_align, "correctness", "Evaluated specification implementation accuracy for custom Task/Project skills."),
                     "confidence": 0.9,
                     "evidence": []
                 },
 
                 # --- Security ---
-                "security": {
-                    "score": get_combined_score(jd_scores, proj_scores, "security"),
-                    "reasoning": get_combined_reasoning(
-                        jd_align, proj_align, "security",
-                        "Evaluated security practices and vulnerability exposure for JD standard skills.",
-                        "Evaluated security practices and vulnerability exposure for custom Task/Project skills."
-                    ),
+                "security (JD Skills)": {
+                    "score": get_scaled(jd_scores, "security"),
+                    "reasoning": get_reasoning(jd_align, "security", "Evaluated security practices and vulnerability exposure for JD standard skills."),
+                    "confidence": 0.9,
+                    "evidence": []
+                },
+                "security (Task Skills)": {
+                    "score": get_scaled(proj_scores, "security"),
+                    "reasoning": get_reasoning(proj_align, "security", "Evaluated security practices and vulnerability exposure for custom Task/Project skills."),
                     "confidence": 0.9,
                     "evidence": []
                 },
 
                 # --- Documentation ---
-                "documentation": {
-                    "score": get_combined_score(jd_scores, proj_scores, "documentation"),
-                    "reasoning": get_combined_reasoning(
-                        jd_align, proj_align, "documentation",
-                        "Evaluated code documentation, README clarity, and setup guides for JD standard skills.",
-                        "Evaluated code documentation, README clarity, and setup guides for custom Task/Project skills."
-                    ),
+                "documentation (JD Skills)": {
+                    "score": get_scaled(jd_scores, "documentation"),
+                    "reasoning": get_reasoning(jd_align, "documentation", "Evaluated code documentation, README clarity, and setup guides for JD standard skills."),
+                    "confidence": 0.9,
+                    "evidence": []
+                },
+                "documentation (Task Skills)": {
+                    "score": get_scaled(proj_scores, "documentation"),
+                    "reasoning": get_reasoning(proj_align, "documentation", "Evaluated code documentation, README clarity, and setup guides for custom Task/Project skills."),
                     "confidence": 0.9,
                     "evidence": []
                 }
