@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 import uuid
 from fastapi import HTTPException
 
-from sqlalchemy import func, or_, select, and_, exists
+from sqlalchemy import func, or_, select, and_, exists, case
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -105,6 +105,31 @@ class CandidateAdminService:
             dir_filter = and_(dir_filter, Candidate.id == candidate_id)
 
         if stage_id:
+            latest_stage_id_subq = (
+                select(CandidateStage.job_stage_id)
+                .join(JobStageConfig, CandidateStage.job_stage_id == JobStageConfig.id)
+                .where(
+                    and_(
+                        CandidateStage.candidate_id == Candidate.id,
+                        JobStageConfig.job_id == job_id
+                    )
+                )
+                .order_by(
+                    case(
+                        (CandidateStage.status == "active", 2),
+                        (CandidateStage.status != "pending", 1),
+                        else_=0
+                    ).desc(),
+                    case(
+                        (CandidateStage.status != "pending", JobStageConfig.stage_order),
+                        else_=-JobStageConfig.stage_order
+                    ).desc()
+                )
+                .limit(1)
+                .correlate(Candidate)
+                .scalar_subquery()
+            )
+
             stage_exists = select(1).select_from(CandidateStage).join(
                 JobStageConfig, CandidateStage.job_stage_id == JobStageConfig.id
             ).join(
@@ -112,7 +137,7 @@ class CandidateAdminService:
             ).where(
                 and_(
                     CandidateStage.candidate_id == Candidate.id,
-                    CandidateStage.status.in_(["active", "completed", "failed", "pending"]),
+                    CandidateStage.job_stage_id == latest_stage_id_subq,
                     stage_filter
                 )
             ).exists()
@@ -122,7 +147,9 @@ class CandidateAdminService:
                     dir_filter,
                     or_(
                         stage_exists,
-                        ~Candidate.stages.any()
+                        ~Candidate.stages.any(
+                            CandidateStage.job_stage.has(JobStageConfig.job_id == job_id)
+                        )
                     )
                 )
             else:
@@ -252,6 +279,31 @@ class CandidateAdminService:
             xm_filter = and_(xm_filter, CrossJobMatch.candidate_id == candidate_id)
         
         if stage_id:
+            xm_latest_stage_id_subq = (
+                select(CandidateStage.job_stage_id)
+                .join(JobStageConfig, CandidateStage.job_stage_id == JobStageConfig.id)
+                .where(
+                    and_(
+                        CandidateStage.candidate_id == CrossJobMatch.candidate_id,
+                        JobStageConfig.job_id == job_id
+                    )
+                )
+                .order_by(
+                    case(
+                        (CandidateStage.status == "active", 2),
+                        (CandidateStage.status != "pending", 1),
+                        else_=0
+                    ).desc(),
+                    case(
+                        (CandidateStage.status != "pending", JobStageConfig.stage_order),
+                        else_=-JobStageConfig.stage_order
+                    ).desc()
+                )
+                .limit(1)
+                .correlate(CrossJobMatch)
+                .scalar_subquery()
+            )
+
             xm_stage_exists = select(1).select_from(CandidateStage).join(
                 JobStageConfig, CandidateStage.job_stage_id == JobStageConfig.id
             ).join(
@@ -259,7 +311,7 @@ class CandidateAdminService:
             ).where(
                 and_(
                     CandidateStage.candidate_id == CrossJobMatch.candidate_id,
-                    CandidateStage.status.in_(["active", "completed", "pending", "failed"]),
+                    CandidateStage.job_stage_id == xm_latest_stage_id_subq,
                     stage_filter
                 )
             ).exists()
@@ -269,7 +321,11 @@ class CandidateAdminService:
                     xm_filter,
                     or_(
                         xm_stage_exists,
-                        ~Candidate.stages.any()
+                        ~CrossJobMatch.candidate.has(
+                            Candidate.stages.any(
+                                CandidateStage.job_stage.has(JobStageConfig.job_id == job_id)
+                            )
+                        )
                     )
                 )
             else:
@@ -586,6 +642,26 @@ class CandidateAdminService:
             if stage_names:
                 stage_filter = or_(stage_filter, func.lower(StageTemplate.name).in_(stage_names))
 
+            search_latest_stage_id_subq = (
+                select(CandidateStage.job_stage_id)
+                .join(JobStageConfig, CandidateStage.job_stage_id == JobStageConfig.id)
+                .where(CandidateStage.candidate_id == Candidate.id)
+                .order_by(
+                    case(
+                        (CandidateStage.status == "active", 2),
+                        (CandidateStage.status != "pending", 1),
+                        else_=0
+                    ).desc(),
+                    case(
+                        (CandidateStage.status != "pending", JobStageConfig.stage_order),
+                        else_=-JobStageConfig.stage_order
+                    ).desc()
+                )
+                .limit(1)
+                .correlate(Candidate)
+                .scalar_subquery()
+            )
+
             stage_exists_stmt = select(1).select_from(CandidateStage).join(
                 JobStageConfig, CandidateStage.job_stage_id == JobStageConfig.id
             ).join(
@@ -593,7 +669,7 @@ class CandidateAdminService:
             ).where(
                 and_(
                     CandidateStage.candidate_id == Candidate.id,
-                    CandidateStage.status.in_(["active", "completed", "pending", "failed"]),
+                    CandidateStage.job_stage_id == search_latest_stage_id_subq,
                     stage_filter
                 )
             ).exists()
