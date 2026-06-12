@@ -7,10 +7,21 @@ and JWT token creation for authentication and authorization.
 
 from datetime import UTC, datetime, timedelta
 
+import base64
+import hashlib
+import json
+
 import bcrypt
 import jwt
+from cryptography.fernet import Fernet
 
 from app.v1.core.config import settings
+
+
+def get_fernet_cipher() -> Fernet:
+    """Return a Fernet cipher instance using a 32-byte derived key from SECRET_KEY."""
+    key = hashlib.sha256(settings.SECRET_KEY.encode()).digest()
+    return Fernet(base64.urlsafe_b64encode(key))
 
 
 # TODO: use pwdlib insted of raw bcrypt
@@ -59,10 +70,17 @@ def create_access_token(*, subject: str, email: str) -> tuple[str, datetime]:
     expires_at = datetime.now(UTC) + timedelta(
         minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
     )
-    payload = {
+    inner_payload = {
         "sub": subject,
         "email": email,
+    }
+    cipher = get_fernet_cipher()
+    enc_data = cipher.encrypt(json.dumps(inner_payload).encode()).decode("utf-8")
+    
+    payload = {
+        "enc_data": enc_data,
         "exp": expires_at,
+        "type": "access",
     }
     token = jwt.encode(
         payload,
@@ -83,9 +101,15 @@ def create_refresh_token(*, subject: str, email: str) -> tuple[str, datetime]:
         A tuple containing the encoded JWT token and its expiration datetime.
     """
     expires_at = datetime.now(UTC) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
-    payload = {
+    inner_payload = {
         "sub": subject,
         "email": email,
+    }
+    cipher = get_fernet_cipher()
+    enc_data = cipher.encrypt(json.dumps(inner_payload).encode()).decode("utf-8")
+    
+    payload = {
+        "enc_data": enc_data,
         "exp": expires_at,
         "type": "refresh",
     }

@@ -31,8 +31,9 @@ class PromptEnhancerService:
         )
         
         try:
+            model_to_use = settings.ENHANCE_MODEL or settings.OLLAMA_MODEL
             response = await self.client.chat.completions.create(
-                model=settings.OLLAMA_MODEL,
+                model=model_to_use,
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
