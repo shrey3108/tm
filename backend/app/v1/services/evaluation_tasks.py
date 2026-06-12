@@ -85,6 +85,7 @@ def evaluate_candidate_practical_task(
         from app.v1.db.models.candidate_stages import CandidateStage
         from app.v1.db.models.job_stage_configs import JobStageConfig
         from app.v1.db.models.evaluations import Evaluation
+        from app.v1.db.models.jobs import Job
 
         async with async_session_maker() as db:
             # 1. Fetch CandidateStage context
@@ -92,7 +93,11 @@ def evaluate_candidate_practical_task(
                 select(CandidateStage)
                 .options(
                     selectinload(CandidateStage.candidate),
-                    selectinload(CandidateStage.job_stage).selectinload(JobStageConfig.job),
+                    selectinload(CandidateStage.job_stage).options(
+                        selectinload(JobStageConfig.job).options(
+                            selectinload(Job.position)
+                        )
+                    ),
                 )
                 .where(CandidateStage.id == candidate_stage_id)
             )
@@ -121,6 +126,7 @@ def evaluate_candidate_practical_task(
                 payload = {
                     "github_url": github_url,
                     "job_title": job.title if job else "Software Engineer",
+                    "job_position": job.position.name if (job and job.position) else None,
                     "jd_skills": jd_skills,
                     "project_required_skills": project_required_skills,
                     "repo_id": str(candidate.id) if candidate else None,

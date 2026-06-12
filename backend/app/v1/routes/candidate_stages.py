@@ -275,7 +275,10 @@ async def evaluate_candidate_github_repo(
         select(CandidateStage)
         .options(
             selectinload(CandidateStage.job_stage).options(
-                selectinload(JobStageConfig.job).selectinload(Job.skills),
+                selectinload(JobStageConfig.job).options(
+                    selectinload(Job.skills),
+                    selectinload(Job.position),
+                ),
                 selectinload(JobStageConfig.template),
             ),
             selectinload(CandidateStage.candidate).selectinload(Candidate.resumes),
@@ -369,6 +372,7 @@ async def evaluate_candidate_github_repo(
     payload = {
         "github_url": github_url,
         "job_title": job.title if job else "Software Engineer",
+        "job_position": job.position.name if (job and job.position) else None,
         "jd_skills": jd_skills,
         "project_required_skills": task_skills,
         "repo_id": str(candidate.id) if candidate else None,
