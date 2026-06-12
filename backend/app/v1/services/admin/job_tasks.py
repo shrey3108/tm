@@ -1,6 +1,8 @@
 import asyncio
 import logging
+import uuid
 from datetime import datetime
+from pathlib import Path
 from sqlalchemy import select, update
 from app.v1.core.celery_app import celery_app
 from app.v1.db.models.jobs import Job
@@ -52,9 +54,8 @@ def deactivate_expired_jobs_task():
 @celery_app.task(name="match_all_resumes_to_job_task")
 def match_all_resumes_to_job_task(job_id_str: str, months_limit: int = 3):
     """Celery task to match existing resumes against a new job."""
-    import uuid
     from app.v1.services.cross_job_match_service import cross_job_match_service
-    
+
     job_id = uuid.UUID(job_id_str)
     try:
         _log.info(f"Starting mass resume matching for new job: {job_id} (limit: {months_limit} months)")
@@ -75,8 +76,6 @@ def match_all_resumes_to_job_task(job_id_str: str, months_limit: int = 3):
 
 async def extract_task_skills_logic(job_id_str: str, file_path_str: str):
     """Logic to extract skills from an uploaded task description file and update the database."""
-    import uuid
-    from pathlib import Path
     from app.v1.services.admin.task_service import task_service
     
     job_id = uuid.UUID(job_id_str)
@@ -106,8 +105,6 @@ def extract_task_skills_task(job_id_str: str, file_path_str: str):
 
 async def extract_paper_task_skills_logic(paper_id_str: str, file_path_str: str):
     """Logic to extract skills from a QuestionSetPaper's task file and update the database."""
-    import uuid
-    from pathlib import Path
     from app.v1.db.models.question_set_paper import QuestionSetPaper
     from app.v1.services.admin.candidate_task_service import candidate_task_service
 

@@ -1,3 +1,6 @@
+import os
+import struct
+import time
 import uuid
 from typing import Optional
 
@@ -20,10 +23,7 @@ class UUIDHelper:
             return uuid.uuid7()
 
         # Pure Python fallback matching RFC 9562 for Python < 3.14
-        import time
-        import os
-        import struct
-
+        
         # 48-bit timestamp (milliseconds since epoch)
         timestamp_ms = int(time.time() * 1000)
         timestamp_bytes = struct.pack(">Q", timestamp_ms)[2:]  # 6 bytes

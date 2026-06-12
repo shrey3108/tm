@@ -3,6 +3,7 @@ API routes for job-related operations in version 1.
 """
 
 import uuid
+import os
 from typing import Any
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Query, status, File as FastAPIFile, UploadFile
@@ -494,7 +495,6 @@ async def download_job_task_file(
     from fastapi.responses import FileResponse
     from app.v1.db.models.jobs import Job
     from app.v1.core.storage import resolve_storage_path
-    import os
 
     # 1. Fetch Job from DB
     job = await db.get(Job, job_id)

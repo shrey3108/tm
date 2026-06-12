@@ -6,6 +6,7 @@ including user creation, retrieval, and listing.
 """
 
 import uuid
+import json
 
 import jwt
 from fastapi import HTTPException, status
@@ -13,6 +14,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.v1.core import settings
+from app.v1.core.security import get_fernet_cipher
 from app.v1.core.logging import get_logger
 from app.v1.core.security import (
     create_access_token,
@@ -259,8 +261,6 @@ class UserService:
         enc_data = payload.get("enc_data")
         if enc_data:
             try:
-                import json
-                from app.v1.core.security import get_fernet_cipher
                 cipher = get_fernet_cipher()
                 inner_payload = json.loads(cipher.decrypt(enc_data.encode()).decode("utf-8"))
                 subject = inner_payload.get("sub")

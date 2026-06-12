@@ -134,7 +134,7 @@ async def test_task_papers_flow():
              patch("app.v1.core.extractor.DocumentParser.extract_text") as mock_extract_text, \
              patch("app.v1.core.extractor.DocumentParser.extract_text_docling") as mock_extract_text_docling, \
              patch("app.v1.services.admin.candidate_task_service.candidate_task_service.extract_paper_details_from_text") as mock_llm_extract, \
-             patch("app.v1.routes.task_papers.send_candidate_task_email_via_smtp") as mock_send_email:
+             patch("app.v1.routes.task_papers_email.send_candidate_task_email_via_smtp") as mock_send_email:
 
             # 3. Create question set papers via Form Upload
             # Upload Paper A

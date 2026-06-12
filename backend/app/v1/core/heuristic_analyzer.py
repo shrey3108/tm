@@ -6,6 +6,7 @@ Uses a combination of bi-encoder semantic scores, skill overlap, and cross-encod
 from __future__ import annotations
 
 import math
+import re
 from typing import Any
 import numpy as np
 from sentence_transformers import CrossEncoder
@@ -34,7 +35,6 @@ class HeuristicAnalyzer:
 
     def _normalize_skills(self, skills: list[str | dict]) -> set[str]:
         """Convert a list of strings or dictionaries to a set of normalized strings."""
-        import re
         normalized = set()
         for s in skills:
             if isinstance(s, dict):

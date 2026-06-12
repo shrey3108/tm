@@ -3,6 +3,8 @@ API routes for candidate-related operations in version 1.
 """
 
 import uuid
+import os
+import traceback
 from datetime import datetime
 from typing import Any
 
@@ -26,6 +28,9 @@ from app.v1.services.job_stats_service import job_stats_service
 from app.v1.services.admin.candidate_service import candidate_admin_service
 from app.v1.schemas.job_stats import JobStatsResponse
 from fastapi import APIRouter, Depends, HTTPException, Query, File as FastAPIFile, UploadFile, status
+from fastapi.responses import FileResponse, RedirectResponse
+from app.v1.db.models.candidates import Candidate
+from app.v1.core.storage import resolve_storage_path
 from app.v1.schemas.upload import CandidateTaskRead, JobCandidateSkillsRead
 from app.v1.services.admin.candidate_task_service import candidate_task_service
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -62,7 +67,6 @@ async def get_job_stats(
         )
     except Exception as e:
         print(f"Error in get_job_stats: {e}")
-        import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail="Internal server error")
 
@@ -382,11 +386,6 @@ async def download_candidate_task_file(
     Download/view the candidate's custom task file.
     Returns FileResponse/RedirectResponse if candidate's custom task exists, otherwise returns None (null).
     """
-    from fastapi.responses import FileResponse, RedirectResponse
-    from app.v1.db.models.candidates import Candidate
-    from app.v1.core.storage import resolve_storage_path
-    import os
-
     # 1. Fetch Candidate from DB
     candidate = await db.get(Candidate, candidate_id)
     if not candidate:

@@ -1,4 +1,5 @@
 import uuid
+import json
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
@@ -121,7 +122,6 @@ class Evaluation(Base):
         data = None
         if self.recommendation:
             try:
-                import json
                 data = json.loads(self.recommendation)
             except (json.JSONDecodeError, TypeError):
                 pass
@@ -388,16 +388,16 @@ class Evaluation(Base):
                     jd_followups = followups
                     task_followups = followups
 
-            # Append overall_summary, strengths, weaknesses, and suggested_followups directly to the respective lists
-            jd_skills_list.append({"overall_summary": jd_summary})
-            jd_skills_list.append({"strengths": jd_strengths})
-            jd_skills_list.append({"weaknesses": jd_weaknesses})
-            jd_skills_list.append({"suggested_followups": jd_followups})
+            # Append Overall Summary, Strengths, Weaknesses, and Suggested Followups directly to the respective lists
+            jd_skills_list.append({"Overall Summary": jd_summary})
+            jd_skills_list.append({"Strengths": jd_strengths})
+            jd_skills_list.append({"Weaknesses": jd_weaknesses})
+            jd_skills_list.append({"Suggested Followups": jd_followups})
             
-            task_skills_list.append({"overall_summary": task_summary})
-            task_skills_list.append({"strengths": task_strengths})
-            task_skills_list.append({"weaknesses": task_weaknesses})
-            task_skills_list.append({"suggested_followups": task_followups})
+            task_skills_list.append({"Overall Summary": task_summary})
+            task_skills_list.append({"Strengths": task_strengths})
+            task_skills_list.append({"Weaknesses": task_weaknesses})
+            task_skills_list.append({"Suggested Followups": task_followups})
 
             return {
                 "JD Skills": jd_skills_list,

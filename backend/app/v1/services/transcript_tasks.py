@@ -2,6 +2,7 @@ import uuid
 import asyncio
 import hashlib
 import os
+import time
 import logging
 from app.v1.core.celery_app import celery_app
 from sqlalchemy import select
@@ -110,7 +111,6 @@ def process_transcript_task(candidate_stage_id_str: str, file_infos: list[dict])
                 clean_text = "\n\n".join([d["text"] for d in all_dialogues])
                 
                 # Hash for duplicates
-                import time
                 salt_text = clean_text + f"\n\n[Merge Salt: {time.time()}]"
                 transcript_hash = hashlib.sha256(salt_text.encode('utf-8')).hexdigest()
 

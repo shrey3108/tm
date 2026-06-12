@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 import uuid
+import re
 from fastapi import HTTPException
 
 from sqlalchemy import func, or_, select, and_, exists, case
@@ -807,8 +808,6 @@ class CandidateAdminService:
                 links = source.get("links") or source.get("social_links")
                 if links:
                     if isinstance(links, str):
-                        import re
-
                         link_list = [
                             link.strip() for link in re.split(r"[;,]", links) if link.strip()
                         ]

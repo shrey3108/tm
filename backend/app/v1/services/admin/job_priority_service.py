@@ -1,4 +1,5 @@
 import uuid
+import re
 from typing import List, Optional
 from sqlalchemy import select, delete, func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -69,7 +70,6 @@ class JobPriorityService:
         names = result.scalars().all()
         
         max_num = 0
-        import re
         for name in names:
             match = re.match(r"P(\d+)", name)
             if match:

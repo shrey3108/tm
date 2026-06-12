@@ -19,7 +19,6 @@ def setup_logging(debug: bool = False) -> None:
     Args:
         debug: Whether to enable debug logging. Defaults to False.
     """
-    import sys
     try:
         if sys.stdout and hasattr(sys.stdout, "reconfigure"):
             sys.stdout.reconfigure(encoding="utf-8", errors="backslashreplace")

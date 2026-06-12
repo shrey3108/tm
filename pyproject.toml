@@ -39,6 +39,7 @@ dependencies = [
     "docling>=2.101.0",
     "pypdf",
     "reportlab",
+    "nest-asyncio>=1.6.0",
 ]
 
 [[tool.uv.index]]

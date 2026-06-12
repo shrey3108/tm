@@ -1,6 +1,8 @@
 import json
 import logging
 import uuid
+import asyncio
+import numpy as np
 from typing import Any, Dict, List
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -22,7 +24,6 @@ from app.v1.core.config import settings
 from app.v1.core.observability import get_tracer
 from opentelemetry.trace import StatusCode
 from openinference.semconv.trace import SpanAttributes, OpenInferenceSpanKindValues
-import json
 
 logger = logging.getLogger(__name__)
 tracer = get_tracer("hiring-platform.evaluation")
@@ -197,8 +198,6 @@ class EvaluationService:
         from app.v1.core.embeddings import embedding_service
         
         # We can run transcript sentence embedding and JD/Resume embedding in parallel
-        import asyncio
-        import numpy as np
         
         # Start sentence embedding
         t_vectors_task = asyncio.to_thread(embedding_service.encode_transcript_batch, t_sentences) if t_sentences else asyncio.sleep(0, [])

@@ -1,4 +1,5 @@
 import os
+import html
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -19,7 +20,6 @@ from app.v1.utils.pdf_generator import generate_candidate_task_pdf_file
 logger = logging.getLogger(__name__)
 
 def markdown_to_html(text: str) -> str:
-    import html
     lines = text.split("\n")
     html_lines = []
     

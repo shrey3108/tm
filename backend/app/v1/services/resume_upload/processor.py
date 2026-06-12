@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import time
 import uuid
+import asyncio
 from typing import Any
 
 from app.v1.core.analyzer import ResumeJdAnalyzer
@@ -102,8 +103,6 @@ class ResumeProcessor:
 
         job_version = getattr(job, "version", 1)
 
-        import asyncio
-        
         # 1. Parallelize Job and Candidate Embeddings
         async def get_job_embedding():
             # ---- Redis Cache for Job Embedding ----

@@ -115,7 +115,7 @@ async def test_task_paper_history_and_evaluation_flow():
     client = TestClient(app)
 
     try:
-        with patch("app.v1.routes.task_papers.send_candidate_task_email_via_smtp") as mock_send_email:
+        with patch("app.v1.routes.task_papers_email.send_candidate_task_email_via_smtp") as mock_send_email:
             # 2. Assign default job-level test paper
             assign_job_payload = {
                 "job_id": str(job_id),

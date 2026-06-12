@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 import openai
 from typing import Any, Dict, List, Optional
 from opentelemetry import trace
@@ -126,7 +127,6 @@ class EvaluationAgent:
             except json.JSONDecodeError as je:
                 logger.warning(f"Initial JSON parse failed: {je}. Attempting basic repair...")
                 # Basic repair: remove trailing commas before closing braces/brackets
-                import re
                 repaired = re.sub(r',\s*([\]}])', r'\1', clean_content)
                 return json.loads(repaired)
                 

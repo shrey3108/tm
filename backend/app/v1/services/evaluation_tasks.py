@@ -1,6 +1,8 @@
 
 import uuid
 import asyncio
+import os
+import nest_asyncio
 from typing import Any, Dict
 from app.v1.core.celery_app import celery_app
 from app.v1.db.session import async_session_maker
@@ -24,7 +26,6 @@ def evaluate_candidate_transcript_task(candidate_stage_id_str: str):
         asyncio.set_event_loop(loop)
     
     if loop.is_running():
-        import nest_asyncio
         nest_asyncio.apply()
     
     async def run_evaluation():
@@ -74,12 +75,10 @@ def evaluate_candidate_practical_task(
         asyncio.set_event_loop(loop)
 
     if loop.is_running():
-        import nest_asyncio
         nest_asyncio.apply()
 
     async def run_practical_eval():
         nonlocal eval_id
-        import os
         from sqlalchemy import select
         from sqlalchemy.orm import selectinload
         from app.v1.db.models.candidate_stages import CandidateStage
