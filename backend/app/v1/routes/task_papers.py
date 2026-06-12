@@ -227,7 +227,9 @@ async def download_paper_task_file(
             detail="Task file not found on disk.",
         )
 
-    filename = os.path.basename(task_file_path)
+    original_ext = os.path.splitext(task_file_path)[1]
+    safe_paper_name = "".join(c for c in paper.name if c.isalnum() or c in (' ', '-', '_')).replace(' ', '_')
+    filename = f"{safe_paper_name}_Task_File{original_ext}"
     media_type = "application/octet-stream"
     if filename.lower().endswith(".pdf"):
         media_type = "application/pdf"
@@ -777,7 +779,8 @@ async def download_candidate_task_file(
         if not is_modified or not task_file_path.lower().endswith(".pdf"):
             abs_path = resolve_storage_path(task_file_path)
             if abs_path.is_file():
-                filename = os.path.basename(task_file_path)
+                original_ext = os.path.splitext(task_file_path)[1]
+                filename = f"Test_Paper_{candidate.first_name or 'Candidate'}{original_ext}"
                 media_type = "application/octet-stream"
                 if filename.lower().endswith(".pdf"):
                     media_type = "application/pdf"
