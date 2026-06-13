@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useCallback } from "react";
 import { toast } from "sonner";
 import { Upload, HelpCircle } from "lucide-react";
 import AppPageShell from "@/components/shared/AppPageShell";
@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { LoadingSpinner, SearchableSelect } from "@/components/shared";
 import { Label } from "@/components";
 import { QuestionPaperCard } from "@/components/candidate/projectSubmission/QuestionPaperCard";
+import { useDebouncedValue } from "@/hooks";
 
 interface ApiErrorResponse {
   response?: {
@@ -25,12 +26,26 @@ export default function QuestionsBank() {
   const [selectedJobId, setSelectedJobId] = useState<string>("");
   const [selectedPositionId, setSelectedPositionId] = useState<string>("");
   const [isUploading, setIsUploading] = useState<boolean>(false);
+  const [jobSearch, setJobSearch] = useState<string>("");
+  const [positionSearch, setPositionSearch] = useState<string>("");
 
-  // Fetch jobs list
-  const { data: jobs, loading: loadingJobs } = useJobTitle("", true);
+  // Debounce search queries for backend API calls
+  const debouncedJobSearch = useDebouncedValue(jobSearch);
+  const debouncedPositionSearch = useDebouncedValue(positionSearch);
 
-  // Fetch job positions 
-  const { data: positions, loading: loadingPositions } = useJobPosition(0, 100);
+  // Fetch jobs list 
+  const { data: jobs, loading: loadingJobs } = useJobTitle(debouncedJobSearch, true);
+
+  // Fetch job positions
+  const { data: positions, loading: loadingPositions } = useJobPosition(0, 10, debouncedPositionSearch);
+
+  // Detect async loading: search text has changed but debounced value hasn't caught up yet
+  const isJobSearching = jobSearch !== debouncedJobSearch;
+  const isPositionSearching = positionSearch !== debouncedPositionSearch;
+
+  // Stable callbacks for onSearch
+  const handleJobSearch = useCallback((query: string) => setJobSearch(query), []);
+  const handlePositionSearch = useCallback((query: string) => setPositionSearch(query), []);
 
   // Compute active selections (default to first item if state is empty)
   const activeJobId = selectedJobId || jobs?.[0]?.id || "";
@@ -141,6 +156,8 @@ export default function QuestionsBank() {
                 loadingPlaceholder="Loading jobs..."
                 emptyMessage="No active jobs found"
                 moreText="jobs"
+                onSearch={handleJobSearch}
+                asyncLoading={isJobSearching}
               />
             </div>
 
@@ -160,6 +177,8 @@ export default function QuestionsBank() {
                 loadingPlaceholder="Loading levels..."
                 emptyMessage="No position levels found"
                 moreText="position levels"
+                onSearch={handlePositionSearch}
+                asyncLoading={isPositionSearching}
               />
             </div>
           </div>

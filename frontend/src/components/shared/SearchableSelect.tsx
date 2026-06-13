@@ -1,5 +1,9 @@
-import { useState, useMemo } from "react";
-import { ChevronDown, Search } from "lucide-react";
+/**
+ * @fileoverview A searchable dropdown component that provides an interactive UI for selecting
+ * options from a list. It supports both local filtering and remote (async) searching.
+ */
+import { useState, useMemo, useEffect } from "react";
+import { ChevronDown, Search, Loader2 } from "lucide-react";
 import { capitalize, cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import {
@@ -9,24 +13,66 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+/**
+ * Represents an individual selectable item in the search list.
+ */
 interface Option {
+  /** Unique identifier for the option. */
   id: string;
+  /** Human-readable text displayed for the option. */
   label: string;
 }
 
+/**
+ * Props for the {@link SearchableSelect} component.
+ */
 interface SearchableSelectProps {
+  /** The currently selected value (id). */
   value: string;
+  /** Callback fired when a new option is selected. */
   onValueChange: (value: string) => void;
+  /** List of available options to display. */
   options: Option[];
+  /** Text to show when no option is selected. @defaultValue "Select option..." */
   placeholder?: string;
+  /** Placeholder text for the internal search input. @defaultValue "Search..." */
   searchPlaceholder?: string;
+  /** Whether the entire component is disabled. @defaultValue false */
   disabled?: boolean;
+  /** Whether the component is in a generic loading state (replaces content). @defaultValue false */
   loading?: boolean;
+  /** Text shown when the component is in the generic loading state. @defaultValue "Loading..." */
   loadingPlaceholder?: string;
+  /** Message shown when no options match the search criteria. @defaultValue "No options found" */
   emptyMessage?: string;
+  /** Text used in the "X more options..." footer when the display limit is exceeded. @defaultValue "options" */
   moreText?: string;
+  /**
+   * Optional callback triggered on every search input change.
+   * Useful for backend-driven searches. The consumer is responsible for debouncing.
+   */
+  onSearch?: (query: string) => void;
+  /**
+   * When true, shows an inline spinner in the search input to indicate a backend search.
+   * @defaultValue false
+   */
+  asyncLoading?: boolean;
 }
 
+/**
+ * A reusable dropdown component with built-in filtering and support for remote searching.
+ *
+ * @example
+ * ```tsx
+ * <SearchableSelect
+ *   value={selectedId}
+ *   onValueChange={setSelectedId}
+ *   options={[{ id: '1', label: 'Option 1' }]}
+ *   onSearch={(q) => fetchResults(q)}
+ *   asyncLoading={isLoading}
+ * />
+ * ```
+ */
 export function SearchableSelect({
   value,
   onValueChange,
@@ -38,8 +84,17 @@ export function SearchableSelect({
   loadingPlaceholder = "Loading...",
   emptyMessage = "No options found",
   moreText = "options",
+  onSearch,
+  asyncLoading = false,
 }: SearchableSelectProps) {
   const [search, setSearch] = useState("");
+
+  // Notify consumer of search changes for backend search
+  useEffect(() => {
+    if (onSearch) {
+      onSearch(search);
+    }
+  }, [search, onSearch]);
 
   const selectedOption = useMemo(() => {
     return options.find((opt) => opt.id === value);
@@ -73,10 +128,14 @@ export function SearchableSelect({
         <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50 text-muted-foreground" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="p-2 w-(--anchor-width)">
-        {options.length >= FILTER_DISPLAY_LIMIT && (
+        {(search || options.length >= FILTER_DISPLAY_LIMIT) && (
           <div className="px-1 pb-2">
             <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              {asyncLoading ? (
+                <Loader2 className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground animate-spin" />
+              ) : (
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              )}
               <Input
                 placeholder={searchPlaceholder}
                 value={search}
@@ -107,7 +166,7 @@ export function SearchableSelect({
                       isSelected && "bg-accent/50 font-semibold"
                     )}
                   >
-                    <span className="truncate">{capitalize(opt.label)}</span>
+                    <span className="truncate capitalize">{capitalize(opt.label)}</span>
                   </DropdownMenuItem>
                 );
               })}
