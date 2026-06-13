@@ -252,6 +252,10 @@ class Evaluation(Base):
             res["strengths"] = []
             res["weaknesses"] = []
             res["suggested_followups"] = []
+            if "overall_summary" in res:
+                del res["overall_summary"]
+            if "recommendation" in res:
+                del res["recommendation"]
             
         return res
 
