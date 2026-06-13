@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo } from "react";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { Clock, ChevronRight } from "lucide-react";
@@ -6,14 +6,11 @@ import { useCandidateTimelineQuery } from "@/hooks/queries/candidates";
 import type { TimelineEvent } from "@/types/candidate";
 import type { Job } from "@/types/job";
 import type { CandidateAnalysis } from "@/types/admin";
-import { TimelineEventDetailModal } from "./TimelineEventDetailModal";
 import { useNavigate } from "react-router-dom";
 import { slugify } from "@/utils/slug";
 import { useTimelineStatus } from "./useTimelineStatus";
 import { TimelineCard } from "./TimelineCard";
 import { isEventOngoing } from "./timelineStatusUtils";
-
-
 
 interface CandidateTimelineProps {
   candidateId?: string;
@@ -43,8 +40,6 @@ export function CandidateTimeline({
   onTranscriptDisableChange,
 }: CandidateTimelineProps) {
   const { data: events } = useCandidateTimelineQuery(candidateId, jobId);
-  const [selectedEvent, setSelectedEvent] = useState<TimelineEvent | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const navigate = useNavigate();
 
@@ -56,16 +51,29 @@ export function CandidateTimeline({
     onTranscriptDisableChange,
   });
 
+  const currentStageIndex = useMemo(
+    () =>
+      events?.events.findIndex((e) =>
+        events.current_stage
+          ? e.title === events.current_stage
+          : isEventOngoing(e.result),
+      ) ?? -1,
+    [events],
+  );
+
   const handleEventClick = (event: TimelineEvent) => {
-    setSelectedEvent(event);
-    if (!event.stage_id) {
-      onSelectStage?.("Resume Screening");
-    } else {
-      if (event.event_type === "stage" && event.title) {
-        onSelectStage?.(event.title);
-      } else {
-        setIsModalOpen(true);
-      }
+    const stageName = event.title || "Resume Screening";
+
+
+    // Navigate to the stage route
+    navigate(`../${slugify(stageName)}`, {
+      relative: "path",
+      state: { job, candidate },
+    });
+
+    // Select stage or open detail modal
+    if (!event.stage_id || (event.event_type === "stage" && event.title)) {
+      onSelectStage?.(stageName);
     }
   };
 
@@ -82,30 +90,23 @@ export function CandidateTimeline({
       <ScrollArea className="w-full whitespace-nowrap rounded-md border-0">
         <div className="flex w-max space-x-1 p-1">
           {events?.events.map((event, index) => {
-            const isSelected = event.title === selectedStage;
-            const isAfterRejection = firstRejectedIndex !== -1 && index > (firstRejectedIndex ?? 0);
-            const isActuallyActive = events?.current_stage
+            const isAfterRejection = firstRejectedIndex !== -1 && index > firstRejectedIndex;
+            const isActuallyActive = events.current_stage
               ? event.title === events.current_stage
               : isEventOngoing(event.result);
+            const isFutureStage = currentStageIndex !== -1 && index > currentStageIndex;
+            const isAiPending = event.ai_result?.toLowerCase().includes("pending");
 
             return (
               <React.Fragment key={index}>
                 <TimelineCard
                   event={event}
-                  isSelected={isSelected}
+                  isSelected={event.title === selectedStage}
                   isAfterRejection={isAfterRejection}
                   isActuallyActive={isActuallyActive}
-                  onClick={() => {
-                    const targetStage = event.stage_id ? (event.title || "Resume Screening") : "Resume Screening";
-                    const slug = slugify(targetStage);
-                    navigate(`../${slug}`, {
-                      relative: "path",
-                      state: { job, candidate },
-                    });
-                    handleEventClick(event);
-                  }}
+                  isDisabled={isFutureStage || (isAiPending && !isActuallyActive)}
+                  onClick={() => handleEventClick(event)}
                 />
-
                 {index < events.events.length - 1 && (
                   <div className="flex items-center justify-center shrink-0 self-center">
                     <ChevronRight className="h-4 w-4 text-muted-foreground/30" />
@@ -117,12 +118,7 @@ export function CandidateTimeline({
         </div>
         <ScrollBar orientation="horizontal" />
       </ScrollArea>
-
-      <TimelineEventDetailModal
-        isOpen={isModalOpen}
-        onOpenChange={setIsModalOpen}
-        event={selectedEvent}
-      />
     </div>
   );
 }
+
