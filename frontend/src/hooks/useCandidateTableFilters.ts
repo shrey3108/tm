@@ -158,6 +158,20 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
     !!dateRange?.to ||
     !!testEmailSentFilter;
 
+  // Resolve selected stage IDs to their normalized names so we can match
+  // candidates by stage name across different jobs (stages are deduplicated by name).
+  const selectedStageNames = useMemo(() => {
+    if (stageFilter.length === 0) return [] as string[];
+    const names = new Set<string>();
+    stageFilter.forEach(id => {
+      const c = candidates.find(c => c.current_stage?.job_stage_id === id);
+      if (c?.current_stage?.template_name) {
+        names.add(c.current_stage.template_name.trim().toLowerCase());
+      }
+    });
+    return Array.from(names);
+  }, [stageFilter, candidates]);
+
   // --- Cross-filter helper: applies all filters EXCEPT the one named by `skip` ---
   const crossFilteredCandidates = (skip: string) => {
     return candidates.filter((c) => {
@@ -205,10 +219,14 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
         }
         if (!resultFilter.includes(candidateResult)) return false;
       }
-      // Stage filter
+      // Stage filter — match by name (stages are deduplicated by name across jobs)
       if (skip !== 'stage' && stageFilter.length > 0) {
-        const candidateStage = c.current_stage?.job_stage_id || '';
-        if (!stageFilter.includes(candidateStage)) return false;
+        const candidateStageName = (c.current_stage?.template_name || '').trim().toLowerCase();
+        const candidateStageId = c.current_stage?.job_stage_id || '';
+        // Match if the candidate's stage ID is directly selected OR if the stage name matches a selected stage's name
+        const matchesById = stageFilter.includes(candidateStageId);
+        const matchesByName = selectedStageNames.some(n => n === candidateStageName);
+        if (!matchesById && !matchesByName) return false;
       }
       // Activity session filter
       if (skip !== 'activity' && activitySessionFilter.length > 0) {
@@ -370,37 +388,71 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
 
   const stageOptions = useMemo(() => {
     if (!isAnyFilterActive && stageOptionsProp && stageOptionsProp.length > 0) {
-      return stageOptionsProp;
+      // Deduplicate stageOptionsProp by name
+      const seen = new Map<string, { id: string; name: string }>();
+      stageOptionsProp.forEach(s => {
+        const key = s.name.trim().toLowerCase();
+        if (!seen.has(key)) {
+          seen.set(key, s);
+        }
+      });
+      return Array.from(seen.values());
     }
     const subset = isAnyFilterActive ? crossFilteredCandidates('stage') : candidates;
-    const map = new Map<string, { id: string; name: string; order: number }>();
+
+    // Deduplicate by normalized stage name so identical stages from different jobs
+    // (e.g. "HR Round" appearing in 3 jobs) only show once in the filter dropdown.
+    // We keep one representative id per unique name and collect all matching IDs.
+    const nameMap = new Map<string, { id: string; name: string; order: number; allIds: string[] }>();
     subset.forEach((c) => {
       const id = c.current_stage?.job_stage_id;
       const name = c.current_stage?.template_name;
       const order = c.current_stage?.order ?? 0;
       if (id && name) {
-        map.set(id, { id, name, order });
+        const key = name.trim().toLowerCase();
+        const existing = nameMap.get(key);
+        if (existing) {
+          if (!existing.allIds.includes(id)) existing.allIds.push(id);
+        } else {
+          nameMap.set(key, { id, name, order, allIds: [id] });
+        }
       }
     });
 
     if (stageOptionsProp && stageOptionsProp.length > 0) {
-      return stageOptionsProp.filter(s => map.has(s.id) || stageFilter.includes(s.id));
+      // Deduplicate stageOptionsProp by name, keep only those present in subset or selected
+      const activeNames = new Set(nameMap.keys());
+      const selectedIds = new Set(stageFilter);
+      const seen = new Map<string, { id: string; name: string }>();
+      stageOptionsProp.forEach(s => {
+        const key = s.name.trim().toLowerCase();
+        if (!seen.has(key) && (activeNames.has(key) || selectedIds.has(s.id))) {
+          seen.set(key, s);
+        }
+      });
+      return Array.from(seen.values());
     }
 
-    // Fallback: if stageOptionsProp is not provided, ensure selected stages are still present by reconstructing from candidates
-    const selectedStagesNotInMap = stageFilter.filter(id => !map.has(id));
-    selectedStagesNotInMap.forEach(id => {
+    // Fallback: ensure selected stages are still present
+    stageFilter.forEach(id => {
       const candidateWithStage = candidates.find(c => c.current_stage?.job_stage_id === id);
       if (candidateWithStage?.current_stage) {
-        map.set(id, {
-          id,
-          name: candidateWithStage.current_stage.template_name || '',
-          order: candidateWithStage.current_stage.order ?? 0
-        });
+        const name = candidateWithStage.current_stage.template_name || '';
+        const key = name.trim().toLowerCase();
+        if (!nameMap.has(key)) {
+          nameMap.set(key, {
+            id,
+            name,
+            order: candidateWithStage.current_stage.order ?? 0,
+            allIds: [id]
+          });
+        }
       }
     });
 
-    return Array.from(map.values()).sort((a, b) => a.order - b.order || a.name.localeCompare(b.name));
+    return Array.from(nameMap.values())
+      .sort((a, b) => a.order - b.order || a.name.localeCompare(b.name))
+      .map(({ id, name }) => ({ id, name }));
   }, [candidates, stageOptionsProp, isAnyFilterActive, debouncedNameFilter, statusFilter, locationFilter, jobFilter, dateRange, hrDecisionFilter, resultFilter, activitySessionFilter, hrScoreFilter, stageFilter, passingThreshold]);
 
   const isTechnicalPracticalRoundSelected = useMemo(() => {
@@ -504,10 +556,13 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
         }
       }
 
-      // Stage filter (multi-select)
+      // Stage filter (multi-select) — match by name (stages are deduplicated by name across jobs)
       if (stageFilter.length > 0) {
-        const candidateStage = c.current_stage?.job_stage_id || "";
-        if (!stageFilter.includes(candidateStage)) return false;
+        const candidateStageId = c.current_stage?.job_stage_id || "";
+        const candidateStageName = (c.current_stage?.template_name || "").trim().toLowerCase();
+        const matchesById = stageFilter.includes(candidateStageId);
+        const matchesByName = selectedStageNames.some(n => n === candidateStageName);
+        if (!matchesById && !matchesByName) return false;
       }
 
       // Activity session filter (multi-select)
@@ -539,7 +594,7 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
 
       return true;
     });
-  }, [candidates, debouncedNameFilter, statusFilter, locationFilter, hrDecisionFilter, jobFilter, dateRange, resultFilter, stageFilter, activitySessionFilter, hrScoreFilter, testEmailSentFilter, isServerSide]);
+  }, [candidates, debouncedNameFilter, statusFilter, locationFilter, hrDecisionFilter, jobFilter, dateRange, resultFilter, stageFilter, selectedStageNames, activitySessionFilter, hrScoreFilter, testEmailSentFilter, isServerSide]);
 
   const hasActiveFilters = isAnyFilterActive;
 
