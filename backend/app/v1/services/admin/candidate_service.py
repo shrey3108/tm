@@ -42,6 +42,7 @@ class CandidateAdminService:
         stage_id: list[str] | None = None,
         city: list[str] | None = None,
         result: list[str] | None = None,
+        test_email_sent: bool | None = None,
     ) -> PaginatedData[CandidateResponse]:
         from app.v1.db.models.cross_job_matches import CrossJobMatch
         from app.v1.db.models.candidate_stages import CandidateStage
@@ -60,6 +61,7 @@ class CandidateAdminService:
         if stage_id: cache_key += f":s_{stage_id}"
         if city: cache_key += f":city_{city}"
         if result: cache_key += f":res_{result}"
+        if test_email_sent is not None: cache_key += f":es_{test_email_sent}"
 
         cached = await cache.get(cache_key)
         if cached:
@@ -172,6 +174,34 @@ class CandidateAdminService:
 
         if result:
             dir_filter = and_(dir_filter, Resume.pass_fail.in_(result))
+
+        if test_email_sent is not None:
+            from app.v1.db.models.candidate_test_paper import CandidateTestPaper
+            
+            tech_round_cond = Candidate.stages.any(
+                and_(
+                    CandidateStage.job_stage.has(
+                        and_(
+                            JobStageConfig.template_id == StageTemplate.id,
+                            StageTemplate.name == "Technical Practical Round"
+                        )
+                    ),
+                    CandidateStage.status == "active"
+                )
+            )
+            
+            email_cond = exists().where(
+                and_(
+                    CandidateTestPaper.candidate_id == Candidate.id,
+                    CandidateTestPaper.email_sent_count > 0
+                )
+            ).correlate(Candidate)
+            
+            if test_email_sent:
+                dir_filter = and_(dir_filter, tech_round_cond, email_cond)
+            else:
+                dir_filter = and_(dir_filter, tech_round_cond, ~email_cond)
+
 
         dir_stmt = select(Candidate).join(Resume, Resume.candidate_id == Candidate.id).where(
             dir_filter
@@ -510,6 +540,7 @@ class CandidateAdminService:
         end_date: datetime | None = None,
         skip: int = 0,
         limit: int = 100,
+        test_email_sent: bool | None = None,
     ) -> PaginatedData[CandidateResponse]:
         """Search candidates across all jobs with advanced filtering."""
         from app.v1.db.models.jobs import Job
@@ -658,6 +689,35 @@ class CandidateAdminService:
         if result:
             stmt = stmt.where(Resume.pass_fail.in_(result))
             total_stmt = total_stmt.where(Resume.pass_fail.in_(result))
+
+        if test_email_sent is not None:
+            from app.v1.db.models.candidate_test_paper import CandidateTestPaper
+            
+            tech_round_cond = Candidate.stages.any(
+                and_(
+                    CandidateStage.job_stage.has(
+                        and_(
+                            JobStageConfig.template_id == StageTemplate.id,
+                            StageTemplate.name == "Technical Practical Round"
+                        )
+                    ),
+                    CandidateStage.status == "active"
+                )
+            )
+            
+            email_cond = exists().where(
+                and_(
+                    CandidateTestPaper.candidate_id == Candidate.id,
+                    CandidateTestPaper.email_sent_count > 0
+                )
+            ).correlate(Candidate)
+            
+            if test_email_sent:
+                stmt = stmt.where(and_(tech_round_cond, email_cond))
+                total_stmt = total_stmt.where(and_(tech_round_cond, email_cond))
+            else:
+                stmt = stmt.where(and_(tech_round_cond, ~email_cond))
+                total_stmt = total_stmt.where(and_(tech_round_cond, ~email_cond))
 
         # 6. Stages filter
         if stage_id:

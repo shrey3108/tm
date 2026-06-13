@@ -84,6 +84,8 @@ export default function CandidatesStages() {
         stageId={instanceId as string}
         candidateId={candidate?.id}
         stageName={currentStage}
+        githubUrl={candidateData?.task_file_path || candidate?.task_file_path}
+        transcriptHistory={transcriptHistory}
       />
       <div className="flex overflow-hidden">
         {/* Main Content Area */}

@@ -6,7 +6,11 @@ import { Badge } from "@/components";
 import { CandidateStatusBadge, DateDisplay } from "@/components/shared";
 import { isEventCompleted, isEventOngoing, isEventPending } from "./timelineStatusUtils";
 import type { TimelineEvent } from "@/types/candidate";
-
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card"
 
 
 interface TimelineCardProps {
@@ -17,6 +21,7 @@ interface TimelineCardProps {
   isAfterRejection: boolean;
   /** Whether this is the real "current" stage the candidate is on. */
   isActuallyActive: boolean;
+  isDisabled?: boolean;
   onClick: () => void;
 }
 
@@ -27,42 +32,52 @@ export const TimelineCard = React.memo(function TimelineCard({
   isSelected,
   isAfterRejection,
   isActuallyActive,
+  isDisabled,
   onClick,
 }: TimelineCardProps) {
   // @ts-ignore
   const _completed = isEventCompleted(event.result);
   const ongoing = isEventOngoing(event.result);
   const pending = isEventPending(event.result);
-
+  // console.log(event);
   return (
     <Card
-      onClick={onClick}
+      onClick={isDisabled ? undefined : onClick}
       className={cn(
-        "flex w-[250px] flex-col p-2.5 gap-1.5 shrink-0 border cursor-pointer hover:border-primary/50 transition-all",
-        isSelected
-          ? "border-primary bg-primary/5 shadow-md ring-1 ring-primary/20 scale-[1.02]"
-          : ongoing
-            ? "border-primary/40 bg-primary/5"
-            : "border-muted-foreground/10 bg-card hover:bg-muted/30",
+        "flex w-[230px] flex-col p-2.5 gap-1.5 shrink-0 border transition-all",
+        isDisabled
+          ? "opacity-50 cursor-not-allowed border-muted-foreground/10 bg-card"
+          : cn(
+            "cursor-pointer hover:border-primary/50",
+            isSelected
+              ? "border-primary bg-primary/5 shadow-md ring-1 ring-primary/20 scale-[1.02]"
+              : ongoing
+                ? "border-primary/40 bg-primary/5"
+                : "border-muted-foreground/10 bg-card hover:bg-muted/30",
+          ),
         isAfterRejection && "opacity-40 grayscale-[0.5]",
       )}
     >
       {/* Title + current badge */}
       <div className="space-y-1 min-h-[38px]">
         <div className="flex items-center justify-between gap-2">
-          <h4
-            className={cn(
-              "font-black text-xs text-wrap line-clamp-1",
-              isSelected
-                ? "text-black font-bold dark:text-white"
-                : pending
-                  ? "text-foreground"
-                  : "text-foreground/90",
-            )}
-            title={event.title}
-          >
-            {event.title}
-          </h4>
+          <HoverCard>
+            <HoverCardTrigger>
+              <h4
+                className={cn(
+                  "font-black text-xs text-wrap line-clamp-1",
+                  isSelected
+                    ? "text-black font-bold dark:text-white"
+                    : pending
+                      ? "text-foreground"
+                      : "text-foreground/90")}
+              >{event.title}</h4>
+            </HoverCardTrigger>
+            <HoverCardContent className="w-auto p-2 bg-popover/90 backdrop-blur-sm border-primary/20 shadow-xl" side="top">
+              {event.title}
+            </HoverCardContent>
+          </HoverCard>
+
           {isActuallyActive && (
             <Badge
               variant="secondary"
@@ -98,7 +113,7 @@ export const TimelineCard = React.memo(function TimelineCard({
               <CandidateStatusBadge status={event.ai_result?.replace("ed", "") || "N/A"} />
               {event.score !== null && event.score !== undefined && (
                 <span className="text-xs font-bold ">
-                  {event.score}
+                  {event.score.toFixed(1)}
                   {event.title !== "Resume Screening" ? "/5" : "%"}
                 </span>
               )}
@@ -113,7 +128,7 @@ export const TimelineCard = React.memo(function TimelineCard({
               <CandidateStatusBadge status={event.hr_decision?.replace("ed", "") || "N/A"} />
               {event.hr_score !== null && event.hr_score !== undefined && (
                 <span className="text-xs font-bold ">
-                  {event.hr_score}/5
+                  {event.hr_score.toFixed(1)}/5
                 </span>
               )}
             </div>

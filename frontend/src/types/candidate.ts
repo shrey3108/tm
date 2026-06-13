@@ -29,6 +29,7 @@ export interface UnifiedCandidate {
   job_name?: string | null;
   current_stage?: CandidateStageSummary | null;
   pipeline?: CandidateStageSummary[] | null;
+  task_file_path?: string | null;
 }
 
 export interface TimelineEvent {

@@ -174,9 +174,6 @@ async def download_paper_task_file(
             detail="No task file uploaded for this paper.",
         )
 
-    if task_file_path.startswith(("http://", "https://")):
-        return RedirectResponse(url=task_file_path)
-
     abs_path = resolve_storage_path(task_file_path)
     if not abs_path.is_file():
         raise HTTPException(

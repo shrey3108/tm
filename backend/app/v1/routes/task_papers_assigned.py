@@ -518,10 +518,6 @@ async def download_candidate_task_file(
 
     task_file_path = candidate.task_file_path or (test_paper.task_file_path if test_paper else None)
 
-    # 3. Handle URL (e.g. GitHub URL or external link)
-    if task_file_path and task_file_path.startswith(("http://", "https://")):
-        return RedirectResponse(url=task_file_path)
-
     # 4. Check if the paper has overridden questions/task compared to the template
     is_modified = True
     if test_paper:

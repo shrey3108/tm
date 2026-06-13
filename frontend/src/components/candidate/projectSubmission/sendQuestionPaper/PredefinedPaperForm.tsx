@@ -82,7 +82,7 @@ export function PredefinedPaperForm({
 
       {/* Predefined Preview */}
       {selectedPredefinedPaper && (
-        <div className="rounded-xl border border-border/40 bg-muted/20 p-2">
+        <div className="rounded-xl border border-border/40 bg-muted/20">
           <div>
             <h4 className="text-base font-bold text-foreground mb-1">
               Questions Preview

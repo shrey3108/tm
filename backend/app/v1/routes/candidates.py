@@ -80,6 +80,7 @@ async def search_candidates(
     city: list[str] | None = Query(None, description="City/Location name(s)"),
     result: list[str] | None = Query(None, description="AI screening result: 'passed', 'failed', or 'pending'"),
     stage_id: list[str] | None = Query(None, description="Hiring pipeline stage name(s) or ID(s)"),
+    test_email_sent: bool | None = Query(None, description="Filter for test paper email sent status (strictly for Technical Practical Round stage)"),
     db: AsyncSession = Depends(get_db),
     user: UserRead = Depends(check_permission("candidates:access")),
     start_date: datetime | None = Query(None),
@@ -97,6 +98,7 @@ async def search_candidates(
         city=city,
         result=result,
         stage_id=stage_id,
+        test_email_sent=test_email_sent,
         start_date=start_date,
         end_date=end_date,
         skip=skip, 
@@ -121,6 +123,7 @@ async def get_job_candidates(
     stage_id: list[str] | None = Query(None, description="Filter by specific stage ID(s) or name(s)"),
     city: list[str] | None = Query(None, description="Filter by candidate city/location(s)"),
     result: list[str] | None = Query(None, description="AI result filter: 'passed', 'failed', 'pending'"),
+    test_email_sent: bool | None = Query(None, description="Filter for test paper email sent status (strictly for Technical Practical Round stage)"),
 ) -> Any:
     """Get all candidates for a specific job, with optional searching and filtering."""
     return await admin_service.get_candidates_for_job(
@@ -138,6 +141,7 @@ async def get_job_candidates(
         stage_id=stage_id,
         city=city,
         result=result,
+        test_email_sent=test_email_sent,
     )
 
 
@@ -395,10 +399,6 @@ async def download_candidate_task_file(
     task_file_path = candidate.task_file_path
     if not task_file_path:
         return None
-
-    # 3. Handle URL (e.g. GitHub URL or external link)
-    if task_file_path.startswith(("http://", "https://")):
-        return RedirectResponse(url=task_file_path)
 
     # 4. Resolve local file path
     abs_path = resolve_storage_path(task_file_path)

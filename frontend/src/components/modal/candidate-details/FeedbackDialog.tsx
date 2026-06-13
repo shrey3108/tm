@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -7,17 +8,10 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare, Star } from "lucide-react";
 import { Controller } from "react-hook-form";
 import type { UseFormReturn } from "react-hook-form";
 import type { CandidateDecisionFormValues } from "@/schemas/candidate";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { HR_DECISION_OPTIONS } from "@/constants";
 
 /**
@@ -53,7 +47,14 @@ export function FeedbackDialog({
   } = form;
 
   const feedbackType = watch("decision");
-  const scoreRange = new Array(5).fill(0).map((_, i) => i + 1)
+  const [hoverValue, setHoverValue] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setHoverValue(null);
+    }
+  }, [isOpen]);
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px] p-6 rounded-3xl">
@@ -88,25 +89,71 @@ export function FeedbackDialog({
 
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground ">Rating</span>
+                <span className="text-xs text-muted-foreground">Rating</span>
                 <Controller
                   control={form.control}
                   name="score"
-                  render={({ field }) => (
-                    <Select
-                      value={field.value?.toString()}
-                      onValueChange={(val) => field.onChange(Number(val))}
-                    >
-                      <SelectTrigger className="w-[100px] rounded-xl bg-background border-muted-foreground/20 text-sm font-semibold" size="sm">
-                        <SelectValue placeholder="Rating" />
-                      </SelectTrigger>
-                      <SelectContent className="rounded-xl border-muted-foreground/10 bg-popover/90 backdrop-blur-xl min-w-fit" >
-                        {
-                          scoreRange.map((item) => (<SelectItem value={item.toString()} key={item}>{item} </SelectItem>))
-                        }
-                      </SelectContent>
-                    </Select>
-                  )}
+                  render={({ field }) => {
+                    const displayValue = hoverValue !== null ? hoverValue : (field.value ?? 0);
+                    return (
+                      <div className="flex items-center gap-2.5">
+                        <div
+                          className="flex items-center gap-0.5"
+                          onMouseLeave={() => setHoverValue(null)}
+                        >
+                          {Array.from({ length: 5 }).map((_, index) => {
+                            const starValue = index + 1;
+                            let fillType: "full" | "half" | "empty" = "empty";
+
+                            if (displayValue >= starValue) {
+                              fillType = "full";
+                            } else if (displayValue === starValue - 0.5) {
+                              fillType = "half";
+                            }
+
+                            return (
+                              <div
+                                key={index}
+                                className="relative w-6 h-6 select-none transition-transform active:scale-95 duration-100"
+                              >
+                                {/* Left half hit zone */}
+                                <div
+                                  className="absolute top-0 left-0 w-1/2 h-full cursor-pointer z-10"
+                                  onMouseEnter={() => setHoverValue(Math.max(1, starValue - 0.5))}
+                                  onClick={() => field.onChange(Math.max(1, starValue - 0.5))}
+                                />
+                                {/* Right half hit zone */}
+                                <div
+                                  className="absolute top-0 right-0 w-1/2 h-full cursor-pointer z-10"
+                                  onMouseEnter={() => setHoverValue(starValue)}
+                                  onClick={() => field.onChange(starValue)}
+                                />
+
+                                {/* Background empty star */}
+                                <Star className="w-6 h-6 text-muted-foreground/30 fill-none" />
+
+                                {/* Full star overlay */}
+                                {fillType === "full" && (
+                                  <Star className="absolute top-0 left-0 w-6 h-6 text-[#E17100]  fill-[#FFB900]" />
+                                )}
+
+                                {/* Half star overlay */}
+                                {fillType === "half" && (
+                                  <Star
+                                    className="absolute top-0 left-0 w-6 h-6 text-[#E17100]  fill-[#FFB900]"
+                                    style={{ clipPath: "inset(0 50% 0 0)" }}
+                                  />
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <span className="px-2 py-0.5 rounded-full bg-[#F9EBE1] text-[#E17100] text-xs font-medium min-w-[40px] text-center">
+                          {displayValue.toFixed(1)} / 5.0
+                        </span>
+                      </div>
+                    );
+                  }}
                 />
               </div>
             </div>
@@ -120,10 +167,14 @@ export function FeedbackDialog({
               {...register("note")}
             />
             {errors && (
-              <p className="text-xs  text-red-500">
-                {errors.note && errors.note.message}
-                {errors.score && errors.score.message}
-              </p>
+              <>
+                {errors.note && <p className="text-xs text-red-500">
+                  {errors.note.message}
+                </p>}
+                {errors.score && <p className="text-xs text-red-500">
+                  {errors.score.message}
+                </p>}
+              </>
             )}
           </div>
         </div>
@@ -132,7 +183,7 @@ export function FeedbackDialog({
             className="rounded-xl"
             onClick={() => {
               onOpenChange(false)
-              form.reset({ note: "", score: 5 })
+              form.reset({ note: "", score: 0 })
             }}
           >
             Cancel
