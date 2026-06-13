@@ -241,15 +241,33 @@ class Evaluation(Base):
 
     @property
     def highlights(self) -> dict | None:
-        """Returns the parsed highlights, but clears strengths, weaknesses, and followups to avoid duplication in UI."""
+        """Returns the parsed highlights, but clears strengths, weaknesses, and followups to avoid duplication in UI if they are injected into JD/Task skills grids."""
         full = self._get_full_highlights()
         if not full:
             return None
         res = full.copy()
-        res["strengths"] = []
-        res["weaknesses"] = []
-        res["suggested_followups"] = []
+        
+        # Only clear them if this is a GitHub Evaluation (which has grouped skills)
+        if isinstance(self.evaluation_data, dict) and any("(JD Skills)" in k or "(Task Skills)" in k for k in self.evaluation_data.keys()):
+            res["strengths"] = []
+            res["weaknesses"] = []
+            res["suggested_followups"] = []
+            
         return res
+
+    @property
+    def jd_skills(self) -> list[str] | None:
+        if isinstance(self.evidence_block, dict):
+            if "jd_alignment" in self.evidence_block and isinstance(self.evidence_block["jd_alignment"], dict):
+                return self.evidence_block["jd_alignment"].get("jd_skills")
+        return None
+
+    @property
+    def project_required_skills(self) -> list[str] | None:
+        if isinstance(self.evidence_block, dict):
+            if "project_alignment" in self.evidence_block and isinstance(self.evidence_block["project_alignment"], dict):
+                return self.evidence_block["project_alignment"].get("project_required_skills")
+        return None
 
     @property
     def structured_evaluation_data(self) -> dict:
@@ -388,13 +406,13 @@ class Evaluation(Base):
                     jd_followups = followups
                     task_followups = followups
 
-            # Append overall_summary, strengths, weaknesses, and suggested_followups directly to the respective lists
-            jd_skills_list.append({"overall_summary": jd_summary})
+            # Append alignment_review, strengths, weaknesses, and suggested_followups directly to the respective lists
+            jd_skills_list.append({"alignment_review": jd_summary})
             jd_skills_list.append({"strengths": jd_strengths})
             jd_skills_list.append({"weaknesses": jd_weaknesses})
             jd_skills_list.append({"suggested_followups": jd_followups})
             
-            task_skills_list.append({"overall_summary": task_summary})
+            task_skills_list.append({"alignment_review": task_summary})
             task_skills_list.append({"strengths": task_strengths})
             task_skills_list.append({"weaknesses": task_weaknesses})
             task_skills_list.append({"suggested_followups": task_followups})

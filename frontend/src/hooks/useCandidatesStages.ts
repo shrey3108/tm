@@ -281,24 +281,38 @@ export function useCandidatesStages() {
     }
 
     const overall_summary = evaluation.highlights?.overall_summary || extractedSummary || "No summary available.";
-    const strength_summary = (evaluation.highlights?.strengths && evaluation.highlights.strengths.length > 0)
+    
+    // Check if this is a GitHub Evaluation with specific keys
+    const github_highlights: Record<string, string[]> = {};
+    if (evaluation.highlights) {
+        ["Architectural Review", "Code Quality Review", "Identified Security Risks", "Extraordinary Points"].forEach(key => {
+            if (evaluation.highlights[key]) {
+                github_highlights[key] = evaluation.highlights[key];
+            }
+        });
+    }
+
+    const hasGithubHighlights = Object.keys(github_highlights).length > 0;
+
+    const strength_summary = (!hasGithubHighlights && evaluation.highlights?.strengths && evaluation.highlights.strengths.length > 0)
       ? evaluation.highlights.strengths
       : (extractedStrengths.length > 0 ? extractedStrengths : ["N/A"]);
-    const weakness_summary = (evaluation.highlights?.weaknesses && evaluation.highlights.weaknesses.length > 0)
+    const weakness_summary = (!hasGithubHighlights && evaluation.highlights?.weaknesses && evaluation.highlights.weaknesses.length > 0)
       ? evaluation.highlights.weaknesses
       : (extractedWeaknesses.length > 0 ? extractedWeaknesses : ["N/A"]);
-    const followups = (evaluation.highlights?.suggested_followups && evaluation.highlights.suggested_followups.length > 0)
+    const followups = (!hasGithubHighlights && evaluation.highlights?.suggested_followups && evaluation.highlights.suggested_followups.length > 0)
       ? evaluation.highlights.suggested_followups
       : (extractedFollowups.length > 0 ? extractedFollowups : ["N/A"]);
 
     return {
       stage_score: evaluation.overall_score || 0,
       recommendation: evaluation.recommendation || "N/A",
-      overall_summary,
-      strength_summary,
-      weakness_summary,
-      followups,
+      overall_summary: hasGithubHighlights ? undefined : overall_summary,
+      strength_summary: hasGithubHighlights ? undefined : strength_summary,
+      weakness_summary: hasGithubHighlights ? undefined : weakness_summary,
+      followups: hasGithubHighlights ? undefined : followups,
       percentage: Math.round((evaluation.overall_score || 0) * 20),
+      github_highlights: hasGithubHighlights ? github_highlights : undefined,
     } as const;
   }, [evaluation]);
 
