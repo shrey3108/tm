@@ -18,6 +18,8 @@ class EvaluationRead(BaseModel):
     sim_resume_transcript: Optional[float] = None
     created_at: datetime
     highlights: Optional[Dict[str, Any]] = None
+    jd_skills: Optional[list[str]] = None
+    project_required_skills: Optional[list[str]] = None
     
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 

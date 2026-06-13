@@ -158,9 +158,15 @@ class ResumeUploadService:
                     detail="This candidate is already linked to this job.",
                 )
             
-            # Find the resume record for this file (only fully parsed ones)
-            resume_stmt = select(Resume.id).where(Resume.file_id == existing_global_file.id, Resume.parsed == True)
+            # Find the resume record for this file (in any parsing state)
+            resume_stmt = select(Resume.id).where(Resume.file_id == existing_global_file.id).order_by(Resume.uploaded_at.desc()).limit(1)
             existing_resume_id = (await db.execute(resume_stmt)).scalar()
+
+            if not existing_resume_id:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Failed to find existing resume record for deduplication.",
+                )
 
             # Link existing candidate to this new job via CrossJobMatch
             new_xm = CrossJobMatch(

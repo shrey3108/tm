@@ -19,13 +19,15 @@ export interface OverallSummaryData {
   /** Overall AI summary of candidate performance — simple string or categorized array */
   overall_summary: SummaryText;
   /** Summary of candidate strengths — flat list or categorized */
-  strength_summary: SummaryItems;
+  strength_summary?: SummaryItems;
   /** Summary of candidate weaknesses — flat list or categorized */
-  weakness_summary: SummaryItems;
+  weakness_summary?: SummaryItems;
   /** Suggested followup questions — flat list or categorized */
-  followups: SummaryItems;
+  followups?: SummaryItems;
   /** Overall percentage score (0-100) */
   percentage: number;
+  /** GitHub specific highlights */
+  github_highlights?: Record<string, string[]>;
 }
 
 interface StageOverallSummaryProps {
@@ -79,30 +81,47 @@ export function StageOverallSummary({ data }: StageOverallSummaryProps) {
         <AccordionContent>
           <div className="space-y-6">
             {/* Overall Summary Section */}
-            <div>
-              <span className="text-sm font-black text-muted-foreground tracking-wide block mb-1 uppercase">Summary</span>
-              <OverallSummaryText value={data.overall_summary} />
-            </div>
+            {data.overall_summary && (
+              <div>
+                <span className="text-sm font-black text-muted-foreground tracking-wide block mb-1 uppercase">Summary</span>
+                <OverallSummaryText value={data.overall_summary} />
+              </div>
+            )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <SummaryList
-                title="Strengths"
-                items={data.strength_summary}
-                titleColor="text-green-600"
-              />
-              <SummaryList
-                title="Weaknesses"
-                items={data.weakness_summary}
-                titleColor="text-red-600"
-              />
-            </div>
+            {data.github_highlights ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {Object.entries(data.github_highlights).map(([key, items]) => (
+                  <SummaryList
+                    key={key}
+                    title={key}
+                    items={items}
+                    titleColor="text-blue-600"
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <SummaryList
+                  title="Strengths"
+                  items={data.strength_summary || []}
+                  titleColor="text-green-600"
+                />
+                <SummaryList
+                  title="Weaknesses"
+                  items={data.weakness_summary || []}
+                  titleColor="text-red-600"
+                />
+              </div>
+            )}
           </div>
 
-          <SummaryList
-            title="Suggest Followups"
-            items={data.followups}
-            className="pt-3 border-t border-primary/10"
-          />
+          {!data.github_highlights && (
+            <SummaryList
+              title="Suggest Followups"
+              items={data.followups || []}
+              className="pt-3 border-t border-primary/10"
+            />
+          )}
         </AccordionContent>
       </AccordionItem>
     </Accordion>
