@@ -401,10 +401,6 @@ async def download_candidate_task_file(
     if not task_file_path:
         return None
 
-    # 3. Handle URL (e.g. GitHub URL or external link)
-    if task_file_path.startswith(("http://", "https://")):
-        return RedirectResponse(url=task_file_path)
-
     # 4. Resolve local file path
     abs_path = resolve_storage_path(task_file_path)
     if not abs_path.is_file():
