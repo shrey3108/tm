@@ -183,6 +183,21 @@ class EvaluationService:
                 {"id": str(r[0].id), "weight": float(r[1]), "obj": r[0]} for r in rows
             ]
         
+        # Normalize active_criteria_configs to a list of dicts to handle name strings and dicts uniformly
+        normalized_configs = []
+        for c in active_criteria_configs:
+            if isinstance(c, str):
+                normalized_configs.append({"id": c, "weight": 10.0})
+            elif isinstance(c, dict):
+                normalized_configs.append({
+                    "id": str(c.get("id", c.get("name", ""))),
+                    "weight": float(c.get("weight", 10.0)),
+                    "obj": c.get("obj")
+                })
+            else:
+                logger.warning(f"Unexpected item in active_criteria_configs: {c}")
+        active_criteria_configs = normalized_configs
+
         logger.info(f"Final active_criteria_configs: {[c.get('id') for c in active_criteria_configs]}")
 
         # 3. EMBEDDING PHASE (Signals)
