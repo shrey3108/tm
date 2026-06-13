@@ -315,6 +315,7 @@ class AdminRepository:
         @param permission_ids - List of permission identifiers to assign
         @returns Updated role with assigned permissions
         """
+        role = await self.get_role_by_id(db, role.id)
         permissions = await db.execute(
             select(Permission).where(Permission.id.in_(permission_ids))
         )
