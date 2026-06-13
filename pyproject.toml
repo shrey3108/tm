@@ -50,7 +50,7 @@ explicit = true
 
 [tool.uv.sources]
 torch = { index = "pytorch-cpu" }
-github-code-evaluator = { path = "C:/OneDriveTemp/Desktop/New folder/github-evaluation-package" }
+github-code-evaluator = { path = "./github-evaluation-package" }
 
 # temp solution for modules not found
 [project.scripts]
