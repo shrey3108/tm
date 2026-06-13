@@ -29,7 +29,7 @@ class HRDecisionCreate(BaseModel):
         None,
         description="Optional Stage Config ID to link this decision to a specific interview stage."
     )
-    score: int | None = Field(
+    score: float | None = Field(
         None,
         ge=1,
         le=5,
@@ -65,7 +65,7 @@ class HRDecisionResponse(BaseModel):
     user_id: uuid.UUID
     decision: str
     notes: str | None
-    score: int | None = None
+    score: float | None = None
     decided_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -98,7 +98,7 @@ class HRDecisionUpdate(BaseModel):
         None,
         description="Updated Stage Config ID"
     )
-    score: int | None = Field(
+    score: float | None = Field(
         None,
         ge=1,
         le=5,

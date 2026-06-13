@@ -77,7 +77,7 @@ class HrDecision(Base):
     )
 
     # DECISION SCORE OUT OF 5
-    score: Mapped[int | None] = mapped_column(
+    score: Mapped[float | None] = mapped_column(
         nullable=True,
     )
 
