@@ -23,6 +23,11 @@ from app.v1.core.resume_executor import (
 from app.v1.db.session import init_db
 from app.v1.core.observability import setup_phoenix_tracing
 
+try:
+    from github_code_evaluator.app.main import app as evaluator_app
+except ImportError:
+    evaluator_app = None
+
 setup_logging(debug=settings.DEBUG)
 logger = get_logger(__name__)
 
@@ -67,6 +72,9 @@ app.add_middleware(
 )
 
 app.include_router(api_router, prefix="/api/v1")
+
+if evaluator_app:
+    app.mount("/evaluator", evaluator_app)
 
 
 @app.get("/")

@@ -7,7 +7,7 @@ name = "backend"
 version = "0.1.0"
 description = "HR Platform"
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.12"
 dependencies = [
     "asyncpg>=0.31.0",
     "docx2txt>=0.9",
@@ -40,6 +40,7 @@ dependencies = [
     "pypdf",
     "reportlab",
     "nest-asyncio>=1.6.0",
+    "github-code-evaluator",
 ]
 
 [[tool.uv.index]]
@@ -49,6 +50,7 @@ explicit = true
 
 [tool.uv.sources]
 torch = { index = "pytorch-cpu" }
+github-code-evaluator = { path = "C:/OneDriveTemp/Desktop/New folder/github-evaluation-package", editable = true }
 
 # temp solution for modules not found
 [project.scripts]
