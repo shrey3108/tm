@@ -533,6 +533,7 @@ export interface CandidateAnalysis {
    * Full recruitment pipeline for this candidate.
    */
   pipeline?: CandidateStageSummary[] | null;
+  task_file_path?: string | null;
 }
 
 /**

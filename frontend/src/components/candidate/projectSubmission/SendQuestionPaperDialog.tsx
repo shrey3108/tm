@@ -1,16 +1,8 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { FileQuestion } from "lucide-react";
+import { FileQuestion, MailIcon } from "lucide-react";
 import { useQuestionSetPapers, useCandidateTestPaper } from "@/hooks/queries/taskPapers/useTaskPaperQueries";
 import {
   useAssignTestPaperMutation,
@@ -23,14 +15,13 @@ import { useCandidateDetailsQuery } from "@/hooks/queries/candidates";
 import type { Job } from "@/types/job";
 import { LoadingSpinner } from "@/components/shared";
 import type { CandidateTestPaperAssign } from "@/types/taskPaper";
-
 import { AssignedPaperView } from "./sendQuestionPaper/AssignedPaperView";
 import { PredefinedPaperForm } from "./sendQuestionPaper/PredefinedPaperForm";
 import { RandomizedPaperView } from "./sendQuestionPaper/RandomizedPaperView";
 import { CustomPaperForm } from "./sendQuestionPaper/CustomPaperForm";
 import { SendQuestionPaperFooter } from "./sendQuestionPaper/SendQuestionPaperFooter";
 import { extractErrorMessage } from "@/utils/error";
-
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 interface SendQuestionPaperDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
@@ -165,7 +156,7 @@ export function SendQuestionPaperDialog({
         const result = await assignMutation.mutateAsync(payload);
         toast.success("Test paper successfully assigned!");
         setBulkAssignedPaper(result);
-        if (onSuccess) onSuccess();
+        // if (onSuccess) onSuccess();
       } catch (err: any) {
         toast.error(extractErrorMessage(err));
       }
@@ -215,7 +206,7 @@ export function SendQuestionPaperDialog({
           : "Default test paper successfully assigned to job!"
       );
       refetchAssigned();
-      if (onSuccess) onSuccess();
+      // if (onSuccess) onSuccess();
     } catch (err: any) {
       toast.error(extractErrorMessage(err));
     }
@@ -293,9 +284,9 @@ export function SendQuestionPaperDialog({
     }
   };
 
+  const isEmailAlreadySent = finalAssignedPaper && finalAssignedPaper.email_sent_count && finalAssignedPaper.email_sent_count > 0;
   const handleSendEmail = async () => {
-    const isAlreadySent = finalAssignedPaper && finalAssignedPaper.email_sent_count && finalAssignedPaper.email_sent_count > 0;
-    if (isAlreadySent) {
+    if (isEmailAlreadySent) {
       setIsConfirmOpen(true);
     } else {
       await executeSendEmail(false);
@@ -332,13 +323,13 @@ export function SendQuestionPaperDialog({
         toast.success("Assignment removed successfully.");
       }
       refetchAssigned();
-      if (onSuccess) onSuccess();
+      // if (onSuccess) onSuccess();
     } catch (err: any) {
       toast.error(err?.response?.data?.detail || "Failed to remove assignment.");
     }
 
   };
-
+  console.log(finalAssignedPaper);
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -347,10 +338,19 @@ export function SendQuestionPaperDialog({
           {/* Header */}
           <DialogHeader className="p-2.5 pb-1.5 border-b border-muted-foreground/10 shrink-0">
             <DialogTitle className="text-xl font-bold tracking-tight flex items-center gap-2">
-              <FileQuestion className="h-4 w-4 text-primary" />
               {selectedCandidates ? (
                 <>
-                  {finalAssignedPaper ? "Send Question Paper to " : "Send Question Paper to "}
+                  {finalAssignedPaper ?
+                    <>
+                      <MailIcon className="h-4 w-4 text-primary" />
+                      Send Email to
+                    </>
+                    :
+                    <>
+                      <FileQuestion className="h-4 w-4 text-primary" />
+                      Assign Question Paper to
+                    </>
+                  }
                   <span className="text-foreground capitalize">
                     {isBulkMode
                       ? `${selectedCandidates.length} Candidates`
@@ -358,15 +358,29 @@ export function SendQuestionPaperDialog({
                   </span>
                 </>
               ) : (
-                <span className="text-foreground">Set Default Question Paper for All Candidates</span>
+                <>
+                  {!finalAssignedPaper ?
+                    <>
+                      <FileQuestion className="h-4 w-4 text-primary" />
+                      <span className="text-foreground">Set Default Question Paper for All Candidates</span>
+                    </>
+                    : <>
+                      {`${candidateDetails?.first_name || ""} ${candidateDetails?.last_name || ""}`.trim()}
+                      <MailIcon className="h-4 w-4 text-primary" />
+                      Send Email
+                      <Tooltip>
+                        <TooltipTrigger>
+                          ({finalAssignedPaper?.email_sent_count ?? 0})
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{finalAssignedPaper?.email_sent_count ?? 0} times email send to candidate</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </>}
+
+                </>
               )}
             </DialogTitle>
-            {/* <DialogDescription className="text-muted-foreground text-sm">
-              {assignedPaper
-                ? `Review the assigned question set and send email notification to `
-                : `Configure and assign a question paper for `}
-              <span className="font-semibold text-foreground capitalize">{candidateName}</span>.
-            </DialogDescription> */}
             {!finalAssignedPaper && <div className="flex gap-1">
               <Button
                 type="button"
@@ -401,7 +415,7 @@ export function SendQuestionPaperDialog({
           </DialogHeader>
 
           {/* Content body */}
-          <div className="flex-1 overflow-y-auto p-0.5 min-h-0">
+          <div className="flex-1 overflow-y-auto  min-h-0 p-2">
             {loadingAssigned ? (
               <LoadingSpinner message="Checking candidate's test paper assignment..." />
             ) : finalAssignedPaper ? (
@@ -413,7 +427,7 @@ export function SendQuestionPaperDialog({
               />
             ) : (
               /* UNASSIGNED VIEW / SELECTION & CREATION SHEET */
-              <div className="space-y-1.5 animate-in fade-in duration-300">
+              <div className="space-y-1.5 animate-in fade-in duration-300 ">
 
                 {/* Predefined Selection */}
                 {mode === "predefined" && (
@@ -456,21 +470,22 @@ export function SendQuestionPaperDialog({
             customProjectTask={customProjectTask}
             isAssignPending={assignMutation.isPending}
             isSendEmailPending={sendEmailMutation.isPending}
+            isEmailAlreadySent={isEmailAlreadySent}
             onAssign={handleAssign}
             onSendEmail={handleSendEmail}
           />
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
-        <AlertDialogContent className="max-w-md bg-card/95 backdrop-blur-xl border-muted-foreground/20 shadow-2xl rounded-2xl p-6">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-lg font-bold text-foreground">Confirm Re-sending Email</AlertDialogTitle>
-            <AlertDialogDescription className="text-sm text-muted-foreground leading-relaxed mt-2">
+      <Dialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+        <DialogContent className="max-w-md bg-card/95 backdrop-blur-xl border-muted-foreground/20 shadow-2xl rounded-2xl p-6">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold text-foreground">Confirm Re-sending Email</DialogTitle>
+            <DialogDescription className="text-sm text-muted-foreground leading-relaxed mt-2">
               Email has already been sent to this candidate. Are you sure you want to send it again?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="flex justify-end gap-3 mt-4">
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex justify-end gap-3 mt-4">
             <Button
               type="button"
               variant="outline"
@@ -491,9 +506,9 @@ export function SendQuestionPaperDialog({
             >
               Confirm & Send
             </Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

@@ -32,17 +32,18 @@ interface EmptyStateProps {
  * Displays an empty state when no evaluation data is available for a stage.
  * Can optionally display an error message if the empty state is due to a failure.
  */
+// @ts-ignore
 export function EmptyState({ error }: EmptyStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
+    <div className="flex flex-col items-center justify-center py-10 gap-4 text-center">
       <div className="h-20 w-20 rounded-full bg-muted flex items-center justify-center">
         <FileText className="h-10 w-10 text-muted-foreground" />
       </div>
       <div>
         <h3 className="text-xl font-black uppercase tracking-tight">No Evaluation Data</h3>
-        <p className="text-muted-foreground max-w-xs mx-auto">
+        {/* <p className="text-muted-foreground max-w-xs mx-auto">
           {error ? error : "Upload a transcript to generate an AI evaluation for this stage."}
-        </p>
+        </p> */}
       </div>
     </div>
   );

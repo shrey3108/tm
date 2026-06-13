@@ -5,7 +5,7 @@ import type { Job } from "@/types/job";
 import { cn } from "@/lib/utils";
 import { PERMISSIONS } from "@/lib/permissions";
 import { Button } from "@/components/ui/button";
-import { BarChart3, Upload, Users, Send } from "lucide-react";
+import { BarChart3, Upload, Users } from "lucide-react";
 import { JobStatus } from "@/components/job/JobStatus";
 
 interface JobCandidatesHeaderProps {
@@ -72,11 +72,12 @@ export const JobCandidatesHeader = ({
           <Button
             variant="outline"
             size="sm"
-            className="h-9 rounded-xl border border-muted-foreground/10 px-4 shrink-0 font-semibold text-center flex items-center gap-2 hover:bg-muted/50"
+            className="h-9 rounded-xl border border-muted-foreground/10 px-4 shrink-0 font-medium text-center flex items-center gap-2 hover:bg-muted/50"
             onClick={onSendQuestionPaperClick}
             disabled={isSendQuestionPaperDisabled || !showSendQuestionPaper || !job?.is_active}
           >
-            <Send className="h-4 w-4" /> Send Question Paper
+            {/* <Send className="h-4 w-4" />  */}
+            Assign Question Paper
           </Button>
           <div className="bg-muted/50 p-1 rounded-lg flex items-center border border-border shrink-0 h-9">
             <button
@@ -116,7 +117,7 @@ export const JobCandidatesHeader = ({
             <Button
               variant="outline"
               size="sm"
-              className="h-9 rounded-xl shrink-0"
+              className="h-9 rounded-xl shrink-0 font-medium"
               onClick={onUploadClick}
               disabled={isUploading || !job?.is_active}
               title={!job?.is_active ? "Resume upload is disabled for inactive jobs" : undefined}

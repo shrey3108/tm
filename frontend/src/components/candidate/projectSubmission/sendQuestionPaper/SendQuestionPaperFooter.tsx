@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { DialogFooter } from "@/components/ui/dialog";
-import { Loader2, Mail, SendIcon } from "lucide-react";
+import { Loader2, Mail } from "lucide-react";
 
 interface SendQuestionPaperFooterProps {
   onCancel: () => void;
@@ -13,6 +13,7 @@ interface SendQuestionPaperFooterProps {
   isSendEmailPending: boolean;
   onAssign: () => void;
   onSendEmail: () => void;
+  isEmailAlreadySent?: boolean;
 }
 
 export function SendQuestionPaperFooter({
@@ -26,6 +27,7 @@ export function SendQuestionPaperFooter({
   isSendEmailPending,
   onAssign,
   onSendEmail,
+  isEmailAlreadySent
 }: SendQuestionPaperFooterProps) {
 
   const isAssignDisabled =
@@ -62,7 +64,7 @@ export function SendQuestionPaperFooter({
           ) : (
             <>
               <Mail className="h-4 w-4" />
-              Send to Candidate via Email
+              {isEmailAlreadySent ? "Re-Send" : "Send"}  to Candidate via Email
             </>
           )}
         </Button>
@@ -80,7 +82,7 @@ export function SendQuestionPaperFooter({
             </>
           ) : (
             <>
-              <SendIcon className="h-4 w-4" />
+              {/* <SendIcon className="h-4 w-4" /> */}
               Assign Paper
             </>
           )}

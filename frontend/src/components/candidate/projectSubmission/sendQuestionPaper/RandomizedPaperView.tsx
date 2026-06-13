@@ -10,7 +10,7 @@ export function RandomizedPaperView({
   positionName,
 }: RandomizedPaperViewProps) {
   return (
-    <div className="p-2.5 rounded-xl border border-border/40 bg-muted/20 space-y-1.5 animate-in fade-in duration-300">
+    <div className="border border-border/40 bg-muted/20 space-y-1 animate-in fade-in duration-300">
       <div className="flex items-start gap-3">
         <HelpCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
         <div>

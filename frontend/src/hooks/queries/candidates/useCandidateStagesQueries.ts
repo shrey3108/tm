@@ -11,7 +11,6 @@ import { slugify, unSlugify } from "@/utils/slug";
 import { useJob, useJobTitle } from "@/hooks/queries/jobs";
 import type { Job } from "@/types/job";
 import type { CandidateAnalysis } from "@/types/admin";
-import { getCorrectCurrentStage } from "@/lib/utils";
 
 /**
  * Hook to resolve Job and Candidate from URL slugs if state is not available.
@@ -182,12 +181,12 @@ export function useCandidateTimelineQuery(
     queryFn: () => adminCandidateService.getCandidateTimeline(candidateId!, jobId),
     enabled: !!candidateId,
     staleTime: QUERY_CONFIG.CANDIDATE_STAGES.staleTime,
-    select: (data) => {
-      return {
-        ...data,
-        current_stage: getCorrectCurrentStage(data)
-      };
-    }
+    // select: (data) => {
+    //   return {
+    //     ...data,
+    //     current_stage: getCorrectCurrentStage(data)
+    //   };
+    // }
     /*
     // TODO: NOTE: Remove this after GEP complete
     select: (data) => {

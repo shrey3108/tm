@@ -101,7 +101,7 @@ export function StageOverallSummary({ data }: StageOverallSummaryProps) {
           <SummaryList
             title="Suggest Followups"
             items={data.followups}
-            className="pt-6 border-t border-primary/10"
+            className="pt-3 border-t border-primary/10"
           />
         </AccordionContent>
       </AccordionItem>
