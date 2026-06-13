@@ -258,8 +258,8 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
       subset.forEach((c) => {
         if (c.applied_job_id) set.add(c.applied_job_id);
       });
-      // Filter availableJobs to only include those that have candidates in the current subset
-      baseOptions = availableJobs.filter(j => set.has(j.id));
+      // Filter availableJobs to only include those that have candidates in the current subset, or are currently selected
+      baseOptions = availableJobs.filter(j => set.has(j.id) || jobFilter.includes(j.id));
     }
 
     if (!jobSearch.trim()) return baseOptions;
@@ -267,7 +267,7 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
     return baseOptions.filter(j =>
       j.title.toLowerCase().includes(query)
     );
-  }, [availableJobs, jobSearch, isAnyFilterActive, candidates, debouncedNameFilter, statusFilter, locationFilter, hrDecisionFilter, dateRange, resultFilter, stageFilter, activitySessionFilter, hrScoreFilter, passingThreshold]);
+  }, [availableJobs, jobSearch, isAnyFilterActive, candidates, debouncedNameFilter, statusFilter, locationFilter, hrDecisionFilter, dateRange, resultFilter, stageFilter, activitySessionFilter, hrScoreFilter, jobFilter, passingThreshold]);
 
 
   // --- Dynamic option sets: full static set on initial load, cross-filtered after ---
@@ -280,11 +280,15 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
       const d = normalizeHrDecision(c.hr_decision);
       set.add(d);
     });
+    // Ensure selected options are kept
+    hrDecisionFilter.forEach(v => {
+      set.add(normalizeHrDecision(v));
+    });
     return Array.from(set).sort().map(v => ({
       value: v === 'may be' ? 'May Be' : v,
       label: HR_DECISION_LABEL_MAP[v] || v,
     }));
-  }, [candidates, isAnyFilterActive, debouncedNameFilter, statusFilter, locationFilter, jobFilter, dateRange, resultFilter, stageFilter, activitySessionFilter, hrScoreFilter, passingThreshold]);
+  }, [candidates, isAnyFilterActive, debouncedNameFilter, statusFilter, locationFilter, jobFilter, dateRange, resultFilter, stageFilter, activitySessionFilter, hrScoreFilter, hrDecisionFilter, passingThreshold]);
 
 
   const resultOptions = useMemo(() => {
@@ -301,11 +305,15 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
       }
       set.add(screening);
     });
+    // Ensure selected options are kept
+    resultFilter.forEach(v => {
+      set.add(v);
+    });
     return Array.from(set).sort().map(v => ({
       value: v,
       label: RESULT_LABEL_MAP[v] || v,
     }));
-  }, [candidates, isAnyFilterActive, debouncedNameFilter, statusFilter, locationFilter, jobFilter, dateRange, hrDecisionFilter, stageFilter, activitySessionFilter, hrScoreFilter, passingThreshold]);
+  }, [candidates, isAnyFilterActive, debouncedNameFilter, statusFilter, locationFilter, jobFilter, dateRange, hrDecisionFilter, stageFilter, activitySessionFilter, hrScoreFilter, resultFilter, passingThreshold]);
 
 
   const statusOptions = useMemo(() => {
@@ -316,8 +324,12 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
       const s = c.processing_status || c.current_status;
       if (s) set.add(s);
     });
+    // Ensure selected options are kept
+    statusFilter.forEach(s => {
+      set.add(s);
+    });
     return Array.from(set).sort();
-  }, [candidates, isAnyFilterActive, debouncedNameFilter, locationFilter, jobFilter, dateRange, hrDecisionFilter, resultFilter, stageFilter, activitySessionFilter, hrScoreFilter, passingThreshold]);
+  }, [candidates, isAnyFilterActive, debouncedNameFilter, locationFilter, jobFilter, dateRange, hrDecisionFilter, resultFilter, stageFilter, activitySessionFilter, hrScoreFilter, statusFilter, passingThreshold]);
 
   const locationOptions = useMemo(() => {
     if (!isAnyFilterActive) {
@@ -330,13 +342,17 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
       const loc = (c.location || '').trim();
       if (loc) set.add(toTitleCase(loc));
     });
+    // Ensure selected options are kept
+    locationFilter.forEach(loc => {
+      set.add(toTitleCase(loc));
+    });
     let options = Array.from(set).sort();
     if (locationSearch) {
       const query = locationSearch.toLowerCase();
       options = options.filter(o => o.toLowerCase().includes(query));
     }
     return options;
-  }, [fetchedLocations, candidates, isAnyFilterActive, locationSearch, debouncedNameFilter, statusFilter, jobFilter, dateRange, hrDecisionFilter, resultFilter, stageFilter, activitySessionFilter, hrScoreFilter, passingThreshold]);
+  }, [fetchedLocations, candidates, isAnyFilterActive, locationSearch, debouncedNameFilter, statusFilter, jobFilter, dateRange, hrDecisionFilter, resultFilter, stageFilter, activitySessionFilter, hrScoreFilter, locationFilter, passingThreshold]);
 
   const stageOptions = useMemo(() => {
     if (!isAnyFilterActive && stageOptionsProp && stageOptionsProp.length > 0) {
@@ -352,13 +368,26 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
         map.set(id, { id, name, order });
       }
     });
-    const derived = Array.from(map.values()).sort((a, b) => a.order - b.order || a.name.localeCompare(b.name));
 
     if (stageOptionsProp && stageOptionsProp.length > 0) {
-      return stageOptionsProp.filter(s => map.has(s.id));
+      return stageOptionsProp.filter(s => map.has(s.id) || stageFilter.includes(s.id));
     }
-    return derived;
-  }, [candidates, stageOptionsProp, isAnyFilterActive, debouncedNameFilter, statusFilter, locationFilter, jobFilter, dateRange, hrDecisionFilter, resultFilter, activitySessionFilter, hrScoreFilter, passingThreshold]);
+
+    // Fallback: if stageOptionsProp is not provided, ensure selected stages are still present by reconstructing from candidates
+    const selectedStagesNotInMap = stageFilter.filter(id => !map.has(id));
+    selectedStagesNotInMap.forEach(id => {
+      const candidateWithStage = candidates.find(c => c.current_stage?.job_stage_id === id);
+      if (candidateWithStage?.current_stage) {
+        map.set(id, {
+          id,
+          name: candidateWithStage.current_stage.template_name || '',
+          order: candidateWithStage.current_stage.order ?? 0
+        });
+      }
+    });
+
+    return Array.from(map.values()).sort((a, b) => a.order - b.order || a.name.localeCompare(b.name));
+  }, [candidates, stageOptionsProp, isAnyFilterActive, debouncedNameFilter, statusFilter, locationFilter, jobFilter, dateRange, hrDecisionFilter, resultFilter, activitySessionFilter, hrScoreFilter, stageFilter, passingThreshold]);
 
 
   const minDate = useMemo(() => {
