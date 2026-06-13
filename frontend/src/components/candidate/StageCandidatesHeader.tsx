@@ -52,7 +52,7 @@ export const StageCandidatesHeader = ({
   const [isProjectSubmissionDialogOpen, setIsProjectSubmissionDialogOpen] = useState(false);
   const [isSendQuestionPaperDialogOpen, setIsSendQuestionPaperDialogOpen] = useState(false);
   const { data: assignedPaper } = useCandidateTestPaper(candidateId);
-  console.log(assignedPaper);
+  // console.log(assignedPaper);
 
   const isTranscriptAdded = !!transcriptHistory && transcriptHistory.length > 0;
 

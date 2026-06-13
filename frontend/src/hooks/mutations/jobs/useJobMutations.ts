@@ -32,6 +32,9 @@ export function useUpdateJobMutation() {
       await queryClient.cancelQueries({ queryKey: [QUERY_KEYS.JOBS.ADMIN_LIST] });
       await queryClient.cancelQueries({ queryKey: [QUERY_KEYS.JOBS.DETAIL, jobId] });
 
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.JOBS.LIST] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.JOBS.ADMIN_LIST] });
+
       // Snapshot the previous values
       const previousJobs = queryClient.getQueryData([QUERY_KEYS.JOBS.LIST]);
       const previousAdminJobs = queryClient.getQueryData([QUERY_KEYS.JOBS.ADMIN_LIST]);

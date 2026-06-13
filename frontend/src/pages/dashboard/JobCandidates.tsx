@@ -148,7 +148,7 @@ export default function JobCandidates() {
       // @ts-ignore
       return c.test_email_sent === true
     });
-    console.log(allSent);
+    // console.log(allSent);
     if (allSent) return "sent" as const;
 
     return "not_sent" as const;
