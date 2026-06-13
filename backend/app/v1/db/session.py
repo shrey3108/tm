@@ -50,6 +50,7 @@ async def init_db():
     # Import all models here so SQLAlchemy metadata
     # is aware of all tables before create_all is called
     import app.v1.db  # noqa: F401
+    import app.v1.db.base  # noqa: F401
     # import packages.auth.v1.models  # noqa: F401
 
     logger.info("Creating database tables...")

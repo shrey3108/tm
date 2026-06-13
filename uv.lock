@@ -504,7 +504,7 @@ wheels = [
 [[package]]
 name = "backend"
 version = "0.1.0"
-source = { editable = "." }
+source = { virtual = "." }
 dependencies = [
     { name = "asyncpg" },
     { name = "autogen" },
@@ -559,7 +559,7 @@ requires-dist = [
     { name = "email-validator", specifier = ">=2.3.0" },
     { name = "fastapi", extras = ["standard"], specifier = ">=0.135.1" },
     { name = "fastcrud", specifier = ">=0.21.0" },
-    { name = "github-code-evaluator", directory = "C:/OneDriveTemp/Desktop/New folder/github-evaluation-package" },
+    { name = "github-code-evaluator", directory = "github-evaluation-package" },
     { name = "langextract", specifier = ">=1.1.1" },
     { name = "markitdown", extras = ["docx"], specifier = ">=0.1.5" },
     { name = "nest-asyncio", specifier = ">=1.6.0" },
@@ -1764,7 +1764,7 @@ wheels = [
 [[package]]
 name = "github-code-evaluator"
 version = "0.1.0"
-source = { directory = "C:/OneDriveTemp/Desktop/New folder/github-evaluation-package" }
+source = { directory = "github-evaluation-package" }
 dependencies = [
     { name = "alembic" },
     { name = "arize-phoenix" },

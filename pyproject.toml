@@ -48,6 +48,9 @@ name = "pytorch-cpu"
 url = "https://download.pytorch.org/whl/cpu"
 explicit = true
 
+[tool.uv]
+package = false
+
 [tool.uv.sources]
 torch = { index = "pytorch-cpu" }
 github-code-evaluator = { path = "./github-evaluation-package" }
@@ -57,6 +60,7 @@ github-code-evaluator = { path = "./github-evaluation-package" }
 seed-all = "seed.main:run"
 
 [tool.setuptools.packages.find]
+where = ["backend"]
 include = ["app*", "packages*", "seed*"]
 
 [dependency-groups]
