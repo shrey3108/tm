@@ -97,12 +97,16 @@ Ideal for active development with faster hot-reloading and direct integration wi
 
 ##### Steps
 
-1. **Install Dependencies**:
+1. **Set Up the GitHub Evaluator Package**:
+   - Place/clone the `github-evaluation-package` folder directly inside the `hirego` root directory (the same folder containing `pyproject.toml`).
+   - Ensure the path is set to relative `./github-evaluation-package` in `pyproject.toml` under `[tool.uv.sources]`.
+
+2. **Install Dependencies**:
    ```bash
    uv sync
    ```
 
-2. **Configure Environment**:
+3. **Configure Environment**:
    Create a `.env` file in the root directory (using `.env.example` as a template).
    ```bash
    # Linux/Mac
@@ -121,10 +125,14 @@ Ideal for active development with faster hot-reloading and direct integration wi
      - `OLLAMA_URL`: URL for the Ollama instance (defaults to `"https://ollama.com/"`).
      - `OLLAMA_MODEL`: Model name (defaults to `gpt-oss:120b-cloud`).
      - `OLLAMA_API_KEY`: Get your Ollama cloud API key from [https://ollama.com/settings/keys](https://ollama.com/settings/keys).
+   - **GitHub Evaluator Specific Settings**:
+     - `EVALUATOR_POSTGRES_DB` (e.g., `github_evalutor` — must be different from `POSTGRES_DB` to prevent table name conflicts).
+     - `OPENAI_API_KEY` (or the respective LLM configurations).
 
-3. **Database Initialization**:
-   - Create a database named `app` (or as specified in your `.env`).
-   - Enable the **pgvector** extension using the provided script:
+4. **Database Initialization**:
+   - Create the main database named `app` (or as specified in your `.env` under `POSTGRES_DB`).
+   - Create the evaluator database named `github_evalutor` (or as specified in your `.env` under `EVALUATOR_POSTGRES_DB`).
+   - Enable the **pgvector** extension on the main database using the provided script:
      ```bash
      psql -d app -f setup_extensions.sql
      ```
