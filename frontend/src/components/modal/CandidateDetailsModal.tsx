@@ -75,7 +75,7 @@ export function CandidateDetailsModal({
     resolver: zodResolver(candidateDecisionSchema),
     defaultValues: {
       note: "",
-      score: 5,
+      score: 0,
     },
   });
 
@@ -157,7 +157,7 @@ export function CandidateDetailsModal({
     reset({
       decision: type,
       note: form.watch("note") || "",
-      score: form.watch("score") || 5,
+      score: form.watch("score") || 0,
     })
     form.clearErrors();
     setShowFeedbackModal(true);
@@ -178,7 +178,7 @@ export function CandidateDetailsModal({
       await onDecisionSubmitted?.();
       toast.success("Decision submitted successfully");
       setShowFeedbackModal(false);
-      form.reset({ note: "", score: 5 });
+      form.reset({ note: "", score: 0 });
     } catch (error) {
       const errorMessage = extractErrorMessage(error);
       toast.error(errorMessage || "Failed to submit decision");
