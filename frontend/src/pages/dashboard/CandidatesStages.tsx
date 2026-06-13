@@ -138,6 +138,12 @@ export default function CandidatesStages() {
                     relative: "path",
                   })
                 }
+                candidateId={candidate?.id}
+                githubUrl={candidateData?.task_file_path || candidate?.task_file_path}
+                job={job || null}
+                onPaperChange={handlePaperChange}
+                stageName={currentStage}
+                candidateName={candidateName}
               />
             ) : (
               <EmptyState error={error} />

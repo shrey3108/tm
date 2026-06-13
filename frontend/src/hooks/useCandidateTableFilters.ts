@@ -20,6 +20,7 @@ export interface CandidateActiveFilters {
   activity_session?: string[];
   q?: string;
   hr_score?: number[];
+  test_email_sent?: boolean;
 }
 
 // TODO: Remove after backend update
@@ -68,6 +69,7 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
   const [stageFilter, setStageFilter] = useState<string[]>([]);
   const [activitySessionFilter, setActivitySessionFilter] = useState<string[]>([]);
   const [activitySearch, setActivitySearch] = useState("");
+  const [testEmailSentFilter, setTestEmailSentFilter] = useState<string | undefined>(undefined);
 
   const debouncedNameFilter = useDebouncedValue(nameFilter);
   const debouncedJobSearch = useDebouncedValue(jobSearch);
@@ -136,10 +138,11 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
         stage_id: stageFilter,
         activity_session: activitySessionFilter,
         q: debouncedNameFilter,
-        hr_score: hrScoreFilter
+        hr_score: hrScoreFilter,
+        test_email_sent: testEmailSentFilter === "sent" ? true : testEmailSentFilter === "not_sent" ? false : undefined
       });
     }
-  }, [statusFilter, locationFilter, jobFilter, hrDecisionFilter, dateRange, resultFilter, stageFilter, activitySessionFilter, debouncedNameFilter, hrScoreFilter, onFiltersChange]);
+  }, [statusFilter, locationFilter, jobFilter, hrDecisionFilter, dateRange, resultFilter, stageFilter, activitySessionFilter, debouncedNameFilter, hrScoreFilter, testEmailSentFilter, onFiltersChange]);
 
   const isAnyFilterActive =
     !!debouncedNameFilter ||
@@ -152,7 +155,8 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
     stageFilter.length > 0 ||
     hrScoreFilter.length > 0 ||
     !!dateRange?.from ||
-    !!dateRange?.to;
+    !!dateRange?.to ||
+    !!testEmailSentFilter;
 
   // --- Cross-filter helper: applies all filters EXCEPT the one named by `skip` ---
   const crossFilteredCandidates = (skip: string) => {
@@ -215,6 +219,16 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
       if (skip !== 'hrScore' && hrScoreFilter.length > 0) {
         const score = c.hr_score ?? null;
         if (score === null || !hrScoreFilter.includes(score)) return false;
+      }
+      // Test paper filter
+      if (skip !== 'test_email_sent' && testEmailSentFilter) {
+
+        if (c.test_email_sent !== undefined) {
+
+          const isSent = c.test_email_sent === true
+          const filterSent = testEmailSentFilter === "sent";
+          if (isSent !== filterSent) return false;
+        }
       }
       return true;
     });
@@ -389,6 +403,25 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
     return Array.from(map.values()).sort((a, b) => a.order - b.order || a.name.localeCompare(b.name));
   }, [candidates, stageOptionsProp, isAnyFilterActive, debouncedNameFilter, statusFilter, locationFilter, jobFilter, dateRange, hrDecisionFilter, resultFilter, activitySessionFilter, hrScoreFilter, stageFilter, passingThreshold]);
 
+  const isTechnicalPracticalRoundSelected = useMemo(() => {
+    return stageFilter.some((id) => {
+      const stage = stageOptions.find((s) => s.id === id);
+      return stage?.name.toLowerCase() === "technical practical round";
+    });
+  }, [stageFilter, stageOptions]);
+
+  const isDecisionPendingSelected = useMemo(() => {
+    return hrDecisionFilter.some((d) => d.toLowerCase() === "pending");
+  }, [hrDecisionFilter]);
+
+  const isTestPaperFilterEnabled = isTechnicalPracticalRoundSelected && isDecisionPendingSelected;
+
+  useEffect(() => {
+    if (!isTestPaperFilterEnabled && testEmailSentFilter !== undefined) {
+      setTestEmailSentFilter(undefined);
+    }
+  }, [isTestPaperFilterEnabled, testEmailSentFilter]);
+
 
   const minDate = useMemo(() => {
     if (candidates.length === 0) return new Date();
@@ -493,9 +526,20 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
         if (score === null || !hrScoreFilter.includes(score)) return false;
       }
 
+      // Test paper filter
+      if (testEmailSentFilter) {
+
+        if (c.test_email_sent !== undefined) {
+
+          const isSent = c.test_email_sent === true
+          const filterSent = testEmailSentFilter === "sent";
+          if (isSent !== filterSent) return false;
+        }
+      }
+
       return true;
     });
-  }, [candidates, debouncedNameFilter, statusFilter, locationFilter, hrDecisionFilter, jobFilter, dateRange, resultFilter, stageFilter, activitySessionFilter, hrScoreFilter, isServerSide]);
+  }, [candidates, debouncedNameFilter, statusFilter, locationFilter, hrDecisionFilter, jobFilter, dateRange, resultFilter, stageFilter, activitySessionFilter, hrScoreFilter, testEmailSentFilter, isServerSide]);
 
   const hasActiveFilters = isAnyFilterActive;
 
@@ -511,6 +555,7 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
     setStageFilter([]);
     setActivitySessionFilter([]);
     setHrScoreFilter([]);
+    setTestEmailSentFilter(undefined);
   };
 
   return {
@@ -551,5 +596,8 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
     setActivitySearch,
     hrScoreFilter,
     setHrScoreFilter,
+    testEmailSentFilter,
+    setTestEmailSentFilter,
+    isTestPaperFilterEnabled,
   };
 };

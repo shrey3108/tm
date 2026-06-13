@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { History } from "lucide-react";
+import { History, ExternalLink, Loader2 } from "lucide-react";
 import { Badge } from "@/components";
 import { EvaluationGrid } from "@/components/candidate/EvaluationGrid";
 import { StageOverallSummary, type OverallSummaryData } from "@/components/candidate/StageOverallSummary";
@@ -7,6 +7,10 @@ import { CandidateHistoryGrid } from "@/components/candidate/CandidateHistoryGri
 import type { EvaluationRead, EvaluationHistoryRead } from "@/types/candidateStage";
 import type { HrDecisionHistoryItem } from "@/apis/candidateDecision";
 import type { Transcript } from "@/types/transcript";
+import type { Job } from "@/types/job";
+import { GithubLogo } from "@/components/logo";
+import { useCandidateTestPaper, useDownloadCandidateAssignedTaskFile } from "@/hooks/queries/taskPapers/useTaskPaperQueries";
+import { toast } from "sonner";
 
 interface StageEvaluationViewProps {
   /** The current evaluation data to display. */
@@ -23,6 +27,12 @@ interface StageEvaluationViewProps {
   transcriptHistory: Transcript[];
   /** Callback triggered when a transcript item is clicked. */
   onTranscriptClick: (id: string) => void;
+  candidateId?: string;
+  githubUrl?: string | null;
+  job?: Job | null;
+  onPaperChange?: () => void;
+  stageName?: string;
+  candidateName?: string;
 }
 
 /**
@@ -37,7 +47,37 @@ export function StageEvaluationView({
   hrDecisionHistory,
   transcriptHistory,
   onTranscriptClick,
+  candidateId,
+  githubUrl,
+  stageName,
 }: StageEvaluationViewProps) {
+  const { data: assignedPaper } = useCandidateTestPaper(candidateId);
+  const { refetch: downloadFile, loading: isDownloading } = useDownloadCandidateAssignedTaskFile(
+    assignedPaper?.task_file_path ? candidateId : null,
+    { enabled: false }
+  );
+
+  const handleViewTaskPaper = async () => {
+    if (!assignedPaper?.task_file_path) return;
+    try {
+      toast.info("Downloading task file...");
+      const { data: blob } = await downloadFile();
+      if (blob) {
+        const url = URL.createObjectURL(blob);
+        window.open(url, "_blank");
+      } else {
+        toast.error("Failed to download the task file.");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to download the task file.");
+    }
+  };
+
+  const isGithubUploaded = !!githubUrl &&
+    githubUrl.toLowerCase().startsWith("http") &&
+    (githubUrl.toLowerCase().includes("github.com") || githubUrl.toLowerCase().includes("gitlab.com"));
+
   const versionNumber =
     evaluationHistory.length -
     Math.max(0, evaluationHistory.findIndex((h) => h.id === evaluation.id));
@@ -47,6 +87,37 @@ export function StageEvaluationView({
   return (
     <>
       <div className="flex items-center justify-end px-4 mb-2 gap-3">
+        {stageName === "Technical Practical Round" && (
+          <>
+            {isGithubUploaded && githubUrl && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground hover:text-primary rounded-lg"
+                onClick={() => window.open(githubUrl, "_blank")}
+              >
+                <GithubLogo className="h-4 w-4" />
+              </Button>
+            )}
+            {assignedPaper?.task_file_path && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8  hover:text-primary rounded-lg"
+                onClick={handleViewTaskPaper}
+                disabled={isDownloading}
+              >
+                {isDownloading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <ExternalLink className="h-4 w-4" />
+                )}
+
+              </Button>
+            )}
+          </>
+        )}
+
         {canTakeDecision && (
           <Button
             variant="outline"

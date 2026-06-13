@@ -5,7 +5,6 @@ import type { Job } from "@/types/job";
 import { TranscriptUpload } from "./TranscriptUpload";
 import { ProjectSubmissionDialog } from "./projectSubmission/ProjectSubmissionDialog";
 import { SendQuestionPaperDialog } from "./projectSubmission/SendQuestionPaperDialog";
-// import { SendIcon } from "lucide-react";
 import { useCandidateTestPaper } from "@/hooks/queries/taskPapers/useTaskPaperQueries";
 import { SendIcon } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";

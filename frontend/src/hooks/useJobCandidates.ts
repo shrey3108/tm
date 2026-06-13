@@ -27,6 +27,7 @@ export const useJobCandidates = (
     city?: string[];
     result?: string[];
     hr_score?: number[];
+    test_email_sent?: boolean;
   }
 ) => {
   const navigate = useNavigate();
@@ -92,6 +93,7 @@ export const useJobCandidates = (
 
     const start_date = searchParams.get("start_date");
     const end_date = searchParams.get("end_date");
+    const test_email_sent_param = searchParams.get("test_email_sent");
 
     return {
       query: searchParams.get("q") || undefined,
@@ -103,6 +105,7 @@ export const useJobCandidates = (
       city: searchParams.getAll("city"),
       result: searchParams.getAll("result"),
       hr_score: searchParams.getAll("hr_score").map(Number),
+      test_email_sent: test_email_sent_param === "true" ? true : test_email_sent_param === "false" ? false : undefined,
     };
   }, [searchParams, externalFilters]);
 

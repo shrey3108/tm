@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { FileQuestion, MailIcon } from "lucide-react";
+import { FileQuestion, MailIcon, AlertTriangle } from "lucide-react";
 import { useQuestionSetPapers, useCandidateTestPaper } from "@/hooks/queries/taskPapers/useTaskPaperQueries";
 import {
   useAssignTestPaperMutation,
@@ -31,6 +32,7 @@ interface SendQuestionPaperDialogProps {
   onSuccess?: () => void;
   selectedCandidates?: any[];
   allCandidates?: any[];
+  emailFilterState?: "sent" | "not_sent" | undefined;
 }
 
 type AssignmentMode = "predefined" | "random" | "custom";
@@ -43,15 +45,21 @@ export function SendQuestionPaperDialog({
   job,
   onSuccess,
   selectedCandidates,
+  emailFilterState,
 }: SendQuestionPaperDialogProps) {
   const isBulkMode = selectedCandidates && selectedCandidates.length > 1;
 
   // Queries
+  // In bulk mode with email filter (sent/not_sent), query the first candidate's paper
+  // to detect if a default job-level paper is already assigned
+  const bulkProbeCandiateId = isBulkMode && emailFilterState
+    ? selectedCandidates?.[0]?.id
+    : undefined;
   const {
     data: assignedPaper,
     loading: loadingAssigned,
     refetch: refetchAssigned,
-  } = useCandidateTestPaper(isBulkMode ? undefined : candidateId);
+  } = useCandidateTestPaper(isBulkMode ? bulkProbeCandiateId : candidateId);
   const { data: candidateDetails } = useCandidateDetailsQuery(
     isBulkMode ? undefined : job?.id,
     isBulkMode ? undefined : candidateId
@@ -82,7 +90,9 @@ export function SendQuestionPaperDialog({
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
   // Consolidated assigned paper
-  const finalAssignedPaper = isBulkMode ? bulkAssignedPaper : assignedPaper;
+  const finalAssignedPaper = isBulkMode
+    ? (bulkAssignedPaper || (emailFilterState ? assignedPaper : null))
+    : assignedPaper;
 
   // Reset custom questions and task description when dialog opens
   useEffect(() => {
@@ -329,7 +339,7 @@ export function SendQuestionPaperDialog({
     }
 
   };
-  console.log(finalAssignedPaper);
+  // console.log(finalAssignedPaper);
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -381,37 +391,39 @@ export function SendQuestionPaperDialog({
                 </>
               )}
             </DialogTitle>
-            {!finalAssignedPaper && <div className="flex gap-1">
-              <Button
-                type="button"
-                variant={mode === "predefined" ? "secondary" : "ghost"}
-                onClick={() => setMode("predefined")}
-                disabled={loadingPredefined || !predefinedPapers || predefinedPapers.length === 0}
-                className={`flex-1 rounded-lg font-semibold text-sm ${mode === "predefined" ? "shadow-sm" : "text-muted-foreground"
-                  }`}
-              >
-                Predefined Paper
-              </Button>
-              <Button
-                type="button"
-                variant={mode === "random" ? "secondary" : "ghost"}
-                onClick={() => setMode("random")}
-                disabled={loadingPredefined || !predefinedPapers || predefinedPapers.length === 0}
-                className={`flex-1 rounded-lg font-semibold text-sm ${mode === "random" ? "shadow-sm" : "text-muted-foreground"
-                  }`}
-              >
-                Randomized Paper
-              </Button>
-              <Button
-                type="button"
-                variant={mode === "custom" ? "secondary" : "ghost"}
-                onClick={() => setMode("custom")}
-                className={`flex-1 rounded-lg font-semibold text-sm ${mode === "custom" ? "shadow-sm" : "text-muted-foreground"
-                  }`}
-              >
-                Custom Paper
-              </Button>
-            </div>}
+            {!finalAssignedPaper && predefinedPapers && predefinedPapers.length > 0 && (
+              <div className="flex gap-1">
+                <Button
+                  type="button"
+                  variant={mode === "predefined" ? "secondary" : "ghost"}
+                  onClick={() => setMode("predefined")}
+                  disabled={loadingPredefined}
+                  className={`flex-1 rounded-lg font-semibold text-sm ${mode === "predefined" ? "shadow-sm" : "text-muted-foreground"
+                    }`}
+                >
+                  Predefined Paper
+                </Button>
+                <Button
+                  type="button"
+                  variant={mode === "random" ? "secondary" : "ghost"}
+                  onClick={() => setMode("random")}
+                  disabled={loadingPredefined}
+                  className={`flex-1 rounded-lg font-semibold text-sm ${mode === "random" ? "shadow-sm" : "text-muted-foreground"
+                    }`}
+                >
+                  Randomized Paper
+                </Button>
+                <Button
+                  type="button"
+                  variant={mode === "custom" ? "secondary" : "ghost"}
+                  onClick={() => setMode("custom")}
+                  className={`flex-1 rounded-lg font-semibold text-sm ${mode === "custom" ? "shadow-sm" : "text-muted-foreground"
+                    }`}
+                >
+                  Custom Paper
+                </Button>
+              </div>
+            )}
           </DialogHeader>
 
           {/* Content body */}
@@ -428,52 +440,82 @@ export function SendQuestionPaperDialog({
             ) : (
               /* UNASSIGNED VIEW / SELECTION & CREATION SHEET */
               <div className="space-y-1.5 animate-in fade-in duration-300 ">
+                {loadingPredefined ? (
+                  <LoadingSpinner message="Loading question set templates..." />
+                ) : !predefinedPapers || predefinedPapers.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center p-8 text-center border-2 border-dashed border-muted-foreground/25 rounded-2xl bg-muted/10 max-w-md mx-auto my-8">
+                    <AlertTriangle className="h-10 w-10 text-amber-500 mb-4" />
+                    <h3 className="text-lg font-bold text-foreground">No Predefined Papers Available</h3>
+                    <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
+                      No predefined question set papers are configured for this job/position. To set one up, please visit the{" "}
+                      <Link to="/dashboard/questions-bank" className="font-semibold text-primary underline hover:text-primary/80 transition-colors">
+                        Questions Bank
+                      </Link>
+                      .
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    {/* Predefined Selection */}
+                    {mode === "predefined" && (
+                      <PredefinedPaperForm
+                        predefinedPapers={predefinedPapers || []}
+                        selectedPaperId={selectedPaperId}
+                        onSelectPaperId={setSelectedPaperId}
+                      />
+                    )}
 
-                {/* Predefined Selection */}
-                {mode === "predefined" && (
-                  <PredefinedPaperForm
-                    predefinedPapers={predefinedPapers || []}
-                    selectedPaperId={selectedPaperId}
-                    onSelectPaperId={setSelectedPaperId}
-                  />
-                )}
+                    {/* Randomized Explanation */}
+                    {mode === "random" && (
+                      <RandomizedPaperView
+                        jobTitle={job?.title}
+                        positionName={job?.position?.name}
+                      />
+                    )}
 
-                {/* Randomized Explanation */}
-                {mode === "random" && (
-                  <RandomizedPaperView
-                    jobTitle={job?.title}
-                    positionName={job?.position?.name}
-                  />
-                )}
-
-                {/* Custom Builder Form */}
-                {mode === "custom" && (
-                  <CustomPaperForm
-                    predefinedPapers={predefinedPapers || []}
-                    customQuestions={customQuestions}
-                    onCustomQuestionsChange={setCustomQuestions}
-                    customProjectTask={customProjectTask}
-                    onCustomProjectTaskChange={setCustomProjectTask}
-                  />
+                    {/* Custom Builder Form */}
+                    {mode === "custom" && (
+                      <CustomPaperForm
+                        predefinedPapers={predefinedPapers || []}
+                        customQuestions={customQuestions}
+                        onCustomQuestionsChange={setCustomQuestions}
+                        customProjectTask={customProjectTask}
+                        onCustomProjectTaskChange={setCustomProjectTask}
+                      />
+                    )}
+                  </>
                 )}
               </div>
             )}
           </div>
 
           {/* Footer actions */}
-          <SendQuestionPaperFooter
-            onCancel={() => onOpenChange(false)}
-            hasAssignedPaper={!!finalAssignedPaper}
-            mode={mode}
-            selectedPaperId={selectedPaperId}
-            customQuestions={customQuestions}
-            customProjectTask={customProjectTask}
-            isAssignPending={assignMutation.isPending}
-            isSendEmailPending={sendEmailMutation.isPending}
-            isEmailAlreadySent={isEmailAlreadySent}
-            onAssign={handleAssign}
-            onSendEmail={handleSendEmail}
-          />
+          {!finalAssignedPaper && !loadingPredefined && (!predefinedPapers || predefinedPapers.length === 0) ? (
+            <DialogFooter className="p-3 border-t border-muted-foreground/10 bg-muted/20 shrink-0 gap-2 flex items-center justify-end flex-row">
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-xl font-semibold"
+                onClick={() => onOpenChange(false)}
+              >
+                Close
+              </Button>
+            </DialogFooter>
+          ) : (
+            <SendQuestionPaperFooter
+              onCancel={() => onOpenChange(false)}
+              hasAssignedPaper={!!finalAssignedPaper}
+              mode={mode}
+              selectedPaperId={selectedPaperId}
+              customQuestions={customQuestions}
+              customProjectTask={customProjectTask}
+              isAssignPending={assignMutation.isPending}
+              isSendEmailPending={sendEmailMutation.isPending}
+              isEmailAlreadySent={isEmailAlreadySent}
+              onAssign={handleAssign}
+              onSendEmail={handleSendEmail}
+            />
+          )}
         </DialogContent>
       </Dialog>
 

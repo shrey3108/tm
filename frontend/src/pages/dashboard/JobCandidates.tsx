@@ -92,6 +92,7 @@ export default function JobCandidates() {
     city: activeFilters.city,
     result: activeFilters.result,
     hr_score: activeFilters.hr_score,
+    test_email_sent: activeFilters.test_email_sent,
   });
 
   const [selectedCandidate, _setSelectedCandidate] = useState<CandidateAnalysis | null>(null);
@@ -124,6 +125,36 @@ export default function JobCandidates() {
       .filter(Boolean);
   }, [rowSelection, candidates]);
 
+  // Compute emailFilterState from activeFilters.test_email_sent
+  const emailFilterState = useMemo(() => {
+    if (activeFilters.test_email_sent === true) return "sent" as const;
+    if (activeFilters.test_email_sent === false) return "not_sent" as const;
+    return undefined;
+  }, [activeFilters.test_email_sent]);
+
+  // Derive button state from selected candidates' actual data
+  // task_file_path: null → no paper assigned, non-null → paper assigned
+  // test_email_sent: true → email sent, false/undefined → not sent
+  const resolvedEmailState = useMemo((): "sent" | "not_sent" | undefined => {
+    // If explicit filter is set, use it
+    if (emailFilterState !== undefined) return emailFilterState;
+    if (selectedCandidates.length === 0) return undefined;
+
+    const allHavePaper = selectedCandidates.every((c) => !!c.task_file_path);
+    if (!allHavePaper) return undefined; // No paper → "Assign Question Paper"
+
+    // All have paper — check email status
+    const allSent = selectedCandidates.every((c) => {
+      // @ts-ignore
+      return c.test_email_sent === true
+    });
+    console.log(allSent);
+    if (allSent) return "sent" as const;
+
+    return "not_sent" as const;
+  }, [emailFilterState, selectedCandidates]);
+
+
   const [modalInitialTab, _setModalInitialTab] = useState<"analysis" | "jd" | "cross-job-match">("analysis");
   const handleFiltersChange = (filters: CandidateActiveFilters) => {
     setActiveFilters(filters);
@@ -152,6 +183,7 @@ export default function JobCandidates() {
         showSendQuestionPaper={showCheckboxes}
         onSendQuestionPaperClick={() => setIsSendQuestionPaperDialogOpen(true)}
         isSendQuestionPaperDisabled={selectedCandidates.length === 0}
+        emailFilterState={resolvedEmailState}
       />
 
       <div className="relative min-h-[400px]">
@@ -401,6 +433,7 @@ export default function JobCandidates() {
           candidateId={selectedCandidates?.[0]?.id}
           selectedCandidates={selectedCandidates}
           allCandidates={candidates}
+          emailFilterState={emailFilterState}
           onSuccess={() => {
             fetchData();
             setRowSelection({});

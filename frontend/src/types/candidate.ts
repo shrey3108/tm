@@ -30,6 +30,7 @@ export interface UnifiedCandidate {
   current_stage?: CandidateStageSummary | null;
   pipeline?: CandidateStageSummary[] | null;
   task_file_path?: string | null;
+  test_email_sent?: boolean
 }
 
 export interface TimelineEvent {

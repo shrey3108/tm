@@ -48,7 +48,7 @@ export function EvaluationCard({
           {hasScore && (
             <div className="flex items-center gap-2 text-foreground">
               <span className="font-bold capitalize">Score</span>
-              <span className="text-sm font-semibold">({score}/{maxScore})</span>
+              <span className="text-sm font-semibold">({score.toFixed(1)}/{maxScore.toFixed(1)})</span>
             </div>
           )}
         </div>
@@ -63,11 +63,11 @@ export function EvaluationCard({
           )}
           {listItems && listItems.length > 0 && (
             <div>
-              {title.toLowerCase() !== "strengths" && 
-               title.toLowerCase() !== "weaknesses" && 
-               title.toLowerCase() !== "suggested_followups" && (
-                <span className="text-sm font-bold capitalize text-muted-foreground block mb-1">Items:</span>
-              )}
+              {title.toLowerCase() !== "strengths" &&
+                title.toLowerCase() !== "weaknesses" &&
+                title.toLowerCase() !== "suggested_followups" && (
+                  <span className="text-sm font-bold capitalize text-muted-foreground block mb-1">Items:</span>
+                )}
               <ul className="list-disc pl-5 space-y-1">
                 {listItems.map((item, idx) => (
                   <li key={idx} className="text-sm text-foreground/80 leading-relaxed font-medium">

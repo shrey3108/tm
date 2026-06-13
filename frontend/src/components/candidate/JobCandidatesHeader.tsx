@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Badge } from "@/components/";
 import AppPageHeader from "@/components/shared/AppPageHeader";
 import PermissionGuard from "@/components/auth/PermissionGuard";
@@ -22,6 +23,7 @@ interface JobCandidatesHeaderProps {
   showSendQuestionPaper?: boolean;
   onSendQuestionPaperClick?: () => void;
   isSendQuestionPaperDisabled?: boolean;
+  emailFilterState?: "sent" | "not_sent" | undefined;
 }
 
 export const JobCandidatesHeader = ({
@@ -36,7 +38,20 @@ export const JobCandidatesHeader = ({
   showSendQuestionPaper = false,
   onSendQuestionPaperClick,
   isSendQuestionPaperDisabled = true,
+  emailFilterState,
 }: JobCandidatesHeaderProps) => {
+  const buttonLabel = useMemo(() => {
+    if (emailFilterState === "sent") return "Re-Send Question Paper";
+    if (emailFilterState === "not_sent") return "Send Question Paper";
+    return "Assign Question Paper";
+  }, [emailFilterState]);
+
+  const disabledTooltip = useMemo(() => {
+    if (!job?.is_active) return "This action is disabled for inactive jobs";
+    if (!showSendQuestionPaper) return undefined;
+    if (isSendQuestionPaperDisabled) return "Select at least one candidate to proceed";
+    return undefined;
+  }, [job?.is_active, showSendQuestionPaper, isSendQuestionPaperDisabled]);
   return (
     <AppPageHeader
       title={job?.title || "Loading..."}
@@ -72,12 +87,12 @@ export const JobCandidatesHeader = ({
           <Button
             variant="outline"
             size="sm"
-            className="h-9 rounded-xl border border-muted-foreground/10 px-4 shrink-0 font-medium text-center flex items-center gap-2 hover:bg-muted/50"
+            className="h-9 rounded-xl shrink-0 font-medium"
             onClick={onSendQuestionPaperClick}
             disabled={isSendQuestionPaperDisabled || !showSendQuestionPaper || !job?.is_active}
+            title={disabledTooltip}
           >
-            {/* <Send className="h-4 w-4" />  */}
-            Assign Question Paper
+            {buttonLabel}
           </Button>
           <div className="bg-muted/50 p-1 rounded-lg flex items-center border border-border shrink-0 h-9">
             <button
