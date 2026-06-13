@@ -375,9 +375,11 @@ export function SendQuestionPaperDialog({
                       <span className="text-foreground">Set Default Question Paper for All Candidates</span>
                     </>
                     : <>
-                      {`${candidateDetails?.first_name || ""} ${candidateDetails?.last_name || ""}`.trim()}
+
                       <MailIcon className="h-4 w-4 text-primary" />
-                      Send Email
+                      Send Email to<span className="text-foreground capitalize">
+                        {`${candidateDetails?.first_name || ""} ${candidateDetails?.last_name || ""}`.trim()}
+                      </span>
                       <Tooltip>
                         <TooltipTrigger>
                           ({finalAssignedPaper?.email_sent_count ?? 0})
@@ -386,6 +388,7 @@ export function SendQuestionPaperDialog({
                           <p>{finalAssignedPaper?.email_sent_count ?? 0} times email send to candidate</p>
                         </TooltipContent>
                       </Tooltip>
+
                     </>}
 
                 </>

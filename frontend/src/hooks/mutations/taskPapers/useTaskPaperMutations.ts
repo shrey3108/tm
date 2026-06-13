@@ -69,6 +69,9 @@ export function useAssignTestPaperMutation() {
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.TASK_PAPERS.SKILLS, data.candidate_id],
       });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.JOBS.CANDIDATES],
+      });
     },
   });
 }

@@ -322,7 +322,7 @@ export const CandidateTableFilters = ({
               { id: "sent", label: "Sent" },
               { id: "not_sent", label: "Not Sent" }
             ]}
-            placeholder="Test Paper"
+            placeholder="Test Email Sent"
             onClear={() => setTestEmailSentFilter(undefined)}
             clearLabel="Clear selection"
             disabled={!isTestPaperFilterEnabled}

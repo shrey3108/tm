@@ -534,6 +534,7 @@ export interface CandidateAnalysis {
    */
   pipeline?: CandidateStageSummary[] | null;
   task_file_path?: string | null;
+  test_email_sent?: boolean;
 }
 
 /**

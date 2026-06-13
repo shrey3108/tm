@@ -136,24 +136,24 @@ export default function JobCandidates() {
   // task_file_path: null → no paper assigned, non-null → paper assigned
   // test_email_sent: true → email sent, false/undefined → not sent
   const resolvedEmailState = useMemo((): "sent" | "not_sent" | undefined => {
-    // If explicit filter is set, use it
+    // If candidates are selected, their actual data takes precedence
+    if (selectedCandidates.length > 0) {
+      const allHavePaper = selectedCandidates.every((c) => !!c.task_file_path);
+      if (!allHavePaper) return undefined; // No paper → "Assign Question Paper"
+
+      // All have paper — check email status
+      const allSent = selectedCandidates.every((c) => c.test_email_sent === true);
+      if (allSent) return "sent" as const;
+
+      return "not_sent" as const;
+    }
+
+    // Fallback: If no candidates are selected, but explicit filter is set, use the filter state
     if (emailFilterState !== undefined) return emailFilterState;
-    if (selectedCandidates.length === 0) return undefined;
 
-    const allHavePaper = selectedCandidates.every((c) => !!c.task_file_path);
-    if (!allHavePaper) return undefined; // No paper → "Assign Question Paper"
-
-    // All have paper — check email status
-    const allSent = selectedCandidates.every((c) => {
-      // @ts-ignore
-      return c.test_email_sent === true
-    });
-    // console.log(allSent);
-    if (allSent) return "sent" as const;
-
-    return "not_sent" as const;
+    return undefined;
   }, [emailFilterState, selectedCandidates]);
-
+  console.log(resolvedEmailState)
 
   const [modalInitialTab, _setModalInitialTab] = useState<"analysis" | "jd" | "cross-job-match">("analysis");
   const handleFiltersChange = (filters: CandidateActiveFilters) => {

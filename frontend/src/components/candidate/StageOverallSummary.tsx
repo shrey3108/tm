@@ -17,7 +17,7 @@ export interface OverallSummaryData {
   /** Recommendation label (e.g., "Strongly Recommend") */
   recommendation: string;
   /** Overall AI summary of candidate performance — simple string or categorized array */
-  overall_summary: SummaryText;
+  overall_summary?: SummaryText;
   /** Summary of candidate strengths — flat list or categorized */
   strength_summary?: SummaryItems;
   /** Summary of candidate weaknesses — flat list or categorized */
