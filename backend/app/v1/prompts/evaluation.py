@@ -73,6 +73,8 @@ EVALUATION_USER_PROMPT_TEMPLATE = dedent("""
     TRANSCRIPT PREVIEW:
     {transcript_text}
 
+    IMPORTANT: You MUST extract at least 2 bullet points for "strengths", 2 for "weaknesses", and 2 for "suggested_followups" based on the transcript and evidence. Do NOT leave these arrays empty.
+
     Please provide the final evaluation in the following JSON format:
     {{
       "criteria": {{

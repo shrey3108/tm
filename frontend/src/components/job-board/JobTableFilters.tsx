@@ -3,28 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Filter, Calendar as CalendarIcon, ChevronDown, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { cn, capitalize } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import type { DateRange } from "react-day-picker";
 import type { DepartmentRead } from "@/types/admin";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuCheckboxItem,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuLabel,
-  DropdownMenuGroup,
-} from "@/components/ui/dropdown-menu";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card"
-
+import { HoverCard, HoverCardContent, HoverCardTrigger, } from "@/components/ui/hover-card"
 import { Separator } from "@/components/ui/separator";
 import { FILTER_DISPLAY_LIMIT } from "@/constants";
+import { SearchableSelect } from "@/components/shared";
 
 interface JobTableFiltersProps {
   titleFilter: string;
@@ -57,7 +43,6 @@ export const JobTableFilters = ({
   dateRange,
   setDateRange,
   departmentOptions,
-  departmentSearch,
   setDepartmentSearch,
   hasActiveFilters,
   clearFilters,
@@ -83,144 +68,50 @@ export const JobTableFilters = ({
           </div>
 
           {/* Status Dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              className={cn(
-                "inline-flex items-center justify-between gap-2 h-10 px-3 w-[130px] rounded-xl border text-sm font-medium cursor-pointer select-none transition-all",
-                statusFilter.length > 0
-                  ? "border-primary/40 bg-primary/10 text-primary"
-                  : "border-input bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-              )}
-            >
-              <span className="truncate">
-                {statusFilter.length === 0
-                  ? "Statuses"
-                  : statusFilter.length === 1
-                    ? capitalize(statusFilter[0])
-                    : `${statusFilter.length} Statuses`}
-              </span>
-              <ChevronDown className="h-4 w-4 opacity-60 shrink-0" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-fit min-w-[130px] p-2 rounded-xl shadow-xl">
-              <DropdownMenuGroup>
-                <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground px-2 py-1.5">Status</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {statusOptions.map((s) => (
-                  <DropdownMenuCheckboxItem
-                    key={s}
-                    checked={statusFilter.includes(s)}
-                    onSelect={(e) => e.preventDefault()}
-                    onClick={() =>
-                      setStatusFilter(
-                        statusFilter.includes(s)
-                          ? statusFilter.filter((v) => v !== s)
-                          : [...statusFilter, s]
-                      )
-                    }
-                    className="rounded-lg my-0.5 capitalize pl-2 pr-6"
-                    closeOnClick={true}
-                  >
-                    {capitalize(s)}
-                  </DropdownMenuCheckboxItem>
-                ))}
-                {statusFilter.length > 0 && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      variant="destructive"
-                      onClick={() => setStatusFilter([])}
-                      className="rounded-lg"
-                    >
-                      Clear statuses
-                    </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <SearchableSelect
+            multiple
+            value={statusFilter}
+            onValueChange={setStatusFilter}
+            options={statusOptions.map((s) => ({ id: s, label: s }))}
+            placeholder="Statuses"
+            pluralLabel="Statuses"
+            onClear={() => setStatusFilter([])}
+            clearLabel="Clear statuses"
+            triggerClassName={cn(
+              "h-10 w-[130px] border font-medium select-none bg-background hover:bg-muted/50 hover:text-foreground",
+              statusFilter.length > 0
+                ? "border-primary/40 bg-primary/10 text-primary hover:bg-primary/10 hover:text-primary"
+                : "border-input text-muted-foreground"
+            )}
+          // contentClassName="w-[50%]"
+          />
 
           {/* Department Dropdown */}
           {departmentOptions.length > 0 && (
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                className={cn(
-                  "inline-flex items-center justify-between gap-2 h-10 px-3 w-[160px] rounded-xl border text-sm font-medium cursor-pointer select-none transition-all",
-                  departmentFilter.length > 0
-                    ? "border-primary/40 bg-primary/10 text-primary"
-                    : "border-input bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-                )}
-              >
-                <span className="truncate mr-auto text-left capitalize">
-                  {departmentFilter.length === 0
-                    ? "Departments"
-                    : departmentFilter.length <= FILTER_DISPLAY_LIMIT
-                      ? departmentFilter.map(id => departmentOptions.find(d => d.id === id)?.name || id).join(", ")
-                      : `${departmentFilter.slice(0, FILTER_DISPLAY_LIMIT).map(id => departmentOptions.find(d => d.id === id)?.name || id).join(", ")} and ${departmentFilter.length - FILTER_DISPLAY_LIMIT} more`}
-                </span>
-                <ChevronDown className="h-4 w-4 opacity-60 shrink-0" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-fit min-w-[160px] p-2 rounded-xl shadow-xl">
-                {departmentFilter.length >= FILTER_DISPLAY_LIMIT || departmentOptions.length >= FILTER_DISPLAY_LIMIT ? <div className="px-1 pb-2">
-                  <div className="relative">
-                    <Input
-                      placeholder="Search departments..."
-                      value={departmentSearch}
-                      onChange={(e) => setDepartmentSearch(e.target.value)}
-                      className="h-9 rounded-lg text-xs pl-2"
-                      onKeyDown={(e) => e.stopPropagation()}
-                    />
-                  </div>
-                </div> : null}
-                <DropdownMenuSeparator />
-                <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
-                  <DropdownMenuGroup>
-                    {departmentOptions.length === 0 ? (
-                      <div className="px-2 py-4 text-xs text-center text-muted-foreground">
-                        No departments found "{departmentSearch}"
-                      </div>
-                    ) : (
-                      <>
-                        {departmentOptions.slice(0, FILTER_DISPLAY_LIMIT).map((d) => (
-                          <DropdownMenuCheckboxItem
-                            key={d.id}
-                            checked={departmentFilter.includes(d.id)}
-                            onSelect={(e) => e.preventDefault()}
-                            onClick={() =>
-                              setDepartmentFilter(
-                                departmentFilter.includes(d.id)
-                                  ? departmentFilter.filter((v) => v !== d.id)
-                                  : [...departmentFilter, d.id]
-                              )
-                            }
-                            className="rounded-lg my-0.5 capitalize pl-2 pr-6"
-                            closeOnClick={true}
-                          >
-                            {capitalize(d.name)}
-                          </DropdownMenuCheckboxItem>
-                        ))}
-                        {departmentOptions.length > FILTER_DISPLAY_LIMIT && (
-                          <div className="px-2 py-2 text-xs text-muted-foreground italic text-center border-t border-muted/50 mt-1">
-                            And {departmentOptions.length - FILTER_DISPLAY_LIMIT} more departments...
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </DropdownMenuGroup>
-                </div>
-                {departmentFilter.length > 0 && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      variant="destructive"
-                      onClick={() => setDepartmentFilter([])}
-                      className="rounded-lg"
-                    >
-                      Clear departments
-                    </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <SearchableSelect
+              multiple
+              value={departmentFilter}
+
+              onValueChange={setDepartmentFilter}
+              options={departmentOptions.map((d) => ({ id: d.id, label: d.name }))}
+              placeholder="Departments"
+              pluralLabel="Departments"
+              onSearch={setDepartmentSearch}
+              onClear={() => setDepartmentFilter([])}
+              clearLabel="Clear departments"
+              getTriggerLabel={(selected) =>
+                selected.length <= FILTER_DISPLAY_LIMIT
+                  ? selected.map((s) => s.label).join(", ")
+                  : `${selected.slice(0, FILTER_DISPLAY_LIMIT).map((s) => s.label).join(", ")} and ${selected.length - FILTER_DISPLAY_LIMIT} more`
+              }
+              triggerClassName={cn(
+                "h-10 w-[160px] border font-medium select-none bg-background hover:bg-muted/50 hover:text-foreground",
+                departmentFilter.length > 0
+                  ? "border-primary/40 bg-primary/10 text-primary hover:bg-primary/10 hover:text-primary"
+                  : "border-input text-muted-foreground"
+              )}
+            // contentClassName="min-w-[160px]"
+            />
           )}
 
           {/* Date Range Picker */}

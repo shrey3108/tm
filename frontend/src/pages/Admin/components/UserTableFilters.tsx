@@ -1,21 +1,13 @@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Filter, X, Calendar as CalendarIcon, ChevronDown, UserCheck } from "lucide-react";
+import { Filter, X, Calendar as CalendarIcon, UserCheck } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { cn, capitalize } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import type { DateRange } from "react-day-picker";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuCheckboxItem,
-  DropdownMenuSeparator,
-  DropdownMenuLabel,
-  DropdownMenuGroup,
-} from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components";
+import { SearchableSelect } from "@/components/shared";
 
 interface UserTableFiltersProps {
   searchFilter: string;
@@ -69,114 +61,44 @@ export const UserTableFilters = ({
 
 
         {/* Status Dropdown */}
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            className={cn(
-              "inline-flex items-center gap-2 h-9 px-3 rounded-xl border text-sm font-medium cursor-pointer select-none transition-colors",
-              statusFilter.length > 0
-                ? "border-primary/40 bg-primary/5 text-foreground"
-                : "border-input bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-            )}
-          >
-            {statusFilter.length === 0
-              ? "Statuses"
-              : statusFilter.length === 1
-                ? capitalize(statusFilter[0])
-                : `${statusFilter.length} statuses`}
-            <ChevronDown className="h-3.5 w-3.5 opacity-60" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="min-w-[160px]">
-            <DropdownMenuGroup>
-              <DropdownMenuLabel>Status</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {statusOptions.map((s) => (
-                <DropdownMenuCheckboxItem
-                  key={s}
-                  checked={statusFilter.includes(s)}
-                  onSelect={(e) => e.preventDefault()}
-                  onClick={() =>
-                    setStatusFilter(
-                      statusFilter.includes(s)
-                        ? statusFilter.filter((v) => v !== s)
-                        : [...statusFilter, s]
-                    )
-                  }
-                  closeOnClick={true} // close the dropdown after selecting option
-                >
-                  {capitalize(s)}
-                </DropdownMenuCheckboxItem>
-              ))}
-              {statusFilter.length > 0 && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuCheckboxItem
-                    checked={false}
-                    onClick={() => setStatusFilter([])}
-                    closeOnClick={true} // close the dropdown after selecting option
-                  >
-                    Clear statuses
-                  </DropdownMenuCheckboxItem>
-                </>
-              )}
-            </DropdownMenuGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <SearchableSelect
+          multiple
+          value={statusFilter}
+          onValueChange={setStatusFilter}
+          options={statusOptions.map((s) => ({ id: s, label: s }))}
+          placeholder="Statuses"
+          pluralLabel="statuses"
+          onClear={() => setStatusFilter([])}
+          clearLabel="Clear statuses"
+          triggerClassName={cn(
+            "inline-flex items-center gap-2 h-9 px-3 rounded-xl border text-sm font-medium cursor-pointer select-none transition-colors",
+            statusFilter.length > 0
+              ? "border-primary/40 bg-primary/5 text-foreground hover:bg-primary/5 hover:text-foreground"
+              : "border-input bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+          )}
+          contentClassName="min-w-[160px]"
+        />
 
         {/* Role Dropdown */}
         {roleOptions.length > 0 && (
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              className={cn(
-                "inline-flex items-center gap-2 h-9 px-3 rounded-xl border text-sm font-medium cursor-pointer select-none transition-colors",
-                roleFilter.length > 0
-                  ? "border-primary/40 bg-primary/5 text-foreground"
-                  : "border-input bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-              )}
-            >
-              <UserCheck className="h-3.5 w-3.5 opacity-60" />
-              {roleFilter.length === 0
-                ? "Roles"
-                : roleFilter.length === 1
-                  ? roleFilter[0]
-                  : `${roleFilter.length} roles`}
-              <ChevronDown className="h-3.5 w-3.5 opacity-60" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="min-w-[180px]">
-              <DropdownMenuGroup>
-                <DropdownMenuLabel>Role</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {roleOptions.map((r) => (
-                  <DropdownMenuCheckboxItem
-                    key={r}
-                    checked={roleFilter.includes(r)}
-                    onSelect={(e) => e.preventDefault()}
-                    onClick={() =>
-                      setRoleFilter(
-                        roleFilter.includes(r)
-                          ? roleFilter.filter((v) => v !== r)
-                          : [...roleFilter, r]
-                      )
-                    }
-                    closeOnClick={true} // close the dropdown after selecting option
-                  >
-                    {r}
-                  </DropdownMenuCheckboxItem>
-                ))}
-                {roleFilter.length > 0 && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuCheckboxItem
-                      checked={false}
-                      onClick={() => setRoleFilter([])}
-                      closeOnClick={true} // close the dropdown after selecting option
-                    >
-                      Clear roles
-                    </DropdownMenuCheckboxItem>
-                  </>
-                )}
-              </DropdownMenuGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <SearchableSelect
+            multiple
+            value={roleFilter}
+            onValueChange={setRoleFilter}
+            options={roleOptions.map((r) => ({ id: r, label: r }))}
+            placeholder="Roles"
+            pluralLabel="roles"
+            onClear={() => setRoleFilter([])}
+            clearLabel="Clear roles"
+            icon={<UserCheck className="h-3.5 w-3.5 opacity-60" />}
+            triggerClassName={cn(
+              "inline-flex items-center gap-2 h-9 px-3 rounded-xl border text-sm font-medium cursor-pointer select-none transition-colors",
+              roleFilter.length > 0
+                ? "border-primary/40 bg-primary/5 text-foreground hover:bg-primary/5 hover:text-foreground"
+                : "border-input bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+            )}
+            contentClassName="min-w-[180px]"
+          />
         )}
 
         {/* Date Range Picker */}

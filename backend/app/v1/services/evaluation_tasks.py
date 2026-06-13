@@ -386,17 +386,34 @@ def evaluate_candidate_practical_task(
             # Prefix each strength, weakness, and followup question with [JD Alignment] or [Project Requirements]
             # to keep them clearly segregated on the UI without modifying any frontend code.
             jd_strengths = jd_align.get("strengths", []) if isinstance(jd_align, dict) else []
+            if not jd_strengths:
+                jd_strengths = ["No specific strengths identified."]
             proj_strengths = proj_align.get("strengths", []) if isinstance(proj_align, dict) else []
+            if not proj_strengths:
+                proj_strengths = ["No specific strengths identified."]
+            
             combined_strengths = []
+            extraordinary = []
             for s in jd_strengths:
                 if isinstance(s, str) and s.strip():
-                    combined_strengths.append(f"[JD Alignment] {s.strip()}")
+                    val = s.strip()
+                    combined_strengths.append(f"[JD Alignment] {val}")
+                    if val != "No specific strengths identified.":
+                        extraordinary.append(val)
             for s in proj_strengths:
                 if isinstance(s, str) and s.strip():
-                    combined_strengths.append(f"[Project Requirements] {s.strip()}")
+                    val = s.strip()
+                    combined_strengths.append(f"[Project Requirements] {val}")
+                    if val != "No specific strengths identified.":
+                        extraordinary.append(val)
 
             jd_weaknesses = jd_align.get("weaknesses", []) if isinstance(jd_align, dict) else []
+            if not jd_weaknesses:
+                jd_weaknesses = ["No specific weaknesses identified."]
             proj_weaknesses = proj_align.get("weaknesses", []) if isinstance(proj_align, dict) else []
+            if not proj_weaknesses:
+                proj_weaknesses = ["No specific weaknesses identified."]
+                
             combined_weaknesses = []
             for w in jd_weaknesses:
                 if isinstance(w, str) and w.strip():
@@ -406,7 +423,12 @@ def evaluate_candidate_practical_task(
                     combined_weaknesses.append(f"[Project Requirements] {w.strip()}")
 
             jd_followups = jd_align.get("interview_questions", []) if isinstance(jd_align, dict) else []
+            if not jd_followups:
+                jd_followups = ["No specific follow-up questions generated."]
             proj_followups = proj_align.get("interview_questions", []) if isinstance(proj_align, dict) else []
+            if not proj_followups:
+                proj_followups = ["No specific follow-up questions generated."]
+                
             combined_followups = []
             for f in jd_followups:
                 if isinstance(f, str) and f.strip():
@@ -427,8 +449,17 @@ def evaluate_candidate_practical_task(
             jd_decision_emoji = "❌ REJECT" if jd_decision == "REJECT" else "✅ PROCEED" if jd_decision == "PROCEED" else jd_decision
             proj_decision_emoji = "❌ REJECT" if proj_decision == "REJECT" else "✅ PROCEED" if proj_decision == "PROCEED" else proj_decision
             
-            jd_review = str(jd_align.get("alignment_review", "No JD alignment review provided.")).strip()
-            proj_review = str(proj_align.get("alignment_review", "No project alignment review provided.")).strip()
+            jd_review = str(
+                report.get("jd_alignment_report") or 
+                jd_align.get("jd_alignment_report") or 
+                jd_align.get("alignment_review", "No JD alignment review provided.")
+            ).strip()
+            
+            proj_review = str(
+                report.get("project_alignment_report") or 
+                proj_align.get("project_alignment_report") or 
+                proj_align.get("alignment_review", "No project alignment review provided.")
+            ).strip()
 
             overall_summary_text = (
                 f"🎯 ALIGNMENT BREAKDOWN: "
@@ -437,11 +468,28 @@ def evaluate_candidate_practical_task(
             )
 
             highlights = {
+                "Architectural Review": [
+                    f"Score: {get_combined_score(jd_scores, proj_scores, 'architecture')}/5.0",
+                    f"JD: {get_reasoning(jd_align, 'architecture', 'N/A')}",
+                    f"Project: {get_reasoning(proj_align, 'architecture', 'N/A')}"
+                ],
+                "Code Quality Review": [
+                    f"Score: {get_combined_score(jd_scores, proj_scores, 'code_quality')}/5.0",
+                    f"JD: {get_reasoning(jd_align, 'code_quality', 'N/A')}",
+                    f"Project: {get_reasoning(proj_align, 'code_quality', 'N/A')}"
+                ],
+                "Identified Security Risks": [
+                    f"Score: {get_combined_score(jd_scores, proj_scores, 'security')}/5.0",
+                    security_risks_str
+                ],
+                "Extraordinary Points": extraordinary if extraordinary else ["No extraordinary points identified."],
+                "overall_summary": [
+                    {"JD Alignment": jd_review},
+                    {"Project Requirements": proj_review}
+                ],
                 "strengths": combined_strengths,
                 "weaknesses": combined_weaknesses,
-                "suggested_followups": combined_followups,
-                "overall_summary": overall_summary_text,
-                "recommendation": f"JD Alignment: {jd_decision} ({jd_scaled}/5.0) | Project Alignment: {proj_decision} ({proj_scaled}/5.0)"
+                "suggested_followups": combined_followups
             }
 
             # Fetch attempt number

@@ -139,9 +139,23 @@ export const useFilteredDepartmentOptions = (
         }
       }
     });
+
+    // Ensure currently selected departments are always preserved in the options to avoid displaying UUIDs
+    if (departmentFilter && departmentFilter.length > 0) {
+      departmentFilter.forEach((id) => {
+        const found = allDepartments.find((d) => d.id === id);
+        if (found) {
+          const trimmedName = found.name.trim();
+          if (!uniqueDeptsMap.has(trimmedName)) {
+            uniqueDeptsMap.set(trimmedName, found);
+          }
+        }
+      });
+    }
+
     return Array.from(uniqueDeptsMap.values())
       .sort((a, b) => a.name.localeCompare(b.name));
-  }, [jobs, allDepartments, hasServerFilter]);
+  }, [jobs, allDepartments, hasServerFilter, departmentFilter]);
 };
 
 /**

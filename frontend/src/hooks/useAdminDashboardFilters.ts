@@ -141,8 +141,11 @@ export const useAdminDashboardFilters = (
       }
     });
 
+    // Ensure selected departments are preserved
+    filters.departments.forEach(d => depts.add(d));
+
     return Array.from(depts).sort();
-  }, [report, filters.jobIds, jobIdToTitle, allDepartments]);
+  }, [report, filters.jobIds, filters.departments, jobIdToTitle, allDepartments]);
 
   // Filter stages based on selected jobs and departments
   const filteredStages = useMemo(() => {
@@ -179,8 +182,8 @@ export const useAdminDashboardFilters = (
 
     // If activeStages is empty (e.g. no data for selection), we might want to show all or none.
     // Showing none might be better for "dynamic" feel.
-    return stages.filter(s => activeStages.has(s.name));
-  }, [report, filters.jobIds, filters.departments, jobIdToTitle, stages]);
+    return stages.filter(s => activeStages.has(s.name) || filters.stages.includes(s.name));
+  }, [report, filters.jobIds, filters.departments, filters.stages, jobIdToTitle, stages]);
 
   // Derived: filtered report
   const filteredReport = useMemo(() => {

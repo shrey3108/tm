@@ -61,7 +61,7 @@ RESUME TEXT:
                     {"role": "user", "content": user_prompt}
                 ],
                 response_format={"type": "json_object"},
-                temperature=0.0
+                temperature=0.1
             )
 
             response_text = response.choices[0].message.content or "{}"

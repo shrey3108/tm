@@ -26,3 +26,6 @@ Important rules:
 - Do NOT default to 3 — use full range when justified.
 
 Return structured JSON exactly as defined in the examples.
+
+CRITICAL JSON REQUIREMENT:
+You MUST populate the `strengths`, `weaknesses`, and `suggested_followups` arrays in your JSON output with at least one bullet point each. DO NOT output empty arrays `[]` for these fields under any circumstances. Extract key points from your overall summary into these arrays if necessary.
