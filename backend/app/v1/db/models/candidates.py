@@ -74,6 +74,13 @@ class Candidate(Base):
         nullable=True,
     )
 
+    email_sent_count: Mapped[int] = mapped_column(
+        Integer,
+        default=0,
+        server_default="0",
+        nullable=False,
+    )
+
     # LOCATION FK (replaces plain text location column)
     location_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True),
