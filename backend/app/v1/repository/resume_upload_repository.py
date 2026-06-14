@@ -744,7 +744,6 @@ class ResumeUploadRepository:
         if should_keep_profile:
             # We keep the Candidate, Resumes, and Files because they are used elsewhere
             await db.commit()
-            return True
         else:
             # Hard delete if this was their only job
             # Delete resume chunks
@@ -760,7 +759,15 @@ class ResumeUploadRepository:
             # Delete the person
             await db.delete(candidate)
             await db.commit()
-            return True
+
+        # Invalidate cache for the job after successful deletion
+        try:
+            from app.v1.services.admin.system_service import system_service
+            await system_service.invalidate_job_cache(job_id)
+        except Exception:
+            pass
+
+        return True
 
 
 resume_upload_repository = ResumeUploadRepository()

@@ -19,6 +19,7 @@ from app.v1.schemas.task_papers import QuestionSetPaperRead
 from app.v1.schemas.user import UserRead
 from app.v1.utils.uuid import UUIDHelper
 from app.v1.core.decorators import cache_response
+from app.v1.core.cache import cache
 
 router = APIRouter()
 
@@ -86,6 +87,7 @@ async def upload_question_set_papers(
     )
     db.add(db_paper)
     await db.commit()
+    await cache.clear("cache:GET:/api/v1/task-papers*")
     await db.refresh(db_paper)
 
     # Trigger celery task to extract skills, questions, and task details in background
@@ -150,6 +152,7 @@ async def delete_question_set_paper(
         )
     await db.delete(paper)
     await db.commit()
+    await cache.clear("cache:GET:/api/v1/task-papers*")
     return
 
 

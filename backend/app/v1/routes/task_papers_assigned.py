@@ -258,6 +258,14 @@ async def assign_test_paper_to_candidate(
 
     await db.commit()
     await db.refresh(new_paper)
+
+    # Invalidate job cache immediately after assignment
+    try:
+        from app.v1.services.admin.system_service import system_service
+        await system_service.invalidate_job_cache(job_id)
+    except Exception:
+        pass
+
     return new_paper
 
 
@@ -373,8 +381,18 @@ async def delete_candidate_test_paper(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="No test paper assigned to this candidate.",
         )
+    job_id = paper.job_id
     await db.delete(paper)
     await db.commit()
+
+    # Invalidate job cache immediately after deleting candidate test paper
+    if job_id:
+        try:
+            from app.v1.services.admin.system_service import system_service
+            await system_service.invalidate_job_cache(job_id)
+        except Exception:
+            pass
+
     return
 
 
@@ -420,6 +438,14 @@ async def delete_job_default_test_paper(
         )
     await db.delete(paper)
     await db.commit()
+
+    # Invalidate job cache immediately after deleting job default test paper
+    try:
+        from app.v1.services.admin.system_service import system_service
+        await system_service.invalidate_job_cache(job_id)
+    except Exception:
+        pass
+
     return
 
 

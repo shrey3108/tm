@@ -14,20 +14,30 @@ from .processor import ResumeProcessor
 _log = logging.getLogger(__name__)
 
 async def run_task_with_disposal(coro):
-    """Helper to run a coroutine and dispose of the engine afterwards.
+    """Helper to run a coroutine and dispose of resources afterwards.
     
     This prevents 'attached to a different loop' errors in Celery workers
-    by ensuring the connection pool is cleared before the loop closes.
+    by ensuring the connection pool and cache client are cleared before the loop closes.
     """
     try:
         await coro
     finally:
         from app.v1.db.session import engine
+        from app.v1.core.cache import cache
+        try:
+            from litellm.llms.custom_httpx.async_client_cleanup import close_litellm_async_clients
+            await asyncio.wait_for(close_litellm_async_clients(), timeout=5.0)
+        except Exception:
+            pass
         # We use a timeout to avoid hangs during disposal
         try:
             await asyncio.wait_for(engine.dispose(), timeout=5.0)
         except Exception:
             _log.warning("Engine disposal timed out or failed")
+        try:
+            await asyncio.wait_for(cache.close(), timeout=5.0)
+        except Exception:
+            _log.warning("Cache closing timed out or failed")
 
 @celery_app.task(name="process_resume_task", bind=True, max_retries=3)
 def process_resume_task(
