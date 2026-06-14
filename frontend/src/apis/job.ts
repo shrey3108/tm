@@ -131,6 +131,7 @@ const jobService = {
       city?: string[];
       result?: string[];
       hr_score?: number[];
+      test_email_sent?: boolean;
     },
   ): Promise<CandidateAnalysisResponse> => {
     const response = await client.get<CandidateAnalysisResponse>(`/candidates/jobs/${jobId}`, {
@@ -151,6 +152,7 @@ const jobService = {
         ...(filters?.city !== undefined ? { city: filters.city } : undefined),
         ...(filters?.result !== undefined ? { result: filters.result } : undefined),
         ...(filters?.hr_score !== undefined ? { hr_score: filters.hr_score } : undefined),
+        ...(filters?.test_email_sent !== undefined ? { test_email_sent: filters.test_email_sent } : undefined),
       },
       paramsSerializer: {
         indexes: null,

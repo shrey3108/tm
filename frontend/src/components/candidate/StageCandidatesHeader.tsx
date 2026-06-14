@@ -5,7 +5,6 @@ import type { Job } from "@/types/job";
 import { TranscriptUpload } from "./TranscriptUpload";
 import { ProjectSubmissionDialog } from "./projectSubmission/ProjectSubmissionDialog";
 import { SendQuestionPaperDialog } from "./projectSubmission/SendQuestionPaperDialog";
-// import { SendIcon } from "lucide-react";
 import { useCandidateTestPaper } from "@/hooks/queries/taskPapers/useTaskPaperQueries";
 import { SendIcon } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
@@ -53,7 +52,7 @@ export const StageCandidatesHeader = ({
   const [isProjectSubmissionDialogOpen, setIsProjectSubmissionDialogOpen] = useState(false);
   const [isSendQuestionPaperDialogOpen, setIsSendQuestionPaperDialogOpen] = useState(false);
   const { data: assignedPaper } = useCandidateTestPaper(candidateId);
-  console.log(assignedPaper);
+  // console.log(assignedPaper);
 
   const isTranscriptAdded = !!transcriptHistory && transcriptHistory.length > 0;
 

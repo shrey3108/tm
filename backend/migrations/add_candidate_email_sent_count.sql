@@ -1,0 +1,2 @@
+ALTER TABLE candidates 
+ADD COLUMN IF NOT EXISTS email_sent_count INTEGER NOT NULL DEFAULT 0;

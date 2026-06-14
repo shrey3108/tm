@@ -28,9 +28,7 @@ export function CandidateHistoryGrid({
   if (hrDecisionHistory.length === 0 && transcriptHistory.length === 0) {
     return null;
   }
-
   return (
-    // <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
     <div className="h-full">
       {/* HR Decision History Column */}
       {hrDecisionHistory.length > 0 && (

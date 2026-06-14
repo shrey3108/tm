@@ -11,6 +11,7 @@ import type { CandidateAnalysis } from "@/types/admin";
 import type { EvaluationRead, EvaluationHistoryRead } from "@/types/candidateStage";
 import { slugify } from "@/utils/slug";
 import type { HrDecisionHistoryItem } from "@/apis/candidateDecision";
+import type { OverallSummaryData } from "@/components/candidate/StageOverallSummary";
 import {
   useResolvedJobAndCandidate,
   useJobStagesQuery,
@@ -313,7 +314,7 @@ export function useCandidatesStages() {
       followups: hasGithubHighlights ? undefined : followups,
       percentage: Math.round((evaluation.overall_score || 0) * 20),
       github_highlights: hasGithubHighlights ? github_highlights : undefined,
-    } as const;
+    } as OverallSummaryData;
   }, [evaluation]);
 
   const isResumeScreening = currentStage === "Resume Screening";

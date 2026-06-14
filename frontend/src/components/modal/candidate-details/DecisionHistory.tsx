@@ -2,7 +2,7 @@ import { Card } from "@/components/ui/card";
 import { DateDisplay } from "@/components/shared/DateDisplay"
 import { History, MessageSquare } from "lucide-react";
 import type { HrDecisionHistoryItem } from "@/apis/candidateDecision";
-import { CandidateStatusBadge } from "@/components/shared";
+import { CandidateStatusBadge, StarRating } from "@/components/shared";
 
 interface DecisionHistoryProps {
   decisions: HrDecisionHistoryItem[];
@@ -42,6 +42,9 @@ export function DecisionHistory({ decisions }: DecisionHistoryProps) {
                   #{decisions.length - index}
                 </span>
                 <CandidateStatusBadge status={decision.decision} />
+                {decision.score !== undefined && decision.score > 0 && (
+                  <StarRating rating={decision.score} size="sm" />
+                )}
               </div>
               <span className="text-[11px] font-medium text-muted-foreground">
                 Decided on <DateDisplay date={decision.decided_at} className="text-[11px]" />

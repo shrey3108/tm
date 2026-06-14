@@ -19,6 +19,7 @@ export interface Highlight {
   strengths: string[] | CategorizedStringArrayItem[];
   weaknesses: string[] | CategorizedStringArrayItem[];
   suggested_followups: string[] | CategorizedStringArrayItem[];
+  [key: string]: any;
 }
 
 /**
@@ -96,4 +97,5 @@ export interface Highlights {
   suggested_followups: string[] | CategorizedStringArrayItem[]
   overall_summary: string | CategorizedStringItem[]
   recommendation: string
+  [key: string]: any;
 }

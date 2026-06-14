@@ -17,7 +17,7 @@ export interface OverallSummaryData {
   /** Recommendation label (e.g., "Strongly Recommend") */
   recommendation: string;
   /** Overall AI summary of candidate performance — simple string or categorized array */
-  overall_summary: SummaryText;
+  overall_summary?: SummaryText;
   /** Summary of candidate strengths — flat list or categorized */
   strength_summary?: SummaryItems;
   /** Summary of candidate weaknesses — flat list or categorized */
@@ -50,6 +50,32 @@ function isCategorizedItems(value: SummaryItems): value is CategorizedStringArra
     !Array.isArray(value[0]) &&
     typeof value[0] !== "string"
   );
+}
+
+/**
+ * Checks if the first element of a string array is a standalone "Score: X/Y" entry.
+ * If found, returns the formatted score string and the remaining items.
+ */
+function extractLeadingScore(items: string[]): { score: string | null; remainingItems: string[] } {
+  try {
+    if (!Array.isArray(items) || items.length === 0) return { score: null, remainingItems: items };
+
+    const first = items[0];
+    if (typeof first !== "string") return { score: null, remainingItems: items };
+
+    // Match standalone score entries like "Score: 3.5/5.0", "Score:4/5"
+    const match = first.match(/^\s*Score\s*:\s*(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)\s*$/i);
+
+    if (!match) return { score: null, remainingItems: items };
+
+    return {
+      score: `${match[1]}/${match[2]}`,
+      remainingItems: items.slice(1),
+    };
+  } catch {
+    // play safe
+    return { score: null, remainingItems: items };
+  }
 }
 
 
@@ -179,18 +205,25 @@ function SummaryList({
 
   // Flat string[] format // HR stage
   if (!isCategorizedItems(items)) {
+    const { score, remainingItems } = extractLeadingScore(items as string[]);
     return (
       <div className={className}>
         <span className={`text-base font-black tracking-wide block mb-2 uppercase ${titleColor}`}>
-          {title}
+          {title}{score && (
+            <Badge variant="outline" className="ml-2 text-xs font-semibold px-1.5 py-0 normal-case">
+              {score}
+            </Badge>
+          )}
         </span>
-        <ul className="list-disc pl-5 space-y-1">
-          {(items as string[]).map((item, i) => (
-            <li key={i} className="text-sm font-medium leading-relaxed">
-              {item}
-            </li>
-          ))}
-        </ul>
+        {remainingItems.length > 0 && (
+          <ul className="list-disc pl-5 space-y-1">
+            {remainingItems.map((item, i) => (
+              <li key={i} className="text-sm font-medium leading-relaxed">
+                {item}
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     );
   }
@@ -205,18 +238,25 @@ function SummaryList({
         {items.map((categoryObj, idx) => {
           const [category, categoryItems] = Object.entries(categoryObj)[0];
           if (!categoryItems || categoryItems.length === 0) return null;
+          const { score: catScore, remainingItems: catRemaining } = extractLeadingScore(categoryItems);
           return (
             <div key={idx}>
               <span className="text-xs font-bold tracking-wide text-muted-foreground/80 block mb-1">
-                {category}
+                {category}{catScore && (
+                  <Badge variant="outline" className="ml-2 text-xs font-semibold px-1.5 py-0 normal-case">
+                    {catScore}
+                  </Badge>
+                )}
               </span>
-              <ul className="list-disc pl-5 space-y-1">
-                {categoryItems.map((item, i) => (
-                  <li key={i} className="text-sm font-medium leading-relaxed">
-                    {item}
-                  </li>
-                ))}
-              </ul>
+              {catRemaining.length > 0 && (
+                <ul className="list-disc pl-5 space-y-1">
+                  {catRemaining.map((item, i) => (
+                    <li key={i} className="text-sm font-medium leading-relaxed">
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           );
         })}

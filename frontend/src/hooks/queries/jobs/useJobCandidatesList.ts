@@ -14,6 +14,7 @@ export interface CandidateFilters {
   city?: string[];
   result?: string[];
   hr_score?: number[];
+  test_email_sent?: boolean;
 }
 
 export const useJobCandidatesList = (

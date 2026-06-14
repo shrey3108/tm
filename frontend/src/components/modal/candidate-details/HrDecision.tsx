@@ -1,13 +1,13 @@
 import { DateDisplay } from "@/components/shared/DateDisplay"
 import { MessageSquare } from "lucide-react";
-import type { CandidateDecision } from "@/apis/candidateDecision";
-import { CandidateStatusBadge } from "@/components/shared";
+import type { HrDecisionHistoryItem } from "@/apis/candidateDecision";
+import { CandidateStatusBadge, StarRating } from "@/components/shared";
 
 /**
  * Props for {@link HrDecision}.
  */
 interface HrDecisionProps {
-  decision: CandidateDecision;
+  decision: HrDecisionHistoryItem;
 }
 
 /**
@@ -23,7 +23,12 @@ export function HrDecision({ decision }: HrDecisionProps) {
           <MessageSquare className="h-4 w-4" />
           HR Decision
         </h3>
-        <CandidateStatusBadge status={decision.decision.toUpperCase()} />
+        <div className="flex items-center gap-2">
+          {decision.score !== undefined && decision.score > 0 && (
+            <StarRating rating={decision.score} size="sm" />
+          )}
+          <CandidateStatusBadge status={decision.decision.toUpperCase()} />
+        </div>
       </div>
       {decision.notes ? (
         <div className="flex items-end gap-2">
