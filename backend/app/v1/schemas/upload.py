@@ -148,6 +148,7 @@ class CandidateResponse(BaseModel):
     task_skills: list[str] | None = None
     is_custom_task: bool = False
     github_evaluation_id: uuid.UUID | None = None
+    email_sent_count: int = 0
 
 
 # Alias for backward compatibility

@@ -154,7 +154,9 @@ async def send_test_paper_email(
 
     # Increment email sent count
     paper.email_sent_count += 1
+    candidate.email_sent_count += 1
     db.add(paper)
+    db.add(candidate)
     await db.commit()
 
     return {
@@ -279,7 +281,9 @@ async def send_bulk_test_paper_email(
 
             await send_candidate_task_email_via_smtp(candidate, current_paper, db)
             current_paper.email_sent_count += 1
+            candidate.email_sent_count += 1
             db.add(current_paper)
+            db.add(candidate)
             sent_emails.append(candidate.email)
         except Exception as e:
             logger.exception(f"Failed to send bulk email to {candidate.email}: {e}")

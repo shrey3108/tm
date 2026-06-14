@@ -97,4 +97,5 @@ export interface Highlights {
   suggested_followups: string[] | CategorizedStringArrayItem[]
   overall_summary: string | CategorizedStringItem[]
   recommendation: string
+  [key: string]: any;
 }

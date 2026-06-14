@@ -1208,6 +1208,7 @@ class CandidateAdminService:
             task_skills=task_skills,
             is_custom_task=is_custom_task,
             github_evaluation_id=candidate.github_evaluation_id,
+            email_sent_count=candidate.email_sent_count,
         )
 
 
