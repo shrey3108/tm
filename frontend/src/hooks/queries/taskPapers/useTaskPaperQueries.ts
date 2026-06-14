@@ -1,7 +1,8 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueries } from "@tanstack/react-query";
 import { taskService } from "@/apis/task";
 import { QUERY_KEYS } from "@/constants/queryKeys";
 import { QUERY_CONFIG } from "@/constants/queryConfig";
+
 
 /**
  * Hook to retrieve the list of predefined question set paper templates.
@@ -68,6 +69,28 @@ export const useCandidateTestPaper = (candidateId: string | null | undefined) =>
     refetch: res.refetch,
   };
 };
+
+/**
+ * Hook to retrieve test papers currently assigned to multiple candidates.
+ */
+export const useCandidatesTestPapers = (candidateIds: (string | null | undefined)[]) => {
+  const results = useQueries({
+    queries: (candidateIds || []).map((id) => ({
+      queryKey: [QUERY_KEYS.TASK_PAPERS.ASSIGNED, id],
+      queryFn: () => taskService.getCandidateTestPaper(id!),
+      enabled: !!id,
+      staleTime: QUERY_CONFIG.TASK_PAPER.staleTime,
+    })),
+  });
+
+  return {
+    data: results.map((r) => r.data ?? null),
+    loading: results.some((r) => r.isLoading),
+    error: results.find((r) => r.error)?.error ?? null,
+    refetch: () => results.forEach((r) => r.refetch()),
+  };
+};
+
 
 /**
  * Hook to retrieve a candidate's task metadata (path, extracted skills, is_custom flag).

@@ -19,6 +19,8 @@ import type { CandidateActiveFilters } from "@/hooks/useCandidateTableFilters";
 import { slugify } from "@/utils/slug";
 import type { DateRange } from "react-day-picker";
 import { SendQuestionPaperDialog } from "@/components/candidate/projectSubmission/SendQuestionPaperDialog";
+import { useCandidatesTestPapers } from "@/hooks/queries/taskPapers/useTaskPaperQueries";
+
 
 /**
  * Page component for managing job candidates with toggle between candidates list and analytics views.
@@ -132,17 +134,25 @@ export default function JobCandidates() {
     return undefined;
   }, [activeFilters.test_email_sent]);
 
+  const selectedCandidateIds = useMemo(() => {
+    return selectedCandidates.map((c) => c.id);
+  }, [selectedCandidates]);
+
+  const { data: selectedCandidatesTestPapers, loading: loadingTestPapers } = useCandidatesTestPapers(selectedCandidateIds);
+
   // Derive button state from selected candidates' actual data
   // task_file_path: null → no paper assigned, non-null → paper assigned
   // test_email_sent: true → email sent, false/undefined → not sent
   const resolvedEmailState = useMemo((): "sent" | "not_sent" | undefined => {
     // If candidates are selected, their actual data takes precedence
     if (selectedCandidates.length > 0) {
-      const allHavePaper = selectedCandidates.every((c) => !!c.task_file_path);
+      if (loadingTestPapers) return undefined;
+
+      const allHavePaper = selectedCandidatesTestPapers.length > 0 && selectedCandidatesTestPapers.every((paper) => !!paper);
       if (!allHavePaper) return undefined; // No paper → "Assign Question Paper"
 
       // All have paper — check email status
-      const allSent = selectedCandidates.every((c) => c.test_email_sent === true);
+      const allSent = selectedCandidatesTestPapers.every((paper) => paper && paper.email_sent_count && paper.email_sent_count > 0);
       if (allSent) return "sent" as const;
 
       return "not_sent" as const;
@@ -152,7 +162,7 @@ export default function JobCandidates() {
     if (emailFilterState !== undefined) return emailFilterState;
 
     return undefined;
-  }, [emailFilterState, selectedCandidates]);
+  }, [emailFilterState, selectedCandidates, selectedCandidatesTestPapers, loadingTestPapers]);
   console.log(resolvedEmailState)
 
   const [modalInitialTab, _setModalInitialTab] = useState<"analysis" | "jd" | "cross-job-match">("analysis");
@@ -433,7 +443,7 @@ export default function JobCandidates() {
           candidateId={selectedCandidates?.[0]?.id}
           selectedCandidates={selectedCandidates}
           allCandidates={candidates}
-          emailFilterState={emailFilterState}
+          emailFilterState={resolvedEmailState}
           onSuccess={() => {
             fetchData();
             setRowSelection({});

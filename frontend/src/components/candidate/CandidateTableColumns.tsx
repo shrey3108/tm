@@ -20,7 +20,6 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card"
-
 function scoreColor(score: number, threshold: number = DEFAULT_PASSING_THRESHOLD) {
   if (score >= threshold) return "bg-green-500";
   return "bg-red-500";
@@ -85,15 +84,26 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
                   toTitleCase(fullName)
                 )}
               </span>
-              <span className="text-muted-foreground text-wrap break-all w-full">
+              <span className="text-muted-foreground text-wrap break-all">
                 {c.email || "N/A"}
               </span>
-              <span className="text-muted-foreground text-wrap w-full break-all">
-                {c.phone || "N/A"}
-              </span>
-              <span className={cn("text-sm font-medium", c.test_email_sent ? "text-green-500" : "text-red-500")}>
-                {c.test_email_sent ? "Sent" : "Pending"}
-              </span>
+              <div className="flex items-center gap-1">
+                <span className="text-muted-foreground text-wrap">
+                  {c.phone || "N/A"}
+                </span>
+                <HoverCard>
+                  <HoverCardTrigger delay={10} closeDelay={10}>
+                    <Badge variant="outline" className="text-xs">
+                      {c.email_sent_count && c.email_sent_count > 0 ? `Email Sent` : "Pending"}
+                    </Badge>
+                  </HoverCardTrigger>
+                  <HoverCardContent className="w-full p-1 py-2 text-xs rounded-lg">
+                    <p className="text-sm ">
+                      {c.email_sent_count && c.email_sent_count > 0 ? `Total email sent: ${c.email_sent_count}` : "No email sent yet"}
+                    </p>
+                  </HoverCardContent>
+                </HoverCard>
+              </div>
             </div>
           );
         },

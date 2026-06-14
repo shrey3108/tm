@@ -40,7 +40,6 @@ export const JobCandidatesHeader = ({
   isSendQuestionPaperDisabled = true,
   emailFilterState,
 }: JobCandidatesHeaderProps) => {
-  console.log({ emailFilterState })
   const buttonLabel = useMemo(() => {
     if (emailFilterState === "sent") return "Re-Send Question Paper";
     if (emailFilterState === "not_sent") return "Send Question Paper";

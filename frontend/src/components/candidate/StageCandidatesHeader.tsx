@@ -6,7 +6,6 @@ import { TranscriptUpload } from "./TranscriptUpload";
 import { ProjectSubmissionDialog } from "./projectSubmission/ProjectSubmissionDialog";
 import { SendQuestionPaperDialog } from "./projectSubmission/SendQuestionPaperDialog";
 import { useCandidateTestPaper } from "@/hooks/queries/taskPapers/useTaskPaperQueries";
-import { SendIcon } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 interface StageCandidatesHeaderProps {
   /** Associated job for the candidate stage view */
@@ -97,7 +96,7 @@ export const StageCandidatesHeader = ({
                 >
                   {assignedPaper ?
                     <>
-                      <SendIcon className="h-4 w-4" />
+
                       Send Email
                       <Tooltip>
                         <TooltipTrigger>

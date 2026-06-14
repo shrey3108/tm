@@ -22,7 +22,13 @@ import { RandomizedPaperView } from "./sendQuestionPaper/RandomizedPaperView";
 import { CustomPaperForm } from "./sendQuestionPaper/CustomPaperForm";
 import { SendQuestionPaperFooter } from "./sendQuestionPaper/SendQuestionPaperFooter";
 import { extractErrorMessage } from "@/utils/error";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card"
+
 interface SendQuestionPaperDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
@@ -366,6 +372,16 @@ export function SendQuestionPaperDialog({
                       ? `${selectedCandidates.length} Candidates`
                       : `${selectedCandidates[0]?.first_name || ""} ${selectedCandidates[0]?.last_name || ""}`.trim()}
                   </span>
+                  {!isBulkMode &&
+                    < HoverCard >
+                      <HoverCardTrigger>
+                        ({selectedCandidates[0]?.email_sent_count ?? 0})
+                      </HoverCardTrigger>
+                      <HoverCardContent className="w-full p-1 py-2 text-xs rounded-lg">
+                        <p>{selectedCandidates[0]?.email_sent_count ?? 0} times email send to candidate</p>
+                      </HoverCardContent>
+                    </HoverCard>
+                  }
                 </>
               ) : (
                 <>
@@ -380,14 +396,14 @@ export function SendQuestionPaperDialog({
                       Send Email to<span className="text-foreground capitalize">
                         {`${candidateDetails?.first_name || ""} ${candidateDetails?.last_name || ""}`.trim()}
                       </span>
-                      <Tooltip>
-                        <TooltipTrigger>
+                      <HoverCard>
+                        <HoverCardTrigger delay={10} closeDelay={10}>
                           ({finalAssignedPaper?.email_sent_count ?? 0})
-                        </TooltipTrigger>
-                        <TooltipContent>
+                        </HoverCardTrigger>
+                        <HoverCardContent className="w-full p-1 py-2 text-xs rounded-lg">
                           <p>{finalAssignedPaper?.email_sent_count ?? 0} times email send to candidate</p>
-                        </TooltipContent>
-                      </Tooltip>
+                        </HoverCardContent>
+                      </HoverCard>
 
                     </>}
 
@@ -520,7 +536,7 @@ export function SendQuestionPaperDialog({
             />
           )}
         </DialogContent>
-      </Dialog>
+      </Dialog >
 
       <Dialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
         <DialogContent className="max-w-md bg-card/95 backdrop-blur-xl border-muted-foreground/20 shadow-2xl rounded-2xl p-6">
