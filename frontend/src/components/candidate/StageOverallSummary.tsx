@@ -121,7 +121,7 @@ export function StageOverallSummary({ data }: StageOverallSummaryProps) {
                     key={key}
                     title={key}
                     items={items}
-                    titleColor="text-blue-600"
+                    titleColor="text-black"
                   />
                 ))}
               </div>
