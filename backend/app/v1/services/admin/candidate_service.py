@@ -1280,6 +1280,16 @@ class CandidateAdminService:
         await db.delete(candidate)
         await db.commit()
 
+        # Invalidate cache immediately after candidate deletion
+        try:
+            from app.v1.core.cache import cache
+            await cache.clear(pattern="candidates:*")
+            if applied_job_id:
+                from app.v1.services.admin.system_service import system_service
+                await system_service.invalidate_job_cache(applied_job_id)
+        except Exception:
+            pass
+
         # Audit log for candidate deletion
         await audit_service.log_action(
             db=db,

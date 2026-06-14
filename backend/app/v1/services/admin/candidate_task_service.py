@@ -353,4 +353,50 @@ Output Format Example (JSON ONLY):
             "task_skills": task_skills
         }
 
+    async def delete_candidate_task_skills(self, db: AsyncSession, candidate_id: uuid.UUID) -> None:
+        """Delete candidate-specific task details and revert to default."""
+        # 1. Fetch Candidate
+        stmt = select(Candidate).where(Candidate.id == candidate_id)
+        result = await db.execute(stmt)
+        candidate = result.scalar_one_or_none()
+        if not candidate:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Candidate not found.",
+            )
+
+        # 2. Delete the physical task file if it exists
+        if candidate.task_file_path:
+            try:
+                abs_path = resolve_storage_path(candidate.task_file_path)
+                if abs_path.is_file():
+                    abs_path.unlink()
+            except Exception as e:
+                logger.error("Failed to delete physical custom task file: %s", e)
+
+        # 3. Clear fields in candidate record
+        candidate.task_file_path = None
+        candidate.task_skills = None
+        
+        try:
+            db.add(candidate)
+            await db.commit()
+        except Exception as e:
+            logger.error("Failed to update candidate record after custom task deletion: %s", e)
+            await db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to delete candidate task details from database."
+            )
+
+        # 4. Clear candidate cache
+        try:
+            from app.v1.core.cache import cache
+            await cache.clear(pattern="candidates:*")
+            if candidate.applied_job_id:
+                from app.v1.services.admin.system_service import system_service
+                await system_service.invalidate_job_cache(candidate.applied_job_id)
+        except Exception:
+            pass
+
 candidate_task_service = CandidateTaskService()

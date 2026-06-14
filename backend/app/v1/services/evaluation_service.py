@@ -438,6 +438,13 @@ class EvaluationService:
 
         await db.commit()
 
+        # Invalidate job cache immediately after evaluation is committed
+        try:
+            from app.v1.services.admin.system_service import system_service
+            await system_service.invalidate_job_cache(cs.job_stage.job_id)
+        except Exception as cache_err:
+            logger.warning(f"Failed to clear job cache after transcript evaluation: {cache_err}")
+
         # Phoenix span mein final result record karo
         if span:
             span.set_attribute("overall_score", avg_score)

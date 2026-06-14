@@ -11,6 +11,26 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+async def run_with_cleanup(coro):
+    try:
+        return await coro
+    finally:
+        try:
+            from litellm.llms.custom_httpx.async_client_cleanup import close_litellm_async_clients
+            await close_litellm_async_clients()
+        except Exception:
+            pass
+        try:
+            from app.v1.core.cache import cache
+            await cache.close()
+        except Exception:
+            pass
+        try:
+            from app.v1.db.session import engine
+            await engine.dispose()
+        except Exception:
+            pass
+
 @celery_app.task(name="evaluate_candidate_transcript_task")
 def evaluate_candidate_transcript_task(candidate_stage_id_str: str):
     """
@@ -49,7 +69,7 @@ def evaluate_candidate_transcript_task(candidate_stage_id_str: str):
                 await cache.delete(lock_key)
                 raise
 
-    return loop.run_until_complete(run_evaluation())
+    return loop.run_until_complete(run_with_cleanup(run_evaluation()))
 
 
 import httpx
@@ -541,12 +561,12 @@ def evaluate_candidate_practical_task(
 
             # 8. Clear candidate cache
             try:
-                from app.v1.core.cache import cache
-                await cache.clear(pattern="candidates:*")
+                from app.v1.services.admin.system_service import system_service
+                await system_service.invalidate_job_cache(job.id)
             except Exception as cache_ex:
-                logger.warning(f"Failed to clear Redis cache: {cache_ex}")
+                logger.warning(f"Failed to clear job cache: {cache_ex}")
 
             logger.info(f"Practical round evaluation completed successfully for stage {candidate_stage_id_str}")
 
-    loop.run_until_complete(run_practical_eval())
+    loop.run_until_complete(run_with_cleanup(run_practical_eval()))
 

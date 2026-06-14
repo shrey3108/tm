@@ -10,6 +10,25 @@ from app.v1.db.session import async_session_maker, engine
 
 _log = logging.getLogger(__name__)
 
+async def run_with_cleanup(coro):
+    try:
+        return await coro
+    finally:
+        try:
+            from litellm.llms.custom_httpx.async_client_cleanup import close_litellm_async_clients
+            await close_litellm_async_clients()
+        except Exception:
+            pass
+        try:
+            from app.v1.core.cache import cache
+            await cache.close()
+        except Exception:
+            pass
+        try:
+            await engine.dispose()
+        except Exception:
+            pass
+
 async def deactivate_expired_jobs_logic():
     """Logic to find and deactivate jobs whose priority period has ended."""
     async with async_session_maker() as session:
@@ -37,19 +56,9 @@ async def deactivate_expired_jobs_logic():
 def deactivate_expired_jobs_task():
     """Celery task wrapper for job deactivation."""
     try:
-        asyncio.run(deactivate_expired_jobs_logic())
+        asyncio.run(run_with_cleanup(deactivate_expired_jobs_logic()))
     except Exception as exc:
         _log.exception("Failed to run deactivate_expired_jobs_task")
-    finally:
-        # Dispose engine to prevent connection leaks in worker
-        try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                loop.create_task(engine.dispose())
-            else:
-                asyncio.run(engine.dispose())
-        except Exception:
-            pass
 
 @celery_app.task(name="match_all_resumes_to_job_task")
 def match_all_resumes_to_job_task(job_id_str: str, months_limit: int = 3):
@@ -59,19 +68,10 @@ def match_all_resumes_to_job_task(job_id_str: str, months_limit: int = 3):
     job_id = uuid.UUID(job_id_str)
     try:
         _log.info(f"Starting mass resume matching for new job: {job_id} (limit: {months_limit} months)")
-        asyncio.run(cross_job_match_service.run_new_job_matching(job_id, months_limit=months_limit))
+        asyncio.run(run_with_cleanup(cross_job_match_service.run_new_job_matching(job_id, months_limit=months_limit)))
         _log.info(f"Successfully finished mass matching for job: {job_id}")
     except Exception as exc:
         _log.exception(f"Failed to run match_all_resumes_to_job_task for job {job_id}")
-    finally:
-        try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                loop.create_task(engine.dispose())
-            else:
-                asyncio.run(engine.dispose())
-        except Exception:
-            pass
 
 
 async def extract_task_skills_logic(job_id_str: str, file_path_str: str):
@@ -89,18 +89,9 @@ async def extract_task_skills_logic(job_id_str: str, file_path_str: str):
 def extract_task_skills_task(job_id_str: str, file_path_str: str):
     """Celery task wrapper for task PDF skill extraction."""
     try:
-        asyncio.run(extract_task_skills_logic(job_id_str, file_path_str))
+        asyncio.run(run_with_cleanup(extract_task_skills_logic(job_id_str, file_path_str)))
     except Exception as exc:
         _log.exception(f"Failed to run extract_task_skills_task for job {job_id_str}")
-    finally:
-        try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                loop.create_task(engine.dispose())
-            else:
-                asyncio.run(engine.dispose())
-        except Exception:
-            pass
 
 
 async def extract_paper_task_skills_logic(paper_id_str: str, file_path_str: str):
@@ -139,23 +130,22 @@ async def extract_paper_task_skills_logic(paper_id_str: str, file_path_str: str)
         await session.commit()
         _log.info(f"Successfully updated paper {paper_id} with extracted details: {extracted_data}")
 
+        # Clear predefined task papers cache immediately after background extraction completes
+        try:
+            from app.v1.core.cache import cache
+            await cache.clear(pattern="cache:GET:/api/v1/task-papers*")
+            _log.info("Successfully cleared predefined task papers cache after background extraction")
+        except Exception as cache_err:
+            _log.error(f"Failed to clear cache after background extraction: {cache_err}")
+
 
 @celery_app.task(name="extract_paper_task_skills_task")
 def extract_paper_task_skills_task(paper_id_str: str, file_path_str: str):
     """Celery task wrapper for predefined paper task PDF skill extraction."""
     try:
-        asyncio.run(extract_paper_task_skills_logic(paper_id_str, file_path_str))
+        asyncio.run(run_with_cleanup(extract_paper_task_skills_logic(paper_id_str, file_path_str)))
     except Exception as exc:
         _log.exception(f"Failed to run extract_paper_task_skills_task for paper {paper_id_str}")
-    finally:
-        try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                loop.create_task(engine.dispose())
-            else:
-                asyncio.run(engine.dispose())
-        except Exception:
-            pass
 
 
 
