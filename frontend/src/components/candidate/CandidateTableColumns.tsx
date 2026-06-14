@@ -91,6 +91,9 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
               <span className="text-muted-foreground text-wrap w-full break-all">
                 {c.phone || "N/A"}
               </span>
+              <span className={cn("text-sm font-medium", c.test_email_sent ? "text-green-500" : "text-red-500")}>
+                {c.test_email_sent ? "Sent" : "Pending"}
+              </span>
             </div>
           );
         },

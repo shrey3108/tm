@@ -93,7 +93,7 @@ export function StageEvaluationView({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 text-muted-foreground hover:text-primary rounded-lg"
+                className="h-8 w-8 text-muted-foreground rounded-lg"
                 onClick={() => window.open(githubUrl, "_blank")}
               >
                 <GithubLogo className="h-4 w-4" />
@@ -103,7 +103,7 @@ export function StageEvaluationView({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8  hover:text-primary rounded-lg"
+                className="h-8 w-8  rounded-lg"
                 onClick={handleViewTaskPaper}
                 disabled={isDownloading}
               >
