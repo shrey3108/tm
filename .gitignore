@@ -21,6 +21,3 @@ logs*.md
 
 # ignore Phoenix db files
 phoenix_data/
-
-# ignore local evaluator package
-github-evaluation-package/
