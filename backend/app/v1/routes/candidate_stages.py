@@ -67,10 +67,18 @@ async def get_candidate_stage_evaluation(
                     "suggested_followups": []
                 }
             }
-        if stage and stage.status == "processing":
+        if stage and stage.status in ("processing", "queued", "submitted"):
             from fastapi.responses import JSONResponse
             return JSONResponse(
                 status_code=202, 
+                content={"status": stage.status, "detail": f"Evaluation is currently {stage.status}"}
+            )
+
+        # If evaluation_data has an evaluation_id it means submission succeeded but evaluation hasn't finished yet
+        if stage and isinstance(stage.evaluation_data, dict) and stage.evaluation_data.get("evaluation_id"):
+            from fastapi.responses import JSONResponse
+            return JSONResponse(
+                status_code=202,
                 content={"status": "processing", "detail": "Evaluation is currently processing"}
             )
             
