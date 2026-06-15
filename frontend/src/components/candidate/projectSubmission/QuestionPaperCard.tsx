@@ -14,6 +14,11 @@ import {
     useDeleteQuestionFromPaperMutation,
 } from "@/hooks/mutations/taskPapers/useTaskPaperMutations";
 import { QuestionModal, DeleteModal } from "@/components/modal";
+import {
+    HoverCard,
+    HoverCardContent,
+    HoverCardTrigger,
+} from "@/components/ui/hover-card"
 
 interface QuestionPaperCardProps {
     paper: QuestionSetPaperRead;
@@ -134,20 +139,26 @@ export function QuestionPaperCard({ paper, onDelete, isDeleting }: QuestionPaper
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                     {paper.task_file_path && (
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={handleView}
-                            disabled={isDownloading}
-                            className="h-8 w-8 text-muted-foreground hover:text-primary rounded-lg"
-                            title="View Task File"
-                        >
-                            {isDownloading ? (
-                                <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                            ) : (
-                                <ExternalLink className="h-4 w-4" />
-                            )}
-                        </Button>
+                        <HoverCard>
+                            <HoverCardTrigger delay={10} closeDelay={10}><Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={handleView}
+                                disabled={isDownloading}
+                                className="h-8 w-8 text-muted-foreground hover:text-primary rounded-lg"
+
+                            >
+                                {isDownloading ? (
+                                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                                ) : (
+                                    <ExternalLink className="h-4 w-4" />
+                                )}
+                            </Button></HoverCardTrigger>
+                            <HoverCardContent className="w-full p-0.5 text-xs rounded-lg">
+                                Github Submmited link
+                            </HoverCardContent>
+                        </HoverCard>
+
                     )}
                     <Button
                         variant="ghost"
@@ -155,7 +166,7 @@ export function QuestionPaperCard({ paper, onDelete, isDeleting }: QuestionPaper
                         onClick={() => onDelete(paper.id)}
                         disabled={isDeleting}
                         className="h-8 w-8 text-muted-foreground hover:text-destructive rounded-lg"
-                        title="Delete Question Set Paper"
+
                     >
                         <Trash2 className="h-4 w-4" />
                     </Button>
@@ -185,7 +196,6 @@ export function QuestionPaperCard({ paper, onDelete, isDeleting }: QuestionPaper
                                                 size="icon"
                                                 onClick={() => handleOpenEditModal(idx, q)}
                                                 className="h-8 w-8 text-muted-foreground hover:text-primary rounded-lg hover:bg-primary/10 transition-colors"
-                                                title="Edit Question"
                                             >
                                                 <Edit2 className="h-3.5 w-3.5" />
                                             </Button>
@@ -194,7 +204,6 @@ export function QuestionPaperCard({ paper, onDelete, isDeleting }: QuestionPaper
                                                 size="icon"
                                                 onClick={() => handleOpenDeleteConfirm(idx)}
                                                 className="h-8 w-8 text-muted-foreground hover:text-destructive rounded-lg hover:bg-destructive/10 transition-colors"
-                                                title="Delete Question"
                                             >
                                                 <Trash2 className="h-3.5 w-3.5" />
                                             </Button>

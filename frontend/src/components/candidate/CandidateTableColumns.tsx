@@ -3,15 +3,14 @@ import type { ColumnDef } from "@tanstack/react-table";
 import {
   ArrowUpDown,
   ExternalLink,
-  Mail,
   // Loader2
 } from "lucide-react";
 import { DateDisplay } from "@/components/shared/DateDisplay";
 import { Badge } from "@/components/ui/badge";
-import CandidateStatusBadge from "@/components/shared/CandidateStatusBadge";
+import CandidateStatusBadge, { CandidateEmailBadge } from "@/components/shared/CandidateStatusBadge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { GithubLogo, LinkedinLogo } from "@/components/logo";
-import { cn, capitalize, toTitleCase } from "@/lib/utils";
+import { cn, toTitleCase } from "@/lib/utils";
 import type { UnifiedCandidate } from "@/types/candidate";
 import { Link } from "react-router-dom";
 import { slugify } from "@/utils/slug";
@@ -35,12 +34,6 @@ function isValidUrl(url: string | null | undefined): url is string {
     trimmed !== "null" &&
     trimmed !== "undefined"
   );
-}
-function resolveEmailIconColor(email_sent_count: number | null | undefined) {
-  if (!email_sent_count) return "text-muted-foreground"
-  if (email_sent_count && email_sent_count > 0) return "text-green-500";
-  // How frontend know email not able to sent 
-  return "text-red-500";
 }
 
 interface UseCandidateTableColumnsProps<T extends UnifiedCandidate> {
@@ -98,24 +91,16 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
                 <span className="text-muted-foreground text-wrap">
                   {c.phone || "N/A"}
                 </span>
-                <HoverCard>
+                {c.current_stage?.template_name == "Technical Practical Round" && <HoverCard>
                   <HoverCardTrigger delay={10} closeDelay={10}>
-                    <Badge variant="outline" className="text-xs">
-                      {c.email_sent_count && c.email_sent_count > 0 ?
-                        <>
-                          <Mail className={resolveEmailIconColor(c.email_sent_count)} />   Email Sent
-                        </>
-                        : <>
-                          <Mail className={resolveEmailIconColor(c.email_sent_count)} />   Pending
-                        </>}
-                    </Badge>
+                    <CandidateEmailBadge email_sent_count={c.email_sent_count} />
                   </HoverCardTrigger>
                   <HoverCardContent className="w-full p-0.5 text-xs rounded-lg">
                     <p className="text-sm ">
                       {c.email_sent_count && c.email_sent_count > 0 ? `Total email sent: ${c.email_sent_count}` : "No email sent yet"}
                     </p>
                   </HoverCardContent>
-                </HoverCard>
+                </HoverCard>}
               </div>
             </div>
           );
@@ -139,7 +124,7 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
               if (!jobId || !jobName) return <span className="text-muted-foreground text-sm font-medium italic">N/A</span>;
               const slug = slugify(jobName);
               return (
-                <div className="flex items-center gap-1.5 min-w-[120px] max-w-[200px]" title={jobName}>
+                <div className="flex items-center gap-1.5 min-w-[120px] max-w-[200px]">
                   <Link
                     to={`/dashboard/jobs/${slug}/candidates`}
                     state={{ state: { jobId: jobId } }}
@@ -332,7 +317,6 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
                 href={url.startsWith("http") ? url : `https://${url}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                title={`${capitalize(type)} Profile`}
                 className={cn(
                   buttonVariants({ variant: "ghost", size: "icon-sm" }),
                   linkColor,
@@ -424,7 +408,7 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
 
           const truncatedLoc = normalized.length > 20 ? `${normalized.slice(0, 18)}...` : normalized;
           return (
-            <div className="flex items-center gap-1.5 text-sm" title={normalized}>
+            <div className="flex items-center gap-1.5 text-sm" >
               <span>{truncatedLoc}</span>
             </div>
           );

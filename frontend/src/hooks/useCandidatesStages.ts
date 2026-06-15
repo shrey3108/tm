@@ -135,15 +135,26 @@ export function useCandidatesStages() {
     }
   }, [isResponseProcessing, isPolling]);
 
-  const hasValidEvaluationData = evaluationData && (evaluationData as any).status !== "processing";
+  const hasValidEvaluationData = evaluationData && 
+    (evaluationData as any).status !== "processing" && 
+    (evaluationData as any).status !== "failed";
   let evaluation = selectedEvaluationVersion || (hasValidEvaluationData ? evaluationData : null);
-  const error = (evaluationError && !isResponseProcessing) ? extractErrorMessage(evaluationError) : "";
+  const error = (evaluationError && !isResponseProcessing)
+    ? extractErrorMessage(evaluationError)
+    : (evaluationData && (evaluationData as any).status === "failed")
+    ? (evaluationData as any).error_message || "Evaluation processing failed"
+    : "";
 
-  // 5. Invalidate evaluation related queries when AI polling finishes successfully
+  // 5. Invalidate evaluation related queries when AI polling finishes
   useEffect(() => {
     if (isPolling && evaluationData && !isResponseProcessing) {
       setIsPolling(false);
-      toast.success("Evaluation generated successfully!");
+      const isFailed = (evaluationData as any).status === "failed";
+      if (isFailed) {
+        toast.error((evaluationData as any).error_message || "Evaluation processing failed");
+      } else {
+        toast.success("Evaluation generated successfully!");
+      }
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CANDIDATES.TRANSCRIPTS, candidate?.id] });
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CANDIDATES.EVALUATION_HISTORY, instanceId] });
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CANDIDATES.TIMELINE, candidate?.id] });

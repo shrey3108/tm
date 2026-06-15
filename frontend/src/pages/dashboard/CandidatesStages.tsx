@@ -86,6 +86,7 @@ export default function CandidatesStages() {
         stageName={currentStage}
         githubUrl={candidateData?.task_file_path || candidate?.task_file_path}
         transcriptHistory={transcriptHistory}
+        hasError={!!error}
       />
       <div className="flex overflow-hidden">
         {/* Main Content Area */}
@@ -148,6 +149,7 @@ export default function CandidatesStages() {
             ) : (
               <EmptyState error={error} />
             )}
+
           </div>
 
           {/* Footer Action Bar */}

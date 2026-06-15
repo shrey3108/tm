@@ -28,6 +28,8 @@ interface StageCandidatesHeaderProps {
   candidateId?: string;
   githubUrl?: string | null;
   transcriptHistory: any;
+  /** Whether there is a processing error */
+  hasError?: boolean;
 }
 
 /**
@@ -46,7 +48,8 @@ export const StageCandidatesHeader = ({
   stageName,
   candidateId,
   githubUrl,
-  transcriptHistory
+  transcriptHistory,
+  // hasError // TODO: FIX IT
 }: StageCandidatesHeaderProps) => {
   const [isProjectSubmissionDialogOpen, setIsProjectSubmissionDialogOpen] = useState(false);
   const [isSendQuestionPaperDialogOpen, setIsSendQuestionPaperDialogOpen] = useState(false);
@@ -114,6 +117,7 @@ export const StageCandidatesHeader = ({
                   className="rounded-xl border border-muted-foreground/10 px-5 font-semibold text-center h-9"
                   onClick={() => setIsProjectSubmissionDialogOpen(true)}
                   disabled={isUploaded || !job?.is_active || assignedPaper?.email_sent_count === 0 || isGithubUploaded}
+                // disabled={isUploaded || !job?.is_active || assignedPaper?.email_sent_count === 0 || isGithubUploaded || hasError}
                 >
                   Project Submission
                 </Button>
@@ -140,6 +144,7 @@ export const StageCandidatesHeader = ({
                 stageId={stageId}
                 className="w-auto m-0 shrink-0"
                 job={job!}
+                // disabled={isUploaded || !job?.is_active || isTranscriptAdded || hasError}
                 disabled={isUploaded || !job?.is_active || isTranscriptAdded}
                 onSuccess={onSuccess}
               />

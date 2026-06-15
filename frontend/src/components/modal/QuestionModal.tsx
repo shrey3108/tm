@@ -1,14 +1,14 @@
 import { useCallback } from "react";
 import {
-  Button,
-  Textarea,
   Form,
   FormField,
   FormItem,
   FormLabel,
   FormControl,
   FormMessage,
-} from "@/components";
+} from "@/components/ui/form";
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import {
   Dialog,
   DialogContent,
@@ -67,26 +67,25 @@ export default function QuestionModal({
     <Dialog open={show} onOpenChange={(open) => !open && !isSaving && handleClose()}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold tracking-tight">
+          <DialogTitle>
             {isEditMode ? "Edit Question" : "Add New Question"}
           </DialogTitle>
         </DialogHeader>
 
         <Form {...formModal}>
-          <form onSubmit={handleFormSubmit} className="space-y-2 py-2">
+          <form onSubmit={handleFormSubmit} className="space-y-4">
             <FormField
               control={control}
               name="question"
               render={({ field }) => (
-                <FormItem className="space-y-1">
-                  <FormLabel className="text-sm font-semibold">
-                    Question Text
-                  </FormLabel>
+                <FormItem>
+                  <FormLabel>Question Text</FormLabel>
                   <FormControl>
-                    <Textarea
+                    <Input
                       placeholder="Enter the question text (minimum 10 characters)..."
-                      rows={4}
+                      // rows={4}
                       disabled={isSaving}
+                      autoFocus
                       {...field}
                     />
                   </FormControl>
@@ -95,7 +94,7 @@ export default function QuestionModal({
               )}
             />
 
-            <DialogFooter className="pt-1">
+            <DialogFooter>
               <Button
                 variant="outline"
                 onClick={handleClose}
