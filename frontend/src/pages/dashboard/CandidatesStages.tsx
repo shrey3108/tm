@@ -64,6 +64,9 @@ export default function CandidatesStages() {
     fetchHrDecisionHistory,
     handlePaperChange,
     setRefetchTimeline,
+    isFailedEvaluation,
+    handleRetry,
+    isRetrying,
   } = useCandidatesStages();
 
   const isResumeScreening = currentStage === "Resume Screening";
@@ -147,7 +150,12 @@ export default function CandidatesStages() {
                 candidateName={candidateName}
               />
             ) : (
-              <EmptyState error={error} />
+              <EmptyState
+                error={error}
+                isFailed={isFailedEvaluation}
+                onRetry={handleRetry}
+                isRetrying={isRetrying}
+              />
             )}
 
           </div>

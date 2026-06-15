@@ -84,3 +84,28 @@ export function useEvaluateGithubMutation() {
     },
   });
 }
+
+/**
+ * Mutation hook to retry failed candidate stage evaluation.
+ */
+export function useRetryEvaluationMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ stageId }: { stageId: string }) =>
+      candidateStageService.retryEvaluation(stageId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.CANDIDATES.EVALUATION, variables.stageId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.CANDIDATES.EVALUATION_HISTORY, variables.stageId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.CANDIDATES.TIMELINE],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.JOBS.CANDIDATES],
+      });
+    },
+  });
+}
