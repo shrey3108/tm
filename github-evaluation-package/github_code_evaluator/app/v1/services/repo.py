@@ -92,7 +92,7 @@ class RepositoryService:
                 stderr=subprocess.PIPE,
                 text=True,
                 env=env,
-                timeout=90,
+                timeout=300,
             )
             if result.returncode != 0:
                 logger.error(
