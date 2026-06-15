@@ -219,14 +219,14 @@ async def assign_test_paper_to_candidate(
 
         assigned_name = "Custom Test Paper"
         assigned_questions = assign_data.questions
-        assigned_task = assign_data.project_task or ""
+        assigned_task = assign_data.project_task or []
         assigned_file_path = None
         assigned_skills = None
 
         if assign_data.base_paper_id:
             base_paper = await db.get(QuestionSetPaper, assign_data.base_paper_id)
             if base_paper:
-                assigned_task = assign_data.project_task or base_paper.project_task or ""
+                assigned_task = assign_data.project_task or base_paper.project_task or []
                 assigned_file_path = base_paper.task_file_path
                 assigned_skills = base_paper.task_skills
 

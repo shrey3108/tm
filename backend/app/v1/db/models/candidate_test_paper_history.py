@@ -55,8 +55,8 @@ class CandidateTestPaperHistory(Base):
         nullable=False,
     )
 
-    project_task: Mapped[str] = mapped_column(
-        Text,
+    project_task: Mapped[list[str]] = mapped_column(
+        JSONB,
         nullable=False,
     )
 

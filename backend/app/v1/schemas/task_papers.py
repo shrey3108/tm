@@ -10,11 +10,14 @@ class QuestionSetPaperCreate(BaseModel):
     job_id: uuid.UUID = Field(..., description="The associated job ID")
     position_id: uuid.UUID = Field(..., description="The associated job position level ID")
     questions: list[str] = Field(..., description="Questions for this paper")
-    project_task: str = Field(..., description="The project task description")
+    project_task: list[str] = Field(default_factory=list, description="The project task description")
 
 
 class QuestionAction(BaseModel):
     question: str = Field(..., description="The content of the question")
+
+class TaskAction(BaseModel):
+    task: str = Field(..., description="The content of the project task")
 
 
 class QuestionSetPaperRead(BaseModel):
@@ -23,7 +26,7 @@ class QuestionSetPaperRead(BaseModel):
     job_id: uuid.UUID
     position_id: uuid.UUID
     questions: list[str]
-    project_task: str
+    project_task: list[str]
     task_file_path: Optional[str] = None
     task_skills: Optional[list[str]] = None
     created_at: datetime
@@ -40,7 +43,7 @@ class CandidateTestPaperRead(BaseModel):
     position_id: uuid.UUID
     name: str
     questions: list[str]
-    project_task: str
+    project_task: list[str]
     task_file_path: Optional[str] = None
     task_skills: Optional[list[str]] = None
     email_sent_count: int = 0
@@ -59,7 +62,7 @@ class CandidateTestPaperHistoryRead(BaseModel):
     job_id: uuid.UUID
     name: str
     questions: list[str]
-    project_task: str
+    project_task: list[str]
     task_file_path: Optional[str] = None
     task_skills: Optional[list[str]] = None
     assigned_at: datetime

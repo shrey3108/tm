@@ -81,7 +81,7 @@ async def upload_question_set_papers(
         job_id=job_id,
         position_id=position_id,
         questions=[],
-        project_task="",
+        project_task=[],
         task_file_path=stored_file_path,
         task_skills=None,
     )
@@ -286,6 +286,93 @@ async def delete_question_from_paper(
     new_questions = list(paper.questions)
     new_questions.pop(index)
     paper.questions = new_questions
+    
+    await db.commit()
+    await db.refresh(paper)
+    await cache.clear("cache:GET:/api/v1/task-papers*")
+    return QuestionSetPaperRead.model_validate(paper)
+
+@router.post("/{paper_id}/tasks", response_model=QuestionSetPaperRead, status_code=status.HTTP_201_CREATED)
+async def add_task_to_paper(
+    paper_id: uuid.UUID,
+    payload: dict,
+    db: AsyncSession = Depends(get_db),
+    user: UserRead = Depends(check_permission("questions:manage")),
+):
+    """Add a new task to a specific Question Set Paper."""
+    paper = await db.get(QuestionSetPaper, paper_id)
+    if not paper:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Question set paper not found.",
+        )
+    
+    task_text = payload.get("task")
+    if not task_text:
+        raise HTTPException(status_code=400, detail="Task text is required.")
+
+    new_tasks = list(paper.project_task) if paper.project_task else []
+    new_tasks.append(task_text)
+    paper.project_task = new_tasks
+    
+    await db.commit()
+    await db.refresh(paper)
+    await cache.clear("cache:GET:/api/v1/task-papers*")
+    return QuestionSetPaperRead.model_validate(paper)
+
+@router.put("/{paper_id}/tasks/{index}", response_model=QuestionSetPaperRead)
+async def update_task_in_paper(
+    paper_id: uuid.UUID,
+    index: int,
+    payload: dict,
+    db: AsyncSession = Depends(get_db),
+    user: UserRead = Depends(check_permission("questions:manage")),
+):
+    """Update a specific task in a Question Set Paper by its index."""
+    paper = await db.get(QuestionSetPaper, paper_id)
+    if not paper:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Question set paper not found.",
+        )
+    
+    task_text = payload.get("task")
+    if not task_text:
+        raise HTTPException(status_code=400, detail="Task text is required.")
+
+    if not paper.project_task or index < 0 or index >= len(paper.project_task):
+        raise HTTPException(status_code=400, detail="Invalid task index.")
+
+    new_tasks = list(paper.project_task)
+    new_tasks[index] = task_text
+    paper.project_task = new_tasks
+    
+    await db.commit()
+    await db.refresh(paper)
+    await cache.clear("cache:GET:/api/v1/task-papers*")
+    return QuestionSetPaperRead.model_validate(paper)
+
+@router.delete("/{paper_id}/tasks/{index}", response_model=QuestionSetPaperRead)
+async def delete_task_from_paper(
+    paper_id: uuid.UUID,
+    index: int,
+    db: AsyncSession = Depends(get_db),
+    user: UserRead = Depends(check_permission("questions:manage")),
+):
+    """Delete a specific task from a Question Set Paper by its index."""
+    paper = await db.get(QuestionSetPaper, paper_id)
+    if not paper:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Question set paper not found.",
+        )
+    
+    if not paper.project_task or index < 0 or index >= len(paper.project_task):
+        raise HTTPException(status_code=400, detail="Invalid task index.")
+
+    new_tasks = list(paper.project_task)
+    new_tasks.pop(index)
+    paper.project_task = new_tasks
     
     await db.commit()
     await db.refresh(paper)

@@ -309,12 +309,18 @@ async def evaluate_candidate_github_repo(
     if not candidate or not job:
         raise HTTPException(status_code=400, detail="Candidate or Job association missing.")
 
-    # 3. Resolve GitHub URL (payload URL takes precedence over candidate.task_file_path)
+    # 3. Resolve GitHub URL (payload URL takes precedence)
     github_url = payload.github_url
     if not github_url:
-        task_path = candidate.task_file_path or ""
-        if task_path.startswith(("http://", "https://")) and "github.com" in task_path.lower():
-            github_url = task_path
+        # Fallback to the one specifically saved for this stage
+        if stage.evaluation_data and isinstance(stage.evaluation_data, dict):
+            github_url = stage.evaluation_data.get("github_url")
+            
+        # If still not found, fallback to candidate global URL
+        if not github_url:
+            task_path = candidate.task_file_path or ""
+            if task_path.startswith(("http://", "https://")) and "github.com" in task_path.lower():
+                github_url = task_path
 
     if not github_url:
         raise HTTPException(
@@ -330,8 +336,10 @@ async def evaluate_candidate_github_repo(
     res_history = await db.execute(stmt_history)
     history_records = res_history.scalars().all()
 
+    has_assigned_paper = False
     task_skills = []
     if history_records:
+        has_assigned_paper = True
         # Combine and deduplicate skills from all history records
         for hr in history_records:
             if hr.task_skills:
@@ -352,10 +360,12 @@ async def evaluate_candidate_github_repo(
             res_job = await db.execute(stmt_job)
             test_paper = res_job.scalar_one_or_none()
 
-        if test_paper and test_paper.task_skills:
-            task_skills = test_paper.task_skills
+        if test_paper:
+            has_assigned_paper = True
+            if test_paper.task_skills:
+                task_skills = test_paper.task_skills
 
-    if not task_skills:
+    if not has_assigned_paper:
         raise HTTPException(
             status_code=400,
             detail="Please assign a test paper to the candidate first before running the repository evaluation.",
@@ -437,7 +447,7 @@ async def evaluate_candidate_github_repo(
 
     # 8. Set stage status to processing since submission succeeded
     stage.status = "processing"
-    stage.evaluation_data = {}  # Reset previous errors
+    stage.evaluation_data = {"github_url": github_url}  # Save URL for retry
     await db.commit()
 
     # 9. Dispatch async Celery task
@@ -457,3 +467,51 @@ async def evaluate_candidate_github_repo(
         "status": "processing",
         "evaluation_id": eval_id,
     }
+
+@router.post("/{id}/retry")
+async def retry_candidate_stage_evaluation(
+    id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    user: UserRead = Depends(check_permission("candidates:decide")),
+) -> Any:
+    """Retry a failed evaluation for a candidate stage without re-entering inputs."""
+    stage = await db.get(CandidateStage, id)
+    if not stage:
+         raise HTTPException(status_code=404, detail="Candidate stage not found")
+         
+    # Fetch job stage to determine template
+    await db.refresh(stage, ["job_stage"])
+    if not stage.job_stage:
+        raise HTTPException(status_code=400, detail="Candidate stage is missing job stage configuration.")
+        
+    await db.refresh(stage.job_stage, ["template"])
+    stage_template_name = stage.job_stage.template.name if stage.job_stage.template else None
+    
+    if stage_template_name == "Technical Practical Round":
+        # Retry GitHub evaluation using the empty payload fallback logic
+        payload = GitHubEvaluationRequest(github_url=None)
+        return await evaluate_candidate_github_repo(id, payload, db, user)
+        
+    elif stage_template_name in ("Resume Screening", "Technical Interview Round", "HR Round"):
+        # Retry Transcript evaluation
+        from app.v1.services.evaluation_tasks import evaluate_candidate_transcript_task
+        stage.status = "processing"
+        
+        # Keep any existing data but clear errors
+        eval_data = stage.evaluation_data if isinstance(stage.evaluation_data, dict) else {}
+        if "error" in eval_data:
+            del eval_data["error"]
+        if "status" in eval_data:
+            del eval_data["status"]
+            
+        stage.evaluation_data = eval_data
+        await db.commit()
+        
+        evaluate_candidate_transcript_task.delay(str(id))
+        return {
+            "message": "Transcript evaluation retry triggered.",
+            "candidate_stage_id": id,
+            "status": "processing"
+        }
+    else:
+        raise HTTPException(status_code=400, detail=f"Unknown stage type for retry: {stage_template_name}")
