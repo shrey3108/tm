@@ -13,6 +13,10 @@ class QuestionSetPaperCreate(BaseModel):
     project_task: str = Field(..., description="The project task description")
 
 
+class QuestionAction(BaseModel):
+    question: str = Field(..., description="The content of the question")
+
+
 class QuestionSetPaperRead(BaseModel):
     id: uuid.UUID
     name: str

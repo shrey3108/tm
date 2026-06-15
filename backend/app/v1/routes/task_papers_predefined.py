@@ -30,7 +30,7 @@ async def upload_question_set_papers(
     position_id: uuid.UUID = Form(..., description="The associated job position level ID"),
     task_file: UploadFile = FastAPIFile(..., description="A test paper PDF/Word file"),
     db: AsyncSession = Depends(get_db),
-    user: UserRead = Depends(check_permission("candidates:decide")),
+    user: UserRead = Depends(check_permission("questions:upload")),
 ):
     """Upload a test paper file directly for a specific job and experience position level."""
     # Verify job exists
@@ -141,7 +141,7 @@ async def get_question_set_paper(
 async def delete_question_set_paper(
     paper_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    user: UserRead = Depends(check_permission("candidates:decide")),
+    user: UserRead = Depends(check_permission("questions:upload")),
 ):
     """Delete a predefined Question Set Paper."""
     paper = await db.get(QuestionSetPaper, paper_id)
@@ -200,3 +200,95 @@ async def download_paper_task_file(
         filename=filename,
         media_type=media_type
     )
+
+
+@router.post("/{paper_id}/questions", response_model=QuestionSetPaperRead, status_code=status.HTTP_201_CREATED)
+async def add_question_to_paper(
+    paper_id: uuid.UUID,
+    payload: dict, # Using dict to avoid schema import issues temporarily, or we could import QuestionAction
+    db: AsyncSession = Depends(get_db),
+    user: UserRead = Depends(check_permission("questions:manage")),
+):
+    """Add a new question to a specific Question Set Paper."""
+    paper = await db.get(QuestionSetPaper, paper_id)
+    if not paper:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Question set paper not found.",
+        )
+    
+    question_text = payload.get("question")
+    if not question_text:
+        raise HTTPException(status_code=400, detail="Question text is required.")
+
+    # Create a new list to ensure SQLAlchemy detects the change to JSONB
+    new_questions = list(paper.questions)
+    new_questions.append(question_text)
+    paper.questions = new_questions
+    
+    await db.commit()
+    await db.refresh(paper)
+    await cache.clear("cache:GET:/api/v1/task-papers*")
+    return QuestionSetPaperRead.model_validate(paper)
+
+
+@router.put("/{paper_id}/questions/{index}", response_model=QuestionSetPaperRead)
+async def update_question_in_paper(
+    paper_id: uuid.UUID,
+    index: int,
+    payload: dict,
+    db: AsyncSession = Depends(get_db),
+    user: UserRead = Depends(check_permission("questions:manage")),
+):
+    """Update a specific question in a Question Set Paper by its index."""
+    paper = await db.get(QuestionSetPaper, paper_id)
+    if not paper:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Question set paper not found.",
+        )
+    
+    question_text = payload.get("question")
+    if not question_text:
+        raise HTTPException(status_code=400, detail="Question text is required.")
+
+    if index < 0 or index >= len(paper.questions):
+        raise HTTPException(status_code=400, detail="Invalid question index.")
+
+    new_questions = list(paper.questions)
+    new_questions[index] = question_text
+    paper.questions = new_questions
+    
+    await db.commit()
+    await db.refresh(paper)
+    await cache.clear("cache:GET:/api/v1/task-papers*")
+    return QuestionSetPaperRead.model_validate(paper)
+
+
+@router.delete("/{paper_id}/questions/{index}", response_model=QuestionSetPaperRead)
+async def delete_question_from_paper(
+    paper_id: uuid.UUID,
+    index: int,
+    db: AsyncSession = Depends(get_db),
+    user: UserRead = Depends(check_permission("questions:manage")),
+):
+    """Delete a specific question from a Question Set Paper by its index."""
+    paper = await db.get(QuestionSetPaper, paper_id)
+    if not paper:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Question set paper not found.",
+        )
+    
+    if index < 0 or index >= len(paper.questions):
+        raise HTTPException(status_code=400, detail="Invalid question index.")
+
+    new_questions = list(paper.questions)
+    new_questions.pop(index)
+    paper.questions = new_questions
+    
+    await db.commit()
+    await db.refresh(paper)
+    await cache.clear("cache:GET:/api/v1/task-papers*")
+    return QuestionSetPaperRead.model_validate(paper)
+

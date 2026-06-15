@@ -423,7 +423,7 @@ class Evaluation(Base):
 
             return {
                 "JD Skills": jd_skills_list,
-                "Task Skills": task_skills_list
+                "Project requirements skills": task_skills_list
             }
 
         # Sort/order keys to guarantee perfect side-by-side grid alignment (PostgreSQL JSONB scrambles insertion order)

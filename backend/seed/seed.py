@@ -37,6 +37,8 @@ DEFAULT_PERMISSIONS = [
     {"name": "audit:read", "description": "View system audit logs."},
     {"name": "files:read", "description": "View uploaded files and resumes."},
     {"name": "analytics:read", "description": "View hiring analytics and reports."},
+    {"name": "questions:upload", "description": "Upload new Question Set Papers."},
+    {"name": "questions:manage", "description": "Add, update, and delete individual questions within a paper."},
 ]
 
 ROLE_PERMISSION_NAMES: dict[str, set[str]] = {
@@ -59,11 +61,14 @@ ROLE_PERMISSION_NAMES: dict[str, set[str]] = {
         "departments:manage",
         "files:read",
         "analytics:read",
+        "questions:upload",
+        "questions:manage",
     },
     HR_USER_ROLE_NAME: {
         "jobs:access",
         "candidates:access",
         "candidates:decide",
+        "questions:manage",
     },
 }
 
