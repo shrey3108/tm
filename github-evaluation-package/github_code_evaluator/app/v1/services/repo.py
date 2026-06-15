@@ -305,12 +305,54 @@ class RepositoryService:
             else:
                 context_parts = []
                 context_parts.append(f"DIRECTORY TREE:\n{tree_str}\n")
-                for fname, fcontent in files.items():
+
+                # Sort files to prioritize core logic over tests/fixtures/mocks/demos
+                def file_priority(item):
+                    fname, _ = item
+                    fname_lower = fname.lower()
+                    # Core logic has higher priority (0), tests/mocks/demos have lower priority (1)
+                    is_test_or_mock = any(p in fname_lower for p in ["test", "spec", "mock", "fixture", "demo"])
+                    return 1 if is_test_or_mock else 0
+
+                sorted_files = sorted(files.items(), key=file_priority)
+
+                # Maximum characters allowed in the code context to fit safely in LLM prompt
+                max_chars = 400000
+                current_chars = len(context_parts[0])
+                truncated_files = []
+
+                for fname, fcontent in sorted_files:
+                    if current_chars >= max_chars:
+                        truncated_files.append(fname)
+                        continue
+
                     lines = fcontent.split("\n")
                     snippet = "\n".join(lines[:150])
                     if len(lines) > 150:
                         snippet += "\n... [TRUNCATED CODE LINES] ..."
-                    context_parts.append(f"FILE (Snippet): {fname}\n{snippet}\n")
+
+                    file_block = f"FILE (Snippet): {fname}\n{snippet}\n"
+
+                    if current_chars + len(file_block) > max_chars:
+                        available_space = max_chars - current_chars
+                        if available_space > 200:
+                            file_block = file_block[:available_space] + "\n... [TRUNCATED FOR SIZE LIMIT] ...\n"
+                            context_parts.append(file_block)
+                            current_chars += len(file_block)
+                        truncated_files.append(fname)
+                    else:
+                        context_parts.append(file_block)
+                        current_chars += len(file_block)
+
+                if truncated_files:
+                    truncation_summary = (
+                        f"\n... [TRUNCATED {len(truncated_files)} FILES TO FIT WITHIN PROMPT LIMITS] ...\n"
+                        f"Omitted files: {', '.join(truncated_files[:20])}"
+                    )
+                    if len(truncated_files) > 20:
+                        truncation_summary += " and others."
+                    context_parts.append(truncation_summary)
+
                 return "\n".join(context_parts)
 
         if filter_mode == "non_code":

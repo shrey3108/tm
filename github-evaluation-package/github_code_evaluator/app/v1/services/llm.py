@@ -15,19 +15,22 @@ from github_code_evaluator.app.v1.core.config import settings
 logger = logging.getLogger(__name__)
 
 # Try to register Arize Phoenix OpenTelemetry tracing
-try:
-    from phoenix.otel import register
-    collector_endpoint = os.getenv(
-        "PHOENIX_COLLECTOR_ENDPOINT", "http://localhost:6006/v1/traces"
-    )
-    register(
-        project_name="github-evaluator",
-        endpoint=collector_endpoint,
-        auto_instrument=True,
-    )
-    logger.info("Arize Phoenix OpenTelemetry tracing initialized successfully.")
-except Exception as e:
-    logger.warning(f"Could not initialize Arize Phoenix tracing: {e}")
+if os.getenv("ENABLE_PHOENIX", "false").lower() == "true":
+    try:
+        from phoenix.otel import register
+        collector_endpoint = os.getenv(
+            "PHOENIX_COLLECTOR_ENDPOINT", "http://localhost:6006/v1/traces"
+        )
+        register(
+            project_name="github-evaluator",
+            endpoint=collector_endpoint,
+            auto_instrument=True,
+        )
+        logger.info("Arize Phoenix OpenTelemetry tracing initialized successfully.")
+    except Exception as e:
+        logger.warning(f"Could not initialize Arize Phoenix tracing: {e}")
+else:
+    logger.info("Arize Phoenix tracing is disabled per ENABLE_PHOENIX configuration.")
 
 # Optional configuration file path for LiteLLM Router
 LITELLM_CONFIG_PATH = Path(__file__).resolve().parents[3] / "config" / "litellm.yaml"
@@ -416,8 +419,20 @@ Expected JSON structure:
         logger.info(f"Running parallel evaluation with {model_code} (code) and {model_non_code} (non-code)...")
 
         async def run_code():
-            response_text = await self.call_llm(messages_code, model=model_code)
-            return self.parse_json_safely(response_text)
+            try:
+                response_text = await self.call_llm(messages_code, model=model_code)
+                return self.parse_json_safely(response_text)
+            except Exception as e:
+                err_str = str(e).lower()
+                # Check for context limit or prompt too long errors to trigger fallback
+                if "too long" in err_str or "context length" in err_str or "limit" in err_str or "400" in err_str:
+                    logger.warning(
+                        f"Code evaluation model {model_code} failed due to context limit error: {e}. "
+                        f"Attempting fallback evaluation with logic model {model_non_code}..."
+                    )
+                    response_text = await self.call_llm(messages_code, model=model_non_code)
+                    return self.parse_json_safely(response_text)
+                raise e
 
         async def run_non_code():
             response_text = await self.call_llm(messages_non_code, model=model_non_code)
