@@ -165,7 +165,7 @@ Output Format Example (JSON ONLY):
             "1. You MUST output ONLY valid JSON format.\n"
             "2. Your output MUST be a JSON object with exactly three keys:\n"
             "   - 'questions': an array of strings representing the questions.\n"
-            "   - 'project_task': a string representing the project description.\n"
+            "   - 'project_task': an array of strings representing the project tasks or descriptions.\n"
             "   - 'skills': an array of strings representing unique technical skill names.\n"
             "3. IMPORTANT FOR QUESTIONS: Extract the questions VERBATIM. Do NOT rephrase them. "
             "If a question is preceded by a Problem Statement, Table Structure, Sample Data, Code, or any other context, "
@@ -186,8 +186,10 @@ Output Format Example (JSON ONLY):
   "questions": [
     "Write a Python function that takes two strings as input...",
     "**Problem Statement:**\\nYou are given a table...\\n\\n| Column | Type |\\n|---|---|\\n...\\n\\nQuestion: Write an SQL query..."
+  "project_task": [
+    "Build a REST API for user authentication.",
+    "Implement rate limiting."
   ],
-  "project_task": "Concise summary of the task.",
   "skills": ["Skill1", "Skill2", "Skill3"]
 }}
 """
@@ -225,12 +227,14 @@ Output Format Example (JSON ONLY):
             response_text = response_text.strip()
 
             data = json.loads(response_text)
-            
             questions = data.get("questions", [])
             if not isinstance(questions, list):
                 questions = []
             
-            project_task = data.get("project_task") or ""
+            project_task = data.get("project_task", [])
+            if not isinstance(project_task, list):
+                project_task = [str(project_task)] if project_task else []
+                
             skills = data.get("skills", [])
             if not isinstance(skills, list):
                 skills = []
@@ -239,7 +243,7 @@ Output Format Example (JSON ONLY):
             
             return {
                 "questions": questions,
-                "project_task": str(project_task).strip(),
+                "project_task": project_task,
                 "skills": cleaned_skills
             }
 
@@ -247,7 +251,7 @@ Output Format Example (JSON ONLY):
             logger.error("LLM task paper details extraction failed: %s", e)
             return {
                 "questions": [f"Technical Question {i}" for i in range(1, 6)],
-                "project_task": "",
+                "project_task": [],
                 "skills": []
             }
 

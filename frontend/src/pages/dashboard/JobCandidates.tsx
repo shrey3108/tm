@@ -163,7 +163,6 @@ export default function JobCandidates() {
 
     return undefined;
   }, [emailFilterState, selectedCandidates, selectedCandidatesTestPapers, loadingTestPapers]);
-  console.log(resolvedEmailState)
 
   const [modalInitialTab, _setModalInitialTab] = useState<"analysis" | "jd" | "cross-job-match">("analysis");
   const handleFiltersChange = (filters: CandidateActiveFilters) => {

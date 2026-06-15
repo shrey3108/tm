@@ -281,6 +281,48 @@ export const taskService = {
     }>("/task-papers/send-email/bulk", data);
     return response.data;
   },
+
+  /**
+   * Adds a question to a predefined question set paper.
+   */
+  addQuestionToPaper: async (
+    paperId: string,
+    question: string
+  ): Promise<QuestionSetPaperRead> => {
+    const response = await client.post<QuestionSetPaperRead>(
+      `/task-papers/${paperId}/questions`,
+      { question }
+    );
+    return response.data;
+  },
+
+  /**
+   * Updates an existing question in a predefined question set paper.
+   */
+  updateQuestionInPaper: async (
+    paperId: string,
+    index: number,
+    question: string
+  ): Promise<QuestionSetPaperRead> => {
+    const response = await client.put<QuestionSetPaperRead>(
+      `/task-papers/${paperId}/questions/${index}`,
+      { question }
+    );
+    return response.data;
+  },
+
+  /**
+   * Deletes a question from a predefined question set paper.
+   */
+  deleteQuestionFromPaper: async (
+    paperId: string,
+    index: number
+  ): Promise<QuestionSetPaperRead> => {
+    const response = await client.delete<QuestionSetPaperRead>(
+      `/task-papers/${paperId}/questions/${index}`
+    );
+    return response.data;
+  },
 };
 
 export interface CandidateTaskRead {

@@ -69,6 +69,7 @@ export function CandidateTimeline({
     navigate(`../${slugify(stageName)}`, {
       relative: "path",
       state: { job, candidate },
+      replace: true
     });
 
     // Select stage or open detail modal

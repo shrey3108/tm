@@ -222,9 +222,12 @@ async def send_candidate_task_email_via_smtp(
         if test_paper.project_task:
             if test_paper.questions:
                 details_html += '<br>'
-            details_html += '<div class="details-title">Project Task:</div>'
-            task_html = markdown_to_html(test_paper.project_task)
-            details_html += f'<div style="font-size: 14px; line-height: 1.5; color: #4b5563;">{task_html}</div>'
+            details_html += '<div class="details-title">Project Tasks:</div>'
+            details_html += '<ul class="questions-list">'
+            for task in test_paper.project_task:
+                task_html = markdown_to_html(task)
+                details_html += f'<li style="margin-bottom: 10px; font-size: 14px; line-height: 1.5; color: #4b5563;">{task_html}</li>'
+            details_html += '</ul>'
         if external_url:
             if test_paper.questions or test_paper.project_task:
                 details_html += '<br>'

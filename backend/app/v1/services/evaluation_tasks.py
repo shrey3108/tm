@@ -268,12 +268,20 @@ def evaluate_candidate_practical_task(
                     if report_res.status_code != 200:
                         logger.error(f"Failed to fetch report from evaluator: {report_res.text}")
                         stage.status = "failed"
+                        stage.evaluation_data = {
+                            "error": f"Failed to fetch report: {report_res.text}",
+                            "status": "report_fetch_error"
+                        }
                         await db.commit()
                         return
                     report = report_res.json()
                 except Exception as ex:
                     logger.error(f"Exception fetching report: {ex}")
                     stage.status = "failed"
+                    stage.evaluation_data = {
+                        "error": f"Exception fetching report: {str(ex)}",
+                        "status": "report_fetch_error"
+                    }
                     await db.commit()
                     return
 

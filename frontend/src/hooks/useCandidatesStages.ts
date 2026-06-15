@@ -21,7 +21,10 @@ import {
   useHrDecisionHistoryQuery,
   useCandidateDetailsQuery,
 } from "./queries/candidates";
-import { useSubmitDecisionMutation } from "./mutations/candidates/useCandidateStages";
+import {
+  useSubmitDecisionMutation,
+  useRetryEvaluationMutation,
+} from "./mutations/candidates/useCandidateStages";
 import { QUERY_KEYS } from "@/constants/queryKeys";
 // import { TEMP_TECHNICAL_ROUND_HR_DECISION, TEMP_TECHNICAL_ROUND_RESPONSE } from "@/constants/temp";
 
@@ -135,15 +138,33 @@ export function useCandidatesStages() {
     }
   }, [isResponseProcessing, isPolling]);
 
-  const hasValidEvaluationData = evaluationData && (evaluationData as any).status !== "processing";
+  const hasValidEvaluationData = evaluationData &&
+    (evaluationData as any).status !== "processing" &&
+    (evaluationData as any).status !== "failed";
   let evaluation = selectedEvaluationVersion || (hasValidEvaluationData ? evaluationData : null);
-  const error = (evaluationError && !isResponseProcessing) ? extractErrorMessage(evaluationError) : "";
+  const error = (evaluationError && !isResponseProcessing)
+    ? extractErrorMessage(evaluationError)
+    : (evaluationData && (evaluationData as any).status === "failed")
+      ? (evaluationData as any).error_message || "Evaluation processing failed"
+      : "";
 
-  // 5. Invalidate evaluation related queries when AI polling finishes successfully
+
+  // TODO: for testing purposes
+  // // MOCK ERROR !!
+  // evaluation = null;
+
+  // // MOCK ERROR !!
+  // const error = "Mocked Evaluation Error: Connection to evaluation microservice timed out.";
+  // // 5. Invalidate evaluation related queries when AI polling finishes
   useEffect(() => {
     if (isPolling && evaluationData && !isResponseProcessing) {
       setIsPolling(false);
-      toast.success("Evaluation generated successfully!");
+      const isFailed = (evaluationData as any).status === "failed";
+      if (isFailed) {
+        toast.error((evaluationData as any).error_message || "Evaluation processing failed");
+      } else {
+        toast.success("Evaluation generated successfully!");
+      }
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CANDIDATES.TRANSCRIPTS, candidate?.id] });
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CANDIDATES.EVALUATION_HISTORY, instanceId] });
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CANDIDATES.TIMELINE, candidate?.id] });
@@ -244,6 +265,31 @@ export function useCandidatesStages() {
     }
   };
 
+  const retryMutation = useRetryEvaluationMutation();
+  const isRetrying = retryMutation.isPending;
+
+  const isFailedEvaluation = !!(
+    (evaluationData && (evaluationData as any).status === "failed") ||
+    (evaluationError && !isResponseProcessing && (evaluationError as any)?.response?.status !== 404)
+  );
+
+
+  // TODO: for testing purposes
+  // MOCK ERROR !!
+  // const isFailedEvaluation = true;
+
+  const handleRetry = async () => {
+    if (!instanceId) return;
+    setIsPolling(true);
+    try {
+      await retryMutation.mutateAsync({ stageId: instanceId });
+      toast.success("Retry evaluation triggered successfully");
+    } catch (err) {
+      setIsPolling(false);
+      toast.error(extractErrorMessage(err) || "Failed to trigger retry evaluation");
+    }
+  };
+
   const candidateName = candidate
     ? `${candidate.first_name} ${candidate.last_name}`
     : params.candidateName || "Candidate";
@@ -282,15 +328,15 @@ export function useCandidatesStages() {
     }
 
     const overall_summary = evaluation.highlights?.overall_summary || extractedSummary || "No summary available.";
-    
+
     // Check if this is a GitHub Evaluation with specific keys
     const github_highlights: Record<string, string[]> = {};
     if (evaluation.highlights) {
-        ["Architectural Review", "Code Quality Review", "Identified Security Risks", "Extraordinary Points"].forEach(key => {
-            if (evaluation.highlights[key]) {
-                github_highlights[key] = evaluation.highlights[key];
-            }
-        });
+      ["Architectural Review", "Code Quality Review", "Identified Security Risks", "Extraordinary Points"].forEach(key => {
+        if (evaluation.highlights[key]) {
+          github_highlights[key] = evaluation.highlights[key];
+        }
+      });
     }
 
     const hasGithubHighlights = Object.keys(github_highlights).length > 0;
@@ -373,6 +419,9 @@ export function useCandidatesStages() {
     handleAction,
     submitFeedback,
     handleSelectHistoryVersion,
+    isFailedEvaluation,
+    handleRetry,
+    isRetrying,
     fetchHistory: () => {
       refetchHistory();
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CANDIDATES.DETAILS, job?.id, candidate?.id] });

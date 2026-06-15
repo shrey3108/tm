@@ -148,7 +148,7 @@ async def test_task_papers_flow():
             paper_a_id = paper_a["id"]
             assert paper_a["name"] == "test_task_a.pdf"
             assert paper_a["questions"] == []
-            assert paper_a["project_task"] == ""
+            assert paper_a["project_task"] == []
 
             # Upload Paper B
             files_b = {"task_file": ("test_task_b.docx", b"test docx content b", "application/vnd.openxmlformats-officedocument.wordprocessingml.document")}
@@ -160,7 +160,7 @@ async def test_task_papers_flow():
             paper_b_id = paper_b["id"]
             assert paper_b["name"] == "test_task_b.docx"
             assert paper_b["questions"] == []
-            assert paper_b["project_task"] == ""
+            assert paper_b["project_task"] == []
 
             # Verify that background task was queued twice
             assert mock_delay.call_count == 2
@@ -178,7 +178,7 @@ async def test_task_papers_flow():
                     "Explain python list comprehension.",
                     "Explain python type hints.",
                 ],
-                "project_task": "Build a REST API with FastAPI.",
+                "project_task": ["Build a REST API with FastAPI."],
                 "skills": ["FastAPI", "Python"],
             }
             await extract_paper_task_skills_logic(str(paper_a_id), paper_a["task_file_path"])
@@ -193,7 +193,7 @@ async def test_task_papers_flow():
                     "How do you handle memory management in Python?",
                     "Explain __slots__.",
                 ],
-                "project_task": "Implement a task runner in Python.",
+                "project_task": ["Implement a task runner in Python."],
                 "skills": ["Asyncio", "Python"],
             }
             await extract_paper_task_skills_logic(str(paper_b_id), paper_b["task_file_path"])
@@ -248,7 +248,7 @@ async def test_task_papers_flow():
             assigned_paper = response.json()
             assert assigned_paper["name"] == "test_task_a.pdf"
             assert len(assigned_paper["questions"]) == 5
-            assert assigned_paper["project_task"] == "Build a REST API with FastAPI."
+            assert assigned_paper["project_task"] == ["Build a REST API with FastAPI."]
             assert assigned_paper["task_file_path"] is not None
 
             # Test sending email after assigning predefined paper returns 200
@@ -307,7 +307,7 @@ async def test_task_papers_flow():
                 "mode": "predefined",
                 "paper_id": paper_a_id,
                 "questions": ["Override Q1", "Override Q2", "Override Q3", "Override Q4", "Override Q5"],
-                "project_task": "Override Project Task Description",
+                "project_task": ["Override Project Task Description"],
             }
             response = client.post(
                 "/api/v1/task-papers/assign",

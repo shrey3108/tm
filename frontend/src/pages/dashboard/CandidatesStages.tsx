@@ -64,6 +64,9 @@ export default function CandidatesStages() {
     fetchHrDecisionHistory,
     handlePaperChange,
     setRefetchTimeline,
+    isFailedEvaluation,
+    handleRetry,
+    isRetrying,
   } = useCandidatesStages();
 
   const isResumeScreening = currentStage === "Resume Screening";
@@ -86,6 +89,7 @@ export default function CandidatesStages() {
         stageName={currentStage}
         githubUrl={candidateData?.task_file_path || candidate?.task_file_path}
         transcriptHistory={transcriptHistory}
+        hasError={!!error}
       />
       <div className="flex overflow-hidden">
         {/* Main Content Area */}
@@ -146,8 +150,14 @@ export default function CandidatesStages() {
                 candidateName={candidateName}
               />
             ) : (
-              <EmptyState error={error} />
+              <EmptyState
+                error={error}
+                isFailed={isFailedEvaluation}
+                onRetry={handleRetry}
+                isRetrying={isRetrying}
+              />
             )}
+
           </div>
 
           {/* Footer Action Bar */}
