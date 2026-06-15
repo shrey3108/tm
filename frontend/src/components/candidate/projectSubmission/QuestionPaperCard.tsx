@@ -1,11 +1,19 @@
+import { useState } from "react";
 import { toast } from "sonner";
-import { HelpCircle, Trash2, Loader2, ExternalLink } from "lucide-react";
-import { useDownloadPaperTaskFile, } from "@/hooks/queries/taskPapers/useTaskPaperQueries";
+import { HelpCircle, Trash2, Loader2, ExternalLink, Edit2, Plus } from "lucide-react";
+import { useDownloadPaperTaskFile } from "@/hooks/queries/taskPapers/useTaskPaperQueries";
 import type { QuestionSetPaperRead } from "@/types/taskPaper";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-
+import { PERMISSIONS } from "@/lib/permissions";
+import PermissionGuard from "@/components/auth/PermissionGuard";
+import {
+    useAddQuestionToPaperMutation,
+    useUpdateQuestionInPaperMutation,
+    useDeleteQuestionFromPaperMutation,
+} from "@/hooks/mutations/taskPapers/useTaskPaperMutations";
+import { QuestionModal, DeleteModal } from "@/components/modal";
 
 interface QuestionPaperCardProps {
     paper: QuestionSetPaperRead;
@@ -18,6 +26,20 @@ export function QuestionPaperCard({ paper, onDelete, isDeleting }: QuestionPaper
         paper.task_file_path ? paper.id : null,
         { enabled: false }
     );
+
+    const addMutation = useAddQuestionToPaperMutation();
+    const updateMutation = useUpdateQuestionInPaperMutation();
+    const deleteQuestionMutation = useDeleteQuestionFromPaperMutation();
+
+    // Modal state for Add/Edit question
+    const [isQuestionModalOpen, setIsQuestionModalOpen] = useState(false);
+    const [questionModalMode, setQuestionModalMode] = useState<"add" | "edit">("add");
+    const [selectedQuestionIndex, setSelectedQuestionIndex] = useState<number | null>(null);
+    const [selectedQuestionText, setSelectedQuestionText] = useState("");
+
+    // Modal state for Delete question confirmation
+    const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+    const [questionIndexToDelete, setQuestionIndexToDelete] = useState<number | null>(null);
 
     const handleView = async () => {
         if (!paper.task_file_path) return;
@@ -33,6 +55,70 @@ export function QuestionPaperCard({ paper, onDelete, isDeleting }: QuestionPaper
             console.error(err);
             toast.error("Failed to download the task file.");
         }
+    };
+
+    const handleOpenAddModal = () => {
+        setQuestionModalMode("add");
+        setSelectedQuestionIndex(null);
+        setSelectedQuestionText("");
+        setIsQuestionModalOpen(true);
+    };
+
+    const handleOpenEditModal = (index: number, text: string) => {
+        setQuestionModalMode("edit");
+        setSelectedQuestionIndex(index);
+        setSelectedQuestionText(text);
+        setIsQuestionModalOpen(true);
+    };
+
+    const handleSaveQuestion = async (text: string) => {
+        if (questionModalMode === "add") {
+            await addMutation.mutateAsync(
+                { paperId: paper.id, question: text },
+                {
+                    onSuccess: () => {
+                        toast.success("Question added successfully!");
+                    },
+                    onError: (error: any) => {
+                        toast.error(error?.response?.data?.detail || "Failed to add question.");
+                    },
+                }
+            );
+        } else if (questionModalMode === "edit" && selectedQuestionIndex !== null) {
+            await updateMutation.mutateAsync(
+                { paperId: paper.id, index: selectedQuestionIndex, question: text },
+                {
+                    onSuccess: () => {
+                        toast.success("Question updated successfully!");
+                    },
+                    onError: (error: any) => {
+                        toast.error(error?.response?.data?.detail || "Failed to update question.");
+                    },
+                }
+            );
+        }
+    };
+
+    const handleOpenDeleteConfirm = (index: number) => {
+        setQuestionIndexToDelete(index);
+        setIsDeleteConfirmOpen(true);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (questionIndexToDelete === null) return;
+        await deleteQuestionMutation.mutateAsync(
+            { paperId: paper.id, index: questionIndexToDelete },
+            {
+                onSuccess: () => {
+                    toast.success("Question deleted successfully!");
+                    setIsDeleteConfirmOpen(false);
+                    setQuestionIndexToDelete(null);
+                },
+                onError: (error: any) => {
+                    toast.error(error?.response?.data?.detail || "Failed to delete question.");
+                },
+            }
+        );
     };
 
     return (
@@ -76,37 +162,76 @@ export function QuestionPaperCard({ paper, onDelete, isDeleting }: QuestionPaper
                 </div>
             </CardHeader>
 
-            <CardContent className="p-2 flex-1 space-y-1">
+            <CardContent className="p-2 flex-1 space-y-3">
                 {/* Questions */}
-                <div className="space-y-1">
-                    <h4 className="text-base font-semibold text-muted-foreground ">
+                <div className="space-y-1.5">
+                    <h4 className="text-base font-semibold text-muted-foreground">
                         Questions
                     </h4>
                     {paper.questions && paper.questions.length > 0 ? (
-                        <ul className="list-decimal pl-5">
+                        <ul className="pl-6 list-decimal space-y-0.5">
                             {paper.questions.map((q, idx) => (
-                                <li key={idx}>
+                                <li
+                                    key={idx}
+                                    className="group/item relative pl-1 pr-20 hover:bg-muted/30 rounded-lg transition-colors duration-200"
+                                >
                                     <p className="text-sm font-medium text-foreground leading-relaxed wrap-break-words">
                                         {q}
                                     </p>
+                                    <PermissionGuard permissions={PERMISSIONS.QUESTIONS_MANAGE} hideWhenDenied>
+                                        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => handleOpenEditModal(idx, q)}
+                                                className="h-8 w-8 text-muted-foreground hover:text-primary rounded-lg hover:bg-primary/10 transition-colors"
+                                                title="Edit Question"
+                                            >
+                                                <Edit2 className="h-3.5 w-3.5" />
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => handleOpenDeleteConfirm(idx)}
+                                                className="h-8 w-8 text-muted-foreground hover:text-destructive rounded-lg hover:bg-destructive/10 transition-colors"
+                                                title="Delete Question"
+                                            >
+                                                <Trash2 className="h-3.5 w-3.5" />
+                                            </Button>
+                                        </div>
+                                    </PermissionGuard>
                                 </li>
                             ))}
                         </ul>
                     ) : (
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground italic pl-1">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground italic pl-1 py-1">
                             <Loader2 className="h-4 w-4 animate-spin text-primary shrink-0" />
                             Extracting questions and skills...
                         </div>
                     )}
+
+                    <PermissionGuard permissions={PERMISSIONS.QUESTIONS_MANAGE} hideWhenDenied>
+                        <div className="pt-1.5 pl-1">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleOpenAddModal}
+                                className="h-8 text-xs font-semibold border-dashed border-primary/20 hover:border-primary/50 text-primary bg-primary/5 hover:bg-primary/10 rounded-xl transition-all"
+                            >
+                                <Plus className="h-3.5 w-3.5 mr-1" />
+                                Add Question
+                            </Button>
+                        </div>
+                    </PermissionGuard>
                 </div>
 
                 {/* Project Task */}
                 {paper.project_task && (
                     <div className="space-y-1">
-                        <h4 className="text-base font-semibold text-muted-foreground ">
+                        <h4 className="text-base font-semibold text-muted-foreground">
                             Project Task
                         </h4>
-                        <div className="px-1.5 py-0.5 rounded-xl border border-border/20 bg-background/50 text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">
+                        <div className="px-3 py-2 rounded-xl border border-border/20 bg-background/50 text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">
                             {paper.project_task}
                         </div>
                     </div>
@@ -114,8 +239,8 @@ export function QuestionPaperCard({ paper, onDelete, isDeleting }: QuestionPaper
 
                 {/* Extracted Skills */}
                 {paper.task_skills && paper.task_skills.length > 0 && (
-                    <div className="space-y-1">
-                        <h4 className="text-base font-semibold text-muted-foreground ">
+                    <div className="space-y-1.5">
+                        <h4 className="text-base font-semibold text-muted-foreground">
                             Extracted Skills
                         </h4>
                         <div className="flex flex-wrap gap-1.5 pl-1">
@@ -128,8 +253,24 @@ export function QuestionPaperCard({ paper, onDelete, isDeleting }: QuestionPaper
                     </div>
                 )}
             </CardContent>
+
+            {/* Modals */}
+            <QuestionModal
+                show={isQuestionModalOpen}
+                handleClose={() => setIsQuestionModalOpen(false)}
+                onSave={handleSaveQuestion}
+                initialValue={selectedQuestionText}
+                isSaving={addMutation.isPending || updateMutation.isPending}
+            />
+
+            <DeleteModal
+                show={isDeleteConfirmOpen}
+                handleClose={() => setIsDeleteConfirmOpen(false)}
+                handleConfirm={handleConfirmDelete}
+                title="Delete Question"
+                message="Are you sure you want to delete this question? This action cannot be undone."
+                isLoading={deleteQuestionMutation.isPending}
+            />
         </Card>
     );
 }
-
-

@@ -3,6 +3,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import {
   ArrowUpDown,
   ExternalLink,
+  Mail,
   // Loader2
 } from "lucide-react";
 import { DateDisplay } from "@/components/shared/DateDisplay";
@@ -34,6 +35,12 @@ function isValidUrl(url: string | null | undefined): url is string {
     trimmed !== "null" &&
     trimmed !== "undefined"
   );
+}
+function resolveEmailIconColor(email_sent_count: number | null | undefined) {
+  if (!email_sent_count) return "text-muted-foreground"
+  if (email_sent_count && email_sent_count > 0) return "text-green-500";
+  // How frontend know email not able to sent 
+  return "text-red-500";
 }
 
 interface UseCandidateTableColumnsProps<T extends UnifiedCandidate> {
@@ -94,10 +101,16 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
                 <HoverCard>
                   <HoverCardTrigger delay={10} closeDelay={10}>
                     <Badge variant="outline" className="text-xs">
-                      {c.email_sent_count && c.email_sent_count > 0 ? `Email Sent` : "Pending"}
+                      {c.email_sent_count && c.email_sent_count > 0 ?
+                        <>
+                          <Mail className={resolveEmailIconColor(c.email_sent_count)} />   Email Sent
+                        </>
+                        : <>
+                          <Mail className={resolveEmailIconColor(c.email_sent_count)} />   Pending
+                        </>}
                     </Badge>
                   </HoverCardTrigger>
-                  <HoverCardContent className="w-full p-1 py-2 text-xs rounded-lg">
+                  <HoverCardContent className="w-full p-0.5 text-xs rounded-lg">
                     <p className="text-sm ">
                       {c.email_sent_count && c.email_sent_count > 0 ? `Total email sent: ${c.email_sent_count}` : "No email sent yet"}
                     </p>

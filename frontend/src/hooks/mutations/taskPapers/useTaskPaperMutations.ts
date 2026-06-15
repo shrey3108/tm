@@ -152,3 +152,68 @@ export function useSendBulkTestPaperEmailMutation() {
     },
   });
 }
+
+/**
+ * Hook to add a new question to a predefined question set paper.
+ */
+export function useAddQuestionToPaperMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      paperId,
+      question,
+    }: {
+      paperId: string;
+      question: string;
+    }) => taskService.addQuestionToPaper(paperId, question),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.TASK_PAPERS.LIST],
+      });
+    },
+  });
+}
+
+/**
+ * Hook to update an existing question in a predefined question set paper.
+ */
+export function useUpdateQuestionInPaperMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      paperId,
+      index,
+      question,
+    }: {
+      paperId: string;
+      index: number;
+      question: string;
+    }) => taskService.updateQuestionInPaper(paperId, index, question),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.TASK_PAPERS.LIST],
+      });
+    },
+  });
+}
+
+/**
+ * Hook to delete a question from a predefined question set paper.
+ */
+export function useDeleteQuestionFromPaperMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      paperId,
+      index,
+    }: {
+      paperId: string;
+      index: number;
+    }) => taskService.deleteQuestionFromPaper(paperId, index),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.TASK_PAPERS.LIST],
+      });
+    },
+  });
+}

@@ -392,3 +392,16 @@ export const jobPositionUpdateSchema = jobPositionBaseSchema.partial();
 
 /** Type inferred from jobPositionUpdateSchema. */
 export type JobPositionUpdateFormValues = z.infer<typeof jobPositionUpdateSchema>;
+
+// --- Question Schemas ---
+
+/**
+ * Schema for creating or editing a question inside a paper.
+ */
+export const questionSchema = z.object({
+  question: z.string().trim().min(10, "Question must be at least 10 characters long."),
+});
+
+/** Type inferred from questionSchema. */
+export type QuestionFormValues = z.infer<typeof questionSchema>;
+
