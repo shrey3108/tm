@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from typing import Any, List
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Path
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -470,7 +470,7 @@ async def evaluate_candidate_github_repo(
 
 @router.post("/{id}/retry")
 async def retry_candidate_stage_evaluation(
-    id: uuid.UUID,
+    id: uuid.UUID = Path(..., description="The UUID of the Candidate Stage to retry"),
     db: AsyncSession = Depends(get_db),
     user: UserRead = Depends(check_permission("candidates:decide")),
 ) -> Any:

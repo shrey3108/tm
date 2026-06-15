@@ -118,6 +118,42 @@ async def get_question_set_papers(
     return [QuestionSetPaperRead.model_validate(item) for item in items]
 
 
+@router.get("/all-content", response_model=list[list[str]])
+@cache_response(ttl_seconds=300)
+async def get_all_questions_and_tasks(
+    request: Request,
+    response: Response,
+    db: AsyncSession = Depends(get_db),
+    user: UserRead = Depends(check_permission("candidates:access")),
+):
+    """Retrieve all unique questions and tasks across all predefined question set papers as an array of two arrays."""
+    result = await db.execute(select(QuestionSetPaper.questions, QuestionSetPaper.project_task))
+    items = result.all()
+    
+    all_questions = set()
+    all_tasks = set()
+    
+    for questions, tasks in items:
+        if questions:
+            for q in questions:
+                if isinstance(q, str):
+                    all_questions.add(q)
+                elif isinstance(q, dict):
+                    val = q.get('question') or q.get('content')
+                    if val and isinstance(val, str):
+                        all_questions.add(val)
+        if tasks:
+            for t in tasks:
+                if isinstance(t, str):
+                    all_tasks.add(t)
+                elif isinstance(t, dict):
+                    val = t.get('task') or t.get('content') or t.get('task_title') or t.get('title')
+                    if val and isinstance(val, str):
+                        all_tasks.add(val)
+                
+    return [list(all_questions), list(all_tasks)]
+
+
 @router.get("/{paper_id}", response_model=QuestionSetPaperRead)
 @cache_response(ttl_seconds=300)
 async def get_question_set_paper(

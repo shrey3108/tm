@@ -100,7 +100,10 @@ def generate_candidate_task_pdf_file(
             text_content += f"{i+1}. {q}\n\n"
     
     if test_paper.project_task:
-        text_content += f"Project Task:\n{test_paper.project_task}\n\n"
+        text_content += f"Project Task:\n"
+        for t in test_paper.project_task:
+            text_content += f"- {t}\n"
+        text_content += "\n"
 
     rect = fitz.Rect(50, 110, 550, 750)
     lines = text_content.split("\n")
