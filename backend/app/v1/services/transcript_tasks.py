@@ -194,6 +194,18 @@ def process_transcript_task(candidate_stage_id_str: str, file_infos: list[dict])
             except Exception as e:
                 logger.error(f"Transcript processing failed: {e}")
                 await db.rollback()
+                
+                try:
+                    stage = await db.get(CandidateStage, candidate_stage_id)
+                    if stage:
+                        stage.status = "failed"
+                        if not stage.evaluation_data:
+                            stage.evaluation_data = {}
+                        stage.evaluation_data["error"] = str(e)
+                        await db.commit()
+                except Exception as inner_e:
+                    logger.error(f"Failed to update stage status to failed: {inner_e}")
+                    
                 raise
 
     return loop.run_until_complete(run_with_cleanup(run_processing()))

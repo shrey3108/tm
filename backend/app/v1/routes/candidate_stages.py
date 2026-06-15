@@ -52,9 +52,11 @@ async def get_candidate_stage_evaluation(
             return {
                 "id": id,  # Use stage id as a dummy evaluation id
                 "candidate_stage_id": id,
-                "version": 1,
+                "attempt_number": 1,
                 "overall_score": 0.0,
-                "result": "fail",
+                "result": "pending",
+                "status": "failed",
+                "error_message": stage.evaluation_data.get('error'),
                 "structured_evaluation_data": {},  # maps to evaluation_data schema field
                 "created_at": stage.completed_at or stage.started_at or datetime.now(timezone.utc),
                 "highlights": {
@@ -102,7 +104,9 @@ async def get_candidate_stage_evaluation_history(
             "candidate_stage_id": id,
             "version": next_version,
             "overall_score": 0.0,
-            "result": "fail",
+            "result": "error",
+            "status": "failed",
+            "error_message": stage.evaluation_data.get('error'),
             "structured_evaluation_data": {},
             "created_at": stage.completed_at or stage.started_at or datetime.now(timezone.utc),
             "highlights": {

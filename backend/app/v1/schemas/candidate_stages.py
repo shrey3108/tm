@@ -10,7 +10,9 @@ class EvaluationRead(BaseModel):
     candidate_stage_id: uuid.UUID
     version: int = Field(1, validation_alias="attempt_number")
     overall_score: Optional[float] = None
-    result: str = "fail"
+    result: Optional[str] = None
+    status: str = "completed"
+    error_message: Optional[str] = None
     # Use the property for better structure/compatibility
     evaluation_data: Dict[str, Any] = Field(..., validation_alias="structured_evaluation_data")
     sim_jd_resume: Optional[float] = None

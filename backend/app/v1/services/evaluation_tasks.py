@@ -67,6 +67,19 @@ def evaluate_candidate_transcript_task(candidate_stage_id_str: str):
                 logger.error(f"Evaluation task failed for stage {candidate_stage_id}: {e}")
                 # Release lock on failure so it can be retried
                 await cache.delete(lock_key)
+                
+                try:
+                    from app.v1.db.models.candidate_stages import CandidateStage
+                    stage = await db.get(CandidateStage, candidate_stage_id)
+                    if stage:
+                        stage.status = "failed"
+                        if not stage.evaluation_data:
+                            stage.evaluation_data = {}
+                        stage.evaluation_data["error"] = str(e)
+                        await db.commit()
+                except Exception as inner_e:
+                    logger.error(f"Failed to update stage status to failed: {inner_e}")
+
                 raise
 
     return loop.run_until_complete(run_with_cleanup(run_evaluation()))
@@ -191,10 +204,16 @@ def evaluate_candidate_practical_task(
                                     "error": error_msg,
                                     "status": submit_status or "submission_error"
                                 }
+                            stage.status = "failed"
                             await db.commit()
                             return
                     except Exception as ex:
                         logger.error(f"Failed to submit repository to evaluator: {ex}")
+                        stage.status = "failed"
+                        stage.evaluation_data = {
+                            "error": str(ex),
+                            "status": "submission_error"
+                        }
                         await db.commit()
                         return
 
@@ -222,7 +241,7 @@ def evaluate_candidate_practical_task(
                         if current_status == "complete":
                             is_complete = True
                             break
-                        elif current_status not in ("pending", "processing"):
+                        elif current_status not in ("pending", "processing", "queued"):
                             last_status = current_status
                             last_error_message = status_data.get("error_message") or f"Evaluation stopped with status: {current_status}"
                             logger.error(f"Evaluator reported task failure for evaluation {eval_id}: {last_error_message}")
@@ -568,5 +587,24 @@ def evaluate_candidate_practical_task(
 
             logger.info(f"Practical round evaluation completed successfully for stage {candidate_stage_id_str}")
 
-    loop.run_until_complete(run_with_cleanup(run_practical_eval()))
+    async def safe_run_practical_eval():
+        try:
+            await run_practical_eval()
+        except Exception as e:
+            logger.error(f"GitHub evaluation task failed for stage {candidate_stage_id_str}: {e}")
+            try:
+                async with async_session_maker() as db:
+                    from app.v1.db.models.candidate_stages import CandidateStage
+                    stage = await db.get(CandidateStage, candidate_stage_id)
+                    if stage:
+                        stage.status = "failed"
+                        if not stage.evaluation_data:
+                            stage.evaluation_data = {}
+                        stage.evaluation_data["error"] = str(e)
+                        await db.commit()
+            except Exception as inner_e:
+                logger.error(f"Failed to update stage status to failed in safe_run_practical_eval: {inner_e}")
+            raise
+
+    loop.run_until_complete(run_with_cleanup(safe_run_practical_eval()))
 
