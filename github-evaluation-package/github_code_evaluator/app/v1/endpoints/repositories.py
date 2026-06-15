@@ -215,3 +215,49 @@ async def get_evaluation_status(
         error_message=error_msg,
         created_at=evaluation.created_at,
     )
+
+
+@router.delete("/{repository_id}", status_code=status.HTTP_200_OK)
+async def delete_repository_by_id(
+    repository_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """Delete a repository and all of its associated evaluations, scores, reports, and security findings by repository ID."""
+    stmt = select(Repository).where(Repository.repository_id == repository_id)
+    result = await db.execute(stmt)
+    repository = result.scalar_one_or_none()
+
+    if not repository:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Repository not found",
+        )
+
+    await db.delete(repository)
+    await db.commit()
+
+    return {"message": "Repository and all associated data deleted successfully."}
+
+
+@router.delete("", status_code=status.HTTP_200_OK)
+async def delete_repository_by_url(
+    github_url: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """Delete a repository and all of its associated evaluations, scores, reports, and security findings by its GitHub URL."""
+    stmt = select(Repository).where(Repository.github_url == github_url.strip())
+    result = await db.execute(stmt)
+    repository = result.scalar_one_or_none()
+
+    if not repository:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Repository not found for the given URL",
+        )
+
+    await db.delete(repository)
+    await db.commit()
+
+    return {"message": "Repository and all associated data deleted successfully."}

@@ -482,6 +482,9 @@ async def execute_evaluation(
                 "documentation_review": raw_proj_align.get("documentation_review", "") if isinstance(raw_proj_align, dict) else "",
             }
 
+            # Override final_score as the average of JD alignment overall score and Project alignment overall score
+            final_score = round((jd_overall + proj_overall) / 2.0, 1)
+
             # 8. Save scores to DB
             from github_code_evaluator.app.v1.db.models.category import Category
             stmt_cats = select(Category)
@@ -516,7 +519,7 @@ async def execute_evaluation(
             # Enforce seniority rules
             raw_seniority = report_json.get("seniority_estimate", "Mid-level")
             if final_recommendation == "Proceed":
-                from github_code_evaluator.v1.services.llm import cap_seniority_estimate
+                from github_code_evaluator.app.v1.services.llm import cap_seniority_estimate
                 seniority_estimate = cap_seniority_estimate(job_position, raw_seniority)
             else:
                 seniority_estimate = "N/A"

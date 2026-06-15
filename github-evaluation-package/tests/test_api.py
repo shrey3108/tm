@@ -474,4 +474,74 @@ def test_submit_repository_allowed_when_failed(mock_celery, mock_check, client):
     assert mock_celery.called
 
 
+def test_delete_repository_by_id_success(client):
+    """Verify deleting a repository by ID is successful."""
+    app.dependency_overrides[get_current_user] = override_get_user_admin
+
+    mock_repo = MagicMock()
+    mock_repo.repository_id = uuid.uuid4()
+
+    async def mock_get_db_with_repo():
+        db = MagicMock()
+        db.execute = AsyncMock()
+        db.delete = AsyncMock()
+        db.commit = AsyncMock()
+        
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = mock_repo
+        db.execute.return_value = mock_result
+        yield db
+
+    app.dependency_overrides[get_db] = mock_get_db_with_repo
+
+    response = client.delete(f"/api/v1/repositories/{mock_repo.repository_id}")
+    assert response.status_code == 200
+    assert "deleted successfully" in response.json()["message"]
+
+
+def test_delete_repository_by_url_success(client):
+    """Verify deleting a repository by GitHub URL is successful."""
+    app.dependency_overrides[get_current_user] = override_get_user_admin
+
+    mock_repo = MagicMock()
+    mock_repo.github_url = "https://github.com/test/repo"
+
+    async def mock_get_db_with_repo():
+        db = MagicMock()
+        db.execute = AsyncMock()
+        db.delete = AsyncMock()
+        db.commit = AsyncMock()
+        
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = mock_repo
+        db.execute.return_value = mock_result
+        yield db
+
+    app.dependency_overrides[get_db] = mock_get_db_with_repo
+
+    response = client.delete("/api/v1/repositories", params={"github_url": mock_repo.github_url})
+    assert response.status_code == 200
+    assert "deleted successfully" in response.json()["message"]
+
+
+def test_delete_repository_not_found(client):
+    """Verify deleting a non-existent repository returns 404."""
+    app.dependency_overrides[get_current_user] = override_get_user_admin
+
+    async def mock_get_db_empty():
+        db = MagicMock()
+        db.execute = AsyncMock()
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = None
+        db.execute.return_value = mock_result
+        yield db
+
+    app.dependency_overrides[get_db] = mock_get_db_empty
+
+    response = client.delete(f"/api/v1/repositories/{uuid.uuid4()}")
+    assert response.status_code == 404
+    assert "Repository not found" in response.json()["detail"]
+
+
+
 
