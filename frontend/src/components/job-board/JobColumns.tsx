@@ -61,7 +61,7 @@ export const getJobColumns = ({
         );
       },
       cell: ({ row }) => (
-        <div className="flex flex-col gap-1 min-w-[200px] max-w-[300px]">
+        <div className="flex flex-col gap-1 min-w-[200px] max-w-[320px]">
           <div className="flex items-center gap-2">
             <span
               className="font-medium text-wrap capitalize"
@@ -72,7 +72,7 @@ export const getJobColumns = ({
               {(row.original.version ?? row.original.processing_version) && (
                 <Badge
                   variant="secondary"
-                  className="ml-1 text-xs font-normal h-5 px-1.5 rounded-md shrink-0"
+                  className="h-5 text-xs font-normal rounded-md shrink-0 ml-0.5"
                 >
                   v{row.original.processing_version ?? row.original.version}
                 </Badge>
