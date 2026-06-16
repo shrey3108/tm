@@ -24,6 +24,12 @@ export const SkillSelectorSection = ({
   initialSelectedSkills = [],
 }: SkillSelectorSectionProps) => {
   const { control, setValue } = useFormContext();
+  const [allSkills, setAllSkills] = useState<SkillRead[]>(initialSelectedSkills);
+  const [prevSkills, setPrevSkills] = useState<SkillRead[]>([]);
+  const [prevInitialSelectedSkills, setPrevInitialSelectedSkills] = useState<SkillRead[]>(initialSelectedSkills);
+
+
+
   const [skillSearch, setSkillSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [selectedSkill, setSelectedSkill] = useState<SkillRead | null>(null);
@@ -37,7 +43,22 @@ export const SkillSelectorSection = ({
 
   const { data: skills, loading: isLoading, refetch: refetchSkills } = useSkill(0, 100, debouncedSearch);
 
-  const displaySkills = skills;
+  // If skills or initialSelectedSkills changed, we update allSkills and the prev state synchronously during render
+  if (skills !== prevSkills || initialSelectedSkills !== prevInitialSelectedSkills) {
+    setPrevSkills(skills);
+    setPrevInitialSelectedSkills(initialSelectedSkills);
+
+    const uniqueMap = new Map<string, SkillRead>();
+    allSkills.forEach((s) => uniqueMap.set(s.id, s));
+    initialSelectedSkills.forEach((s) => uniqueMap.set(s.id, s));
+    skills.forEach((s) => uniqueMap.set(s.id, s));
+    const merged = Array.from(uniqueMap.values());
+
+    if (merged.length !== allSkills.length || merged.some((s, idx) => s.id !== allSkills[idx]?.id)) {
+      setAllSkills(merged);
+    }
+  }
+
   const toggleSkill = (skillId: string) => {
     const current = [...selectedSkillIds];
     const index = current.indexOf(skillId);
@@ -53,15 +74,24 @@ export const SkillSelectorSection = ({
     });
   };
 
+
   const selectedSkills = useMemo(() => {
-    const pool = [...initialSelectedSkills, ...skills];
-    const uniqueMap = new Map(pool.map((s) => [s.id, s]));
+    const uniqueMap = new Map(allSkills.map((s) => [s.id, s]));
     return selectedSkillIds
       .map((id: string) => uniqueMap.get(id))
       .filter(Boolean) as SkillRead[];
-  }, [initialSelectedSkills, skills, selectedSkillIds]);
+  }, [allSkills, selectedSkillIds]);
 
-  const filteredSkills = displaySkills;
+
+  const filteredSkills = useMemo(() => {
+    if (!skillSearch.trim()) {
+      return skills;
+    }
+    const query = skillSearch.toLowerCase();
+    return allSkills.filter((skill) =>
+      skill.name.toLowerCase().includes(query) || (skill.description && skill.description.toLowerCase().includes(query))
+    );
+  }, [skills, allSkills, skillSearch]);
 
   const handleCloseModal = () => {
     setShowModal(false);
