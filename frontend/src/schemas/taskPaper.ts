@@ -1,7 +1,7 @@
 import * as z from "zod";
 
 export const manualQuestionPaperSchema = z.object({
-  name: z.string().trim().min(1, "Paper template name is required."),
+  // name: z.string().trim().min(1, "Paper template name is required."),
   questions: z.array(
     z.object({
       value: z.string().trim().min(1, "Question cannot be empty."),

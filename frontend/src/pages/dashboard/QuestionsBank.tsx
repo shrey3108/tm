@@ -29,6 +29,7 @@ export default function QuestionsBank() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const currentUser = useAppSelector(selectCurrentUser);
   const hasManagePermission = hasPermissions(currentUser?.permissions, PERMISSIONS.QUESTIONS_MANAGE);
+  const [showCreateForm, setShowCreateForm] = useState<boolean>(false)
   const [selectedJobId, setSelectedJobId] = useState<string>("");
   const [selectedPositionId, setSelectedPositionId] = useState<string>("");
   const [isUploading, setIsUploading] = useState<boolean>(false);
@@ -55,7 +56,7 @@ export default function QuestionsBank() {
 
   // Compute active selections
   const activeJobId = selectedJobId || jobs?.[0]?.id || "";
-  const activePositionId = selectedPositionId || positions[0].id || "";
+  const activePositionId = selectedPositionId || positions[0]?.id || "";
 
   // Fetch predefined Question Set Papers with polling if any paper is still extracting questions
   // do polling if `questions: []` means empty array
@@ -138,6 +139,18 @@ export default function QuestionsBank() {
     });
   };
 
+  const handleJobChange = (jobId: string) => {
+    setSelectedJobId(jobId);
+    setShowCreateForm(false);
+  };
+
+  const handlePositionChange = (position: string) => {
+    setSelectedPositionId(position);
+    setShowCreateForm(false);
+  };
+
+
+
   return (
     <AppPageShell width="wide" className="animate-in fade-in duration-500 bg-background min-h-screen">
       <AppPageHeader title="Questions Bank" />
@@ -151,7 +164,7 @@ export default function QuestionsBank() {
               <Label>Select Job Role</Label>
               <SearchableSelect
                 value={activeJobId}
-                onValueChange={(val) => setSelectedJobId(val)}
+                onValueChange={handleJobChange}
                 options={jobs?.map((job) => ({ id: job.id, label: job.title })) || []}
                 placeholder="Choose a job role..."
                 searchPlaceholder="Search jobs..."
@@ -170,7 +183,7 @@ export default function QuestionsBank() {
               <Label>Select Experience / Position Level</Label>
               <SearchableSelect
                 value={activePositionId}
-                onValueChange={(val) => setSelectedPositionId(val)}
+                onValueChange={handlePositionChange}
                 options={positions?.map((pos) => ({ id: pos.id, label: pos.name })) || []}
                 placeholder="Choose a position level..."
                 searchPlaceholder="Search levels..."
@@ -213,21 +226,24 @@ export default function QuestionsBank() {
         {loadingPapers ? (
           <LoadingSpinner message="Loading question set papers..." />
         ) : questionPapers.length === 0 ? (
-          <div className=" animate-in fade-in duration-300">
-            <div className="text-center py-1 border border-dashed border-border/60 rounded-2xl bg-card/10 text-muted-foreground">
-              <p className="font-semibold text-foreground/80">No Question Set Papers Found</p>
-              <p className="text-sm mt-1 max-w-md mx-auto">
-                There are no predefined question set papers for the selected job and experience level.
-                Upload a document to automatically extract questions, or define one manually below!
-              </p>
-            </div>
-            {hasManagePermission && (
-              <ManualPaperCreateForm
-                jobId={activeJobId}
-                positionId={activePositionId}
-                onSuccess={() => refetchPapers()}
-              />
-            )}
+          <div className="animate-in fade-in duration-300">
+            {!showCreateForm ?
+              <div className="flex flex-col items-center justify-center h-full gap-2">
+                <div className="text-center py-4 border border-dashed border-border/60 rounded-2xl bg-card/10 text-muted-foreground">
+                  <p className="font-semibold text-foreground/80">No Question Set Papers Found</p>
+                  <p className="text-sm mt-1 max-w-md mx-auto">
+                    There are no predefined question set papers for the selected job and experience level.
+                    Upload a document to automatically extract questions, or define one manually below!
+                  </p>
+                </div>
+                <Button onClick={() => setShowCreateForm(true)}>Add</Button>
+              </div> : (
+                hasManagePermission && <ManualPaperCreateForm
+                  jobId={activeJobId}
+                  positionId={activePositionId}
+                  onSuccess={() => refetchPapers()}
+                />
+              )}
           </div>
         ) : (
           <div className="space-y-2 animate-in fade-in duration-300">

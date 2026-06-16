@@ -17,7 +17,7 @@ import type { Job } from "@/types/job";
 import { LoadingSpinner } from "@/components/shared";
 import type { CandidateTestPaperAssign } from "@/types/taskPaper";
 import { AssignedPaperView } from "./sendQuestionPaper/AssignedPaperView";
-import { PredefinedPaperForm } from "./sendQuestionPaper/PredefinedPaperForm";
+// import { PredefinedPaperForm } from "./sendQuestionPaper/PredefinedPaperForm";
 import { RandomizedPaperView } from "./sendQuestionPaper/RandomizedPaperView";
 import { CustomPaperForm } from "./sendQuestionPaper/CustomPaperForm";
 import { SendQuestionPaperFooter } from "./sendQuestionPaper/SendQuestionPaperFooter";
@@ -45,7 +45,8 @@ interface SendQuestionPaperDialogProps {
   emailFilterState?: "sent" | "not_sent" | undefined;
 }
 
-type AssignmentMode = "predefined" | "random" | "custom";
+// type AssignmentMode = "predefined" | "random" | "custom";
+type AssignmentMode = "random" | "custom";
 
 export function SendQuestionPaperDialog({
   isOpen,
@@ -93,7 +94,7 @@ export function SendQuestionPaperDialog({
   const deleteJobDefaultMutation = useDeleteJobDefaultTestPaperMutation();
 
   // Local state for assignment configuration
-  const [mode, setMode] = useState<AssignmentMode>("predefined");
+  const [mode, setMode] = useState<AssignmentMode>("random");
   const [selectedPaperId, setSelectedPaperId] = useState<string>("");
   const [customQuestions, setCustomQuestions] = useState<string[]>([]);
   const [customProjectTask, setCustomProjectTask] = useState<string>("");
@@ -121,9 +122,10 @@ export function SendQuestionPaperDialog({
   const handleManualPaperCreated = (newPaper: any) => {
     refetchPredefinedPapers().then(() => {
       setSelectedPaperId(newPaper.id);
-      setMode("predefined");
+      setMode("random");
     });
   };
+
 
   // Default to custom if no predefined papers are available
   useEffect(() => {
@@ -144,7 +146,7 @@ export function SendQuestionPaperDialog({
       if (predefinedPapers.length === 0) {
         setMode("custom");
       } else {
-        setMode("predefined");
+        setMode("random");
         setSelectedPaperId(predefinedPapers[0]?.id || "");
       }
     }
@@ -168,10 +170,11 @@ export function SendQuestionPaperDialog({
         return;
       }
 
-      if (mode === "predefined" && !selectedPaperId) {
-        toast.error("Please select a predefined question set paper template.");
-        return;
-      } else if (mode === "custom") {
+      // if (mode === "predefined" && !selectedPaperId) {
+      //   toast.error("Please select a predefined question set paper template.");
+      //   return;
+      // }
+      else if (mode === "custom") {
         if (customQuestions.length !== 5) {
           toast.error("Please select exactly 5 questions.");
           return;
@@ -190,9 +193,10 @@ export function SendQuestionPaperDialog({
           position_id: job?.position_id,
           source_paper_ids: mode === "random" ? predefinedPapers.map((paper) => paper.id) : []
         };
-        if (mode === "predefined") {
-          payload.paper_id = selectedPaperId;
-        } else if (mode === "custom") {
+        // if (mode === "predefined") {
+        //   payload.paper_id = selectedPaperId;
+        // }
+        if (mode === "custom") {
           payload.questions = customQuestions.map((q) => q.trim());
           payload.project_task = customProjectTask.trim();
         }
@@ -223,13 +227,14 @@ export function SendQuestionPaperDialog({
         payload.candidate_id = candidateId;
       }
 
-      if (mode === "predefined") {
-        if (!selectedPaperId) {
-          toast.error("Please select a predefined question set paper template.");
-          return;
-        }
-        payload.paper_id = selectedPaperId;
-      } else if (mode === "custom") {
+      // if (mode === "predefined") {
+      //   if (!selectedPaperId) {
+      //     toast.error("Please select a predefined question set paper template.");
+      //     return;
+      //   }
+      //   payload.paper_id = selectedPaperId;
+      // } 
+      else if (mode === "custom") {
         if (customQuestions.length !== 5) {
           toast.error("Please select exactly 5 questions.");
           return;
@@ -439,7 +444,7 @@ export function SendQuestionPaperDialog({
             </DialogTitle>
             {!finalAssignedPaper && predefinedPapers && predefinedPapers.length > 0 && (
               <div className="flex gap-1">
-                <Button
+                {/* <Button
                   type="button"
                   variant={mode === "predefined" ? "secondary" : "ghost"}
                   onClick={() => setMode("predefined")}
@@ -448,7 +453,7 @@ export function SendQuestionPaperDialog({
                     }`}
                 >
                   Predefined Paper
-                </Button>
+                </Button> */}
                 <Button
                   type="button"
                   variant={mode === "random" ? "secondary" : "ghost"}
@@ -514,13 +519,13 @@ export function SendQuestionPaperDialog({
                 ) : (
                   <>
                     {/* Predefined Selection */}
-                    {mode === "predefined" && (
+                    {/* {mode === "predefined" && (
                       <PredefinedPaperForm
                         predefinedPapers={predefinedPapers || []}
                         selectedPaperId={selectedPaperId}
                         onSelectPaperId={setSelectedPaperId}
                       />
-                    )}
+                    )} */}
 
                     {/* Randomized Explanation */}
                     {mode === "random" && (

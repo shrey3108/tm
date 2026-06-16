@@ -3,10 +3,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Plus, Trash2, Save, FileQuestion, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { Form, FormField, FormItem, FormControl, FormMessage } from "@/components/ui/form";
 import { useCreateQuestionSetPaperMutation } from "@/hooks/mutations/taskPapers/useTaskPaperMutations";
 import type { QuestionSetPaperRead } from "@/types/taskPaper";
 import { extractErrorMessage } from "@/utils/error";
@@ -31,7 +30,7 @@ export function ManualPaperCreateForm({
   const form = useForm<ManualQuestionPaperFormValues>({
     resolver: zodResolver(manualQuestionPaperSchema),
     defaultValues: {
-      name: "",
+      // name: "",
       questions: [{ value: "" }],
       project_tasks: [{ value: "" }],
     },
@@ -61,7 +60,7 @@ export function ManualPaperCreateForm({
         : [];
 
       const payload = {
-        name: values.name.trim(),
+        // name: values.name.trim(),
         job_id: jobId,
         position_id: positionId,
         questions: values.questions.map((q) => q.value.trim()),
@@ -87,16 +86,16 @@ export function ManualPaperCreateForm({
         <div className="flex items-center justify-between border-b border-border/40 pb-2">
           <div className="flex items-center gap-2">
             <h3 className="text-lg font-bold text-foreground">
-              Define Question Paper Manually
+              Define Question Paper
             </h3>
           </div>
           <p className="text-xs text-muted-foreground">
-            Create predefined template by entering questions & tasks directly
+            Create Question bank by entering questions & tasks directly
           </p>
         </div>
 
         {/* Name Input */}
-        <FormField
+        {/*<FormField
           control={control}
           name="name"
           render={({ field }) => (
@@ -113,7 +112,7 @@ export function ManualPaperCreateForm({
               <FormMessage />
             </FormItem>
           )}
-        />
+        />*/}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {/* Questions Section */}
@@ -136,7 +135,7 @@ export function ManualPaperCreateForm({
 
             <ul className="list-decimal pl-5 space-y-2 overflow-y-auto pr-1 w-full">
               {questionFields.map((field, idx) => (
-                <li key={field.id} className="group w-full my-0.5">
+                <li key={field.id} className="group w-full my-1">
                   <div className="flex items-center justify-between gap-2 w-full">
                     <FormField
                       control={control}

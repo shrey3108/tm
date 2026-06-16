@@ -16,7 +16,7 @@ export interface QuestionSetPaperRead {
 }
 
 export interface QuestionSetPaperCreate {
-  name: string;
+  // name: string;
   job_id: string;
   position_id: string;
   questions: string[];
