@@ -280,12 +280,11 @@ export function useCandidatesStages() {
 
   const handleRetry = async () => {
     if (!instanceId) return;
-    setIsPolling(true);
     try {
       await retryMutation.mutateAsync({ stageId: instanceId });
       toast.success("Retry evaluation triggered successfully");
+      setIsPolling(true);
     } catch (err) {
-      setIsPolling(false);
       toast.error(extractErrorMessage(err) || "Failed to trigger retry evaluation");
     }
   };

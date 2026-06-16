@@ -43,7 +43,7 @@ export function EmptyState({ error, isFailed, onRetry, isRetrying }: EmptyStateP
   if (isFailed) {
     return (
       <div className="flex flex-col items-center justify-center py-6 px-3 gap-3 text-center max-w-md mx-auto my-8 rounded-2xl border border-destructive/20 bg-destructive/5 backdrop-blur-md shadow-xl animate-in fade-in slide-in-from-bottom-4 duration-300">
-        <div className="relative flex items-center justify-center h-20 w-20 rounded-full bg-destructive/10 text-destructive animate-pulse">
+        <div className="relative flex items-center justify-center h-20 w-20 rounded-full bg-destructive/10 text-destructive">
           <AlertCircle className="h-10 w-10" />
         </div>
         <div className="space-y-2">
