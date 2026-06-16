@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { extractErrorMessage } from "@/utils/error";
-import { slugify, unSlugify } from "@/utils/slug";
+import { slugify } from "@/utils/slug";
 import type { CandidateAnalysis, JobStatsResponse } from "@/types/admin";
 import type { Job } from "@/types/job";
 import { useDeleteConfirmation } from "./useDeleteConfirmation";
@@ -56,7 +56,7 @@ export const useJobCandidates = (
 
   // Resolve job ID from slug if not available
   const { data: jobs, error: jobTitleError, loading: isJobTitleLoading } = useJobTitle(
-    jobSlug ? unSlugify(jobSlug) : "",
+    "",
     !!jobSlug && !resolvedJobId
   );
 
