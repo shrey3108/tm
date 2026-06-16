@@ -440,8 +440,9 @@ class EvaluationService:
         )
         db.add(ev)
 
-        # Update candidate stage results, but DO NOT mark as completed/failed under normal circumstances.
-        # Status should only be changed by explicit HR decision, unless a processing error occurred.
+        # Update candidate stage results, and mark as completed so the frontend knows the AI evaluation is done.
+        # HR decisions are handled by the separate HrDecision service.
+        cs.status = "completed"
         cs.evaluation_data = {
             "signals": signals,
             "report": structured_evaluation_data,
