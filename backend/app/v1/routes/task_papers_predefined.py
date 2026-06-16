@@ -15,7 +15,7 @@ from app.v1.dependencies import check_permission
 from app.v1.db.models.question_set_paper import QuestionSetPaper
 from app.v1.db.models.jobs import Job
 from app.v1.db.models.job_positions import JobPosition
-from app.v1.schemas.task_papers import QuestionSetPaperRead
+from app.v1.schemas.task_papers import QuestionSetPaperRead, QuestionAction, TaskAction
 from app.v1.schemas.user import UserRead
 from app.v1.utils.uuid import UUIDHelper
 from app.v1.core.decorators import cache_response
@@ -95,6 +95,39 @@ async def upload_question_set_papers(
     extract_paper_task_skills_task.delay(str(db_paper.id), db_paper.task_file_path)
 
     return [db_paper]
+
+from app.v1.schemas.task_papers import QuestionSetPaperCreate
+
+@router.post("/manual", response_model=QuestionSetPaperRead, status_code=status.HTTP_201_CREATED)
+async def create_manual_question_set_paper(
+    payload: QuestionSetPaperCreate,
+    db: AsyncSession = Depends(get_db),
+    user: UserRead = Depends(check_permission("questions:manage")),
+):
+    """Create a new manual Question Set Paper without a file upload."""
+    paper_id = UUIDHelper.generate_uuid7()
+    
+    db_paper = QuestionSetPaper(
+        id=paper_id,
+        name=payload.name,
+        job_id=payload.job_id,
+        position_id=payload.position_id,
+        questions=payload.questions,
+        project_task=payload.project_task,
+        task_file_path=None,
+        task_skills=None,
+    )
+    db.add(db_paper)
+    await db.commit()
+    await cache.clear("cache:GET:/api/v1/task-papers*")
+    await db.refresh(db_paper)
+    
+    # Trigger celery task to extract skills from manually provided text
+    if db_paper.questions or db_paper.project_task:
+        from app.v1.services.admin.job_tasks import extract_paper_skills_from_text_task
+        extract_paper_skills_from_text_task.delay(str(db_paper.id))
+
+    return db_paper
 
 
 @router.get("", response_model=list[QuestionSetPaperRead])
@@ -241,7 +274,7 @@ async def download_paper_task_file(
 @router.post("/{paper_id}/questions", response_model=QuestionSetPaperRead, status_code=status.HTTP_201_CREATED)
 async def add_question_to_paper(
     paper_id: uuid.UUID,
-    payload: dict, # Using dict to avoid schema import issues temporarily, or we could import QuestionAction
+    payload: QuestionAction,
     db: AsyncSession = Depends(get_db),
     user: UserRead = Depends(check_permission("questions:manage")),
 ):
@@ -253,7 +286,7 @@ async def add_question_to_paper(
             detail="Question set paper not found.",
         )
     
-    question_text = payload.get("question")
+    question_text = payload.question
     if not question_text:
         raise HTTPException(status_code=400, detail="Question text is required.")
 
@@ -265,6 +298,10 @@ async def add_question_to_paper(
     await db.commit()
     await db.refresh(paper)
     await cache.clear("cache:GET:/api/v1/task-papers*")
+    
+    from app.v1.services.admin.job_tasks import extract_paper_skills_from_text_task
+    extract_paper_skills_from_text_task.delay(str(paper.id))
+    
     return QuestionSetPaperRead.model_validate(paper)
 
 
@@ -272,7 +309,7 @@ async def add_question_to_paper(
 async def update_question_in_paper(
     paper_id: uuid.UUID,
     index: int,
-    payload: dict,
+    payload: QuestionAction,
     db: AsyncSession = Depends(get_db),
     user: UserRead = Depends(check_permission("questions:manage")),
 ):
@@ -284,7 +321,7 @@ async def update_question_in_paper(
             detail="Question set paper not found.",
         )
     
-    question_text = payload.get("question")
+    question_text = payload.question
     if not question_text:
         raise HTTPException(status_code=400, detail="Question text is required.")
 
@@ -298,6 +335,10 @@ async def update_question_in_paper(
     await db.commit()
     await db.refresh(paper)
     await cache.clear("cache:GET:/api/v1/task-papers*")
+    
+    from app.v1.services.admin.job_tasks import extract_paper_skills_from_text_task
+    extract_paper_skills_from_text_task.delay(str(paper.id))
+    
     return QuestionSetPaperRead.model_validate(paper)
 
 
@@ -326,12 +367,16 @@ async def delete_question_from_paper(
     await db.commit()
     await db.refresh(paper)
     await cache.clear("cache:GET:/api/v1/task-papers*")
+    
+    from app.v1.services.admin.job_tasks import extract_paper_skills_from_text_task
+    extract_paper_skills_from_text_task.delay(str(paper.id))
+    
     return QuestionSetPaperRead.model_validate(paper)
 
 @router.post("/{paper_id}/tasks", response_model=QuestionSetPaperRead, status_code=status.HTTP_201_CREATED)
 async def add_task_to_paper(
     paper_id: uuid.UUID,
-    payload: dict,
+    payload: TaskAction,
     db: AsyncSession = Depends(get_db),
     user: UserRead = Depends(check_permission("questions:manage")),
 ):
@@ -343,7 +388,7 @@ async def add_task_to_paper(
             detail="Question set paper not found.",
         )
     
-    task_text = payload.get("task")
+    task_text = payload.task
     if not task_text:
         raise HTTPException(status_code=400, detail="Task text is required.")
 
@@ -354,13 +399,17 @@ async def add_task_to_paper(
     await db.commit()
     await db.refresh(paper)
     await cache.clear("cache:GET:/api/v1/task-papers*")
+    
+    from app.v1.services.admin.job_tasks import extract_paper_skills_from_text_task
+    extract_paper_skills_from_text_task.delay(str(paper.id))
+    
     return QuestionSetPaperRead.model_validate(paper)
 
 @router.put("/{paper_id}/tasks/{index}", response_model=QuestionSetPaperRead)
 async def update_task_in_paper(
     paper_id: uuid.UUID,
     index: int,
-    payload: dict,
+    payload: TaskAction,
     db: AsyncSession = Depends(get_db),
     user: UserRead = Depends(check_permission("questions:manage")),
 ):
@@ -372,7 +421,7 @@ async def update_task_in_paper(
             detail="Question set paper not found.",
         )
     
-    task_text = payload.get("task")
+    task_text = payload.task
     if not task_text:
         raise HTTPException(status_code=400, detail="Task text is required.")
 
@@ -386,6 +435,10 @@ async def update_task_in_paper(
     await db.commit()
     await db.refresh(paper)
     await cache.clear("cache:GET:/api/v1/task-papers*")
+    
+    from app.v1.services.admin.job_tasks import extract_paper_skills_from_text_task
+    extract_paper_skills_from_text_task.delay(str(paper.id))
+    
     return QuestionSetPaperRead.model_validate(paper)
 
 @router.delete("/{paper_id}/tasks/{index}", response_model=QuestionSetPaperRead)
@@ -413,5 +466,9 @@ async def delete_task_from_paper(
     await db.commit()
     await db.refresh(paper)
     await cache.clear("cache:GET:/api/v1/task-papers*")
+    
+    from app.v1.services.admin.job_tasks import extract_paper_skills_from_text_task
+    extract_paper_skills_from_text_task.delay(str(paper.id))
+    
     return QuestionSetPaperRead.model_validate(paper)
 

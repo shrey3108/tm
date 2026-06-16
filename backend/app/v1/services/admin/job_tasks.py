@@ -148,4 +148,53 @@ def extract_paper_task_skills_task(paper_id_str: str, file_path_str: str):
         _log.exception(f"Failed to run extract_paper_task_skills_task for paper {paper_id_str}")
 
 
+async def extract_paper_skills_from_text_logic(paper_id_str: str):
+    """Logic to extract skills from a QuestionSetPaper's text fields (questions + tasks)."""
+    from app.v1.db.models.question_set_paper import QuestionSetPaper
+    from app.v1.services.admin.candidate_task_service import candidate_task_service
+
+    paper_id = uuid.UUID(paper_id_str)
+
+    async with async_session_maker() as session:
+        paper = await session.get(QuestionSetPaper, paper_id)
+        if not paper:
+            _log.error(f"QuestionSetPaper not found for text background extraction: {paper_id}")
+            return
+
+        # Combine questions and tasks into a single text block
+        text_parts = []
+        if paper.questions:
+            text_parts.append("Questions:\n" + "\n".join(f"- {q}" for q in paper.questions))
+        if paper.project_task:
+            text_parts.append("Tasks:\n" + "\n".join(f"- {t}" for t in paper.project_task))
+
+        raw_text = "\n\n".join(text_parts)
+        if not raw_text.strip():
+            _log.error(f"Paper has no text content to extract skills from: {paper_id}")
+            return
+
+        _log.info(f"Extracting skills from manual paper text using LLM: {paper_id}")
+        extracted_skills = await candidate_task_service._extract_skills_from_text(raw_text)
+
+        paper.task_skills = extracted_skills
+        
+        session.add(paper)
+        await session.commit()
+        _log.info(f"Successfully updated paper {paper_id} with extracted skills from text: {extracted_skills}")
+
+        try:
+            from app.v1.core.cache import cache
+            await cache.clear(pattern="cache:GET:/api/v1/task-papers*")
+        except Exception:
+            pass
+
+@celery_app.task(name="extract_paper_skills_from_text_task")
+def extract_paper_skills_from_text_task(paper_id_str: str):
+    """Celery task wrapper for manual paper skill extraction from text."""
+    try:
+        asyncio.run(run_with_cleanup(extract_paper_skills_from_text_logic(paper_id_str)))
+    except Exception as exc:
+        _log.exception(f"Failed to run extract_paper_skills_from_text_task for paper {paper_id_str}")
+
+
 
