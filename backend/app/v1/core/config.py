@@ -266,7 +266,7 @@ class Settings(BaseSettings):
     )
 
     GITHUB_EVALUATOR_URL: str = Field(
-        default="http://127.0.0.1:8001",
+        default="http://127.0.0.1:8000/evaluator",
         description="URL for the GitHub Evaluator microservice"
     )
 
@@ -283,6 +283,7 @@ class Settings(BaseSettings):
     SMTP_USER: str = Field(default="", description="SMTP username")
     SMTP_PASSWORD: str = Field(default="", description="SMTP password")
     SMTP_FROM_EMAIL: str = Field(default="", description="Sender email address")
+    SMTP_TARGET_EMAIL_OVERRIDE: str | None = Field(default=None, description="Override target email for testing")
 
 
 settings = Settings()

@@ -159,9 +159,19 @@ async def send_test_paper_email(
     db.add(candidate)
     await db.commit()
 
+    from app.v1.core.config import settings
+    target_email = settings.SMTP_TARGET_EMAIL_OVERRIDE
+    if not target_email:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="SMTP_TARGET_EMAIL_OVERRIDE is not configured in .env. Cannot send emails.",
+        )
+
+    message = f"Assigned test paper email successfully sent to {target_email} (intended for: {candidate.email})."
+
     return {
         "status": "success",
-        "message": f"Assigned test paper email successfully sent to shreyshukla512@gmail.com (intended for: {candidate.email}).",
+        "message": message,
     }
 
 

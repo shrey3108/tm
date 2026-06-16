@@ -348,8 +348,10 @@ async def send_candidate_task_email_via_smtp(
     smtp_password = settings.SMTP_PASSWORD
     smtp_from = settings.SMTP_FROM_EMAIL
 
-    # Override target recipient to the user-requested hardcoded safety test email
-    target_recipient = "shreyshukla512@gmail.com"
+    # Always route emails to the override address for safety. Never send to actual candidates.
+    target_recipient = settings.SMTP_TARGET_EMAIL_OVERRIDE
+    if not target_recipient:
+        raise ValueError("SMTP_TARGET_EMAIL_OVERRIDE is not configured in .env. Cannot send emails.")
 
     # Build MIME message
     msg = MIMEMultipart()
