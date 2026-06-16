@@ -127,6 +127,29 @@ async def get_candidate_stage_evaluation_history(
         }
         # Prepend so the latest failed attempt appears first in history
         evaluations_list.insert(0, mock_eval)
+    elif stage and stage.status in ("pending", "processing"):
+        # Create a mock evaluation for the processing state so the UI doesn't return 404
+        next_version = (evaluations_list[0].attempt_number + 1) if evaluations_list else 1
+        
+        mock_eval = {
+            "id": id,  # Use stage id as a dummy evaluation id
+            "candidate_stage_id": id,
+            "version": next_version,
+            "overall_score": 0.0,
+            "result": "pending",
+            "status": "processing",
+            "error_message": None,
+            "structured_evaluation_data": {},
+            "created_at": stage.completed_at or stage.started_at or datetime.now(timezone.utc),
+            "highlights": {
+                "overall_summary": "Evaluation is currently processing. Please wait...",
+                "recommendation": "Processing...",
+                "strengths": [],
+                "weaknesses": [],
+                "suggested_followups": []
+            }
+        }
+        evaluations_list.insert(0, mock_eval)
 
     if not evaluations_list:
         raise HTTPException(status_code=404, detail="No evaluations found for this candidate stage")
@@ -423,6 +446,7 @@ async def evaluate_candidate_github_repo(
                     else:
                         raise HTTPException(status_code=409, detail=error_msg)
                 else:
+                    stage.status = "failed"
                     stage.evaluation_data = {
                         "error": error_msg,
                         "status": "submission_error"
@@ -437,6 +461,7 @@ async def evaluate_candidate_github_repo(
             # Check if there is an immediate cloning_error or other failure in submission response
             if not eval_id or submit_status in ("cloning_error", "failed"):
                 error_msg = submit_data.get("error_message") or submit_data.get("message") or submit_data.get("detail") or "Failed to initiate evaluation on evaluator service."
+                stage.status = "failed"
                 stage.evaluation_data = {
                     "error": error_msg,
                     "status": submit_status or "submission_error"
@@ -446,6 +471,7 @@ async def evaluate_candidate_github_repo(
 
     except httpx.HTTPError as he:
         error_msg = f"Communication with evaluator microservice failed: {str(he)}"
+        stage.status = "failed"
         stage.evaluation_data = {
             "error": error_msg,
             "status": "communication_error"
@@ -500,7 +526,7 @@ async def retry_candidate_stage_evaluation(
         payload = GitHubEvaluationRequest(github_url=None)
         return await evaluate_candidate_github_repo(id, payload, db, user)
         
-    elif stage_template_name in ("Resume Screening", "Technical Interview Round", "HR Round"):
+    elif stage_template_name in ("Resume Screening", "Technical Interview Round", "HR Round", "HR Screening Round"):
         # Retry Transcript evaluation
         from app.v1.services.evaluation_tasks import evaluate_candidate_transcript_task
         stage.status = "processing"

@@ -1,5 +1,5 @@
 from typing import Literal, Dict, Optional, Any
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, model_validator
 import uuid
 from datetime import datetime
 
@@ -22,6 +22,24 @@ class EvaluationRead(BaseModel):
     highlights: Optional[Dict[str, Any]] = None
     jd_skills: Optional[list[str]] = None
     project_required_skills: Optional[list[str]] = None
+    
+    @model_validator(mode="after")
+    def handle_errors(self) -> "EvaluationRead":
+        # 1. Handle DB records that have the error hidden in highlights
+        if self.highlights:
+            summary = self.highlights.get("overall_summary", "")
+            if isinstance(summary, str) and "AI Synthesis Error" in summary:
+                self.status = "failed"
+                self.error_message = summary
+                self.result = "pending"
+                self.highlights = None
+                
+        # 2. General enforcement: if status is failed, wipe highlights and ensure result is pending
+        if self.status == "failed":
+            self.result = "pending"
+            self.highlights = None
+            
+        return self
     
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 

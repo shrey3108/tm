@@ -372,12 +372,16 @@ class EvaluationService:
         criteria_scores = [v["score"] for v in structured_evaluation_data.values()]
         avg_score = sum(criteria_scores) / len(criteria_scores) if criteria_scores else 0.0
 
-        # Pass/Fail Logic
-        is_passed = avg_score >= 3.5
-        result_status = "pass" if is_passed else "fail"
-        
         # Prepare highlights, including any potential errors
         error_msg = final_report.get("error", "")
+
+        # Pass/Fail Logic
+        if error_msg:
+            is_passed = False
+            result_status = "pending"
+        else:
+            is_passed = avg_score >= 3.5
+            result_status = "pass" if is_passed else "fail"
         
         # Extract arrays with fallback if model ignored strict instructions
         strengths = final_report.get("strengths", [])
@@ -424,8 +428,8 @@ class EvaluationService:
         )
         db.add(ev)
 
-        # Update candidate stage results, but DO NOT mark as completed/failed.
-        # Status should only be changed by explicit HR decision.
+        # Update candidate stage results, but DO NOT mark as completed/failed under normal circumstances.
+        # Status should only be changed by explicit HR decision, unless a processing error occurred.
         cs.evaluation_data = {
             "signals": signals,
             "report": structured_evaluation_data,
@@ -435,6 +439,10 @@ class EvaluationService:
             "is_passed": is_passed,
             "threshold": 3.5,
         }
+        
+        if error_msg:
+            cs.status = "failed"
+            cs.evaluation_data["error"] = error_msg
 
         await db.commit()
 

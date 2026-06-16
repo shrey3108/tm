@@ -73,9 +73,9 @@ def evaluate_candidate_transcript_task(candidate_stage_id_str: str):
                     stage = await db.get(CandidateStage, candidate_stage_id)
                     if stage:
                         stage.status = "failed"
-                        if not stage.evaluation_data:
-                            stage.evaluation_data = {}
-                        stage.evaluation_data["error"] = str(e)
+                        eval_data = dict(stage.evaluation_data or {})
+                        eval_data["error"] = str(e)
+                        stage.evaluation_data = eval_data
                         await db.commit()
                 except Exception as inner_e:
                     logger.error(f"Failed to update stage status to failed: {inner_e}")
@@ -606,9 +606,9 @@ def evaluate_candidate_practical_task(
                     stage = await db.get(CandidateStage, candidate_stage_id)
                     if stage:
                         stage.status = "failed"
-                        if not stage.evaluation_data:
-                            stage.evaluation_data = {}
-                        stage.evaluation_data["error"] = str(e)
+                        eval_data = dict(stage.evaluation_data or {})
+                        eval_data["error"] = str(e)
+                        stage.evaluation_data = eval_data
                         await db.commit()
             except Exception as inner_e:
                 logger.error(f"Failed to update stage status to failed in safe_run_practical_eval: {inner_e}")
