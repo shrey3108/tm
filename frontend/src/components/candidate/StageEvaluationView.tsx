@@ -96,14 +96,22 @@ export function StageEvaluationView({
           <>
             {isGithubUploaded && githubUrl && (
               <HoverCard>
-                <HoverCardTrigger delay={10} closeDelay={10}><Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-muted-foreground rounded-lg"
-                  onClick={() => window.open(githubUrl, "_blank")}
-                >
-                  <GithubLogo className="h-4 w-4" />
-                </Button></HoverCardTrigger>
+                <HoverCardTrigger delay={10} closeDelay={10}
+                  render={(props) => (
+                    <Button
+                      {...props}
+                      variant="ghost"
+                      size="icon-sm"
+                      className="rounded-lg"
+                      onClick={(e) => {
+                        if (props.onClick) props.onClick(e);
+                        window.open(githubUrl, "_blank");
+                      }}
+                    >
+                      <GithubLogo className="h-4 w-4" />
+                    </Button>
+                  )}
+                />
                 <HoverCardContent className="w-full p-0.5 text-xs rounded-lg">
                   Github Submmited link
                 </HoverCardContent>
@@ -111,26 +119,31 @@ export function StageEvaluationView({
             )}
             {assignedPaper?.task_file_path && (
               <HoverCard>
-                <HoverCardTrigger delay={10} closeDelay={10}>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8  rounded-lg"
-                    onClick={handleViewTaskPaper}
-                    disabled={isDownloading}
-                  >
-                    {isDownloading ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <ExternalLink className="h-4 w-4" />
-                    )}
-
-                  </Button></HoverCardTrigger>
+                <HoverCardTrigger delay={10} closeDelay={10}
+                  render={(props) => (
+                    <Button
+                      {...props}
+                      variant="ghost"
+                      size="icon-sm"
+                      className="rounded-lg"
+                      onClick={(e) => {
+                        if (props.onClick) props.onClick(e);
+                        handleViewTaskPaper();
+                      }}
+                      disabled={isDownloading}
+                    >
+                      {isDownloading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <ExternalLink className="h-4 w-4" />
+                      )}
+                    </Button>
+                  )}
+                />
                 <HoverCardContent className="w-full p-0.5 text-xs rounded-lg">
                   View Task file
                 </HoverCardContent>
               </HoverCard>
-
             )}
           </>
         )}

@@ -20,12 +20,12 @@ export const LogoComponent = ({
   variant,
 }: LogoProps) => {
   return (
-    <div className={cn("flex items-center gap-2", className)}>
+    <div className={cn("flex items-center gap-2 h-8", className)}>
       <img
         src={src}
         alt={alt || INFO.companyName}
         className={cn(
-          "h-8 w-auto",
+          "h-full w-auto object-contain",
           variant === "dark" && "invert opacity-90"
         )}
       />
