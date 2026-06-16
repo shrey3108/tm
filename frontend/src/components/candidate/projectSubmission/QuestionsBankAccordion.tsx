@@ -61,8 +61,9 @@ export function QuestionsBankAccordion({
   const [paperIdToDelete, setPaperIdToDelete] = useState<string | null>(null);
   const [indexToDelete, setIndexToDelete] = useState<number | null>(null);
 
-  // Accordion active open items state (default open both)
-  const [openItems, setOpenItems] = useState<string[]>(["questions", "tasks"]);
+  // Accordion active open items state (default open none)
+  // const [openItems, setOpenItems] = useState<string[]>(["questions", "tasks"]);
+  const [openItems, setOpenItems] = useState<string[]>([]);
 
   // Flatten logic
   const allQuestions = (questionPapers || []).flatMap((paper) =>

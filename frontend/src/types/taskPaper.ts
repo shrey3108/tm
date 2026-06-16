@@ -15,6 +15,15 @@ export interface QuestionSetPaperRead {
   updated_at: string;
 }
 
+export interface QuestionSetPaperCreate {
+  name: string;
+  job_id: string;
+  position_id: string;
+  questions: string[];
+  project_task?: string[];
+}
+
+
 export interface CandidateTestPaperRead {
   id: string;
   candidate_id: string;

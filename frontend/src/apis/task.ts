@@ -2,6 +2,7 @@ import client from "@/apis/client";
 import type { JobTask, DeleteJobTaskResponse } from "@/types/job";
 import type {
   QuestionSetPaperRead,
+  QuestionSetPaperCreate,
   CandidateTestPaperRead,
   CandidateTestPaperAssign,
   CandidateTestPaperEmailSend,
@@ -117,6 +118,19 @@ export const taskService = {
           "Content-Type": "multipart/form-data",
         },
       }
+    );
+    return response.data;
+  },
+
+  /**
+   * Manually creates a new question set paper.
+   */
+  createQuestionSetPaper: async (
+    data: QuestionSetPaperCreate
+  ): Promise<QuestionSetPaperRead> => {
+    const response = await client.post<QuestionSetPaperRead>(
+      "/task-papers/manual",
+      data
     );
     return response.data;
   },

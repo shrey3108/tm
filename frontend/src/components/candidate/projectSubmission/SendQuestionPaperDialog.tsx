@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,10 @@ import { RandomizedPaperView } from "./sendQuestionPaper/RandomizedPaperView";
 import { CustomPaperForm } from "./sendQuestionPaper/CustomPaperForm";
 import { SendQuestionPaperFooter } from "./sendQuestionPaper/SendQuestionPaperFooter";
 import { extractErrorMessage } from "@/utils/error";
+import { useAppSelector } from "@/store/hooks";
+import { selectCurrentUser } from "@/store/slices/authSlice";
+import { hasPermissions, PERMISSIONS } from "@/lib/permissions";
+import { ManualPaperCreateForm } from "./sendQuestionPaper/ManualPaperCreateForm";
 
 import {
   HoverCard,
@@ -53,6 +57,7 @@ export function SendQuestionPaperDialog({
   selectedCandidates,
   emailFilterState,
 }: SendQuestionPaperDialogProps) {
+  const navigate = useNavigate();
   const isBulkMode = selectedCandidates && selectedCandidates.length > 1;
 
   // Queries
@@ -71,11 +76,14 @@ export function SendQuestionPaperDialog({
     isBulkMode ? undefined : candidateId
   );
 
-  const { data: predefinedPapers, loading: loadingPredefined } = useQuestionSetPapers({
+  const { data: predefinedPapers, loading: loadingPredefined, refetch: refetchPredefinedPapers } = useQuestionSetPapers({
     jobId: job?.id,
     positionId: job?.position_id,
     options: { enabled: isOpen && !!job?.id }
   });
+
+  const currentUser = useAppSelector(selectCurrentUser);
+  const hasManagePermission = hasPermissions(currentUser?.permissions, PERMISSIONS.QUESTIONS_MANAGE);
 
   // Mutations
   const assignMutation = useAssignTestPaperMutation();
@@ -110,9 +118,29 @@ export function SendQuestionPaperDialog({
     }
   }, [isOpen]);
 
+  const handleManualPaperCreated = (newPaper: any) => {
+    refetchPredefinedPapers().then(() => {
+      setSelectedPaperId(newPaper.id);
+      setMode("predefined");
+    });
+  };
+
   // Default to custom if no predefined papers are available
   useEffect(() => {
     if (isOpen && !loadingPredefined && predefinedPapers) {
+      const hasEmptyQuestions = predefinedPapers.length > 0 && predefinedPapers.every(
+        (paper: any) => !paper.questions || paper.questions.length === 0
+      );
+
+      if (hasEmptyQuestions) {
+        toast.error("not enough question found");
+        const timer = setTimeout(() => {
+          onOpenChange(false);
+          navigate("/dashboard/questions-bank");
+        }, 2000);
+        return () => clearTimeout(timer);
+      }
+
       if (predefinedPapers.length === 0) {
         setMode("custom");
       } else {
@@ -120,7 +148,7 @@ export function SendQuestionPaperDialog({
         setSelectedPaperId(predefinedPapers[0]?.id || "");
       }
     }
-  }, [isOpen, loadingPredefined, predefinedPapers]);
+  }, [isOpen, loadingPredefined, predefinedPapers, navigate, onOpenChange]);
 
 
 
@@ -173,7 +201,7 @@ export function SendQuestionPaperDialog({
         toast.success("Test paper successfully assigned!");
         setBulkAssignedPaper(result);
         // if (onSuccess) onSuccess();
-      } catch (err: any) {
+      } catch (err: unknown) {
         toast.error(extractErrorMessage(err));
       }
       return;
@@ -223,7 +251,7 @@ export function SendQuestionPaperDialog({
       );
       refetchAssigned();
       // if (onSuccess) onSuccess();
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error(extractErrorMessage(err));
     }
   };
@@ -265,7 +293,7 @@ export function SendQuestionPaperDialog({
         });
         toast.success("Successfully sent test paper emails in bulk!");
         onOpenChange(false);
-      } catch (err: any) {
+      } catch (err: unknown) {
         toast.error(extractErrorMessage(err));
       }
       return;
@@ -294,9 +322,8 @@ export function SendQuestionPaperDialog({
       });
       toast.success(`Successfully sent test paper email to ${email}!`);
       onOpenChange(false);
-    } catch (err: any) {
-      const message = extractErrorMessage(err);
-      toast.error(message);
+    } catch (err: unknown) {
+      toast.error(extractErrorMessage(err));
     }
   };
 
@@ -322,8 +349,8 @@ export function SendQuestionPaperDialog({
         setBulkAssignedPaper(null);
         setAssignedPapersList([]);
         if (onSuccess) onSuccess();
-      } catch (err: any) {
-        toast.error(err?.response?.data?.detail || "Failed to remove assignments.");
+      } catch (err: unknown) {
+        toast.error(extractErrorMessage(err, "Failed to remove assignments."));
       }
       return;
     }
@@ -340,8 +367,8 @@ export function SendQuestionPaperDialog({
       }
       refetchAssigned();
       // if (onSuccess) onSuccess();
-    } catch (err: any) {
-      toast.error(err?.response?.data?.detail || "Failed to remove assignment.");
+    } catch (err: unknown) {
+      toast.error(extractErrorMessage(err, "Failed to remove assignment."));
     }
 
   };
@@ -462,17 +489,28 @@ export function SendQuestionPaperDialog({
                 {loadingPredefined ? (
                   <LoadingSpinner message="Loading question set templates..." />
                 ) : !predefinedPapers || predefinedPapers.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center p-8 text-center border-2 border-dashed border-muted-foreground/25 rounded-2xl bg-muted/10 max-w-md mx-auto my-8">
-                    <AlertTriangle className="h-10 w-10 text-amber-500 mb-4" />
-                    <h3 className="text-lg font-bold text-foreground">No Predefined Papers Available</h3>
-                    <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
-                      No predefined question set papers are configured for this job/position. To set one up, please visit the{" "}
-                      <Link to="/dashboard/questions-bank" className="font-semibold text-primary underline hover:text-primary/80 transition-colors">
-                        Questions Bank
-                      </Link>
-                      .
-                    </p>
-                  </div>
+                  hasManagePermission && job?.id && job?.position_id ? (
+                    <div className="p-1">
+                      <ManualPaperCreateForm
+                        jobId={job.id}
+                        positionId={job.position_id}
+                        onSuccess={handleManualPaperCreated}
+                        onCancel={() => onOpenChange(false)}
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center p-8 text-center border-2 border-dashed border-muted-foreground/25 rounded-2xl bg-muted/10 max-w-md mx-auto my-8">
+                      <AlertTriangle className="h-10 w-10 text-amber-500 mb-4" />
+                      <h3 className="text-lg font-bold text-foreground">No Predefined Papers Available</h3>
+                      <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
+                        No predefined question set papers are configured for this job/position. To set one up, please visit the{" "}
+                        <Link to="/dashboard/questions-bank" className="font-semibold text-primary underline hover:text-primary/80 transition-colors">
+                          Questions Bank
+                        </Link>
+                        .
+                      </p>
+                    </div>
+                  )
                 ) : (
                   <>
                     {/* Predefined Selection */}
@@ -510,16 +548,18 @@ export function SendQuestionPaperDialog({
 
           {/* Footer actions */}
           {!finalAssignedPaper && !loadingPredefined && (!predefinedPapers || predefinedPapers.length === 0) ? (
-            <DialogFooter className="p-3 border-t border-muted-foreground/10 bg-muted/20 shrink-0 gap-2 flex items-center justify-end flex-row">
-              <Button
-                type="button"
-                variant="outline"
-                className="rounded-xl font-semibold"
-                onClick={() => onOpenChange(false)}
-              >
-                Close
-              </Button>
-            </DialogFooter>
+            !hasManagePermission ? (
+              <DialogFooter className="p-3 border-t border-muted-foreground/10 bg-muted/20 shrink-0 gap-2 flex items-center justify-end flex-row">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-xl font-semibold"
+                  onClick={() => onOpenChange(false)}
+                >
+                  Close
+                </Button>
+              </DialogFooter>
+            ) : null
           ) : (
             <SendQuestionPaperFooter
               onCancel={() => onOpenChange(false)}

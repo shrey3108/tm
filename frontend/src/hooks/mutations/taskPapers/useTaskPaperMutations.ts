@@ -5,6 +5,7 @@ import type {
   CandidateTestPaperAssign,
   CandidateTestPaperEmailSend,
   CandidateTestPaperBulkEmailSend,
+  QuestionSetPaperCreate,
 } from "@/types/taskPaper";
 
 /**
@@ -22,6 +23,22 @@ export function useUploadQuestionSetPaperMutation() {
       positionId: string;
       file: File;
     }) => taskService.uploadQuestionSetPaper({ jobId, positionId, file }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.TASK_PAPERS.LIST],
+      });
+    },
+  });
+}
+
+/**
+ * Hook to manually create a new predefined question set paper.
+ */
+export function useCreateQuestionSetPaperMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: QuestionSetPaperCreate) =>
+      taskService.createQuestionSetPaper(data),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.TASK_PAPERS.LIST],

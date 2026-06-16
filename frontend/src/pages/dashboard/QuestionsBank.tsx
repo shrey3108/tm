@@ -1,6 +1,6 @@
 import { useRef, useState, useCallback } from "react";
 import { toast } from "sonner";
-import { Upload, HelpCircle } from "lucide-react";
+import { Upload } from "lucide-react";
 import AppPageShell from "@/components/shared/AppPageShell";
 import AppPageHeader from "@/components/shared/AppPageHeader";
 import { useJobTitle } from "@/hooks/queries/jobs";
@@ -15,21 +15,20 @@ import { LoadingSpinner, SearchableSelect } from "@/components/shared";
 import { Label } from "@/components";
 import { Badge } from "@/components/ui/badge";
 import PermissionGuard from "@/components/auth/PermissionGuard";
-import { PERMISSIONS } from "@/lib/permissions";
+import { PERMISSIONS, hasPermissions } from "@/lib/permissions";
+import { useAppSelector } from "@/store/hooks";
+import { selectCurrentUser } from "@/store/slices/authSlice";
 import { useDebouncedValue } from "@/hooks";
 import { QuestionsBankAccordion } from "@/components/candidate/projectSubmission/QuestionsBankAccordion";
+import { ManualPaperCreateForm } from "@/components/candidate/projectSubmission/sendQuestionPaper/ManualPaperCreateForm";
+import { extractErrorMessage } from "@/utils/error";
 
-interface ApiErrorResponse {
-  response?: {
-    data?: {
-      detail?: string;
-    };
-  };
-}
 
 
 export default function QuestionsBank() {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const currentUser = useAppSelector(selectCurrentUser);
+  const hasManagePermission = hasPermissions(currentUser?.permissions, PERMISSIONS.QUESTIONS_MANAGE);
   const [selectedJobId, setSelectedJobId] = useState<string>("");
   const [selectedPositionId, setSelectedPositionId] = useState<string>("");
   const [isUploading, setIsUploading] = useState<boolean>(false);
@@ -56,7 +55,7 @@ export default function QuestionsBank() {
 
   // Compute active selections
   const activeJobId = selectedJobId || jobs?.[0]?.id || "";
-  const activePositionId = selectedPositionId || positions?.[0]?.id || "";
+  const activePositionId = selectedPositionId || positions[0].id || "";
 
   // Fetch predefined Question Set Papers with polling if any paper is still extracting questions
   // do polling if `questions: []` means empty array
@@ -111,12 +110,8 @@ export default function QuestionsBank() {
             file,
           });
           toast.success(`Successfully uploaded and triggered AI extraction for '${file.name}'!`);
-        } catch (err) {
-          const error = err as ApiErrorResponse;
-          toast.error(
-            error.response?.data?.detail ||
-            `Failed to upload '${file.name}'.`
-          );
+        } catch (err: unknown) {
+          toast.error(extractErrorMessage(err, `Failed to upload '${file.name}'.`));
         }
       });
 
@@ -137,9 +132,8 @@ export default function QuestionsBank() {
         toast.success("Successfully deleted the question set paper.");
         refetchPapers();
       },
-      onError: (err) => {
-        const error = err as ApiErrorResponse;
-        toast.error(error.response?.data?.detail || "Failed to delete question set paper.");
+      onError: (err: unknown) => {
+        toast.error(extractErrorMessage(err, "Failed to delete question set paper."));
       },
     });
   };
@@ -219,13 +213,21 @@ export default function QuestionsBank() {
         {loadingPapers ? (
           <LoadingSpinner message="Loading question set papers..." />
         ) : questionPapers.length === 0 ? (
-          <div className="text-center py-16 border border-dashed border-border/60 rounded-2xl bg-card/10 text-muted-foreground">
-            <HelpCircle className="h-8 w-8 mx-auto mb-3 text-muted-foreground/60" />
-            <p className="font-semibold text-foreground/80">No Question Set Papers Found</p>
-            <p className="text-sm mt-1 max-w-md mx-auto">
-              There are no predefined question set papers for the selected job and experience level.
-              Upload a document above to automatically extract questions and projects using AI!
-            </p>
+          <div className=" animate-in fade-in duration-300">
+            <div className="text-center py-1 border border-dashed border-border/60 rounded-2xl bg-card/10 text-muted-foreground">
+              <p className="font-semibold text-foreground/80">No Question Set Papers Found</p>
+              <p className="text-sm mt-1 max-w-md mx-auto">
+                There are no predefined question set papers for the selected job and experience level.
+                Upload a document to automatically extract questions, or define one manually below!
+              </p>
+            </div>
+            {hasManagePermission && (
+              <ManualPaperCreateForm
+                jobId={activeJobId}
+                positionId={activePositionId}
+                onSuccess={() => refetchPapers()}
+              />
+            )}
           </div>
         ) : (
           <div className="space-y-2 animate-in fade-in duration-300">
