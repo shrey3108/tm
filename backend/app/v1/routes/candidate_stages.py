@@ -38,16 +38,34 @@ async def get_candidate_stage_evaluation(
     user: UserRead = Depends(check_permission("candidates:read")),
 ) -> EvaluationRead:
     """Retrieve the full evaluation result for a specific candidate stage."""
+    stage = await db.get(CandidateStage, id)
+    if not stage:
+        raise HTTPException(status_code=404, detail="Candidate stage not found")
+
+    if stage.status in ("processing", "queued", "submitted"):
+        from fastapi.responses import JSONResponse
+        return JSONResponse(
+            status_code=202, 
+            content={"status": stage.status, "detail": f"Evaluation is currently {stage.status}"}
+        )
+
+    # If evaluation_data has an evaluation_id it means submission succeeded but evaluation hasn't finished yet
+    if isinstance(stage.evaluation_data, dict) and stage.evaluation_data.get("evaluation_id") and stage.status not in ("completed", "failed"):
+        from fastapi.responses import JSONResponse
+        return JSONResponse(
+            status_code=202,
+            content={"status": "processing", "detail": "Evaluation is currently processing"}
+        )
+
     res = await db.execute(
         select(Evaluation)
         .where(Evaluation.candidate_stage_id == id)
         .order_by(Evaluation.attempt_number.desc())
     )
     evaluation = res.scalars().first()
+
     if not evaluation:
-        # Check if the CandidateStage exists and has a cloning/processing error
-        stage = await db.get(CandidateStage, id)
-        if stage and stage.status == "failed" and isinstance(stage.evaluation_data, dict) and "error" in stage.evaluation_data:
+        if stage.status == "failed" and isinstance(stage.evaluation_data, dict) and "error" in stage.evaluation_data:
             # Construct a mock Evaluation dict with the error details conforming to EvaluationRead
             return {
                 "id": id,  # Use stage id as a dummy evaluation id
@@ -67,22 +85,9 @@ async def get_candidate_stage_evaluation(
                     "suggested_followups": []
                 }
             }
-        if stage and stage.status in ("processing", "queued", "submitted"):
-            from fastapi.responses import JSONResponse
-            return JSONResponse(
-                status_code=202, 
-                content={"status": stage.status, "detail": f"Evaluation is currently {stage.status}"}
-            )
-
-        # If evaluation_data has an evaluation_id it means submission succeeded but evaluation hasn't finished yet
-        if stage and isinstance(stage.evaluation_data, dict) and stage.evaluation_data.get("evaluation_id"):
-            from fastapi.responses import JSONResponse
-            return JSONResponse(
-                status_code=202,
-                content={"status": "processing", "detail": "Evaluation is currently processing"}
-            )
             
         raise HTTPException(status_code=404, detail="Evaluation not found for this candidate stage")
+        
     return evaluation
 
 

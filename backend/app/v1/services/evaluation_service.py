@@ -368,6 +368,18 @@ class EvaluationService:
             else:
                 logger.warning(f"Could not map LLM criteria key '{key}' back to any active criteria.")
 
+        # Ensure all expected criteria are present even if LLM skipped them
+        for crit_id, crit_obj in criteria_objs.items():
+            if crit_obj.name not in structured_evaluation_data:
+                logger.warning(f"LLM missed expected criterion '{crit_obj.name}'. Filling with default 0.")
+                structured_evaluation_data[crit_obj.name] = {
+                    "score": 0,
+                    "reasoning": "Criterion was skipped or not evaluated by the AI.",
+                    "confidence": 0.0,
+                    "evidence": evidence_snippets.get(crit_obj.name, []),
+                    "prompt_text": crit_obj.prompt_text
+                }
+
         # Calculate overall score
         criteria_scores = [v["score"] for v in structured_evaluation_data.values()]
         avg_score = sum(criteria_scores) / len(criteria_scores) if criteria_scores else 0.0
