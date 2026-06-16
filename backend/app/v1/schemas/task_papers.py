@@ -32,6 +32,14 @@ class QuestionSetPaperRead(BaseModel):
     created_at: datetime
     updated_at: datetime
 
+    @field_validator("project_task", mode="before")
+    @classmethod
+    def coerce_project_task_to_list(cls, v):
+        """Handle legacy DB rows where project_task was stored as a plain string."""
+        if isinstance(v, str):
+            return [v] if v.strip() else []
+        return v or []
+
     class Config:
         from_attributes = True
 
@@ -52,6 +60,14 @@ class CandidateTestPaperRead(BaseModel):
     job_default_paper_name: Optional[str] = None
     job_default_paper_id: Optional[uuid.UUID] = None
 
+    @field_validator("project_task", mode="before")
+    @classmethod
+    def coerce_project_task_to_list(cls, v):
+        """Handle legacy DB rows where project_task was stored as a plain string."""
+        if isinstance(v, str):
+            return [v] if v.strip() else []
+        return v or []
+
     class Config:
         from_attributes = True
 
@@ -67,6 +83,14 @@ class CandidateTestPaperHistoryRead(BaseModel):
     task_skills: Optional[list[str]] = None
     assigned_at: datetime
     user_id: Optional[uuid.UUID] = None
+
+    @field_validator("project_task", mode="before")
+    @classmethod
+    def coerce_project_task_to_list(cls, v):
+        """Handle legacy DB rows where project_task was stored as a plain string."""
+        if isinstance(v, str):
+            return [v] if v.strip() else []
+        return v or []
 
     class Config:
         from_attributes = True

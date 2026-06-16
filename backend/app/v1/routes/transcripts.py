@@ -145,7 +145,11 @@ async def upload_transcript_path(
     if not file_infos:
         raise HTTPException(status_code=400, detail="No valid files uploaded")
 
-    # 4. Trigger merged background processing
+    # 4. Set stage status to "processing" so evaluation polling returns 202
+    current_stage.status = "processing"
+    await db.commit()
+
+    # 5. Trigger merged background processing
     process_transcript_task.delay(str(candidate_stage_id), file_infos)
 
     return {
