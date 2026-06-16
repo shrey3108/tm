@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field, field_validator
 
 
 class QuestionSetPaperCreate(BaseModel):
-    name: str = Field(..., description="Name/title of the question set paper")
+    name: Optional[str] = Field(None, description="Name/title of the question set paper")
     job_id: uuid.UUID = Field(..., description="The associated job ID")
     position_id: uuid.UUID = Field(..., description="The associated job position level ID")
     questions: list[str] = Field(..., description="Questions for this paper")
