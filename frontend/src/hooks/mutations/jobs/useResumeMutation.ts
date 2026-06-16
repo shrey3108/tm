@@ -4,27 +4,6 @@ import { QUERY_KEYS } from "@/constants/queryKeys";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 /**
- * Shared query keys that both upload and delete mutations must invalidate
- * (job-scoped data that changes when a resume is added or removed).
- */
-const jobScopedKeys = (jobId: string) => [
-    [QUERY_KEYS.JOBS.CANDIDATES, jobId],
-    [QUERY_KEYS.JOBS.STATS, jobId],
-    [QUERY_KEYS.JOBS.DETAIL, jobId],
-] as const;
-
-/**
- * Additional global keys that only an upload needs to invalidate
- * (admin-wide aggregates / activity feeds).
- */
-const globalUploadKeys = [
-    [QUERY_KEYS.ADMIN.DASHBOARD_DATA],
-    [QUERY_KEYS.ADMIN.LOCATIONS],
-    [QUERY_KEYS.ADMIN.AUDIT_LOGS],
-    [QUERY_KEYS.ADMIN.RECENT_UPLOADS],
-] as const;
-
-/**
  * Hook for uploading a resume for a job.
  */
 export function useUploadResumeMutation() {
@@ -35,25 +14,42 @@ export function useUploadResumeMutation() {
 
         onMutate: async ({ jobId }) => {
             // Cancel any in-flight fetches for data we are about to invalidate
-            await Promise.all(
-                jobScopedKeys(jobId).map((key) =>
-                    queryClient.cancelQueries({ queryKey: key }),
-                ),
-            );
+            await queryClient.cancelQueries({
+                queryKey: [QUERY_KEYS.JOBS.CANDIDATES, jobId],
+            });
+            await queryClient.cancelQueries({
+                queryKey: [QUERY_KEYS.JOBS.STATS, jobId],
+            });
+            await queryClient.cancelQueries({
+                queryKey: [QUERY_KEYS.JOBS.DETAIL, jobId],
+            });
         },
 
         onSettled: (_data, _error, variables) => {
-            const keys = [
-                ...jobScopedKeys(variables.jobId),
-                ...globalUploadKeys,
-            ];
+            const jobId = variables.jobId;
 
-            // invalidate queries and refetch all data
-            Promise.all(
-                keys.map((key) =>
-                    queryClient.invalidateQueries({ queryKey: [...key] }),
-                ),
-            );
+            // Invalidate queries and refetch all data individually
+            queryClient.invalidateQueries({
+                queryKey: [QUERY_KEYS.JOBS.CANDIDATES, jobId],
+            });
+            queryClient.invalidateQueries({
+                queryKey: [QUERY_KEYS.JOBS.STATS, jobId],
+            });
+            queryClient.invalidateQueries({
+                queryKey: [QUERY_KEYS.JOBS.DETAIL, jobId],
+            });
+            queryClient.invalidateQueries({
+                queryKey: [QUERY_KEYS.ADMIN.DASHBOARD_DATA],
+            });
+            queryClient.invalidateQueries({
+                queryKey: [QUERY_KEYS.ADMIN.LOCATIONS],
+            });
+            queryClient.invalidateQueries({
+                queryKey: [QUERY_KEYS.ADMIN.AUDIT_LOGS],
+            });
+            queryClient.invalidateQueries({
+                queryKey: [QUERY_KEYS.ADMIN.RECENT_UPLOADS],
+            });
         },
     });
 }
@@ -68,19 +64,29 @@ export function useDeleteResumeMutation() {
             resumeService.deleteResume(jobId, resumeId),
 
         onMutate: async ({ jobId }) => {
-            await Promise.all(
-                jobScopedKeys(jobId).map((key) =>
-                    queryClient.cancelQueries({ queryKey: key }),
-                ),
-            );
+            await queryClient.cancelQueries({
+                queryKey: [QUERY_KEYS.JOBS.CANDIDATES, jobId],
+            });
+            await queryClient.cancelQueries({
+                queryKey: [QUERY_KEYS.JOBS.STATS, jobId],
+            });
+            await queryClient.cancelQueries({
+                queryKey: [QUERY_KEYS.JOBS.DETAIL, jobId],
+            });
         },
 
         onSettled: (_data, _error, variables) => {
-            Promise.all(
-                jobScopedKeys(variables.jobId).map((key) =>
-                    queryClient.invalidateQueries({ queryKey: [...key] }),
-                ),
-            );
+            const jobId = variables.jobId;
+
+            queryClient.invalidateQueries({
+                queryKey: [QUERY_KEYS.JOBS.CANDIDATES, jobId],
+            });
+            queryClient.invalidateQueries({
+                queryKey: [QUERY_KEYS.JOBS.STATS, jobId],
+            });
+            queryClient.invalidateQueries({
+                queryKey: [QUERY_KEYS.JOBS.DETAIL, jobId],
+            });
         },
     });
-}
+}
