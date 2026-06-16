@@ -54,14 +54,18 @@ export function AssignedPaperView({
       </div>
 
       {/* Project Task */}
-      {assignedPaper.project_task && (
-        <div className="space-y-1">
+      {assignedPaper.project_task && assignedPaper.project_task.length > 0 && (
+        <div className="space-y-1 p-2">
           <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-            Project Task Description
+            Project Tasks
           </h4>
-          <div className="p-2 rounded-xl border border-border/40 bg-card/40 text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap">
-            {assignedPaper.project_task}
-          </div>
+          <ul className="pl-3 list-decimal space-y-1">
+            {assignedPaper.project_task.map((task, idx) => (
+              <li key={idx} className="text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap">
+                {task}
+              </li>
+            ))}
+          </ul>
         </div>
       )}
     </div>

@@ -323,6 +323,48 @@ export const taskService = {
     );
     return response.data;
   },
+
+  /**
+   * Adds a project task to a predefined question set paper.
+   */
+  addProjectTaskToPaper: async (
+    paperId: string,
+    projectTask: string
+  ): Promise<QuestionSetPaperRead> => {
+    const response = await client.post<QuestionSetPaperRead>(
+      `/task-papers/${paperId}/tasks`,
+      { task: projectTask }
+    );
+    return response.data;
+  },
+
+  /**
+   * Updates a project task in a predefined question set paper.
+   */
+  updateProjectTaskInPaper: async (
+    paperId: string,
+    index: number,
+    projectTask: string
+  ): Promise<QuestionSetPaperRead> => {
+    const response = await client.put<QuestionSetPaperRead>(
+      `/task-papers/${paperId}/tasks/${index}`,
+      { task: projectTask }
+    );
+    return response.data;
+  },
+
+  /**
+   * Deletes a project task from a predefined question set paper.
+   */
+  deleteProjectTaskFromPaper: async (
+    paperId: string,
+    index: number
+  ): Promise<QuestionSetPaperRead> => {
+    const response = await client.delete<QuestionSetPaperRead>(
+      `/task-papers/${paperId}/tasks/${index}`
+    );
+    return response.data;
+  },
 };
 
 export interface CandidateTaskRead {

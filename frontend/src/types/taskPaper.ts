@@ -8,7 +8,7 @@ export interface QuestionSetPaperRead {
   job_id: string;
   position_id: string;
   questions: string[];
-  project_task: string;
+  project_task: string[];
   task_file_path: string | null;
   task_skills: string[] | null;
   created_at: string;
@@ -22,7 +22,7 @@ export interface CandidateTestPaperRead {
   position_id: string;
   name: string;
   questions: string[];
-  project_task: string;
+  project_task: string[];
   task_file_path: string | null;
   task_skills: string[] | null;
   email_sent_count?: number;

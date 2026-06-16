@@ -217,3 +217,69 @@ export function useDeleteQuestionFromPaperMutation() {
     },
   });
 }
+
+/**
+ * Hook to add a project task to a predefined question set paper.
+ */
+export function useAddProjectTaskToPaperMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      paperId,
+      projectTask,
+    }: {
+      paperId: string;
+      projectTask: string;
+    }) => taskService.addProjectTaskToPaper(paperId, projectTask),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.TASK_PAPERS.LIST],
+      });
+    },
+  });
+}
+
+/**
+ * Hook to update a project task in a predefined question set paper.
+ */
+export function useUpdateProjectTaskInPaperMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      paperId,
+      index,
+      projectTask,
+    }: {
+      paperId: string;
+      index: number;
+      projectTask: string;
+    }) => taskService.updateProjectTaskInPaper(paperId, index, projectTask),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.TASK_PAPERS.LIST],
+      });
+    },
+  });
+}
+
+/**
+ * Hook to delete a project task from a predefined question set paper.
+ */
+export function useDeleteProjectTaskFromPaperMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      paperId,
+      index,
+    }: {
+      paperId: string;
+      index: number;
+    }) => taskService.deleteProjectTaskFromPaper(paperId, index),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.TASK_PAPERS.LIST],
+      });
+    },
+  });
+}
+

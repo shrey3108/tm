@@ -5,13 +5,19 @@ import AppPageShell from "@/components/shared/AppPageShell";
 import AppPageHeader from "@/components/shared/AppPageHeader";
 import { useJobTitle } from "@/hooks/queries/jobs";
 import { useJobPosition } from "@/hooks/queries/admin/useJobPosition";
-import { useQuestionSetPapers, } from "@/hooks/queries/taskPapers/useTaskPaperQueries";
-import { useUploadQuestionSetPaperMutation, useDeleteQuestionSetPaperMutation } from "@/hooks/mutations/taskPapers/useTaskPaperMutations";
+import { useQuestionSetPapers } from "@/hooks/queries/taskPapers/useTaskPaperQueries";
+import {
+  useUploadQuestionSetPaperMutation,
+  useDeleteQuestionSetPaperMutation,
+} from "@/hooks/mutations/taskPapers/useTaskPaperMutations";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner, SearchableSelect } from "@/components/shared";
 import { Label } from "@/components";
-import { QuestionPaperCard } from "@/components/candidate/projectSubmission/QuestionPaperCard";
+import { Badge } from "@/components/ui/badge";
+import PermissionGuard from "@/components/auth/PermissionGuard";
+import { PERMISSIONS } from "@/lib/permissions";
 import { useDebouncedValue } from "@/hooks";
+import { QuestionsBankAccordion } from "@/components/candidate/projectSubmission/QuestionsBankAccordion";
 
 interface ApiErrorResponse {
   response?: {
@@ -20,6 +26,7 @@ interface ApiErrorResponse {
     };
   };
 }
+
 
 export default function QuestionsBank() {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -33,13 +40,13 @@ export default function QuestionsBank() {
   const debouncedJobSearch = useDebouncedValue(jobSearch);
   const debouncedPositionSearch = useDebouncedValue(positionSearch);
 
-  // Fetch jobs list 
+  // Fetch jobs list
   const { data: jobs, loading: loadingJobs } = useJobTitle(debouncedJobSearch, true);
 
   // Fetch job positions
   const { data: positions, loading: loadingPositions } = useJobPosition(0, 10, debouncedPositionSearch);
 
-  // Detect async loading: search text has changed but debounced value hasn't caught up yet
+  // Detect async loading
   const isJobSearching = jobSearch !== debouncedJobSearch;
   const isPositionSearching = positionSearch !== debouncedPositionSearch;
 
@@ -47,14 +54,14 @@ export default function QuestionsBank() {
   const handleJobSearch = useCallback((query: string) => setJobSearch(query), []);
   const handlePositionSearch = useCallback((query: string) => setPositionSearch(query), []);
 
-  // Compute active selections (default to first item if state is empty)
+  // Compute active selections
   const activeJobId = selectedJobId || jobs?.[0]?.id || "";
   const activePositionId = selectedPositionId || positions?.[0]?.id || "";
 
   // Fetch predefined Question Set Papers with polling if any paper is still extracting questions
   // do polling if `questions: []` means empty array
   const {
-    data: questionPapers,
+    data: questionPapers = [],
     loading: loadingPapers,
     refetch: refetchPapers,
   } = useQuestionSetPapers({
@@ -62,7 +69,8 @@ export default function QuestionsBank() {
     positionId: activePositionId || undefined,
     options: {
       refetchInterval: (query: unknown) => {
-        const papers = (query as { state?: { data?: { questions?: string[] }[] } })?.state?.data;
+        // @ts-ignore
+        const papers = (query as { state?: { data?: { questions?: string[] }[] }[] })?.state?.data;
         const hasProcessing = Array.isArray(papers) && papers.some(
           (paper) => !paper.questions || paper.questions.length === 0
         );
@@ -71,10 +79,15 @@ export default function QuestionsBank() {
     }
   });
 
-  // Mutations
+  // Mutations for templates/papers
   const uploadMutation = useUploadQuestionSetPaperMutation();
   const deleteMutation = useDeleteQuestionSetPaperMutation();
 
+  const allSkills = Array.from(
+    new Set((questionPapers || []).flatMap((paper) => paper.task_skills || []))
+  );
+
+  // File Upload Handlers
   const handleUploadClick = () => {
     fileInputRef.current?.click();
   };
@@ -117,8 +130,8 @@ export default function QuestionsBank() {
     }
   };
 
+  // @ts-ignore will use again after discussion
   const handleDeletePaper = (paperId: string) => {
-
     deleteMutation.mutate(paperId, {
       onSuccess: () => {
         toast.success("Successfully deleted the question set paper.");
@@ -129,22 +142,19 @@ export default function QuestionsBank() {
         toast.error(error.response?.data?.detail || "Failed to delete question set paper.");
       },
     });
-
   };
 
   return (
     <AppPageShell width="wide" className="animate-in fade-in duration-500 bg-background min-h-screen">
       <AppPageHeader title="Questions Bank" />
 
-      <div className="space-y-3">
+      <div className="space-y-2">
         {/* Top Control Bar */}
         <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2 rounded-xl border border-border">
-          <div className="flex flex-col sm:flex-row gap-2 flex-1 p-2">
+          <div className="flex flex-col sm:flex-row gap-2 flex-1">
             {/* Job Selector */}
             <div className="flex flex-col gap-1.5 flex-1">
-              <Label>
-                Select Job Role
-              </Label>
+              <Label>Select Job Role</Label>
               <SearchableSelect
                 value={activeJobId}
                 onValueChange={(val) => setSelectedJobId(val)}
@@ -163,9 +173,7 @@ export default function QuestionsBank() {
 
             {/* Position Level Selector */}
             <div className="flex flex-col gap-1.5 flex-1">
-              <Label>
-                Select Experience / Position Level
-              </Label >
+              <Label>Select Experience / Position Level</Label>
               <SearchableSelect
                 value={activePositionId}
                 onValueChange={(val) => setSelectedPositionId(val)}
@@ -184,16 +192,18 @@ export default function QuestionsBank() {
           </div>
 
           {/* Action Upload Widget */}
-          <div className="flex items-end shrink-0 md:self-end p-2">
-            <Button
-              onClick={handleUploadClick}
-              disabled={!activeJobId || !activePositionId || isUploading}
-              variant="outline"
-              className="rounded-xl border border-muted-foreground/10 px-5 font-semibold text-center h-11"
-            >
-              <Upload className="h-4 w-4 mr-2" />
-              {isUploading ? "Uploading..." : "Upload new set"}
-            </Button>
+          <div className="flex items-end shrink-0 md:self-end">
+            <PermissionGuard permissions={PERMISSIONS.QUESTIONS_MANAGE} hideWhenDenied>
+              <Button
+                onClick={handleUploadClick}
+                disabled={!activeJobId || !activePositionId || isUploading}
+                variant="outline"
+                className="rounded-xl border border-muted-foreground/10 px-5 font-semibold text-center h-11"
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                {isUploading ? "Uploading..." : "Upload new set"}
+              </Button>
+            </PermissionGuard>
             <input
               type="file"
               ref={fileInputRef}
@@ -205,7 +215,7 @@ export default function QuestionsBank() {
           </div>
         </div>
 
-        {/* Question Sets Layout */}
+        {/* Loading papers state */}
         {loadingPapers ? (
           <LoadingSpinner message="Loading question set papers..." />
         ) : questionPapers.length === 0 ? (
@@ -218,16 +228,31 @@ export default function QuestionsBank() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {questionPapers.map((paper) => (
-              <QuestionPaperCard
-                key={paper.id}
-                paper={paper}
-                onDelete={handleDeletePaper}
-                isDeleting={deleteMutation.isPending}
-              />
-            ))}
+          <div className="space-y-2 animate-in fade-in duration-300">
+
+            {/* Questions Bank Accordion */}
+            <QuestionsBankAccordion
+              questionPapers={questionPapers}
+              refetchPapers={refetchPapers}
+            />
+            {/* Extracted Skills Section */}
+
+            {allSkills.length > 0 && (
+              <div className="rounded-2xl border border-border/50 bg-card/10 p-2 space-y-1">
+                <h3 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground px-1">
+                  Extracted Skills
+                </h3>
+                <div className="flex flex-wrap gap-1.5 px-1 pb-0.5">
+                  {allSkills.map((skill, sIdx) => (
+                    <Badge key={sIdx} variant="outline" className="bg-background/50 text-xs">
+                      {skill}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
+
         )}
       </div>
     </AppPageShell>

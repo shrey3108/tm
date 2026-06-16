@@ -8,7 +8,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import {
   Dialog,
   DialogContent,
@@ -17,43 +17,43 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useFormModal } from "@/hooks";
-import { questionSchema, type QuestionFormValues } from "@/schemas/admin";
+import { projectTaskSchema, type ProjectTaskFormValues } from "@/schemas/admin";
 
-interface QuestionModalProps {
+interface ProjectTaskModalProps {
   show: boolean;
   handleClose: () => void;
-  onSave: (question: string) => Promise<void>;
+  onSave: (projectTask: string) => Promise<void>;
   initialValue?: string;
   isSaving: boolean;
 }
 
-const DEFAULT_VALUES: QuestionFormValues = {
-  question: "",
+const DEFAULT_VALUES: ProjectTaskFormValues = {
+  project_task: "",
 };
 
-export default function QuestionModal({
+export default function ProjectTaskModal({
   show,
   handleClose,
   onSave,
   initialValue = "",
   isSaving,
-}: QuestionModalProps) {
+}: ProjectTaskModalProps) {
   const isEditMode = !!initialValue;
 
   const mapItemToValues = useCallback(
-    (val: string): QuestionFormValues => ({
-      question: val,
+    (val: string): ProjectTaskFormValues => ({
+      project_task: val,
     }),
     []
   );
 
-  const onSubmit = async (data: QuestionFormValues) => {
-    await onSave(data.question.trim());
-    handleClose()
+  const onSubmit = async (data: ProjectTaskFormValues) => {
+    await onSave(data.project_task.trim());
+    handleClose();
   };
 
-  const formModal = useFormModal<QuestionFormValues, string>({
-    schema: questionSchema,
+  const formModal = useFormModal<ProjectTaskFormValues, string>({
+    schema: projectTaskSchema,
     defaultValues: DEFAULT_VALUES,
     item: initialValue || null,
     show,
@@ -68,7 +68,7 @@ export default function QuestionModal({
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {isEditMode ? "Edit Question" : "Add New Question"}
+            {isEditMode ? "Edit Project Task" : "Add Project Task"}
           </DialogTitle>
         </DialogHeader>
 
@@ -76,17 +76,21 @@ export default function QuestionModal({
           <form onSubmit={handleFormSubmit} className="space-y-4">
             <FormField
               control={control}
-              name="question"
+              name="project_task"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Question Text</FormLabel>
+                  <FormLabel>Project Task Description</FormLabel>
                   <FormControl>
-                    <Input
-                      placeholder="Enter the question text ..."
-                      // rows={4}
+                    <Textarea
+                      placeholder="Enter the project task description (minimum 25 characters) ..."
                       disabled={isSaving}
+                      rows={6}
                       autoFocus
                       {...field}
+                      onFocus={(e) => {
+                        const len = e.target.value.length;
+                        e.target.setSelectionRange(len, len, "forward");
+                      }}
                     />
                   </FormControl>
                   <FormMessage className="text-xs font-semibold text-destructive animate-in fade-in slide-in-from-top-1 duration-200" />
@@ -108,7 +112,7 @@ export default function QuestionModal({
                 disabled={isSaving}
                 isLoading={isSaving}
               >
-                {isEditMode ? "Update Question" : "Add Question"}
+                {isEditMode ? "Update Task" : "Add Task"}
               </Button>
             </DialogFooter>
           </form>

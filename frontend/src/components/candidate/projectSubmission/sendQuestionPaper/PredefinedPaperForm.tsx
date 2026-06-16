@@ -95,14 +95,18 @@ export function PredefinedPaperForm({
               ))}
             </ol>
           </div>
-          {selectedPredefinedPaper.project_task && (
+          {selectedPredefinedPaper.project_task && selectedPredefinedPaper.project_task.length > 0 && (
             <div className="pt-1.5 border-t border-border/30">
               <h4 className="text-base font-bold text-foreground mb-1">
-                Project Task Preview
+                Project Tasks Preview
               </h4>
-              <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">
-                {selectedPredefinedPaper.project_task}
-              </p>
+              <ol className="list-decimal pl-5 space-y-1">
+                {selectedPredefinedPaper.project_task.map((task, idx) => (
+                  <li key={idx} className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">
+                    {task}
+                  </li>
+                ))}
+              </ol>
             </div>
           )}
         </div>

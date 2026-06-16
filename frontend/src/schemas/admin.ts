@@ -405,3 +405,14 @@ export const questionSchema = z.object({
 /** Type inferred from questionSchema. */
 export type QuestionFormValues = z.infer<typeof questionSchema>;
 
+/**
+ * Schema for creating or editing a project task inside a paper.
+ */
+export const projectTaskSchema = z.object({
+  project_task: z.string().trim().min(25, "Project task must be at least 25 characters long."),
+});
+
+/** Type inferred from projectTaskSchema. */
+export type ProjectTaskFormValues = z.infer<typeof projectTaskSchema>;
+
+

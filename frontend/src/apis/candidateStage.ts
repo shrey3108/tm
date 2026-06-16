@@ -119,4 +119,23 @@ export const candidateStageService = {
     }>(`/candidate-stages/${id}/evaluate-github`, { github_url: githubUrl });
     return response.data;
   },
+
+  /**
+   * Retry a failed evaluation for a candidate stage without re-entering inputs.
+   * @param id - UUID of the candidate stage.
+   */
+  retryEvaluation: async (
+    id: string
+  ): Promise<{
+    message: string;
+    candidate_stage_id: string;
+    status: string;
+  }> => {
+    const response = await apiClient.post<{
+      message: string;
+      candidate_stage_id: string;
+      status: string;
+    }>(`/candidate-stages/${id}/retry`);
+    return response.data;
+  },
 };

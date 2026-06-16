@@ -163,7 +163,7 @@ export function CustomPaperForm({
         <label className="text-base font-bold text-muted-foreground block mb-2">
           Select Project Task Description
         </label>
-        {predefinedPapers.filter((p) => !!p.project_task).length === 0 ? (
+        {predefinedPapers.filter((p) => p.project_task && p.project_task.length > 0).length === 0 ? (
           <div className="p-4 rounded-xl border border-dashed border-muted-foreground/25 bg-muted/5 text-center">
             <p className="text-sm text-muted-foreground">
               No existing project tasks available to select from.
@@ -173,37 +173,40 @@ export function CustomPaperForm({
           <div className=" overflow-y-auto pr-1 border border-muted-foreground/10 rounded-xl p-1.5 bg-muted/5 scrollbar-thin">
             <RadioGroup value={customProjectTask} onValueChange={onCustomProjectTaskChange} >
               {predefinedPapers.map((paper) => {
-                if (!paper.project_task) return null;
-                const isSelected = customProjectTask === paper.project_task;
-                return (
-                  <div
-                    key={paper.id}
-                    className={cn(
-                      "flex items-start gap-1.5 p-1.5 rounded-xl border transition-all duration-200 cursor-pointer",
-                      isSelected
-                        ? "bg-primary/5 border-primary shadow-sm"
-                        : "bg-card border-border/40 hover:border-muted-foreground/20"
-                    )}
-                    onClick={() => onCustomProjectTaskChange(paper.project_task)}
-                  >
-                    <RadioGroupItem
-                      value={paper.project_task}
-                      id={`task-${paper.id}`}
-                      className="mt-0.5"
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                    <label
-                      htmlFor={`task-${paper.id}`}
-                      className="flex-1 cursor-pointer select-none space-y-1"
-                      onClick={(e) => e.stopPropagation()}
+                if (!paper.project_task || paper.project_task.length === 0) return null;
+                return paper.project_task.map((task, taskIdx) => {
+                  const isSelected = customProjectTask === task;
+                  const optionId = `task-${paper.id}-${taskIdx}`;
+                  return (
+                    <div
+                      key={optionId}
+                      className={cn(
+                        "flex items-start gap-1.5 p-1.5 rounded-xl border transition-all duration-200 cursor-pointer",
+                        isSelected
+                          ? "bg-primary/5 border-primary shadow-sm"
+                          : "bg-card border-border/40 hover:border-muted-foreground/20"
+                      )}
+                      onClick={() => onCustomProjectTaskChange(task)}
                     >
-                      <span className="text-sm font-bold text-foreground block">{paper.name} Task</span>
-                      <p className="text-xs text-foreground/80 leading-relaxed whitespace-pre-wrap">
-                        {paper.project_task}
-                      </p>
-                    </label>
-                  </div>
-                );
+                      <RadioGroupItem
+                        value={task}
+                        id={optionId}
+                        className="mt-0.5"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                      <label
+                        htmlFor={optionId}
+                        className="flex-1 cursor-pointer select-none space-y-1"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <span className="text-sm font-bold text-foreground block">{paper.name} Task #{taskIdx + 1}</span>
+                        <p className="text-xs text-foreground/80 leading-relaxed whitespace-pre-wrap">
+                          {task}
+                        </p>
+                      </label>
+                    </div>
+                  );
+                });
               })}
             </RadioGroup>
           </div>
