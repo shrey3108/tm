@@ -111,6 +111,7 @@ Output Format Example (JSON ONLY):
 }}
 """
 
+        client = None
         try:
             base_url = settings.OLLAMA_URL
             if not base_url.endswith("/"):
@@ -152,6 +153,9 @@ Output Format Example (JSON ONLY):
         except Exception as e:
             logger.error("LLM candidate task skill extraction failed: %s", e)
             return []
+        finally:
+            if client:
+                await client.close()
 
     async def extract_paper_details_from_text(self, raw_text: str) -> dict:
         """Call LLM directly using openai client to extract questions, project task description, and technical skills."""
@@ -194,6 +198,7 @@ Output Format Example (JSON ONLY):
 }}
 """
 
+        client = None
         try:
             base_url = settings.OLLAMA_URL
             if not base_url.endswith("/"):
@@ -254,6 +259,9 @@ Output Format Example (JSON ONLY):
                 "project_task": [],
                 "skills": []
             }
+        finally:
+            if client:
+                await client.close()
 
     async def get_candidate_task_skills(self, db: AsyncSession, candidate_id: uuid.UUID) -> dict:
         # 1. Verify Candidate exists

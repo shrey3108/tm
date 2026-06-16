@@ -170,7 +170,15 @@ async def extract_paper_skills_from_text_logic(paper_id_str: str):
 
         raw_text = "\n\n".join(text_parts)
         if not raw_text.strip():
-            _log.error(f"Paper has no text content to extract skills from: {paper_id}")
+            _log.warning(f"Paper has no text content to extract skills from: {paper_id}. Clearing existing skills.")
+            paper.task_skills = []
+            session.add(paper)
+            await session.commit()
+            try:
+                from app.v1.core.cache import cache
+                await cache.clear(pattern="cache:GET:/api/v1/task-papers*")
+            except Exception:
+                pass
             return
 
         _log.info(f"Extracting skills from manual paper text using LLM: {paper_id}")
