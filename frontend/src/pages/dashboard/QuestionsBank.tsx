@@ -151,7 +151,7 @@ export default function QuestionsBank() {
       <div className="space-y-2">
         {/* Top Control Bar */}
         <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2 rounded-xl border border-border">
-          <div className="flex flex-col sm:flex-row gap-2 flex-1">
+          <div className="flex flex-col sm:flex-row gap-2 flex-1 p-2">
             {/* Job Selector */}
             <div className="flex flex-col gap-1.5 flex-1">
               <Label>Select Job Role</Label>
@@ -192,7 +192,7 @@ export default function QuestionsBank() {
           </div>
 
           {/* Action Upload Widget */}
-          <div className="flex items-end shrink-0 md:self-end">
+          <div className="flex items-end shrink-0 md:self-end p-2">
             <PermissionGuard permissions={PERMISSIONS.QUESTIONS_MANAGE} hideWhenDenied>
               <Button
                 onClick={handleUploadClick}
