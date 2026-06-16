@@ -107,9 +107,9 @@ async def create_manual_question_set_paper(
     """Create a new manual Question Set Paper without a file upload."""
     paper_id = UUIDHelper.generate_uuid7()
     
-    # Auto-generate a name if not provided
+    # Auto-generate a name
     from datetime import datetime
-    paper_name = payload.name or f"Custom Paper - {datetime.utcnow().strftime('%Y-%m-%d %H:%M')}"
+    paper_name = f"Custom Paper - {datetime.utcnow().strftime('%Y-%m-%d %H:%M')}"
 
     db_paper = QuestionSetPaper(
         id=paper_id,
