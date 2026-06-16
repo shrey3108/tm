@@ -8,7 +8,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import {
   Dialog,
   DialogContent,
@@ -81,12 +81,16 @@ export default function QuestionModal({
                 <FormItem>
                   <FormLabel>Question Text</FormLabel>
                   <FormControl>
-                    <Input
+                    <Textarea
                       placeholder="Enter the question text ..."
-                      // rows={4}
+                      rows={4}
                       disabled={isSaving}
                       autoFocus
                       {...field}
+                      onFocus={(e) => {
+                        const len = e.target.value.length;
+                        e.target.setSelectionRange(len, len, "forward");
+                      }}
                     />
                   </FormControl>
                   <FormMessage className="text-xs font-semibold text-destructive animate-in fade-in slide-in-from-top-1 duration-200" />

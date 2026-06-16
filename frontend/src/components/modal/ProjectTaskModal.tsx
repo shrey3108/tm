@@ -91,6 +91,7 @@ export default function ProjectTaskModal({
                         const len = e.target.value.length;
                         e.target.setSelectionRange(len, len, "forward");
                       }}
+                      className="w-full"
                     />
                   </FormControl>
                   <FormMessage className="text-xs font-semibold text-destructive animate-in fade-in slide-in-from-top-1 duration-200" />

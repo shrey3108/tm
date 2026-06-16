@@ -160,6 +160,7 @@ const AdminDepartments = () => {
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
+      cell: ({ row }) => <span className="capitalize"> {row.original.name} </span>
     },
     {
       accessorKey: "description",
@@ -171,7 +172,7 @@ const AdminDepartments = () => {
           </div>
         )
       },
-      cell: ({ row }) => row.original.description || "No description provided",
+      cell: ({ row }) => <span className="capitalize"> {row.original.description || "No description provided"}</span>,
     },
     ...(hasManagePermission
       ? [

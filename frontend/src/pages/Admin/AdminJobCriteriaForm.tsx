@@ -234,7 +234,7 @@ export default function AdminJobCriteriaForm() {
                                                 placeholder="Describe what this criterion evaluates..."
                                                 className="min-h-[220px] resize-y disabled:opacity-80"
                                                 {...field}
-                                                disabled
+                                            // disabled
                                             />
                                         </FormControl>
                                         {/* <FormDescription>
