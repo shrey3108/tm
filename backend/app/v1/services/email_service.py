@@ -202,7 +202,7 @@ async def send_candidate_task_email_via_smtp(
     else:
         # Generate PDF dynamically
         try:
-            temp_file_to_delete = generate_candidate_task_pdf_file(candidate, test_paper)
+            temp_file_to_delete = generate_candidate_task_pdf_file(candidate, test_paper, job_name=job_title)
             attachment_path = temp_file_to_delete
             attachment_name = f"Test_Paper_{candidate.first_name or 'Candidate'}.pdf"
         except Exception as e:

@@ -582,7 +582,10 @@ async def download_candidate_task_file(
 
     # 6. Generate PDF dynamically containing the assigned questions + project task
     if test_paper:
-        temp_pdf_path = generate_candidate_task_pdf_file(candidate, test_paper)
+        # Fetch job name for the PDF header
+        job = await db.get(Job, test_paper.job_id)
+        job_name = job.title if job else ""
+        temp_pdf_path = generate_candidate_task_pdf_file(candidate, test_paper, job_name=job_name)
         return FileResponse(
             path=temp_pdf_path,
             filename=f"Test_Paper_{candidate.first_name or 'Candidate'}.pdf",

@@ -86,12 +86,14 @@ def create_and_store_master_pdf(paper_id: uuid.UUID, paper_name: str, questions:
 
 def generate_candidate_task_pdf_file(
     candidate: Candidate,
-    test_paper: CandidateTestPaper
+    test_paper: CandidateTestPaper,
+    job_name: str = ""
 ) -> str:
     doc = fitz.open()
     
-    # Prepare text content
-    text_content = f"Test Paper: {test_paper.name}\n"
+    # Prepare text content - show job name instead of paper type
+    display_title = job_name if job_name else test_paper.name
+    text_content = f"Test Paper: {display_title}\n"
     text_content += "-" * 50 + "\n\n"
     
     if test_paper.questions:
