@@ -20,6 +20,62 @@ import { slugify } from "@/utils/slug";
 import type { DateRange } from "react-day-picker";
 import { SendQuestionPaperDialog } from "@/components/candidate/projectSubmission/SendQuestionPaperDialog";
 import { useCandidatesTestPapers } from "@/hooks/queries/taskPapers/useTaskPaperQueries";
+import { useCandidateTimelineQuery } from "@/hooks/queries/candidates";
+import type { Job } from "@/types/job";
+
+interface CandidateStagesButtonProps {
+  candidate: CandidateAnalysis;
+  jobSlug: string | undefined;
+  job: Job | null;
+}
+
+function CandidateStagesButton({ candidate, jobSlug, job }: CandidateStagesButtonProps) {
+  const { data: timeline, isLoading } = useCandidateTimelineQuery(
+    candidate.id,
+    job?.id
+  );
+  const navigate = useNavigate();
+
+  const handleNavigate = () => {
+    const candidateFullName = slugify(`${candidate.first_name || ""} ${candidate.last_name || ""}`);
+    const currentStageName = timeline?.current_stage || candidate.current_stage?.template_name || "Resume Screening";
+    const stageSlug = slugify(currentStageName);
+
+    navigate(`/dashboard/jobs/${jobSlug}/candidates/${candidateFullName}/stages/${stageSlug}`, {
+      state: {
+        candidate: candidate,
+        jobSlug: jobSlug,
+        job
+      }
+    });
+  };
+
+  return (
+    <HoverCard>
+      <HoverCardTrigger
+        render={(props) => (
+          <Button
+            {...props}
+            variant="secondary"
+            size="sm"
+            className="h-9 w-9 p-0 rounded-xl bg-muted/50 hover:bg-muted text-foreground transition-all duration-300 border border-muted-foreground/10 flex items-center justify-center shrink-0"
+            onClick={handleNavigate}
+            disabled={!candidate.pipeline || !candidate.is_parsed || isLoading}
+          >
+            {isLoading ? (
+              <div className="h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin shrink-0" />
+            ) : (
+              <Layers className="h-4 w-4 shrink-0 text-blue-600" />
+            )}
+          </Button>
+        )}
+      />
+      <HoverCardContent side="top" className="w-auto p-2 min-w-0">
+        <div className="text-sm font-semibold text-blue-600">Stages</div>
+      </HoverCardContent>
+    </HoverCard>
+  );
+}
 
 
 /**
@@ -336,35 +392,11 @@ export default function JobCandidates() {
                               <div className="text-sm font-semibold">More Info</div>
                             </HoverCardContent>
                           </HoverCard> */}
-                          <HoverCard>
-                            <HoverCardTrigger
-                              render={(props) => (
-                                <Button
-                                  {...props}
-                                  variant="secondary"
-                                  size="sm"
-                                  className="h-9 w-9 p-0 rounded-xl bg-muted/50 hover:bg-muted text-foreground transition-all duration-300 border border-muted-foreground/10 flex items-center justify-center shrink-0 "
-                                  onClick={() => {
-                                    const candidateFullName = slugify(`${candidate.first_name} ${candidate.last_name}`);
-                                    const stageSlug = slugify(candidate.current_stage?.template_name || candidate.current_status);
-                                    navigate(`/dashboard/jobs/${jobSlug}/candidates/${candidateFullName}/stages/${stageSlug}`, {
-                                      state: {
-                                        candidate: candidate,
-                                        jobSlug: jobSlug,
-                                        job
-                                      }
-                                    })
-                                  }}
-                                  disabled={!candidate.pipeline || !candidate.is_parsed}
-                                >
-                                  <Layers className="h-4 w-4 shrink-0 text-blue-600" />
-                                </Button>
-                              )}
-                            />
-                            <HoverCardContent side="top" className="w-auto p-2 min-w-0">
-                              <div className="text-sm font-semibold text-blue-600">Stages</div>
-                            </HoverCardContent>
-                          </HoverCard>
+                          <CandidateStagesButton
+                            candidate={candidate}
+                            jobSlug={jobSlug}
+                            job={job}
+                          />
                           {/* <HoverCard>
                             <HoverCardTrigger
                               render={(props) => (
