@@ -198,11 +198,13 @@ async def assign_test_paper_to_candidate(
         if len(unique_questions) < 5:
             unique_questions = all_questions
 
-        # Select one task randomly (associated file path and skills come from that same chosen paper)
+        # Select one task randomly (associated file path comes from that same chosen paper)
         chosen_paper = random.choice(papers)
         assigned_task = chosen_paper.project_task
         assigned_file_path = chosen_paper.task_file_path
-        assigned_skills = chosen_paper.task_skills
+        
+        assigned_skills = None  # Will be extracted dynamically
+        
         assigned_name = f"Randomized Test Paper ({job.title})"
 
         if unique_questions:
@@ -228,7 +230,28 @@ async def assign_test_paper_to_candidate(
             if base_paper:
                 assigned_task = assign_data.project_task or base_paper.project_task or []
                 assigned_file_path = base_paper.task_file_path
-                assigned_skills = base_paper.task_skills
+                # assigned_skills will be extracted dynamically
+
+    # Dynamic skill extraction for Random and Custom modes to ensure exact skill matching
+    if assign_data.mode in ["random", "custom"]:
+        raw_text_parts = []
+        if assigned_questions:
+            raw_text_parts.extend(assigned_questions)
+        if assigned_task:
+            if isinstance(assigned_task, list):
+                raw_text_parts.extend(assigned_task)
+            else:
+                raw_text_parts.append(assigned_task)
+        
+        if raw_text_parts:
+            raw_text = "\n\n".join(raw_text_parts)
+            try:
+                extracted = await candidate_task_service._extract_skills_from_text(raw_text)
+                if extracted:
+                    assigned_skills = extracted
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).error("Dynamic skill extraction failed during assignment: %s", e)
 
     # Persist the assigned test paper
     new_paper = CandidateTestPaper(
