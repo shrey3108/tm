@@ -322,7 +322,7 @@ async def send_candidate_task_email_via_smtp(
           <div class="content">
             <div class="greeting">Hello {candidate.first_name or "Candidate"},</div>
             <div class="message">
-              We are pleased to invite you to take the next step in our interview process{job_info_str}. A test paper <strong>"{test_paper.name}"</strong> has been assigned to you.
+              We are pleased to invite you to take the next step in our interview process{job_info_str}. A test paper <strong></strong> has been assigned to you.
             </div>
             
             {details_html}
