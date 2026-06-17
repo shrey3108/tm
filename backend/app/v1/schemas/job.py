@@ -57,6 +57,7 @@ class JobCreate(JobBase):
     If stages is [] (empty list), no stages will be created.
     """
 
+    position_id: uuid.UUID = Field(..., description="Position is required to create a job")
     skill_ids: list[uuid.UUID] = []
     processing_version: int | None = Field(None, description="Pin to a specific job version for matching")
     stages: list[StageInput] | None = Field(

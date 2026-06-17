@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Text, Numeric
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Text, Numeric, Index, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
@@ -46,6 +46,18 @@ class Job(Base):
     """
 
     __tablename__ = "jobs"
+    __table_args__ = (
+        # Partial unique index: only one ACTIVE job allowed per (title, position_id).
+        # Inactive jobs with the same (title, position_id) are allowed, so a new
+        # active job can be created even if older inactive ones exist with the same combo.
+        Index(
+            "uq_jobs_title_position_active",
+            "title",
+            "position_id",
+            unique=True,
+            postgresql_where=text("is_active = true"),
+        ),
+    )
 
     # PRIMARY KEY
     id: Mapped[uuid.UUID] = mapped_column(
@@ -57,7 +69,6 @@ class Job(Base):
     # JOB FIELDS
     title: Mapped[str] = mapped_column(
         Text,
-        unique=True,
         nullable=False,
     )
 
@@ -149,10 +160,10 @@ class Job(Base):
         nullable=True,
     )
 
-    position_id: Mapped[uuid.UUID | None] = mapped_column(
+    position_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("job_positions.id", ondelete="SET NULL"),
-        nullable=True,
+        ForeignKey("job_positions.id", ondelete="RESTRICT"),
+        nullable=False,
     )
 
     priority_start_date: Mapped[datetime | None] = mapped_column(

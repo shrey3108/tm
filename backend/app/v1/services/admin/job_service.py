@@ -206,13 +206,24 @@ class JobAdminService:
             for skill_id in job_in.skill_ids:
                 await skill_service.get_skill_by_id(db, skill_id)
 
-        # Validate title uniqueness (case-insensitive)
+        # Validate (title + position_id) uniqueness against ACTIVE jobs only.
+        # Inactive duplicates are allowed because the user may want to re-create
+        # the same (title, position) combo while older inactive copies still exist.
         from sqlalchemy import func, select
-        existing_job_stmt = select(Job.id).where(func.lower(Job.title) == func.lower(job_in.title))
+        if not job_in.position_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="position_id is required to create a job.",
+            )
+        existing_job_stmt = select(Job.id).where(
+            func.lower(Job.title) == func.lower(job_in.title),
+            Job.position_id == job_in.position_id,
+            Job.is_active.is_(True),
+        )
         if await db.scalar(existing_job_stmt):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Job with title '{job_in.title}' already exists.",
+                detail=f"An active job with title '{job_in.title}' already exists for this position.",
             )
 
         # Handle priority dates calculation
@@ -333,17 +344,33 @@ class JobAdminService:
                     continue
             job_update.skill_ids = valid_skill_ids
 
-        # Validate title uniqueness (case-insensitive) if title is being changed
-        if job_update.title:
+        # Validate (title + position_id) uniqueness against ACTIVE jobs only.
+        # We check whenever title, position_id, or is_active is being changed —
+        # because activating/reactivating a job can also create a duplicate active pair.
+        if (
+            job_update.title is not None
+            or job_update.position_id is not None
+            or job_update.is_active is not None
+        ):
             from sqlalchemy import func, select
-            # Get current job to see if title is actually changing
             current_job = await self.get_job_by_id(db, job_id)
-            if job_update.title.lower() != current_job.title.lower():
-                existing_job_stmt = select(Job.id).where(func.lower(Job.title) == func.lower(job_update.title))
+            new_title = job_update.title if job_update.title else current_job.title
+            new_position_id = job_update.position_id if job_update.position_id else current_job.position_id
+            new_is_active = (
+                job_update.is_active if job_update.is_active is not None else current_job.is_active
+            )
+            # Only enforce uniqueness when the resulting row would be ACTIVE.
+            if new_is_active:
+                existing_job_stmt = select(Job.id).where(
+                    func.lower(Job.title) == func.lower(new_title),
+                    Job.position_id == new_position_id,
+                    Job.is_active.is_(True),
+                    Job.id != job_id,
+                )
                 if await db.scalar(existing_job_stmt):
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
-                        detail=f"Job with title '{job_update.title}' already exists.",
+                        detail=f"An active job with title '{new_title}' already exists for this position.",
                     )
 
         # Handle priority dates calculation on update
