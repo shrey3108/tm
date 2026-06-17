@@ -42,7 +42,7 @@ interface EmptyStateProps {
 export function EmptyState({ error, isFailed, onRetry, isRetrying }: EmptyStateProps) {
   if (isFailed) {
     return (
-      <div className="flex flex-col items-center justify-center py-6 px-3 gap-3 text-center max-w-md mx-auto my-8 rounded-2xl border border-destructive/20 bg-destructive/5 backdrop-blur-md shadow-xl animate-in fade-in slide-in-from-bottom-4 duration-300">
+      <div className="flex flex-col items-center justify-center py-6 px-3 gap-3 text-center max-w-md mx-auto my-8 rounded-2xl border border-destructive/20 bg-destructive/5 backdrop-blur-md animate-in fade-in slide-in-from-bottom-4 duration-300">
         <div className="relative flex items-center justify-center h-20 w-20 rounded-full bg-destructive/10 text-destructive">
           <AlertCircle className="h-10 w-10" />
         </div>
@@ -58,7 +58,7 @@ export function EmptyState({ error, isFailed, onRetry, isRetrying }: EmptyStateP
           <Button
             onClick={onRetry}
             disabled={isRetrying}
-            className="relative font-bold px-2 py-2.5 rounded-xl bg-destructive hover:bg-destructive/90 text-destructive-foreground transition-all duration-200 shadow-md hover:shadow-destructive/20 active:scale-95 flex items-center gap-2 group"
+            className="relative font-bold px-2 py-2.5 rounded-xl bg-destructive hover:bg-destructive/90 transition-all duration-200 shadow-md hover:shadow-destructive/20 active:scale-95 flex items-center gap-2 group"
           >
             <RefreshCw className={`h-4 w-4 transition-transform duration-500 ${isRetrying ? "animate-spin" : "group-hover:rotate-180"}`} />
             {isRetrying ? "Retrying Evaluation..." : "Retry Evaluation"}

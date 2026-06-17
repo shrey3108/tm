@@ -282,6 +282,11 @@ export function useCandidatesStages() {
     if (!instanceId) return;
     try {
       await retryMutation.mutateAsync({ stageId: instanceId });
+      // Reset the cache to processing state to avoid using the old failed evaluation status
+      queryClient.setQueryData(
+        [QUERY_KEYS.CANDIDATES.EVALUATION, instanceId],
+        { status: "processing" }
+      );
       toast.success("Retry evaluation triggered successfully");
       setIsPolling(true);
     } catch (err) {
@@ -424,6 +429,13 @@ export function useCandidatesStages() {
     fetchHistory: () => {
       refetchHistory();
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CANDIDATES.DETAILS, job?.id, candidate?.id] });
+      if (instanceId) {
+        // Clear/set evaluation cache to processing state to avoid using old failed evaluation data
+        queryClient.setQueryData(
+          [QUERY_KEYS.CANDIDATES.EVALUATION, instanceId],
+          { status: "processing" }
+        );
+      }
     },
     fetchHrDecisionHistory: async () => {
       await refetchHrDecisionHistory();
