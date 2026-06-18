@@ -165,6 +165,44 @@ class JobAdminService:
         titles = await job_repository.get_titles(db, query=query)
         return JobTitlesListRead(data=[JobTitleRead(**t) for t in titles])
 
+    async def get_job_titles_grouped(self, db: AsyncSession, query: str | None = None):
+        """
+        Retrieve active jobs grouped by title with their position variants.
+
+        Returns a JobTitlesGroupedListRead where each entry has a unique title
+        and a list of variants (job_id, position_id, position_name, is_active).
+        """
+        from app.v1.schemas.job import (
+            JobTitleVariantRead,
+            JobTitleGroupRead,
+            JobTitlesGroupedListRead,
+        )
+        from collections import OrderedDict
+
+        rows = await job_repository.get_titles_grouped(db, query=query)
+
+        # Group by title (preserving order)
+        grouped: dict[str, list[JobTitleVariantRead]] = OrderedDict()
+        for row in rows:
+            title = row["title"]
+            if title not in grouped:
+                grouped[title] = []
+            grouped[title].append(
+                JobTitleVariantRead(
+                    job_id=row["job_id"],
+                    position_id=row["position_id"],
+                    position_name=row["position_name"],
+                    is_active=row["is_active"],
+                )
+            )
+
+        data = [
+            JobTitleGroupRead(title=title, variants=variants)
+            for title, variants in grouped.items()
+        ]
+
+        return JobTitlesGroupedListRead(data=data)
+
     async def get_job_by_id(self, db: AsyncSession, job_id: uuid.UUID) -> JobRead:
         """Get a job by ID."""
         job = await job_repository.get(db=db, id=job_id)

@@ -227,3 +227,35 @@ class JobTaskRead(BaseModel):
     task_skills: list[str] | None = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+# --- Grouped Job Titles (title → variants) ---
+
+class JobTitleVariantRead(BaseModel):
+    """
+    A single variant under a job title group, identified by its unique (job_id, position_id).
+    """
+
+    job_id: uuid.UUID
+    position_id: uuid.UUID
+    position_name: str
+    is_active: bool
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class JobTitleGroupRead(BaseModel):
+    """
+    A job title with all its position variants grouped together.
+    """
+
+    title: str
+    variants: list[JobTitleVariantRead]
+
+
+class JobTitlesGroupedListRead(BaseModel):
+    """
+    Schema for a list of grouped job titles.
+    """
+
+    data: list[JobTitleGroupRead]

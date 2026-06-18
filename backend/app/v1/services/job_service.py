@@ -44,6 +44,14 @@ class JobService:
 
         return await job_admin_service.get_job_titles(db=db, query=query)
 
+    async def get_job_titles_grouped(self, db: AsyncSession, query: str | None = None):
+        """
+        Retrieve active jobs grouped by title with their position variants.
+        """
+        from app.v1.services.admin.job_service import job_admin_service
+
+        return await job_admin_service.get_job_titles_grouped(db=db, query=query)
+
     async def search_jobs(
         self, db: AsyncSession, query: str, skip: int = 0, limit: int = 100
     ):

@@ -422,5 +422,47 @@ class JobRepository:
         result = await db.execute(stmt)
         return [{"id": row.id, "title": row.title} for row in result.all()]
 
+    async def get_titles_grouped(self, db: AsyncSession, query: str | None = None) -> list[dict[str, Any]]:
+        """
+        Retrieve active jobs grouped by title with their position variants.
+
+        Returns a flat list of rows, each containing:
+            job_id, title, position_id, position_name, is_active
+
+        The caller (service layer) is responsible for grouping by title.
+        """
+        from app.v1.db.models.job_positions import JobPosition
+
+        stmt = (
+            select(
+                Job.id.label("job_id"),
+                Job.title,
+                Job.position_id,
+                JobPosition.name.label("position_name"),
+                Job.is_active,
+            )
+            .join(JobPosition, Job.position_id == JobPosition.id)
+            .where(Job.is_active.is_(True))
+        )
+
+        if query:
+            stmt = stmt.where(Job.title.ilike(f"%{query}%"))
+
+        stmt = stmt.order_by(Job.title, JobPosition.name)
+
+        result = await db.execute(stmt)
+        rows = result.all()
+
+        return [
+            {
+                "job_id": row.job_id,
+                "title": row.title,
+                "position_id": row.position_id,
+                "position_name": row.position_name,
+                "is_active": row.is_active,
+            }
+            for row in rows
+        ]
+
 
 job_repository = JobRepository()
