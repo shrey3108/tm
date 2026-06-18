@@ -1,22 +1,16 @@
-import { useMemo, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import {
-  Combobox,
-  ComboboxContent,
-  ComboboxEmpty,
-  ComboboxInput,
-  ComboboxItem,
-  ComboboxList,
-} from "@/components/ui/combobox";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { ChevronDown } from "lucide-react";
 import { FILTER_DISPLAY_LIMIT } from "@/constants";
 import { cn } from "@/lib/utils";
+import { ScrollArea } from "@/components/ui/scroll-area"
 
 interface CollapsibleFilterSectionProps {
   title: ReactNode;
@@ -80,18 +74,21 @@ export function CheckboxListFilter({
   onChange,
   idPrefix,
   emptyText = "No options available",
-  searchPlaceholder = "Search more...",
-  comboboxProps,
   showSearchMore = true,
 }: CheckboxListFilterProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
   const displayedOptions = useMemo(() => {
+    if (isExpanded) {
+      return options;
+    }
     const selected = options.filter((opt) => selectedValues.includes(opt.id));
     const unselected = options.filter((opt) => !selectedValues.includes(opt.id));
     const combined = [...selected];
     const remainingLimit = Math.max(0, FILTER_DISPLAY_LIMIT - combined.length);
     combined.push(...unselected.slice(0, remainingLimit));
     return combined;
-  }, [options, selectedValues]);
+  }, [options, selectedValues, isExpanded]);
 
   const handleToggle = (id: string) => {
     if (selectedValues.includes(id)) {
@@ -101,58 +98,61 @@ export function CheckboxListFilter({
     }
   };
 
+  const hiddenCount = options.length - displayedOptions.length;
+
   return (
     <>
-      <div className="space-y-1">
-        {displayedOptions.length === 0 ? (
-          <div className="text-xs text-muted-foreground py-2 text-center">
-            {emptyText}
-          </div>
-        ) : (
-          displayedOptions.map((opt) => (
-            <div
-              key={opt.id}
-              className="flex items-center gap-2 py-1 px-1 hover:bg-muted/15 rounded-md transition-colors"
-            >
-              <Checkbox
-                id={`${idPrefix}-${opt.id}`}
-                checked={selectedValues.includes(opt.id)}
-                onCheckedChange={() => handleToggle(opt.id)}
-              />
-              <Label
-                htmlFor={`${idPrefix}-${opt.id}`}
-                className="text-xs cursor-pointer flex-1 select-none text-wrap"
-              >
-                {opt.label}
-              </Label>
+      <ScrollArea className="max-h-[240px] w-full pr-3 **:data-[slot=scroll-area-viewport]:max-h-[240px]">
+        <div className="space-y-1">
+          {displayedOptions.length === 0 ? (
+            <div className="text-xs text-muted-foreground py-2 text-center">
+              {emptyText}
             </div>
-          ))
-        )}
-      </div>
-
-      {showSearchMore && options.length > displayedOptions.length && (
-        <Combobox
-          multiple
-          value={selectedValues}
-          onValueChange={onChange}
-          {...comboboxProps}
-        >
-          <ComboboxInput
-            placeholder={searchPlaceholder}
-            className="w-full mt-2"
-            showClear
-          />
-          <ComboboxContent>
-            <ComboboxList>
-              <ComboboxEmpty>{emptyText}</ComboboxEmpty>
-              {options.map((opt) => (
-                <ComboboxItem key={opt.id} value={opt.id}>
+          ) : (
+            displayedOptions.map((opt) => (
+              <div
+                key={opt.id}
+                className="flex items-center gap-2 py-1 px-1 hover:bg-muted/15 rounded-md transition-colors"
+              >
+                <Checkbox
+                  id={`${idPrefix}-${opt.id}`}
+                  checked={selectedValues.includes(opt.id)}
+                  onCheckedChange={() => handleToggle(opt.id)}
+                />
+                <Label
+                  htmlFor={`${idPrefix}-${opt.id}`}
+                  className="text-xs cursor-pointer flex-1 select-none text-wrap"
+                >
                   {opt.label}
-                </ComboboxItem>
-              ))}
-            </ComboboxList>
-          </ComboboxContent>
-        </Combobox>
+                </Label>
+              </div>
+            ))
+          )}
+        </div>
+      </ScrollArea>
+
+      {showSearchMore && hiddenCount > 0 && !isExpanded && (
+        <div className="pt-2">
+          <Button
+            variant="ghost"
+            className="w-full text-xs text-muted-foreground hover:text-foreground h-8"
+            onClick={() => setIsExpanded(true)}
+          >
+            Show {hiddenCount} More
+          </Button>
+        </div>
+      )}
+
+      {showSearchMore && isExpanded && options.length > FILTER_DISPLAY_LIMIT && (
+        <div className="pt-2">
+          <Button
+            variant="ghost"
+            className="w-full text-xs text-muted-foreground hover:text-foreground h-8"
+            onClick={() => setIsExpanded(false)}
+          >
+            Show Less
+          </Button>
+        </div>
       )}
     </>
   );

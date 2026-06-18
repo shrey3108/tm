@@ -16,7 +16,7 @@ export const useGetAllCacheKeys = ({ pattern, enableQuery }: { pattern?: string,
         staleTime: QUERY_CONFIG.CLEAR_CACHE.staleTime,
         select: ((data) => {
             return {
-                data: data?.data?.keys?.filter((key) => !key.includes("_kombu") && !key.includes("_celery") && !key.includes("unacked") && !key.includes("celery") && !key.includes("kombu")) || [], // remove celery and kombu keys
+                data: data?.data?.keys?.filter((key) => !key.includes("_kombu") && !key.includes("_celery") && !key.includes("unacked") && !key.includes("celery") && !key.includes("kombu") && !key.includes("LIMITS:LIMITER")) || [], // remove celery, kombu, and rate limiter keys
                 total: data.data.total_count ?? 0
             }
         })

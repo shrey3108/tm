@@ -20,7 +20,7 @@ import { slugify } from "@/utils/slug";
 import type { DateRange } from "react-day-picker";
 import { SendQuestionPaperDialog } from "@/components/candidate/projectSubmission/SendQuestionPaperDialog";
 import { useCandidatesTestPapers } from "@/hooks/queries/taskPapers/useTaskPaperQueries";
-import { useCandidateTimelineQuery } from "@/hooks/queries/candidates";
+// import { useCandidateTimelineQuery } from "@/hooks/queries/candidates";
 import type { Job } from "@/types/job";
 
 interface CandidateStagesButtonProps {
@@ -30,15 +30,16 @@ interface CandidateStagesButtonProps {
 }
 
 function CandidateStagesButton({ candidate, jobSlug, job }: CandidateStagesButtonProps) {
-  const { data: timeline, isLoading } = useCandidateTimelineQuery(
-    candidate.id,
-    job?.id
-  );
+  // const { data: timeline, isLoading } = useCandidateTimelineQuery(
+  //   candidate.id,
+  //   job?.id
+  // );
   const navigate = useNavigate();
 
   const handleNavigate = () => {
     const candidateFullName = slugify(`${candidate.first_name || ""} ${candidate.last_name || ""}`);
-    const currentStageName = timeline?.current_stage || candidate.current_stage?.template_name || "Resume Screening";
+    // const currentStageName = timeline?.current_stage || candidate.current_stage?.template_name || "Resume Screening";
+    const currentStageName = candidate.current_stage?.template_name || "Resume Screening";
     const stageSlug = slugify(currentStageName);
 
     navigate(`/dashboard/jobs/${jobSlug}/candidates/${candidateFullName}/stages/${stageSlug}`, {
@@ -60,13 +61,14 @@ function CandidateStagesButton({ candidate, jobSlug, job }: CandidateStagesButto
             size="sm"
             className="h-9 w-9 p-0 rounded-xl bg-muted/50 hover:bg-muted text-foreground transition-all duration-300 border border-muted-foreground/10 flex items-center justify-center shrink-0"
             onClick={handleNavigate}
-            disabled={!candidate.pipeline || !candidate.is_parsed || isLoading}
+            // disabled={!candidate.pipeline || !candidate.is_parsed || isLoading}
+            disabled={!candidate.pipeline || !candidate.is_parsed}
           >
-            {isLoading ? (
+            {/* {isLoading ? (
               <div className="h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin shrink-0" />
-            ) : (
-              <Layers className="h-4 w-4 shrink-0 text-blue-600" />
-            )}
+            ) : ( */}
+            <Layers className="h-4 w-4 shrink-0 text-blue-600" />
+            {/* )} */}
           </Button>
         )}
       />

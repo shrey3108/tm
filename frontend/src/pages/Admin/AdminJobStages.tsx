@@ -154,6 +154,7 @@ const AdminJobStages = () => {
             checked={row.original.is_default ?? false}
             onCheckedChange={(isChecked) => handleDefaultToggle(row.original, isChecked)}
             size="sm"
+            disabled={row.original.name === "Resume Screening"}
           />
         </div>
       ),
@@ -196,6 +197,7 @@ const AdminJobStages = () => {
                   size="icon"
                   onClick={() => handleEdit(row.original)}
                   className="h-9 w-9 rounded-xl hover:bg-primary/10 hover:text-primary transition-colors flex items-center justify-center shrink-0"
+                  disabled={row.original.name === "Resume Screening"}
                 >
                   <Edit2 className="h-4 w-4 shrink-0" />
                   <span className="sr-only">Edit</span>
@@ -216,6 +218,7 @@ const AdminJobStages = () => {
                   size="icon"
                   onClick={() => handleDeleteClick(row.original)}
                   className="h-9 w-9 rounded-xl hover:bg-destructive/10 hover:text-destructive transition-colors flex items-center justify-center shrink-0"
+                  disabled={row.original.name === "Resume Screening"}
                 >
                   <Trash2 className="h-4 w-4 shrink-0" />
                   <span className="sr-only">Delete</span>

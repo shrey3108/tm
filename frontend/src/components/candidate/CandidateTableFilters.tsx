@@ -7,7 +7,7 @@ import { format } from "date-fns";
 import type { DateRange } from "react-day-picker";
 import { Separator } from "@/components/ui/separator";
 // import { FILTER_DISPLAY_LIMIT } from "@/constants";
-import { useMemo, useState, useRef } from "react";
+import { useMemo, useState } from "react";
 import {
   Sheet,
   SheetClose,
@@ -17,17 +17,8 @@ import {
   SheetTrigger,
   SheetFooter
 } from "@/components/ui/sheet";
-import {
-  Combobox,
-  ComboboxContent,
-  ComboboxItem,
-  ComboboxList,
-  ComboboxChips,
-  ComboboxChip,
-  ComboboxChipsInput,
-} from "@/components/ui/combobox";
 import { CollapsibleFilterSection, CheckboxListFilter } from "@/components/shared/FilterComponents";
-import { FILTER_DISPLAY_LIMIT } from "@/constants";
+
 
 interface CandidateTableFiltersProps {
   nameFilter: string;
@@ -141,31 +132,9 @@ export const CandidateTableFilters = ({
     }));
   }, [jobOptions]);
 
-  const [jobInputValue, setJobInputValue] = useState("");
-  const jobsAnchorRef = useRef<HTMLDivElement>(null);
-
-  const filteredJobOptions = useMemo(() => {
-    if (!jobInputValue) return formattedJobOptions;
-    const query = jobInputValue.toLowerCase();
-    return formattedJobOptions.filter(job =>
-      job.label.toLowerCase().includes(query)
-    );
-  }, [formattedJobOptions, jobInputValue]);
-
   const formattedLocationOptions = useMemo(() => {
     return locationOptions.map((l) => ({ id: l, label: l }));
   }, [locationOptions]);
-
-  const [locationInputValue, setLocationInputValue] = useState("");
-  const locationsAnchorRef = useRef<HTMLDivElement>(null);
-
-  const filteredLocationOptions = useMemo(() => {
-    if (!locationInputValue) return formattedLocationOptions;
-    const query = locationInputValue.toLowerCase();
-    return formattedLocationOptions.filter(loc =>
-      loc.label.toLowerCase().includes(query)
-    );
-  }, [formattedLocationOptions, locationInputValue]);
 
   const formattedHrDecisionOptions = useMemo(() => {
     return hrDecisionOptions.map((d) => ({ id: d.value, label: d.label }));
@@ -257,114 +226,26 @@ export const CandidateTableFilters = ({
                 {/* Jobs Filter */}
                 {showJobContext && (
                   <CollapsibleFilterSection title="Jobs" count={jobFilter.length}>
-                    <Combobox
-                      multiple
-                      value={jobFilter}
-                      onValueChange={(val) => {
-                        setJobFilter(val);
-                        setJobInputValue("");
-                      }}
-                    >
-                      <div ref={jobsAnchorRef}>
-                        <ComboboxChips>
-                          {jobFilter.map(jobId => {
-                            const option = formattedJobOptions.find(o => o.id === jobId);
-                            return (
-                              <ComboboxChip key={jobId}>
-                                {option ? option.label : jobId}
-                              </ComboboxChip>
-                            );
-                          })}
-                          <ComboboxChipsInput
-                            placeholder="Search jobs..."
-                            onChange={(e) => setJobInputValue(e.target.value)}
-                          />
-                        </ComboboxChips>
-                      </div>
-                      <ComboboxContent anchor={jobsAnchorRef}>
-                        {filteredJobOptions.length === 0 ? (
-                          <div className="py-4 text-center text-sm text-muted-foreground">No jobs found</div>
-                        ) : (
-                          <ComboboxList>
-                            {(() => {
-                              const visibleOptions = filteredJobOptions.slice(0, FILTER_DISPLAY_LIMIT);
-                              const hiddenCount = filteredJobOptions.length - visibleOptions.length;
-                              return (
-                                <>
-                                  {visibleOptions.map((job) => (
-                                    <ComboboxItem key={job.id} value={job.id}>
-                                      {job.label}
-                                    </ComboboxItem>
-                                  ))}
-                                  {hiddenCount > 0 && (
-                                    <ComboboxItem value="view-more">
-                                      View More + {hiddenCount}
-                                    </ComboboxItem>
-                                  )}
-                                </>
-                              );
-                            })()}
-                          </ComboboxList>
-                        )}
-                      </ComboboxContent>
-                    </Combobox>
+                    <CheckboxListFilter
+                      options={formattedJobOptions}
+                      selectedValues={jobFilter}
+                      onChange={setJobFilter}
+                      idPrefix="job"
+                      emptyText="No jobs found"
+                    />
                   </CollapsibleFilterSection>
                 )}
 
                 {/* Locations Filter */}
                 {showLocationFilter && (
                   <CollapsibleFilterSection title="Locations" count={locationFilter.length}>
-                    <Combobox
-                      multiple
-                      value={locationFilter}
-                      onValueChange={(val) => {
-                        setLocationFilter(val);
-                        setLocationInputValue("");
-                      }}
-                    >
-                      <div ref={locationsAnchorRef}>
-                        <ComboboxChips>
-                          {locationFilter.map(locId => {
-                            const option = formattedLocationOptions.find(o => o.id === locId);
-                            return (
-                              <ComboboxChip key={locId}>
-                                {option ? option.label : locId}
-                              </ComboboxChip>
-                            );
-                          })}
-                          <ComboboxChipsInput
-                            placeholder="Search locations..."
-                            onChange={(e) => setLocationInputValue(e.target.value)}
-                          />
-                        </ComboboxChips>
-                      </div>
-                      <ComboboxContent anchor={locationsAnchorRef}>
-                        {filteredLocationOptions.length === 0 ? (
-                          <div className="py-4 text-center text-sm text-muted-foreground">No locations found</div>
-                        ) : (
-                          <ComboboxList>
-                            {(() => {
-                              const visibleOptions = filteredLocationOptions.slice(0, FILTER_DISPLAY_LIMIT);
-                              const hiddenCount = filteredLocationOptions.length - visibleOptions.length;
-                              return (
-                                <>
-                                  {visibleOptions.map((loc) => (
-                                    <ComboboxItem key={loc.id} value={loc.id}>
-                                      {loc.label}
-                                    </ComboboxItem>
-                                  ))}
-                                  {hiddenCount > 0 && (
-                                    <ComboboxItem value="view-more">
-                                      View More + {hiddenCount}
-                                    </ComboboxItem>
-                                  )}
-                                </>
-                              );
-                            })()}
-                          </ComboboxList>
-                        )}
-                      </ComboboxContent>
-                    </Combobox>
+                    <CheckboxListFilter
+                      options={formattedLocationOptions}
+                      selectedValues={locationFilter}
+                      onChange={setLocationFilter}
+                      idPrefix="location"
+                      emptyText="No locations found"
+                    />
                   </CollapsibleFilterSection>
                 )}
 

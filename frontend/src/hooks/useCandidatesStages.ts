@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useParams, useLocation } from "react-router-dom";
+import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -39,6 +39,7 @@ export function useCandidatesStages() {
     candidateName: string;
     stageSlug: string;
   }>();
+  const navigate = useNavigate()
 
   const location = useLocation();
   const queryClient = useQueryClient();
@@ -63,7 +64,8 @@ export function useCandidatesStages() {
   // 2. Fetch job-specific stages using query
   const { data: jobStagesRaw } = useJobStagesQuery(job?.id);
   const stages = useMemo(() => {
-    const stageNames = [{ stage: "Resume Screening", id: "resume-screening" }];
+    // const stageNames = [{ stage: "Resume Screening", id: "resume-screening" }];
+    const stageNames = [];
     if (jobStagesRaw) {
       stageNames.push(
         ...jobStagesRaw.map((stage) => ({ stage: stage.template.name, id: stage.id }))
@@ -236,6 +238,7 @@ export function useCandidatesStages() {
     setShowFeedbackModal(true);
   };
 
+
   // 9. Mutation for submitting feedback
   const submitDecisionMutation = useSubmitDecisionMutation();
   const isSubmitting = submitDecisionMutation.isPending;
@@ -259,6 +262,29 @@ export function useCandidatesStages() {
       toast.success("Decision submitted successfully");
       setShowFeedbackModal(false);
       setRefetchTimeline((prev) => prev + 1);
+
+      const candidateFullName = slugify(`${candidate.first_name || ""} ${candidate.last_name || ""}`);
+      const jobSlug = slugify(job?.title);
+
+      let nextStageName = currentStage;
+
+      // Navigate to next stage ONLY if the candidate passed the current stage
+      if (data.decision === "pass") {
+        const currentIndex = stages.findIndex((s) => s.stage === currentStage);
+        if (currentIndex !== -1 && currentIndex < stages.length - 1) {
+          nextStageName = stages[currentIndex + 1].stage;
+        }
+      }
+
+      const stageSlug = slugify(nextStageName);
+
+      navigate(`/dashboard/jobs/${jobSlug}/candidates/${candidateFullName}/stages/${stageSlug}`, {
+        state: {
+          candidate: candidate,
+          jobSlug: jobSlug,
+          job
+        }, replace: true
+      });
     } catch (error) {
       const errorMessage = extractErrorMessage(error);
       toast.error(errorMessage || "Failed to submit decision");

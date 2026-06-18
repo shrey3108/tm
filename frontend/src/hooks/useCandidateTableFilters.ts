@@ -211,9 +211,9 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
       }
       // Resume Screening filter
       if (skip !== 'result' && resultFilter.length > 0) {
-        let candidateResult = 'failed';
+        let candidateResult = 'fail';
         if (c.pass_fail === true || String(c.pass_fail).toLowerCase() === 'pass' || (c.resume_score ?? 0) >= passingThreshold) {
-          candidateResult = 'passed';
+          candidateResult = 'pass';
         } else if (c.processing_status === 'processing' || c.processing_status === 'queued' || !c.is_parsed) {
           candidateResult = 'pending';
         }

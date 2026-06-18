@@ -15,6 +15,14 @@ export function useCreateJobMutation() {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.JOBS.LIST] });
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.JOBS.ADMIN_LIST] });
     },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.JOBS.LIST] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.JOBS.ADMIN_LIST] });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.JOBS.LIST] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.JOBS.ADMIN_LIST] });
+    },
   });
 }
 

@@ -31,7 +31,7 @@ export function AssignedPaperView({
           disabled={isUnassigning}
           className="rounded-xl border-destructive/20 text-destructive hover:bg-destructive/10 hover:text-destructive shrink-0 transition-all font-semibold"
         >
-          Change / Re-assign Paper
+          Change Exising Paper
         </Button>
       </div>
 

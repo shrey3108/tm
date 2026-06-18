@@ -49,7 +49,7 @@ export function CrossMatchView({ resumeId, onClose }: CrossMatchViewProps) {
     resumeId!,
     pageIndex * pageSize,
     pageSize,
-    isPolling ? 6000 : false
+    isPolling ? 15000 : false
   );
 
   const handleTrigger = async () => {

@@ -96,7 +96,7 @@ export default function QuestionsBank() {
         const hasProcessing = Array.isArray(papers) && papers.some(
           (paper) => !paper.questions || paper.questions.length === 0
         );
-        return hasProcessing ? 3000 : false;
+        return hasProcessing ? 15000 : false;
       }
     }
   });
