@@ -116,6 +116,22 @@ async def get_job_titles(
     return await job_service.get_job_titles(db=db, query=q)
 
 
+@router.get("/titles/grouped", response_model=Any)
+async def get_job_titles_grouped(
+    db: AsyncSession = Depends(get_db),
+    user: UserRead = Depends(check_permission("jobs:access")),
+    q: str | None = Query(None),
+) -> Any:
+    """
+    Retrieve active jobs grouped by title with their position variants.
+
+    Each unique title appears once with a list of available position variants
+    (Fresher, Senior, Intern, etc.). The frontend uses this to populate an
+    intuitive two-level dropdown: Job Role → Position.
+    """
+    return await job_service.get_job_titles_grouped(db=db, query=q)
+
+
 @router.post("", response_model=JobRead, status_code=status.HTTP_201_CREATED)
 async def create_job(
     *,
