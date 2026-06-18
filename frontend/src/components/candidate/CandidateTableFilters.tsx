@@ -1,17 +1,33 @@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Filter, Calendar as CalendarIcon, ChevronDown, X, } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Filter, Star } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import type { DateRange } from "react-day-picker";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
 import { Separator } from "@/components/ui/separator";
+// import { FILTER_DISPLAY_LIMIT } from "@/constants";
+import { useMemo, useState, useRef } from "react";
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+  SheetFooter
+} from "@/components/ui/sheet";
+import {
+  Combobox,
+  ComboboxContent,
+  ComboboxItem,
+  ComboboxList,
+  ComboboxChips,
+  ComboboxChip,
+  ComboboxChipsInput,
+} from "@/components/ui/combobox";
+import { CollapsibleFilterSection, CheckboxListFilter } from "@/components/shared/FilterComponents";
 import { FILTER_DISPLAY_LIMIT } from "@/constants";
-import { useMemo } from "react";
-import { SearchableSelect } from "@/components/shared";
-// import { DateDisplay } from "../shared";
 
 interface CandidateTableFiltersProps {
   nameFilter: string;
@@ -80,9 +96,9 @@ export const CandidateTableFilters = ({
   resultFilter,
   setResultFilter,
   locationOptions,
-  setLocationSearch,
+  // setLocationSearch,
   jobOptions,
-  setJobSearch,
+  // setJobSearch,
   stageFilter,
   setStageFilter,
   stageOptions,
@@ -94,10 +110,7 @@ export const CandidateTableFilters = ({
   totalCount,
   minDate,
   showLocationFilter = true,
-  // activitySession,
-  // setActivitySession,
   activitySearch,
-  // setActivitySearch,
   activitySessionOptions,
   hrScoreFilter = [],
   setHrScoreFilter = () => { },
@@ -105,6 +118,8 @@ export const CandidateTableFilters = ({
   setTestEmailSentFilter = () => { },
   isTestPaperFilterEnabled = false,
 }: CandidateTableFiltersProps) => {
+
+  const [hoverValue, setHoverValue] = useState<number | null>(0);
 
   // @ts-ignore
   const _filteredActivityOptions = useMemo(() => {
@@ -123,15 +138,34 @@ export const CandidateTableFilters = ({
     return jobOptions.map((j) => ({
       id: j.id,
       label: j.title,
-      hoverContent: (
-        <div className="text-sm font-medium mb-0.5 capitalize">{j.title}</div>
-      ),
     }));
   }, [jobOptions]);
+
+  const [jobInputValue, setJobInputValue] = useState("");
+  const jobsAnchorRef = useRef<HTMLDivElement>(null);
+
+  const filteredJobOptions = useMemo(() => {
+    if (!jobInputValue) return formattedJobOptions;
+    const query = jobInputValue.toLowerCase();
+    return formattedJobOptions.filter(job =>
+      job.label.toLowerCase().includes(query)
+    );
+  }, [formattedJobOptions, jobInputValue]);
 
   const formattedLocationOptions = useMemo(() => {
     return locationOptions.map((l) => ({ id: l, label: l }));
   }, [locationOptions]);
+
+  const [locationInputValue, setLocationInputValue] = useState("");
+  const locationsAnchorRef = useRef<HTMLDivElement>(null);
+
+  const filteredLocationOptions = useMemo(() => {
+    if (!locationInputValue) return formattedLocationOptions;
+    const query = locationInputValue.toLowerCase();
+    return formattedLocationOptions.filter(loc =>
+      loc.label.toLowerCase().includes(query)
+    );
+  }, [formattedLocationOptions, locationInputValue]);
 
   const formattedHrDecisionOptions = useMemo(() => {
     return hrDecisionOptions.map((d) => ({ id: d.value, label: d.label }));
@@ -145,265 +179,406 @@ export const CandidateTableFilters = ({
     return stageOptions.map((s) => ({ id: s.id, label: s.name }));
   }, [stageOptions]);
 
-  const normalStyle = "inline-flex items-center justify-between gap-2 h-10 px-3 rounded-xl border text-sm cursor-pointer select-none transition-all"
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (jobFilter.length > 0) count++;
+    if (locationFilter.length > 0) count++;
+    if (hrDecisionFilter.length > 0) count++;
+    if (resultFilter.length > 0) count++;
+    if (hrScoreFilter.length > 0) count++;
+    if (stageFilter.length > 0) count++;
+    if (testEmailSentFilter !== undefined) count++;
+    if (dateRange?.from || dateRange?.to) count++;
+    return count;
+  }, [
+    jobFilter,
+    locationFilter,
+    hrDecisionFilter,
+    resultFilter,
+    hrScoreFilter,
+    stageFilter,
+    testEmailSentFilter,
+    dateRange,
+  ]);
+
   return (
     <div className="flex flex-col gap-4 p-2 bg-muted/20 rounded-2xl border border-muted-foreground/10 overflow-hidden">
-      <div className="flex flex-col lg:flex-row items-start gap-4 w-full">
-        {/* All Filters Area */}
-        <div className="flex flex-wrap items-center gap-2 flex-1">
+      <div className="flex flex-col lg:flex-row items-center gap-4 w-full">
+        {/* Search & Filter Trigger Area */}
+        <div className="flex flex-wrap items-center gap-2 flex-1 w-full lg:w-auto">
           {/* Search Field */}
-          <div className="relative w-full lg:w-[320px] group">
-            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" />
+          <div className="relative w-10/12 lg:w-[320px] group">
+            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search name or email…"
               value={nameFilter}
               onChange={(e) => setNameFilter(e.target.value)}
-              className="pl-10 h-10 rounded-xl text-sm w-full bg-background"
+              className="pl-10 h-10 rounded-xl text-base w-full bg-background"
             />
           </div>
 
-          {/* Job dropdown */}
-          {showJobContext && (
-            <SearchableSelect
-              multiple
-              value={jobFilter}
-              onValueChange={setJobFilter}
-              options={formattedJobOptions}
-              placeholder="All Jobs"
-              onSearch={setJobSearch}
-              onClear={() => setJobFilter([])}
-              clearLabel="Clear jobs"
-              getTriggerLabel={(selected) =>
-                selected.length === 0
-                  ? "All Jobs"
-                  : selected.length <= FILTER_DISPLAY_LIMIT
-                    ? selected.map((s) => s.label).join(", ")
-                    : `${selected.slice(0, FILTER_DISPLAY_LIMIT).map((s) => s.label).join(", ")} and ${selected.length - FILTER_DISPLAY_LIMIT} more`
-              }
-              triggerClassName={cn(
-                normalStyle,
-                "w-[140px]",
-                jobFilter.length > 0
-                  ? "border-primary/40 bg-primary/10 text-primary hover:bg-primary/10 hover:text-primary"
-                  : "border-input bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-              )}
-              contentClassName="w-[240px]"
-            />
-          )}
-
-          {/* Location dropdown */}
-          {showLocationFilter && (
-            <SearchableSelect
-              multiple
-              value={locationFilter}
-              onValueChange={setLocationFilter}
-              options={formattedLocationOptions}
-              placeholder="Locations"
-              onSearch={setLocationSearch}
-              onClear={() => setLocationFilter([])}
-              clearLabel="Clear locations"
-              getTriggerLabel={(selected) =>
-                selected.length === 0
-                  ? "Locations"
-                  : selected.length <= FILTER_DISPLAY_LIMIT
-                    ? selected.map((s) => s.label).join(", ")
-                    : `${selected.slice(0, FILTER_DISPLAY_LIMIT).map((s) => s.label).join(", ")} and ${selected.length - FILTER_DISPLAY_LIMIT} more`
-              }
-              triggerClassName={cn(
-                normalStyle,
-                "w-[130px]",
-                locationFilter.length > 0
-                  ? "border-primary/40 bg-primary/10 text-primary hover:bg-primary/10 hover:text-primary"
-                  : "border-input bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-              )}
-              contentClassName="w-[160px]"
-            />
-          )}
-
-          {/* HR Decision multi-select dropdown */}
-          <SearchableSelect
-            multiple
-            value={hrDecisionFilter}
-            onValueChange={setHrDecisionFilter}
-            options={formattedHrDecisionOptions}
-            placeholder="Decisions"
-            pluralLabel="Decisions"
-            onClear={() => setHrDecisionFilter([])}
-            clearLabel="Clear selection"
-            triggerClassName={cn(
-              normalStyle,
-              "w-[130px]",
-              hrDecisionFilter.length > 0
-                ? "border-primary/30 bg-primary/5 text-primary hover:bg-primary/5 hover:text-primary"
-                : "border-input bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-            )}
-            contentClassName="w-fit min-w-[130px]"
-          />
-
-          {/* resume screening result dropdown */}
-          <SearchableSelect
-            multiple
-            value={resultFilter}
-            onValueChange={setResultFilter}
-            options={formattedResultOptions}
-            placeholder="AI Result"
-            pluralLabel="Results"
-            onClear={() => setResultFilter([])}
-            clearLabel="Clear selection"
-            getTriggerLabel={(selected) =>
-              selected.length === 0
-                ? "AI Result"
-                : selected.length === 1
-                  ? selected[0].label
-                  : `${selected.length} Results`
-            }
-            triggerClassName={cn(
-              normalStyle,
-              "w-[130px]",
-              resultFilter.length > 0
-                ? "border-primary/30 bg-primary/5 text-primary hover:bg-primary/5 hover:text-primary"
-                : "border-input bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-            )}
-            contentClassName="w-fit min-w-[130px]"
-          />
-
-          {/* Score Rating multi-select dropdown */}
-          <SearchableSelect
-            multiple
-            value={hrScoreFilter.map(String)}
-            onValueChange={(val) => setHrScoreFilter(val.map(Number))}
-            options={[1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0].map((score) => ({ id: String(score), label: score.toFixed(1) }))}
-            placeholder="Score Rating"
-            pluralLabel="Ratings"
-            onClear={() => setHrScoreFilter([])}
-            clearLabel="Clear selection"
-            getTriggerLabel={(selected) =>
-              selected.length === 0
-                ? "Score Rating"
-                : selected.length === 1
-                  ? `Score: ${selected[0].label}`
-                  : `${selected.length} Ratings`
-            }
-            triggerClassName={cn(
-              normalStyle,
-              "w-[130px]",
-              hrScoreFilter.length > 0
-                ? "border-primary/30 bg-primary/5 text-primary hover:bg-primary/5 hover:text-primary"
-                : "border-input bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-            )}
-            contentClassName="w-fit min-w-[130px]"
-          />
-
-          {/* Stages multi-select dropdown */}
-          <SearchableSelect
-            multiple
-            value={stageFilter}
-            onValueChange={setStageFilter}
-            options={formattedStageOptions}
-            placeholder="Stages"
-            pluralLabel="Stages"
-            onClear={() => setStageFilter([])}
-            clearLabel="Clear selection"
-            triggerClassName={cn(
-              normalStyle,
-              "w-[130px]",
-              stageFilter.length > 0
-                ? "border-primary/30 bg-primary/5 text-primary hover:bg-primary/5 hover:text-primary"
-                : "border-input bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-            )}
-            contentClassName="w-fit min-w-[130px]"
-          />
-
-          {/* Test Paper dropdown */}
-          <SearchableSelect
-            value={testEmailSentFilter ?? ""}
-            onValueChange={(val) => setTestEmailSentFilter(val || undefined)}
-            options={[
-              { id: "sent", label: "Sent" },
-              { id: "not_sent", label: "Not Sent" }
-            ]}
-            placeholder="Test Email Sent"
-            onClear={() => setTestEmailSentFilter(undefined)}
-            clearLabel="Clear selection"
-            disabled={!isTestPaperFilterEnabled}
-            triggerClassName={cn(
-              normalStyle,
-              "w-[140px]",
-              testEmailSentFilter
-                ? "border-primary/30 bg-primary/5 text-primary hover:bg-primary/5 hover:text-primary"
-                : "border-input bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground",
-              !isTestPaperFilterEnabled && "opacity-50 cursor-not-allowed pointer-events-none"
-            )}
-            contentClassName="w-fit min-w-[140px]"
-          />
-
-          {/* Date range picker */}
-          <div className="flex items-center gap-1.5 px-3 h-10 w-fit rounded-xl border border-input text-sm bg-background hover:bg-muted/30 transition-colors">
-            <Popover>
-              <PopoverTrigger
-                className={cn(
-                  "inline-flex items-center justify-between w-full h-full font-normal rounded-md bg-transparent focus-visible:outline-none",
-                  !dateRange?.from && "text-muted-foreground"
-                )}
+          {/* Sheet Trigger */}
+          <Sheet>
+            <SheetTrigger>
+              <Button
+                variant="outline"
+                className="rounded-xl gap-2 px-3 border border-muted-foreground/20 hover:bg-muted/10 bg-background transition-all cursor-pointer"
               >
-                <div className="flex items-center truncate">
-                  <CalendarIcon className="mr-2 h-3.5 w-3.5 shrink-0 opacity-60" />
-                  <span className="truncate">
-                    {dateRange?.from ? (
-                      dateRange.to ? (
-                        <>
-                          {format(dateRange.from, "LLL dd")} - {format(dateRange.to, "LLL dd, y")}
-                        </>
-                      ) : (
-                        format(dateRange.from, "LLL dd, y")
-                      )
-                    ) : (
-                      "Applied date range"
-                    )}
+                <Filter className="h-4 w-4 text-muted-foreground" />
+                {activeFilterCount > 0 && (
+                  <span className="flex items-center justify-center bg-primary text-primary-foreground text-xs font-bold rounded-full min-w-5 h-5 px-1 ml-1 animate-in zoom-in duration-200">
+                    {activeFilterCount}
                   </span>
-                </div>
-                <ChevronDown className="h-3.5 w-3.5 opacity-60 shrink-0 ml-1" />
-              </PopoverTrigger>
-              <PopoverContent
-                className="w-auto p-0 rounded-2xl border bg-popover shadow-2xl overflow-hidden"
-                align="start"
-              >
-                <Calendar
-                  required
-                  autoFocus
-                  mode="range"
-                  defaultMonth={dateRange?.from}
-                  selected={dateRange}
-                  onSelect={setDateRange}
-                  numberOfMonths={1}
-                  disabled={{ after: new Date(), before: minDate }}
-                  buttonVariant="ghost"
-                  captionLayout="label"
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
+                )}
+              </Button>
+            </SheetTrigger>
 
-          {/* Clear Button */}
-          {hasActiveFilters && (
-            <HoverCard>
-              <HoverCardTrigger delay={10} closeDelay={100}
-                render={
+            <SheetContent className="w-full sm:max-w-md flex flex-col h-full p-0 bg-background border-l shadow-2xl" showCloseButton={false}>
+              {/* Header */}
+              <SheetHeader className="px-3 py-2 border-b border-muted/20 flex flex-row items-center justify-between shrink-0">
+                <div className="flex items-center gap-1">
+                  <Filter className="h-4.5 w-4.5 text-primary" />
+                  <SheetTitle className="font-semibold text-base text-foreground">
+                    Filters
+                  </SheetTitle>
+                </div>
+                {hasActiveFilters && (
                   <Button
-                    variant="ghost"
+                    variant="destructive"
                     size="sm"
-                    className="h-10 px-3 rounded-xl text-xs font-semibold text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-all"
-                    onClick={clearFilters}
-                  >
-                    <X className="h-4 w-4" />
+                    onClick={clearFilters}>
+                    Clear All
                   </Button>
-                }
-              />
-              <HoverCardContent className="flex items-center justify-center w-auto h-auto p-3 rounded-2xl border bg-popover shadow-2xl overflow-hidden">
-                <div className="font-medium text-sm">Clear all filters</div>
-              </HoverCardContent>
-            </HoverCard>
-          )}
+                )}
+              </SheetHeader>
+
+              {/* Scrollable Filters */}
+              <div className="flex-1 overflow-y-auto p-2 space-y-2">
+                {/* Jobs Filter */}
+                {showJobContext && (
+                  <CollapsibleFilterSection title="Jobs" count={jobFilter.length}>
+                    <Combobox
+                      multiple
+                      value={jobFilter}
+                      onValueChange={(val) => {
+                        setJobFilter(val);
+                        setJobInputValue("");
+                      }}
+                    >
+                      <div ref={jobsAnchorRef}>
+                        <ComboboxChips>
+                          {jobFilter.map(jobId => {
+                            const option = formattedJobOptions.find(o => o.id === jobId);
+                            return (
+                              <ComboboxChip key={jobId}>
+                                {option ? option.label : jobId}
+                              </ComboboxChip>
+                            );
+                          })}
+                          <ComboboxChipsInput
+                            placeholder="Search jobs..."
+                            onChange={(e) => setJobInputValue(e.target.value)}
+                          />
+                        </ComboboxChips>
+                      </div>
+                      <ComboboxContent anchor={jobsAnchorRef}>
+                        {filteredJobOptions.length === 0 ? (
+                          <div className="py-4 text-center text-sm text-muted-foreground">No jobs found</div>
+                        ) : (
+                          <ComboboxList>
+                            {(() => {
+                              const visibleOptions = filteredJobOptions.slice(0, FILTER_DISPLAY_LIMIT);
+                              const hiddenCount = filteredJobOptions.length - visibleOptions.length;
+                              return (
+                                <>
+                                  {visibleOptions.map((job) => (
+                                    <ComboboxItem key={job.id} value={job.id}>
+                                      {job.label}
+                                    </ComboboxItem>
+                                  ))}
+                                  {hiddenCount > 0 && (
+                                    <ComboboxItem value="view-more">
+                                      View More + {hiddenCount}
+                                    </ComboboxItem>
+                                  )}
+                                </>
+                              );
+                            })()}
+                          </ComboboxList>
+                        )}
+                      </ComboboxContent>
+                    </Combobox>
+                  </CollapsibleFilterSection>
+                )}
+
+                {/* Locations Filter */}
+                {showLocationFilter && (
+                  <CollapsibleFilterSection title="Locations" count={locationFilter.length}>
+                    <Combobox
+                      multiple
+                      value={locationFilter}
+                      onValueChange={(val) => {
+                        setLocationFilter(val);
+                        setLocationInputValue("");
+                      }}
+                    >
+                      <div ref={locationsAnchorRef}>
+                        <ComboboxChips>
+                          {locationFilter.map(locId => {
+                            const option = formattedLocationOptions.find(o => o.id === locId);
+                            return (
+                              <ComboboxChip key={locId}>
+                                {option ? option.label : locId}
+                              </ComboboxChip>
+                            );
+                          })}
+                          <ComboboxChipsInput
+                            placeholder="Search locations..."
+                            onChange={(e) => setLocationInputValue(e.target.value)}
+                          />
+                        </ComboboxChips>
+                      </div>
+                      <ComboboxContent anchor={locationsAnchorRef}>
+                        {filteredLocationOptions.length === 0 ? (
+                          <div className="py-4 text-center text-sm text-muted-foreground">No locations found</div>
+                        ) : (
+                          <ComboboxList>
+                            {(() => {
+                              const visibleOptions = filteredLocationOptions.slice(0, FILTER_DISPLAY_LIMIT);
+                              const hiddenCount = filteredLocationOptions.length - visibleOptions.length;
+                              return (
+                                <>
+                                  {visibleOptions.map((loc) => (
+                                    <ComboboxItem key={loc.id} value={loc.id}>
+                                      {loc.label}
+                                    </ComboboxItem>
+                                  ))}
+                                  {hiddenCount > 0 && (
+                                    <ComboboxItem value="view-more">
+                                      View More + {hiddenCount}
+                                    </ComboboxItem>
+                                  )}
+                                </>
+                              );
+                            })()}
+                          </ComboboxList>
+                        )}
+                      </ComboboxContent>
+                    </Combobox>
+                  </CollapsibleFilterSection>
+                )}
+
+
+                {/* HR Decisions Filter */}
+                <CollapsibleFilterSection title="HR Decisions" count={hrDecisionFilter.length}>
+                  <CheckboxListFilter
+                    options={formattedHrDecisionOptions}
+                    selectedValues={hrDecisionFilter}
+                    onChange={setHrDecisionFilter}
+                    idPrefix="decision"
+                    showSearchMore={false}
+                  />
+                </CollapsibleFilterSection>
+
+                {/* AI Results Filter */}
+                <CollapsibleFilterSection title="AI Resume Screening" count={resultFilter.length}>
+                  <CheckboxListFilter
+                    options={formattedResultOptions}
+                    selectedValues={resultFilter}
+                    onChange={setResultFilter}
+                    idPrefix="result"
+                    showSearchMore={false}
+                  />
+                </CollapsibleFilterSection>
+
+                {/* Score Rating Filter */}
+                <CollapsibleFilterSection title="Score Rating" count={hrScoreFilter.length}>
+                  <div className="flex items-center justify-center py-2.5">
+                    <div
+                      className="flex items-center gap-1 cursor-pointer"
+                      onMouseLeave={() => setHoverValue(null)}
+                    >
+                      {Array.from({ length: 5 }).map((_, index) => {
+                        const starValue = index + 1;
+                        const activeValue = hoverValue !== null ? hoverValue : (hrScoreFilter[0] ?? 0);
+                        let fillType: "full" | "half" | "empty" = "empty";
+
+                        if (activeValue >= starValue) {
+                          fillType = "full";
+                        } else if (activeValue === starValue - 0.5) {
+                          fillType = "half";
+                        }
+
+                        const leftVal = Math.max(1, starValue - 0.5);
+                        const rightVal = starValue;
+
+                        return (
+                          <div
+                            key={index}
+                            className="relative w-8 h-8 select-none transition-transform active:scale-95 duration-100"
+                          >
+                            {/* Left half hit zone */}
+                            <div
+                              className="absolute top-0 left-0 w-1/2 h-full cursor-pointer z-10"
+                              onMouseEnter={() => setHoverValue(leftVal)}
+                              onClick={() => {
+                                if (hrScoreFilter.includes(leftVal)) {
+                                  setHrScoreFilter([]);
+                                } else {
+                                  setHrScoreFilter([leftVal]);
+                                }
+                              }}
+                            />
+                            {/* Right half hit zone */}
+                            <div
+                              className="absolute top-0 right-0 w-1/2 h-full cursor-pointer z-10"
+                              onMouseEnter={() => setHoverValue(rightVal)}
+                              onClick={() => {
+                                if (hrScoreFilter.includes(rightVal)) {
+                                  setHrScoreFilter([]);
+                                } else {
+                                  setHrScoreFilter([rightVal]);
+                                }
+                              }}
+                            />
+
+                            {/* Background empty star */}
+                            <Star className="w-8 h-8 text-muted-foreground/30 fill-none" />
+
+                            {/* Full star overlay */}
+                            {fillType === "full" && (
+                              <Star className="absolute top-0 left-0 w-8 h-8 text-[#E17100] fill-[#FFB900]" />
+                            )}
+
+                            {/* Half star overlay */}
+                            {fillType === "half" && (
+                              <Star
+                                className="absolute top-0 left-0 w-8 h-8 text-[#E17100] fill-[#FFB900]"
+                                style={{ clipPath: "inset(0 50% 0 0)" }}
+                              />
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="min-w-[28px]">
+                      {(hrScoreFilter.length > 0 || hoverValue !== null) && (
+                        <span className="px-1.5 py-0.5 rounded-md bg-[#F9EBE1] text-[#E17100] text-xs font-bold min-w-[28px] text-center">
+                          {(hoverValue !== null ? hoverValue : hrScoreFilter[0]).toFixed(1)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                </CollapsibleFilterSection>
+
+                {/* Stages Filter */}
+                <CollapsibleFilterSection title="Stages" count={stageFilter.length}>
+                  <CheckboxListFilter
+                    options={formattedStageOptions}
+                    selectedValues={stageFilter}
+                    onChange={setStageFilter}
+                    idPrefix="stage"
+                    emptyText="No stages available"
+                    searchPlaceholder="Search more stages..."
+                  />
+                </CollapsibleFilterSection>
+
+                {/* Test Email Filter */}
+                <CollapsibleFilterSection title="Test Email Sent" count={testEmailSentFilter !== undefined ? 1 : 0}>
+                  <div className="flex items-center justify-center gap-2 pt-1">
+                    <Button
+                      type="button"
+                      variant={"outline"}
+                      disabled={!isTestPaperFilterEnabled}
+                      onClick={() =>
+                        setTestEmailSentFilter(
+                          testEmailSentFilter === "sent" ? undefined : "sent"
+                        )
+                      }
+                      className={cn(
+                        testEmailSentFilter === "sent"
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-input bg-transparent text-muted-foreground",
+                        !isTestPaperFilterEnabled &&
+                        "opacity-50 cursor-not-allowed pointer-events-none"
+                      )}
+                    >
+                      Sent
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={"outline"}
+                      disabled={!isTestPaperFilterEnabled}
+                      onClick={() =>
+                        setTestEmailSentFilter(
+                          testEmailSentFilter === "not_sent" ? undefined : "not_sent"
+                        )
+                      }
+                      className={cn(
+                        testEmailSentFilter === "not_sent"
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-input bg-transparent text-muted-foreground",
+                        !isTestPaperFilterEnabled &&
+                        "opacity-50 cursor-not-allowed pointer-events-none"
+                      )}
+                    >
+                      Not Sent
+                    </Button>
+                  </div>
+                  {!isTestPaperFilterEnabled && (
+                    <p className="text-xs text-muted-foreground mt-2 text-center">
+                      Enable by selecting "Technical Practical Round" stage and "Pending"
+                      decision.
+                    </p>
+                  )}
+                </CollapsibleFilterSection>
+
+                {/* Applied Date Range Filter */}
+                <CollapsibleFilterSection
+                  title={
+                    <span className="flex items-center gap-2">
+                      Applied Date Range
+                      {dateRange?.from && (
+                        <span className="text-xs bg-primary/10 text-primary font-bold px-2 py-0.5 rounded-full truncate">
+                          {format(dateRange.from, "MMM d")}
+                          {dateRange.to ? ` - ${format(dateRange.to, "MMM d")}` : ""}
+                        </span>
+                      )}
+                    </span>
+                  }
+                  titleClassName="max-w-[85%]"
+                >
+                  <div className="flex justify-center rounded-xl mt-1">
+                    <Calendar
+                      required
+                      autoFocus={false}
+                      mode="range"
+                      defaultMonth={dateRange?.from}
+                      selected={dateRange}
+                      onSelect={setDateRange}
+                      numberOfMonths={1}
+                      disabled={{ after: new Date(), before: minDate }}
+                      buttonVariant="ghost"
+                      captionLayout="label"
+                      className="w-full rounded-xl"
+                    />
+                  </div>
+                </CollapsibleFilterSection>
+              </div>
+
+              <SheetFooter>
+                {/* Footer */}
+                <SheetClose
+                  render={
+                    <Button>
+                      {hasActiveFilters ? <span>Apply & Close</span> : <span>Close</span>}
+                    </Button>
+                  }
+                />
+              </SheetFooter>
+            </SheetContent>
+          </Sheet>
         </div>
 
         {/* Result Count Area (Anchored Right) */}
