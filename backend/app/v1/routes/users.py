@@ -24,6 +24,7 @@ from app.v1.schemas.user import (
     UserRegister,
 )
 from app.v1.services.user_service import user_service
+from app.v1.core.rate_limit import limiter
 
 logger = get_logger(__name__)
 
@@ -33,6 +34,8 @@ router = APIRouter()
 @router.post(
     "/register", response_model=UserRead, status_code=status.HTTP_201_CREATED
 )
+@limiter.exempt
+
 async def register_user(
     *,
     db: AsyncSession = Depends(get_db),
@@ -55,6 +58,8 @@ async def register_user(
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.exempt
+
 async def logout_user(
     *,
     db: AsyncSession = Depends(get_db),
@@ -97,6 +102,8 @@ async def create_user(
 
 
 @router.post("/login", response_model=LoginResponse)
+@limiter.exempt
+
 async def login_user(
     *,
     db: AsyncSession = Depends(get_db),
@@ -140,6 +147,8 @@ async def login_user(
 
 
 @router.post("/refresh", response_model=LoginResponse)
+@limiter.exempt
+
 async def refresh_token(
     *,
     db: AsyncSession = Depends(get_db),
@@ -187,6 +196,8 @@ async def refresh_token(
     response_model=LoginResponse,
     summary="Swagger login",
 )
+@limiter.exempt
+
 async def swagger_login_user(
     *,
     db: AsyncSession = Depends(get_db),

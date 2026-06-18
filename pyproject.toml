@@ -41,6 +41,7 @@ dependencies = [
     "reportlab",
     "nest-asyncio>=1.6.0",
     "github-code-evaluator",
+    "slowapi>=0.1.10",
 ]
 
 [[tool.uv.index]]
