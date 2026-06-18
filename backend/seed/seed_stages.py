@@ -7,8 +7,24 @@ from app.v1.db.session import async_session_maker, init_db
 
 STAGE_TEMPLATES = [
     {
+        "name": "Resume Screening",
+        "description": "Initial automated screening of the resume against the job description and required skills.",
+        "is_default": True,
+        "default_order": 0,
+        "default_config": {
+            "type": "document",
+            "evaluation_criteria": [
+                "Overall Fit",
+                "Skills Match",
+                "Experience Match"
+            ],
+        },
+    },
+    {
         "name": "HR Screening Round",
         "description": "Initial HR call to evaluate communication, confidence, and cultural fit.",
+        "is_default": True,
+        "default_order": 1,
         "default_config": {
             "type": "audio",
             "evaluation_criteria": [
@@ -81,6 +97,10 @@ async def ensure_stages(session) -> list[StageTemplate]:
             # Update existing template if description or config changed
             existing.description = template_data["description"]
             existing.default_config = template_data["default_config"]
+            if "is_default" in template_data:
+                existing.is_default = template_data["is_default"]
+            if "default_order" in template_data:
+                existing.default_order = template_data["default_order"]
             templates.append(existing)
             continue
 
@@ -88,6 +108,8 @@ async def ensure_stages(session) -> list[StageTemplate]:
             name=name,
             description=template_data["description"],
             default_config=template_data["default_config"],
+            is_default=template_data.get("is_default", False),
+            default_order=template_data.get("default_order", None),
         )
         session.add(template)
         templates.append(template)

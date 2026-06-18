@@ -1388,6 +1388,7 @@ class CandidateAdminService:
             # Base status and results
             result = {
                 "completed": "passed",
+                "evaluation_completed": "completed",
                 "failed": "pending",
                 "skipped": "skipped",
                 "active": "pending",

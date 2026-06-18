@@ -190,7 +190,7 @@ class EvaluationService:
                 normalized_configs.append({"id": c, "weight": 10.0})
             elif isinstance(c, dict):
                 normalized_configs.append({
-                    "id": str(c.get("id", c.get("name", ""))),
+                    "id": str(c.get("id") or c.get("name") or ""),
                     "weight": float(c.get("weight", 10.0)),
                     "obj": c.get("obj")
                 })
@@ -251,8 +251,14 @@ class EvaluationService:
                     criterion = await db.get(Criterion, uuid.UUID(criterion_id))
                 except ValueError:
                     # Fallback for plain text name strings saved as IDs
+                    search_term = criterion_id.lower().strip()
+                    if "communication" in search_term:
+                        search_term = "communication"
+                    elif "tech-stack" in search_term or "tech stack" in search_term or "tech_stack" in search_term:
+                        search_term = "tech stack"
+                    
                     result = await db.execute(
-                        select(Criterion).where(func.lower(Criterion.name) == criterion_id.lower())
+                        select(Criterion).where(func.lower(Criterion.name) == search_term)
                     )
                     criterion = result.scalar_one_or_none()
             

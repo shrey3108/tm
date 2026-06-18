@@ -44,7 +44,7 @@ async def run_with_cleanup(coro):
             pass
 
 @celery_app.task(name="process_transcript_task")
-def process_transcript_task(candidate_stage_id_str: str, file_infos: list[dict]):
+def process_transcript_task(candidate_stage_id_str: str, file_infos: list[dict], uploader_id_str: str | None = None):
     """
     Celery task to process one or more uploaded transcript files.
     1. Reads each file from disk.
@@ -77,8 +77,13 @@ def process_transcript_task(candidate_stage_id_str: str, file_infos: list[dict])
 
                 candidate_id = current_stage.candidate_id
                 
-                # Fetch first user as owner
-                first_user_result = await db.execute(select(User).limit(1))
+                # Fetch the correct user as owner, or fallback to first user
+                if uploader_id_str:
+                    uploader_id = uuid.UUID(uploader_id_str)
+                    first_user_result = await db.execute(select(User).where(User.id == uploader_id))
+                else:
+                    first_user_result = await db.execute(select(User).limit(1))
+                    
                 first_user = first_user_result.scalar_one_or_none()
                 if not first_user:
                     logger.error("No users found to assign as file owner")

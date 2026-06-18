@@ -57,7 +57,7 @@ class CandidateStageService:
         new_stages = []
         default_stage_idx = 0
         for i, js in enumerate(job_stages):
-            if js.is_default:
+            if js.is_default and default_stage_idx == 0:
                 default_stage_idx = i
             
             cs = CandidateStage(

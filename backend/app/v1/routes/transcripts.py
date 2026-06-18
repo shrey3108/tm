@@ -8,6 +8,7 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.v1.db.session import get_db
+from app.v1.dependencies import check_permission
 from app.v1.db.models.candidate_stages import CandidateStage
 from app.v1.db.models.candidates import Candidate
 from app.v1.db.models.files import File as DBFile
@@ -98,6 +99,7 @@ async def upload_transcript_path(
     candidate_stage_id: uuid.UUID,
     files: List[UploadFile] = File(...),
     db: AsyncSession = Depends(get_db),
+    current_user: Any = Depends(check_permission("candidates:access")),
 ):
     """
     Upload one or more transcript files (docx, pdf, txt) for a specific candidate stage.
@@ -150,7 +152,7 @@ async def upload_transcript_path(
     await db.commit()
 
     # 5. Trigger merged background processing
-    process_transcript_task.delay(str(candidate_stage_id), file_infos)
+    process_transcript_task.delay(str(candidate_stage_id), file_infos, str(current_user.id))
 
     return {
         "message": f"Processing started for {len(file_infos)} files. They will be merged into a single transcript.",
