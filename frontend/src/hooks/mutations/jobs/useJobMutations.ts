@@ -11,7 +11,7 @@ export function useCreateJobMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: Record<string, any>) => jobService.createJob(data),
-    onSuccess: () => {
+    onMutate: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.JOBS.LIST] });
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.JOBS.ADMIN_LIST] });
     },

@@ -1,10 +1,9 @@
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, useEffect } from "react";
 import { toast } from "sonner";
 import { Upload } from "lucide-react";
 import AppPageShell from "@/components/shared/AppPageShell";
 import AppPageHeader from "@/components/shared/AppPageHeader";
-import { useJobTitle } from "@/hooks/queries/jobs";
-import { useJobPosition } from "@/hooks/queries/admin/useJobPosition";
+import { useJobTitlesGrouped } from "@/hooks/queries/jobs";
 import { useQuestionSetPapers } from "@/hooks/queries/taskPapers/useTaskPaperQueries";
 import {
   useUploadQuestionSetPaperMutation,
@@ -23,15 +22,15 @@ import { QuestionsBankAccordion } from "@/components/candidate/projectSubmission
 import { ManualPaperCreateForm } from "@/components/candidate/projectSubmission/sendQuestionPaper/ManualPaperCreateForm";
 import { extractErrorMessage } from "@/utils/error";
 
-
-
 export default function QuestionsBank() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const currentUser = useAppSelector(selectCurrentUser);
   const hasManagePermission = hasPermissions(currentUser?.permissions, PERMISSIONS.QUESTIONS_MANAGE);
   const [showCreateForm, setShowCreateForm] = useState<boolean>(false)
-  const [selectedJobId, setSelectedJobId] = useState<string>("");
-  const [selectedPositionId, setSelectedPositionId] = useState<string>("");
+  // const [selectedJobId, setSelectedJobId] = useState<string>("");
+  // const [selectedPositionId, setSelectedPositionId] = useState<string>("");
+  const [selectedTitle, setSelectedTitle] = useState<string>("");
+  const [selectedVariant, setSelectedVariant] = useState<{ job_id: string; position_id: string; position_name: string } | null>(null);
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [jobSearch, setJobSearch] = useState<string>("");
   const [positionSearch, setPositionSearch] = useState<string>("");
@@ -41,10 +40,31 @@ export default function QuestionsBank() {
   const debouncedPositionSearch = useDebouncedValue(positionSearch);
 
   // Fetch jobs list
-  const { data: jobs, loading: loadingJobs } = useJobTitle(debouncedJobSearch, true);
+  // const { data: jobs, loading: loadingJobs } = useJobTitle(debouncedJobSearch, true);
 
   // Fetch job positions
-  const { data: positions, loading: loadingPositions } = useJobPosition(0, 10, debouncedPositionSearch);
+  // const { data: positions, loading: loadingPositions } = useJobPosition(0, 10, debouncedPositionSearch);
+
+  const { data: groupedTitles, loading: loadingJobs } = useJobTitlesGrouped(debouncedJobSearch, true);
+  const uniqueTitles = groupedTitles.map(g => g.title);
+  const selectedGroup = groupedTitles.find(g => g.title === selectedTitle);
+  const availablePositions = selectedGroup?.variants ?? [];
+  useEffect(() => {
+    let timeout: number;
+    if (groupedTitles.length > 0 && !selectedTitle) {
+      timeout = setTimeout(() => {
+        const firstTitle = groupedTitles[0].title;
+        setSelectedTitle(firstTitle);
+        if (groupedTitles[0].variants.length > 0) {
+          setSelectedVariant(groupedTitles[0].variants[0]);
+        }
+      }, 0);
+    }
+    return () => {
+      if (timeout) clearTimeout(timeout);
+    };
+  }, [groupedTitles, selectedTitle]);
+
 
   // Detect async loading
   const isJobSearching = jobSearch !== debouncedJobSearch;
@@ -55,8 +75,10 @@ export default function QuestionsBank() {
   const handlePositionSearch = useCallback((query: string) => setPositionSearch(query), []);
 
   // Compute active selections
-  const activeJobId = selectedJobId || jobs?.[0]?.id || "";
-  const activePositionId = selectedPositionId || positions[0]?.id || "";
+  // const activeJobId = selectedJobId || jobs?.[0]?.id || "";
+  // const activePositionId = selectedPositionId || positions[0]?.id || "";
+  const activeJobId = selectedVariant?.job_id || "";
+  const activePositionId = selectedVariant?.position_id || "";
 
   // Fetch predefined Question Set Papers with polling if any paper is still extracting questions
   // do polling if `questions: []` means empty array
@@ -69,7 +91,7 @@ export default function QuestionsBank() {
     positionId: activePositionId || undefined,
     options: {
       refetchInterval: (query: unknown) => {
-        // @ts-ignore
+        // @ts-expect-error
         const papers = (query as { state?: { data?: { questions?: string[] }[] }[] })?.state?.data;
         const hasProcessing = Array.isArray(papers) && papers.some(
           (paper) => !paper.questions || paper.questions.length === 0
@@ -126,7 +148,8 @@ export default function QuestionsBank() {
     }
   };
 
-  // @ts-ignore will use again after discussion
+  // @ts-expect-error will use again after discussion
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleDeletePaper = (paperId: string) => {
     deleteMutation.mutate(paperId, {
       onSuccess: () => {
@@ -139,13 +162,19 @@ export default function QuestionsBank() {
     });
   };
 
-  const handleJobChange = (jobId: string) => {
-    setSelectedJobId(jobId);
+  const handleJobChange = (title: string) => {
+    setSelectedTitle(title);
+    const newGroup = groupedTitles.find(g => g.title === title);
+    if (newGroup && newGroup.variants.length > 0) {
+      setSelectedVariant(newGroup.variants[0]);
+    } else {
+      setSelectedVariant(null);
+    }
     setShowCreateForm(false);
   };
 
-  const handlePositionChange = (position: string) => {
-    setSelectedPositionId(position);
+  const handlePositionChange = (positionId: string) => {
+    setSelectedVariant(availablePositions.find(pos => pos.position_id == positionId) || null);
     setShowCreateForm(false);
   };
 
@@ -163,12 +192,13 @@ export default function QuestionsBank() {
             <div className="flex flex-col gap-1.5 flex-1">
               <Label>Select Job Role</Label>
               <SearchableSelect
-                value={activeJobId}
+                value={selectedTitle}
                 onValueChange={handleJobChange}
-                options={jobs?.map((job) => ({ id: job.id, label: job.title })) || []}
+                // options={jobs?.map((job) => ({ id: job.id, label: job.title })) || []}
+                options={uniqueTitles?.map((title) => ({ id: title, label: title })) || []}
                 placeholder="Choose a job role..."
                 searchPlaceholder="Search jobs..."
-                disabled={!jobs || jobs.length === 0}
+                disabled={!uniqueTitles || uniqueTitles.length === 0}
                 loading={loadingJobs}
                 loadingPlaceholder="Loading jobs..."
                 emptyMessage="No active jobs found"
@@ -184,11 +214,11 @@ export default function QuestionsBank() {
               <SearchableSelect
                 value={activePositionId}
                 onValueChange={handlePositionChange}
-                options={positions?.map((pos) => ({ id: pos.id, label: pos.name })) || []}
-                placeholder="Choose a position level..."
+                options={availablePositions?.map((pos) => ({ id: pos.position_id, label: pos.position_name })) || []}
+                placeholder={selectedTitle ? "Choose a position level..." : "Select a job role first"}
+                disabled={!selectedTitle || availablePositions.length === 0}
                 searchPlaceholder="Search levels..."
-                disabled={!positions || positions.length === 0}
-                loading={loadingPositions}
+                loading={loadingJobs}
                 loadingPlaceholder="Loading levels..."
                 emptyMessage="No position levels found"
                 moreText="position levels"

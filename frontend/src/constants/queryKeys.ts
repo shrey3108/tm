@@ -40,7 +40,8 @@ export const QUERY_KEYS = {
     ADMIN_CANDIDATES: "adminCandidates",
     JOB_VERSION: "jobVersion",
     TASK: "jobTask",
-    TASK_DOWNLOAD: "candidateTaskDownload"
+    TASK_DOWNLOAD: "candidateTaskDownload",
+    TITLES_GROUPED: "jobTitlesGrouped"
   },
   TASK_PAPERS: {
     LIST: "taskPapersList",

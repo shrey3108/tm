@@ -1,5 +1,4 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { History, CheckCircle2, Calendar } from "lucide-react";
 import type { EvaluationHistoryRead } from "@/types/candidateStage";
@@ -25,11 +24,11 @@ export function EvaluationHistoryModal({
 }: EvaluationHistoryModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col p-0 overflow-hidden border-none shadow-2xl rounded-3xl">
-        <DialogHeader className="p-6 pb-2 bg-linear-to-br from-primary/5 via-transparent to-transparent">
+      <DialogContent className="sm:w-[60vw] w-[80vw] max-w-[95vw] sm:max-w-3xl md:max-w-4xl lg:max-w-5xl max-h-[90vh] flex flex-col p-0 overflow-hidden bg-card/95 backdrop-blur-xl border-muted-foreground/20 shadow-2xl rounded-2xl">
+        <DialogHeader className="p-3 pb-2 bg-linear-to-br from-primary/5 via-transparent to-transparent">
           <div className="flex items-center gap-3 mb-1">
             <div className="h-10 w-10 rounded-2xl bg-primary/10 flex items-center justify-center">
-              <History className="h-5 w-5 text-primary" />
+              <History className="h-4 w-4 text-primary" />
             </div>
             <div>
               <DialogTitle className="text-2xl font-black uppercase tracking-tight">Evaluation History</DialogTitle>
@@ -39,9 +38,8 @@ export function EvaluationHistoryModal({
             </div>
           </div>
         </DialogHeader>
-
-        <ScrollArea className="flex-1 px-6 pb-6">
-          <div className="space-y-3 pt-2">
+        <ScrollArea className="h-80">
+          <div className="px-3 py-3 space-y-1">
             {isLoading ? (
               <div className="flex flex-col items-center justify-center py-12 gap-3">
                 <div className="h-8 w-8 border-4 border-primary/20 border-t-primary animate-spin rounded-full" />
@@ -107,16 +105,6 @@ export function EvaluationHistoryModal({
             )}
           </div>
         </ScrollArea>
-
-        <div className="p-4 bg-muted/30 border-t border-border flex justify-end">
-          <Button
-            variant="ghost"
-            onClick={() => onOpenChange(false)}
-            className="font-bold rounded-xl"
-          >
-            Close
-          </Button>
-        </div>
       </DialogContent>
     </Dialog>
   );

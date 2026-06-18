@@ -104,3 +104,20 @@ export const useJobVersion = (versionId: string | null, enabled: boolean) => {
     refetch: res.refetch,
   };
 };
+
+
+export const useJobTitlesGrouped = (q?: string, isEnable?: boolean) => {
+  const res = useQuery({
+    queryKey: [QUERY_KEYS.JOBS.TITLES_GROUPED, q],
+    queryFn: () => jobService.getJobTitlesGrouped(q),
+    staleTime: QUERY_CONFIG.JOB_DETAIL.staleTime,
+    enabled: isEnable
+  });
+
+  return {
+    data: res.data?.data ?? [],
+    loading: res.isLoading,
+    error: res.error,
+    refetch: res.refetch,
+  };
+};

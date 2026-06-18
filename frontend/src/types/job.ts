@@ -124,3 +124,19 @@ export interface JobTask {
 export interface DeleteJobTaskResponse {
   message: string;
 }
+
+export interface JobTitleVariant {
+  job_id: string;
+  position_id: string;
+  position_name: string;
+  is_active: boolean;
+}
+
+export interface JobTitleGroup {
+  title: string;
+  variants: JobTitleVariant[];
+}
+
+export interface JobTitlesGroupedListResponse {
+  data: JobTitleGroup[];
+}

@@ -1,5 +1,5 @@
 import client from "@/apis/client";
-import type { Job, JobTitle, JobVersionDetail, JobsListResponse } from "@/types/job";
+import type { Job, JobTitle, JobTitlesGroupedListResponse, JobVersionDetail, JobsListResponse } from "@/types/job";
 import type { CandidateAnalysisResponse, JobStatsResponse } from "@/types/admin";
 
 type JobPayload = Record<string, unknown>;
@@ -216,6 +216,18 @@ const jobService = {
       params: {
         ...filters,
       },
+    });
+    return response.data;
+  },
+
+  /**
+   * Retrieves a list of job titles grouped by position.
+   * @param q - The search query 
+   * @returns Promise resolving to an array of job titles grouped by position
+   */
+  getJobTitlesGrouped: async (q: string = ""): Promise<JobTitlesGroupedListResponse> => {
+    const response = await client.get<JobTitlesGroupedListResponse>("/jobs/titles/grouped", {
+      params: { ...(q ? { q } : undefined) },
     });
     return response.data;
   },
