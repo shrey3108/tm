@@ -150,13 +150,6 @@ export function useCandidatesStages() {
       ? (evaluationData as any).error_message || "Evaluation processing failed"
       : "";
 
-
-  // TODO: for testing purposes
-  // // MOCK ERROR !!
-  // evaluation = null;
-
-  // // MOCK ERROR !!
-  // const error = "Mocked Evaluation Error: Connection to evaluation microservice timed out.";
   // // 5. Invalidate evaluation related queries when AI polling finishes
   useEffect(() => {
     if (isPolling && evaluationData && !isResponseProcessing) {
@@ -217,8 +210,8 @@ export function useCandidatesStages() {
   const queryStageId = currentStage === "Resume Screening" ? undefined : configId;
   const { data: hrDecisionHistoryResponse, refetch: refetchHrDecisionHistory } =
     useHrDecisionHistoryQuery(candidate?.id, job?.id, queryStageId);
-  // TODO: CHNAGE TO CONST AFTER GEP
-  let hrDecisionHistory = hrDecisionHistoryResponse?.decisions ?? [];
+
+  const hrDecisionHistory = hrDecisionHistoryResponse?.decisions ?? [];
 
   const form = useForm<CandidateDecisionFormValues>({
     resolver: zodResolver(candidateDecisionSchema),
@@ -300,9 +293,7 @@ export function useCandidatesStages() {
   );
 
 
-  // TODO: for testing purposes
-  // MOCK ERROR !!
-  // const isFailedEvaluation = true;
+
 
   const handleRetry = async () => {
     if (!instanceId) return;
@@ -404,10 +395,7 @@ export function useCandidatesStages() {
 
   const latestDecision = filteredHistory ? filteredHistory[0] : hrDecisionHistory[0];
   const canTakeDecision = !latestDecision || latestDecision.decision.toLowerCase() === "may be";
-  // if (currentStage === "Technical Practical Round" && !evaluation && error) {
-  //   evaluation = TEMP_TECHNICAL_ROUND_RESPONSE
-  //   hrDecisionHistory = TEMP_TECHNICAL_ROUND_HR_DECISION
-  // }
+
 
   return {
     job,

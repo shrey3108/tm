@@ -37,8 +37,8 @@ function getStageHrStats(
   stageName: string,
 ): {
   totalCandidates: number;
-  approveCount: number;
-  rejectCount: number;
+  passedCount: number;
+  failedCount: number;
   maybeCount: number;
   undecidedCount: number;
 } | null {
@@ -46,13 +46,13 @@ function getStageHrStats(
   if (!stageDetail) return null;
 
   const hrDec = stageDetail.hr_decisions ?? {};
-  const approveCount = hrDec["approve"] ?? 0;
-  const rejectCount = hrDec["reject"] ?? 0;
-  const maybeCount = hrDec["may be"] ?? 0;
+  const passedCount = hrDec["approve"] ?? hrDec["pass"] ?? 0;
+  const failedCount = hrDec["reject"] ?? hrDec["fail"] ?? 0;
+  const maybeCount = hrDec["may be"] ?? hrDec["maybe"] ?? 0;
   const pendingCount = hrDec["pending"] ?? 0;
-  const totalCandidates = approveCount + rejectCount + maybeCount + pendingCount;
+  const totalCandidates = passedCount + failedCount + maybeCount + pendingCount;
 
-  return { totalCandidates, approveCount, rejectCount, maybeCount, undecidedCount: pendingCount };
+  return { totalCandidates, passedCount, failedCount, maybeCount, undecidedCount: pendingCount };
 }
 
 /**
@@ -82,6 +82,7 @@ export function JobCandidatesCharts({
 
   const passCount = jobStats?.result?.passed ?? 0;
   const failCount = jobStats?.result?.failed ?? 0;
+  console.log(jobStats);
 
   // Determine the HR decision stats and screening results based on selected stage
   const stageHrStats = selectedStage ? getStageHrStats(jobStats, selectedStage) : null;
@@ -105,7 +106,7 @@ export function JobCandidatesCharts({
     );
   }
 
-  const stagesList = ["Resume Screening", ...Object.keys(jobStats?.stages || {})];
+  const stagesList = [...Object.keys(jobStats?.stages || {})];
   const StageSelector = (
     <DropdownMenu>
       <DropdownMenuTrigger className="inline-flex items-center justify-between gap-2 h-10 px-3 w-[200px] rounded-xl border text-sm font-medium cursor-pointer select-none transition-all truncate">
@@ -184,17 +185,6 @@ export function JobCandidatesCharts({
         takeFullSpace: true,
       },
     ];
-
-  // TODO: Used when breadcrum won't able to fix !!
-  // useEffect(() => {
-  //   if (!loading && jobStats) {
-  //     window.scrollBy({
-  //       top: 200,
-  //       behavior: 'smooth'
-  //     });
-  //   }
-  // }, [loading, jobStats]); // Only runs when loading status or data changes
-
   return (
     <div
       className={cn(

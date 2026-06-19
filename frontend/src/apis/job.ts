@@ -150,7 +150,7 @@ const jobService = {
         ...(filters?.activity_session !== undefined ? { activity_session: filters.activity_session } : undefined),
         ...(filters?.stage_id !== undefined ? { stage_id: filters.stage_id } : undefined),
         ...(filters?.city !== undefined ? { city: filters.city } : undefined),
-        ...(filters?.result !== undefined ? { result: filters.result.map(r => r === "passed" ? "pass" : r) } : undefined),
+        ...(filters?.result !== undefined ? { result: filters.result.map(r => r.replace(/ed$/, "")) } : undefined),
         ...(filters?.hr_score !== undefined ? { hr_score: filters.hr_score } : undefined),
         ...(filters?.test_email_sent !== undefined ? { test_email_sent: filters.test_email_sent } : undefined),
       },

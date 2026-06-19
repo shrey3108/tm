@@ -49,7 +49,7 @@ export const StageCandidatesHeader = ({
   candidateId,
   githubUrl,
   transcriptHistory,
-  // hasError // TODO: FIX IT
+  hasError // TODO: FIX IT
 }: StageCandidatesHeaderProps) => {
   const [isProjectSubmissionDialogOpen, setIsProjectSubmissionDialogOpen] = useState(false);
   const [isSendQuestionPaperDialogOpen, setIsSendQuestionPaperDialogOpen] = useState(false);
@@ -62,7 +62,7 @@ export const StageCandidatesHeader = ({
     githubUrl.toLowerCase().startsWith("http") &&
     (githubUrl.toLowerCase().includes("github.com") || githubUrl.toLowerCase().includes("gitlab.com"));
 
-
+  console.log(isUploaded, !job?.is_active, transcriptHistory, hasError)
   return (
     <AppPageHeader
       headingClassName="text-lg sm:text-xl capitalize"
