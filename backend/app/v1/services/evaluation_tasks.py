@@ -202,7 +202,8 @@ def evaluate_candidate_practical_task(
                             logger.error(f"Evaluator API returned: {error_msg}")
                             stage.evaluation_data = {
                                     "error": error_msg,
-                                    "status": submit_status or "submission_error"
+                                    "status": submit_status or "submission_error",
+                                    "github_url": github_url
                                 }
                             stage.status = "failed"
                             await db.commit()
@@ -212,7 +213,8 @@ def evaluate_candidate_practical_task(
                         stage.status = "failed"
                         stage.evaluation_data = {
                             "error": str(ex),
-                            "status": "submission_error"
+                            "status": "submission_error",
+                            "github_url": github_url
                         }
                         await db.commit()
                         return
@@ -255,7 +257,8 @@ def evaluate_candidate_practical_task(
                 stage.status = "failed"
                 stage.evaluation_data = {
                     "error": last_error_message,
-                    "status": last_status
+                    "status": last_status,
+                    "github_url": github_url
                 }
                 await db.commit()
                 return
@@ -270,7 +273,8 @@ def evaluate_candidate_practical_task(
                         stage.status = "failed"
                         stage.evaluation_data = {
                             "error": f"Failed to fetch report: {report_res.text}",
-                            "status": "report_fetch_error"
+                            "status": "report_fetch_error",
+                            "github_url": github_url
                         }
                         await db.commit()
                         return
@@ -280,7 +284,8 @@ def evaluate_candidate_practical_task(
                     stage.status = "failed"
                     stage.evaluation_data = {
                         "error": f"Exception fetching report: {str(ex)}",
-                        "status": "report_fetch_error"
+                        "status": "report_fetch_error",
+                        "github_url": github_url
                     }
                     await db.commit()
                     return
@@ -577,7 +582,8 @@ def evaluate_candidate_practical_task(
                 "highlights": highlights,
                 "is_passed": result == "pass",
                 "threshold": 3.5,
-                "github_evaluation_id": eval_id
+                "github_evaluation_id": eval_id,
+                "github_url": github_url
             }
 
             if candidate:

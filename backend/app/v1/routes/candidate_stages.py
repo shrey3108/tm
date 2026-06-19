@@ -5,7 +5,7 @@ from typing import Any, List
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Path
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -298,6 +298,12 @@ async def candidate_stage_decision(
         raise HTTPException(status_code=500, detail=f"Failed to record decision: {str(e)}")
 
 
+def is_practical_evaluation(stage: CandidateStage) -> bool:
+    """Determine if a stage is configured for Technical Practical / GitHub Evaluation."""
+    template = stage.job_stage.template if stage.job_stage else None
+    return template.name == "Technical Practical Round" if template else False
+
+
 class GitHubEvaluationRequest(BaseModel):
     github_url: str | None = None
 
@@ -331,9 +337,9 @@ async def evaluate_candidate_github_repo(
     if not stage:
         raise HTTPException(status_code=404, detail="Candidate stage not found")
 
-    # 2. Verify stage is Technical Practical Round
-    stage_template_name = stage.job_stage.template.name if stage.job_stage and stage.job_stage.template else None
-    if stage_template_name != "Technical Practical Round":
+    # 2. Verify stage is a Technical Practical / GitHub Round
+    if not is_practical_evaluation(stage):
+        stage_template_name = stage.job_stage.template.name if stage.job_stage and stage.job_stage.template else None
         raise HTTPException(
             status_code=400,
             detail=f"This stage is not configured for Technical Practical Round evaluation (found: {stage_template_name}).",
@@ -454,7 +460,8 @@ async def evaluate_candidate_github_repo(
                     stage.status = "failed"
                     stage.evaluation_data = {
                         "error": error_msg,
-                        "status": "submission_error"
+                        "status": "submission_error",
+                        "github_url": github_url
                     }
                     await db.commit()
                     raise HTTPException(status_code=response.status_code, detail=error_msg)
@@ -469,7 +476,8 @@ async def evaluate_candidate_github_repo(
                 stage.status = "failed"
                 stage.evaluation_data = {
                     "error": error_msg,
-                    "status": submit_status or "submission_error"
+                    "status": submit_status or "submission_error",
+                    "github_url": github_url
                 }
                 await db.commit()
                 raise HTTPException(status_code=400, detail=error_msg)
@@ -479,7 +487,8 @@ async def evaluate_candidate_github_repo(
         stage.status = "failed"
         stage.evaluation_data = {
             "error": error_msg,
-            "status": "communication_error"
+            "status": "communication_error",
+            "github_url": github_url
         }
         await db.commit()
         raise HTTPException(status_code=502, detail=error_msg)
@@ -524,14 +533,13 @@ async def retry_candidate_stage_evaluation(
         raise HTTPException(status_code=400, detail="Candidate stage is missing job stage configuration.")
         
     await db.refresh(stage.job_stage, ["template"])
-    stage_template_name = stage.job_stage.template.name if stage.job_stage.template else None
     
-    if stage_template_name == "Technical Practical Round":
+    if is_practical_evaluation(stage):
         # Retry GitHub evaluation using the empty payload fallback logic
         payload = GitHubEvaluationRequest(github_url=None)
         return await evaluate_candidate_github_repo(id, payload, db, user)
         
-    elif stage_template_name in ("Resume Screening", "Technical Interview Round", "HR Round", "HR Screening Round"):
+    else:
         # Retry Transcript evaluation
         from app.v1.services.evaluation_tasks import evaluate_candidate_transcript_task
         stage.status = "processing"
@@ -552,5 +560,51 @@ async def retry_candidate_stage_evaluation(
             "candidate_stage_id": id,
             "status": "processing"
         }
-    else:
-        raise HTTPException(status_code=400, detail=f"Unknown stage type for retry: {stage_template_name}")
+
+
+@router.delete("/{id}/results")
+async def delete_candidate_stage_results(
+    id: uuid.UUID = Path(..., description="The UUID of the Candidate Stage to reset/delete results for"),
+    db: AsyncSession = Depends(get_db),
+    user: UserRead = Depends(check_permission("candidates:decide")),
+) -> Any:
+    """Delete all evaluation results and decisions for a candidate stage, resetting its status to pending."""
+    # 1. Fetch CandidateStage
+    stage = await db.get(CandidateStage, id)
+    if not stage:
+        raise HTTPException(status_code=404, detail="Candidate stage not found")
+
+    # 2. Delete linked Evaluations
+    await db.execute(
+        delete(Evaluation).where(Evaluation.candidate_stage_id == id)
+    )
+
+    # 3. Delete linked HR Decisions
+    await db.execute(
+        delete(HrDecision).where(
+            HrDecision.candidate_id == stage.candidate_id,
+            HrDecision.stage_config_id == stage.job_stage_id
+        )
+    )
+
+    # 4. Reset CandidateStage status and data
+    stage.status = "pending"
+    stage.evaluation_data = None
+    stage.completed_at = None
+
+    await db.commit()
+
+    # 5. Invalidate Job Cache if stage config is available
+    try:
+        await db.refresh(stage, ["job_stage"])
+        if stage.job_stage:
+            from app.v1.services.admin.system_service import system_service
+            await system_service.invalidate_job_cache(stage.job_stage.job_id)
+    except Exception as e:
+        get_logger(__name__).warning(f"Failed to invalidate cache: {e}")
+
+    return {
+        "message": f"Successfully deleted all results and reset candidate stage {id} to pending.",
+        "candidate_stage_id": id,
+        "status": "pending"
+    }
