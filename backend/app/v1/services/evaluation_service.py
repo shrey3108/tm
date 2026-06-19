@@ -327,6 +327,8 @@ class EvaluationService:
         logger.info(f"EVIDENCE USED: {json.dumps(evidence_snippets, indent=2)}")
         logger.info(f"--- LLM USER PROMPT END ---")
 
+        is_panel = cs.job_stage.config.get("is_panel_interview", False) if cs.job_stage.config else False
+
         final_report = await evaluation_agent.synthesize_evaluation(
             transcript_text=transcript.clean_transcript_text,
             jd_text=full_jd_text,
@@ -334,6 +336,7 @@ class EvaluationService:
             calculated_scores=calculated_scores,
             evidence_snippets=evidence_snippets,
             criteria_names=criteria_names,
+            is_panel_interview=is_panel,
         )
 
         # 7. RESTRUCTURE AND STORE PHASE
@@ -393,13 +396,13 @@ class EvaluationService:
         # Prepare highlights, including any potential errors
         error_msg = final_report.get("error", "")
 
-        # Pass/Fail Logic
         if error_msg:
-            is_passed = False
-            result_status = "pending"
-        else:
-            is_passed = avg_score >= 3.5
-            result_status = "pass" if is_passed else "fail"
+            # Raise an exception so the Celery task marks the stage as failed without saving an Evaluation record
+            raise ValueError(f"AI Synthesis Error: {error_msg}")
+
+        # Pass/Fail Logic
+        is_passed = avg_score >= 3.5
+        result_status = "pass" if is_passed else "fail"
         
         # Extract arrays with fallback if model ignored strict instructions
         strengths = final_report.get("strengths", [])

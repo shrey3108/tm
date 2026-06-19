@@ -92,6 +92,10 @@ def process_transcript_task(candidate_stage_id_str: str, file_infos: list[dict],
                 all_dialogues = []
                 primary_file_id = None
                 
+                is_panel = False
+                if current_stage.job_stage and current_stage.job_stage.config:
+                    is_panel = current_stage.job_stage.config.get("is_panel_interview", False)
+                
                 # 1. Process each file
                 for idx, info in enumerate(file_infos):
                     file_path_str = info["path"]
@@ -108,7 +112,7 @@ def process_transcript_task(candidate_stage_id_str: str, file_infos: list[dict],
                         content = f.read()
 
                     # 2. Parse
-                    processed_data = process_transcript_file(content, ext)
+                    processed_data = process_transcript_file(content, ext, keep_speakers=is_panel)
                     all_dialogues.extend(processed_data.get("dialogues", []))
 
                     # 3. Save File entry
@@ -133,7 +137,10 @@ def process_transcript_task(candidate_stage_id_str: str, file_infos: list[dict],
 
                 # 4. Merge and finalize
                 # Reconstruct clean text from merged dialogues
-                clean_text = "\n\n".join([d["text"] for d in all_dialogues])
+                if is_panel:
+                    clean_text = "\n\n".join([f"{d['speaker']}: {d['text']}" for d in all_dialogues])
+                else:
+                    clean_text = "\n\n".join([d["text"] for d in all_dialogues])
                 
                 # Hash for duplicates
                 salt_text = clean_text + f"\n\n[Merge Salt: {time.time()}]"

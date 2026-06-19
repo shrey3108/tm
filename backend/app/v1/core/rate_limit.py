@@ -34,6 +34,6 @@ def _get_user_or_ip(request: Request) -> str:
 # are shared across all Gunicorn/Uvicorn workers.
 limiter = Limiter(
     key_func=_get_user_or_ip,
-    default_limits=["20/minute"],
+    default_limits=["10/minute"],
     storage_uri=settings.REDIS_URL,
 )

@@ -234,7 +234,7 @@ def chunk_dialogues(dialogues: list[DialogueTurn], chunk_size_turns: int = 10, o
     return chunks
 
 
-def process_transcript_file(file_content: bytes, file_extension: str) -> dict:
+def process_transcript_file(file_content: bytes, file_extension: str, keep_speakers: bool = False) -> dict:
     """
     Main utility function to ingest .docx or .pdf content, clean it,
     parse dialogues, and chunk it for further embedding/evaluation logic.
@@ -271,9 +271,12 @@ def process_transcript_file(file_content: bytes, file_extension: str) -> dict:
             # 4. Trim Post-Interview Noise (e.g. casual talk after 'Bye')
             dialogues = trim_post_interview_noise(dialogues)
             
-        # 5. Reconstruct the final clean text WITHOUT timestamps or speaker names
-        # This is what will be stored in 'clean_transcript_text'
-        final_clean_text = "\n\n".join([d["text"] for d in dialogues])
+        # 5. Reconstruct the final clean text
+        # If keep_speakers is True, retain the speaker names for panel evaluations
+        if keep_speakers:
+            final_clean_text = "\n\n".join([f"{d['speaker']}: {d['text']}" for d in dialogues])
+        else:
+            final_clean_text = "\n\n".join([d["text"] for d in dialogues])
         
         chunks = chunk_dialogues(dialogues, chunk_size_turns=10, overlap_turns=2)
         
