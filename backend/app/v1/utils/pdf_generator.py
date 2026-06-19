@@ -98,12 +98,14 @@ def generate_candidate_task_pdf_file(
     
     if test_paper.questions:
         text_content += "Questions:\n"
-        for i, q in enumerate(test_paper.questions):
+        questions = test_paper.questions if isinstance(test_paper.questions, list) else [test_paper.questions]
+        for i, q in enumerate(questions):
             text_content += f"{i+1}. {q}\n\n"
     
     if test_paper.project_task:
         text_content += f"Project Task:\n"
-        for t in test_paper.project_task:
+        tasks = test_paper.project_task if isinstance(test_paper.project_task, list) else [test_paper.project_task]
+        for t in tasks:
             text_content += f"- {t}\n"
         text_content += "\n"
 
