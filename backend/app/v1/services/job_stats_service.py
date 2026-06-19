@@ -161,10 +161,16 @@ class JobStatsService:
         rows = await db.execute(stmt)
         counts: dict[str, int] = {"passed": 0, "failed": 0, "pending": 0}
         for _, pf in rows.all():
-            if pf in counts:
-                counts[pf] += 1
-            else:
+            if not pf:
                 counts["pending"] += 1
+            else:
+                normalized = pf.lower().strip()
+                if normalized in ("pass", "passed"):
+                    counts["passed"] += 1
+                elif normalized in ("fail", "failed"):
+                    counts["failed"] += 1
+                else:
+                    counts["pending"] += 1
 
         return JobResultStats(
             passed=counts["passed"],
@@ -558,10 +564,16 @@ class JobStatsService:
                 ai_stmt = select(subq.c.final_pass_fail, func.count()).group_by(subq.c.final_pass_fail)
                 ai_rows = await db.execute(ai_stmt)
                 for pf, cnt in ai_rows.all():
-                    if pf in ai_counts:
-                        ai_counts[pf] = cnt
-                    else:
+                    if not pf:
                         ai_counts["pending"] += cnt
+                    else:
+                        normalized = pf.lower().strip()
+                        if normalized in ("pass", "passed"):
+                            ai_counts["passed"] += cnt
+                        elif normalized in ("fail", "failed"):
+                            ai_counts["failed"] += cnt
+                        else:
+                            ai_counts["pending"] += cnt
             else:
                 # Interview Rounds (Evaluations)
                 ai_stmt = (
