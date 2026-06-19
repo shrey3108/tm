@@ -318,6 +318,16 @@ async def get_stage_templates(
     )
 
 
+@router.get("/stage-templates/{template_id}", response_model=StageTemplateRead)
+async def get_stage_template(
+    template_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    admin: UserRead = Depends(check_permission("jobs:access")),
+) -> Any:
+    """Get a specific stage template by ID."""
+    return await stage_service.get_template(db=db, template_id=template_id)
+
+
 @router.post(
     "/stage-templates",
     response_model=StageTemplateRead,

@@ -46,6 +46,19 @@ class StageTemplateService:
         await cache.set(cache_key, final_res, ttl=3600)
         return final_res
 
+    async def get_template(
+        self, db: AsyncSession, template_id: uuid.UUID
+    ) -> StageTemplate:
+        """Retrieve a stage template by ID."""
+        template = await stage_repository.get_template_by_id(db, template_id)
+        if not template:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Stage template with ID {template_id} not found",
+            )
+        await enrich_stage_configs(db, template)
+        return template
+
     async def create_template(
         self, db: AsyncSession, admin_user_id: uuid.UUID, template_in: StageTemplateCreate
     ) -> StageTemplate:
