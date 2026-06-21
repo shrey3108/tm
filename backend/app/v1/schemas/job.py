@@ -12,6 +12,7 @@ from app.v1.schemas.job_stage import JobStageConfigRead
 from app.v1.schemas.skill import SkillRead
 from app.v1.schemas.job_priority import JobPriorityRead
 from app.v1.schemas.job_position import JobPositionRead
+from app.v1.schemas.tech_stack import TechStackRead
 from pydantic import BaseModel, ConfigDict, Field
 from typing import Any
 
@@ -36,6 +37,7 @@ class JobBase(BaseModel):
     priority_end_date: datetime | None = None
     task_file_path: str | None = None
     task_skills: list[str] | None = None
+    tech_stack_ids: list[uuid.UUID] = []
 
 
 class StageInput(BaseModel):
@@ -88,6 +90,7 @@ class JobUpdate(BaseModel):
     jd_json: dict | None = None
     is_active: bool | None = None
     skill_ids: list[uuid.UUID] | None = None
+    tech_stack_ids: list[uuid.UUID] | None = None
     passing_threshold: float | None = None
     custom_extraction_fields: list[str] | None = None
     priority_id: uuid.UUID | None = None
@@ -147,6 +150,7 @@ class JobRead(JobBase):
     department_name: str | None = None
     department: DepartmentRead | None = None
     skills: list[SkillRead] = []
+    tech_stacks: list[TechStackRead] = []
     stages: list[JobStageConfigRead] = []
     priority: JobPriorityRead | None = None
     position: JobPositionRead | None = None

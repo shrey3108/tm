@@ -29,6 +29,8 @@ from app.v1.db.models.resumes import Resume
 from app.v1.db.models.transcripts import Transcript
 from app.v1.schemas.job import JobCreate, JobUpdate
 from app.v1.db.models.job_versions import JobVersion
+from app.v1.db.models.tech_stacks import TechStack
+from app.v1.db.models.job_tech_stacks import job_tech_stacks
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +50,7 @@ class JobRepository:
         department_ids: list[uuid.UUID] | None = None,
         priority_ids: list[uuid.UUID] | None = None,
         position_ids: list[uuid.UUID] | None = None,
+        tech_stack_ids: list[uuid.UUID] | None = None,
     ):
         """
         Retrieve multiple job records with pagination and filters.
@@ -76,6 +79,8 @@ class JobRepository:
             filters.append(Job.priority_id.in_(priority_ids))
         if position_ids:
             filters.append(Job.position_id.in_(position_ids))
+        if tech_stack_ids:
+            filters.append(Job.tech_stacks.any(TechStack.id.in_(tech_stack_ids)))
 
         # 1. Total Count Query
         total_stmt = select(func.count()).select_from(Job)
@@ -88,6 +93,7 @@ class JobRepository:
             select(Job)
             .options(
                 selectinload(Job.skills),
+                selectinload(Job.tech_stacks),
                 selectinload(Job.stages).selectinload(JobStageConfig.template),
                 selectinload(Job.department),
                 selectinload(Job.versions),
@@ -110,6 +116,7 @@ class JobRepository:
             select(Job)
             .options(
                 selectinload(Job.skills),
+                selectinload(Job.tech_stacks),
                 selectinload(Job.stages).selectinload(JobStageConfig.template),
                 selectinload(Job.department),
                 selectinload(Job.versions),
@@ -125,6 +132,7 @@ class JobRepository:
         """Create a job and persist its skill associations."""
         payload = object.model_dump()
         skill_ids = payload.pop("skill_ids", [])
+        tech_stack_ids = payload.pop("tech_stack_ids", [])
         payload.pop("stages", None)  # handled separately in job_service, not an ORM field
 
         job = Job(**payload, created_by=created_by)
@@ -141,6 +149,7 @@ class JobRepository:
         await self._sync_job_chunks(db=db, job=job)
 
         await self._sync_skills(db=db, job_id=job.id, skill_ids=skill_ids)
+        await self._sync_tech_stacks(db=db, job_id=job.id, tech_stack_ids=tech_stack_ids)
 
         from app.v1.db.models.job_versions import JobVersion
 
@@ -172,6 +181,7 @@ class JobRepository:
 
         payload = object.model_dump(exclude_unset=True)
         skill_ids = payload.pop("skill_ids", None)
+        tech_stack_ids = payload.pop("tech_stack_ids", None)
         payload.pop("stages", None)  # handled separately in job_service, not an ORM field
 
         # Remove status from payload to prevent version creation on status changes
@@ -196,10 +206,18 @@ class JobRepository:
             if current_skill_ids != new_skill_ids:
                 skills_changed = True
 
+        tech_stacks_changed = False
+        if tech_stack_ids is not None:
+            current_tech_stack_ids = {ts.id for ts in job.tech_stacks}
+            new_tech_stack_ids = set(tech_stack_ids)
+            if current_tech_stack_ids != new_tech_stack_ids:
+                tech_stacks_changed = True
+
         version_worthy_change = (
             core_fields_changed
             or extraction_fields_changed
             or skills_changed
+            or tech_stacks_changed
         )
 
         for key, value in payload.items():
@@ -224,6 +242,8 @@ class JobRepository:
 
         if skill_ids is not None:
             await self._sync_skills(db=db, job_id=id, skill_ids=skill_ids)
+        if tech_stack_ids is not None:
+            await self._sync_tech_stacks(db=db, job_id=id, tech_stack_ids=tech_stack_ids)
 
         if version_worthy_change:
             # Increment version to record an update
@@ -294,6 +314,7 @@ class JobRepository:
 
         # 6. Remove job-owned configuration and metadata
         await db.execute(delete(job_skills).where(job_skills.c.job_id == id))
+        await db.execute(delete(job_tech_stacks).where(job_tech_stacks.c.job_id == id))
         await db.execute(delete(JobStageConfig).where(JobStageConfig.job_id == id))
         await db.execute(delete(JobChunk).where(JobChunk.job_id == id))
         await db.execute(delete(JobVersion).where(JobVersion.job_id == id))
@@ -334,6 +355,7 @@ class JobRepository:
             select(Job)
             .options(
                 selectinload(Job.skills),
+                selectinload(Job.tech_stacks),
                 selectinload(Job.stages).selectinload(JobStageConfig.template),
                 selectinload(Job.department),
                 selectinload(Job.versions),
@@ -369,6 +391,19 @@ class JobRepository:
         await db.execute(
             insert(job_skills),
             [{"job_id": job_id, "skill_id": skill_id} for skill_id in skill_ids],
+        )
+
+    async def _sync_tech_stacks(
+        self, db: AsyncSession, job_id: uuid.UUID, tech_stack_ids: list[uuid.UUID]
+    ) -> None:
+        """Replace a job's tech stack links with the provided tech stack ids."""
+        await db.execute(delete(job_tech_stacks).where(job_tech_stacks.c.job_id == job_id))
+        if not tech_stack_ids:
+            return
+
+        await db.execute(
+            insert(job_tech_stacks),
+            [{"job_id": job_id, "tech_stack_id": ts_id} for ts_id in tech_stack_ids],
         )
 
     async def _sync_job_chunks(self, db: AsyncSession, job: Job) -> None:

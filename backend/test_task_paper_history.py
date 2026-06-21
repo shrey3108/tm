@@ -134,7 +134,7 @@ async def test_task_paper_history_and_evaluation_flow():
             res_json = response.json()
             assert res_json["id"] == job_paper_id
             assert res_json["name"] == "Custom Test Paper"
-            assert res_json["project_task"] == "Task A"
+            assert res_json["project_task"] == ["Task A"]
             # It should not show that job default changed yet, because candidate does not have candidate-specific paper
             assert res_json["job_default_paper_changed"] is False
 
@@ -155,7 +155,7 @@ async def test_task_paper_history_and_evaluation_flow():
                 cand_paper = res_ctp.mappings().first()
                 assert cand_paper is not None
                 assert cand_paper["name"] == "Custom Test Paper"
-                assert cand_paper["project_task"] == "Task A"
+                assert cand_paper["project_task"] == ["Task A"]
                 candidate_paper_id = cand_paper["id"]
 
             # Query assigned paper again -> should return candidate-specific assignment
@@ -170,7 +170,7 @@ async def test_task_paper_history_and_evaluation_flow():
             assert response.status_code == 200
             history = response.json()
             assert len(history) == 1
-            assert history[0]["project_task"] == "Task A"
+            assert history[0]["project_task"] == ["Task A"]
 
             # 4. Change job default paper to Paper B
             assign_job_payload_b = {
@@ -189,7 +189,7 @@ async def test_task_paper_history_and_evaluation_flow():
             assert response.status_code == 200
             res_json = response.json()
             assert res_json["id"] == str(candidate_paper_id)
-            assert res_json["project_task"] == "Task A"
+            assert res_json["project_task"] == ["Task A"]
             assert res_json["job_default_paper_changed"] is True
             assert res_json["job_default_paper_name"] == "Custom Test Paper"
             assert res_json["job_default_paper_id"] == new_job_paper_id
@@ -208,16 +208,16 @@ async def test_task_paper_history_and_evaluation_flow():
             assert response.status_code == 200
             history = response.json()
             assert len(history) == 2
-            assert history[0]["project_task"] == "Task B"
-            assert history[1]["project_task"] == "Task A"
+            assert history[0]["project_task"] == ["Task B"]
+            assert history[1]["project_task"] == ["Task A"]
 
             # Check job history log -> should contain the same 2 log entries
             response = client.get(f"/api/v1/task-papers/assigned/job/{job_id}/history")
             assert response.status_code == 200
             job_history = response.json()
             assert len(job_history) == 2
-            assert job_history[0]["project_task"] == "Task B"
-            assert job_history[1]["project_task"] == "Task A"
+            assert job_history[0]["project_task"] == ["Task B"]
+            assert job_history[1]["project_task"] == ["Task A"]
 
 
             # 6. Complete stage Technical Practical Round in DB

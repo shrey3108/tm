@@ -52,6 +52,26 @@ async def test_task_papers_flow():
             {"id": user_id, "email": user_email, "role_id": role_id},
         )
 
+        # Create department
+        department_id = UUIDHelper.generate_uuid7()
+        await conn.execute(
+            text(
+                "INSERT INTO departments (id, name, description) "
+                "VALUES (:id, :name, 'Test Department')"
+            ),
+            {"id": department_id, "name": f"Test Department {test_id_suffix}"},
+        )
+
+        # Create tech stack
+        tech_stack_id = UUIDHelper.generate_uuid7()
+        await conn.execute(
+            text(
+                "INSERT INTO tech_stacks (id, name, description, created_at, updated_at) "
+                "VALUES (:id, :name, 'Test Tech Stack', NOW(), NOW())"
+            ),
+            {"id": tech_stack_id, "name": f"Test Tech Stack {test_id_suffix}"},
+        )
+
         # Create position level
         position_id = UUIDHelper.generate_uuid7()
         await conn.execute(
@@ -62,14 +82,23 @@ async def test_task_papers_flow():
             {"id": position_id, "name": position_name},
         )
 
-        # Create job linked to position level
+        # Create job linked to position level and department
         job_id = UUIDHelper.generate_uuid7()
         await conn.execute(
             text(
-                "INSERT INTO jobs (id, title, position_id, is_active, passing_threshold, version, created_at) "
-                "VALUES (:id, :title, :position_id, true, 70.0, 1, NOW())"
+                "INSERT INTO jobs (id, title, department_id, position_id, is_active, passing_threshold, version, created_at) "
+                "VALUES (:id, :title, :department_id, :position_id, true, 70.0, 1, NOW())"
             ),
-            {"id": job_id, "title": job_title, "position_id": position_id},
+            {"id": job_id, "title": job_title, "department_id": department_id, "position_id": position_id},
+        )
+
+        # Link job to tech stack
+        await conn.execute(
+            text(
+                "INSERT INTO job_tech_stacks (job_id, tech_stack_id) "
+                "VALUES (:job_id, :tech_stack_id)"
+            ),
+            {"job_id": job_id, "tech_stack_id": tech_stack_id},
         )
 
         # Create candidate linked to job
@@ -139,7 +168,11 @@ async def test_task_papers_flow():
             # 3. Create question set papers via Form Upload
             # Upload Paper A
             files_a = {"task_file": ("test_task_a.pdf", b"test pdf content a", "application/pdf")}
-            data = {"job_id": str(job_id), "position_id": str(position_id)}
+            data = {
+                "department_id": str(department_id),
+                "position_id": str(position_id),
+                "tech_stack_id": str(tech_stack_id),
+            }
             response = client.post("/api/v1/task-papers/upload", data=data, files=files_a)
             assert response.status_code == 201
             created_papers_a = response.json()
@@ -178,6 +211,7 @@ async def test_task_papers_flow():
                     "Explain python list comprehension.",
                     "Explain python type hints.",
                 ],
+                "mcqs": [],
                 "project_task": ["Build a REST API with FastAPI."],
                 "skills": ["FastAPI", "Python"],
             }
@@ -193,6 +227,7 @@ async def test_task_papers_flow():
                     "How do you handle memory management in Python?",
                     "Explain __slots__.",
                 ],
+                "mcqs": [],
                 "project_task": ["Implement a task runner in Python."],
                 "skills": ["Asyncio", "Python"],
             }
@@ -203,11 +238,11 @@ async def test_task_papers_flow():
             response = client.get("/api/v1/task-papers")
             assert response.status_code == 200
             # Ensure our created papers are in the returned list
-            matching_papers = [p for p in response.json() if p["job_id"] == str(job_id)]
+            matching_papers = [p for p in response.json() if p["department_id"] == str(department_id)]
             assert len(matching_papers) == 2
 
-            # GET /api/v1/task-papers?job_id=...
-            response = client.get(f"/api/v1/task-papers?job_id={job_id}")
+            # GET /api/v1/task-papers?department_id=...
+            response = client.get(f"/api/v1/task-papers?department_id={department_id}")
             assert response.status_code == 200
             assert len(response.json()) == 2
 
@@ -307,7 +342,7 @@ async def test_task_papers_flow():
                 "mode": "predefined",
                 "paper_id": paper_a_id,
                 "questions": ["Override Q1", "Override Q2", "Override Q3", "Override Q4", "Override Q5"],
-                "project_task": ["Override Project Task Description"],
+                "project_task": "Override Project Task Description",
             }
             response = client.post(
                 "/api/v1/task-papers/assign",
@@ -317,7 +352,7 @@ async def test_task_papers_flow():
             override_assigned = response.json()
             assert override_assigned["name"] == "test_task_a.pdf"
             assert override_assigned["questions"] == ["Override Q1", "Override Q2", "Override Q3", "Override Q4", "Override Q5"]
-            assert override_assigned["project_task"] == "Override Project Task Description"
+            assert override_assigned["project_task"] == ["Override Project Task Description"]
             assert override_assigned["task_file_path"] == paper_a["task_file_path"]
             assert override_assigned["task_skills"] == ["FastAPI", "Python"]
 
@@ -350,8 +385,8 @@ async def test_task_papers_flow():
                 assert q in pooled_questions
             # Project task should be either from paper A or paper B
             assert random_assigned["project_task"] in [
-                "Build a REST API with FastAPI.",
-                "Implement a task runner in Python.",
+                ["Build a REST API with FastAPI."],
+                ["Implement a task runner in Python."],
             ]
 
             # 7. Assign custom paper
@@ -374,7 +409,7 @@ async def test_task_papers_flow():
                 "Custom Q4",
                 "Custom Q5",
             ]
-            assert custom_assigned["project_task"] == "Custom Project Task"
+            assert custom_assigned["project_task"] == ["Custom Project Task"]
 
             # 8. Unassign/Delete candidate test paper
             # DELETE /api/v1/task-papers/assigned/{candidate_id}
@@ -464,7 +499,6 @@ async def test_task_papers_flow():
             response = client.get(f"/api/v1/task-papers/assigned/job/{job_id}")
             assert response.status_code == 404
 
-            # 9. Delete predefined QuestionSetPaper
             # DELETE /api/v1/task-papers/{paper_id}
             response = client.delete(f"/api/v1/task-papers/{paper_a_id}")
             assert response.status_code == 204
@@ -476,6 +510,10 @@ async def test_task_papers_flow():
         # Clean up database records
         async with engine.begin() as conn:
             await conn.execute(
+                text("DELETE FROM candidate_test_paper_histories WHERE candidate_id = :id"),
+                {"id": candidate_id},
+            )
+            await conn.execute(
                 text("DELETE FROM candidate_test_papers WHERE job_id = :id"),
                 {"id": job_id},
             )
@@ -484,9 +522,18 @@ async def test_task_papers_flow():
             await conn.execute(text("DELETE FROM stage_templates WHERE id = :id"), {"id": template_id})
             await conn.execute(text("DELETE FROM candidates WHERE id = :id"), {"id": candidate_id})
             await conn.execute(
-                text("DELETE FROM question_set_papers WHERE job_id = :id"), {"id": job_id}
+                text("DELETE FROM question_set_papers WHERE department_id = :id"), {"id": department_id}
+            )
+            await conn.execute(
+                text("DELETE FROM job_tech_stacks WHERE job_id = :id"), {"id": job_id}
             )
             await conn.execute(text("DELETE FROM jobs WHERE id = :id"), {"id": job_id})
+            await conn.execute(
+                text("DELETE FROM tech_stacks WHERE id = :id"), {"id": tech_stack_id}
+            )
+            await conn.execute(
+                text("DELETE FROM departments WHERE id = :id"), {"id": department_id}
+            )
             await conn.execute(
                 text("DELETE FROM job_positions WHERE id = :id"), {"id": position_id}
             )
@@ -502,6 +549,264 @@ async def test_task_papers_flow():
                 f_path = tasks_dir / file_name
                 if f_path.is_file():
                     f_path.unlink()
+        except Exception:
+            pass
+
+
+@pytest.mark.anyio
+async def test_task_papers_mcq_flow():
+    # 1. Setup mock records
+    test_id_suffix = str(UUIDHelper.generate_uuid7())[:8]
+    job_title = f"Test MCQ Engineer {test_id_suffix}"
+    position_name = f"Test MCQ Level {test_id_suffix}"
+    candidate_email = f"test_candidate_mcq_{test_id_suffix}@example.com"
+    user_email = f"test_user_mcq_{test_id_suffix}@example.com"
+
+    async with engine.begin() as conn:
+        # Create role
+        role_id = UUIDHelper.generate_uuid7()
+        await conn.execute(
+            text(
+                "INSERT INTO roles (id, name, created_at, updated_at) "
+                "VALUES (:id, :name, NOW(), NOW())"
+            ),
+            {"id": role_id, "name": f"Test Role {test_id_suffix}"},
+        )
+
+        # Create user
+        user_id = UUIDHelper.generate_uuid7()
+        await conn.execute(
+            text(
+                "INSERT INTO users (id, email, password_hash, role_id, is_active, created_at, updated_at) "
+                "VALUES (:id, :email, 'hash', :role_id, true, NOW(), NOW())"
+            ),
+            {"id": user_id, "email": user_email, "role_id": role_id},
+        )
+
+        # Create department
+        department_id = UUIDHelper.generate_uuid7()
+        await conn.execute(
+            text(
+                "INSERT INTO departments (id, name, description) "
+                "VALUES (:id, :name, 'Test Department')"
+            ),
+            {"id": department_id, "name": f"Test Department {test_id_suffix}"},
+        )
+
+        # Create tech stack
+        tech_stack_id = UUIDHelper.generate_uuid7()
+        await conn.execute(
+            text(
+                "INSERT INTO tech_stacks (id, name, description, created_at, updated_at) "
+                "VALUES (:id, :name, 'Test Tech Stack', NOW(), NOW())"
+            ),
+            {"id": tech_stack_id, "name": f"Test Tech Stack {test_id_suffix}"},
+        )
+
+        # Create position level
+        position_id = UUIDHelper.generate_uuid7()
+        await conn.execute(
+            text(
+                "INSERT INTO job_positions (id, name, created_at, updated_at) "
+                "VALUES (:id, :name, NOW(), NOW())"
+            ),
+            {"id": position_id, "name": position_name},
+        )
+
+        # Create job linked to position level and department
+        job_id = UUIDHelper.generate_uuid7()
+        await conn.execute(
+            text(
+                "INSERT INTO jobs (id, title, department_id, position_id, is_active, passing_threshold, version, created_at) "
+                "VALUES (:id, :title, :department_id, :position_id, true, 70.0, 1, NOW())"
+            ),
+            {"id": job_id, "title": job_title, "department_id": department_id, "position_id": position_id},
+        )
+
+        # Link job to tech stack
+        await conn.execute(
+            text(
+                "INSERT INTO job_tech_stacks (job_id, tech_stack_id) "
+                "VALUES (:job_id, :tech_stack_id)"
+            ),
+            {"job_id": job_id, "tech_stack_id": tech_stack_id},
+        )
+
+        # Create candidate linked to job
+        candidate_id = UUIDHelper.generate_uuid7()
+        await conn.execute(
+            text(
+                "INSERT INTO candidates (id, first_name, last_name, email, applied_job_id, created_at) "
+                "VALUES (:id, 'Jane', 'Doe', :email, :job_id, NOW())"
+            ),
+            {"id": candidate_id, "email": candidate_email, "job_id": job_id},
+        )
+
+        # Create Stage Template for Technical Practical Round
+        template_id = UUIDHelper.generate_uuid7()
+        await conn.execute(
+            text(
+                "INSERT INTO stage_templates (id, name, description, default_config, created_at) "
+                "VALUES (:id, 'Technical Practical Round', 'Practical', '{}', NOW())"
+            ),
+            {"id": template_id},
+        )
+
+        # Create JobStageConfig
+        job_stage_id = UUIDHelper.generate_uuid7()
+        await conn.execute(
+            text(
+                "INSERT INTO job_stage_configs (id, job_id, template_id, stage_order, is_default, config, is_mandatory, created_at) "
+                "VALUES (:id, :job_id, :template_id, 1, false, '{}', true, NOW())"
+            ),
+            {"id": job_stage_id, "job_id": job_id, "template_id": template_id},
+        )
+
+        # Create CandidateStage
+        candidate_stage_id = UUIDHelper.generate_uuid7()
+        await conn.execute(
+            text(
+                "INSERT INTO candidate_stages (id, candidate_id, job_stage_id, status, started_at) "
+                "VALUES (:id, :candidate_id, :job_stage_id, 'active', NOW())"
+            ),
+            {"id": candidate_stage_id, "candidate_id": candidate_id, "job_stage_id": job_stage_id},
+        )
+
+    # 2. Mock authentication
+    mock_user = UserRead(
+        id=user_id,
+        email=user_email,
+        is_active=True,
+        is_superuser=True,
+        first_name="Test",
+        last_name="MCQ",
+        role_id=role_id,
+        role_name=f"Test Role {test_id_suffix}",
+        permissions=["candidates:decide", "candidates:access", "questions:upload", "questions:manage", "admin:all"],
+    )
+    app.dependency_overrides[get_current_user] = lambda: mock_user
+    client = TestClient(app)
+
+    try:
+        with patch("app.v1.services.admin.job_tasks.extract_paper_task_skills_task.delay") as mock_delay, \
+             patch("app.v1.core.extractor.DocumentParser.extract_text") as mock_extract_text, \
+             patch("app.v1.core.extractor.DocumentParser.extract_text_docling") as mock_extract_text_docling, \
+             patch("app.v1.services.admin.candidate_task_service.candidate_task_service.extract_paper_details_from_text") as mock_llm_extract:
+
+            # 3. Create predefined MCQ paper via Form Upload
+            files = {"task_file": ("test_mcq.pdf", b"test pdf content mcq", "application/pdf")}
+            data = {
+                "department_id": str(department_id),
+                "position_id": str(position_id),
+                "tech_stack_id": str(tech_stack_id),
+                "paper_type": "mcq"
+            }
+            response = client.post("/api/v1/task-papers/upload", data=data, files=files)
+            assert response.status_code == 201
+            paper = response.json()[0]
+            paper_id = paper["id"]
+            assert paper["paper_type"] == "mcq"
+
+            # 4. Extract MCQs via Celery task simulator
+            from app.v1.services.admin.job_tasks import extract_paper_task_skills_logic
+            mock_extract_text.return_value = "dummy text content for mcqs"
+            mock_extract_text_docling.return_value = "dummy text content for mcqs"
+            mock_llm_extract.return_value = {
+                "questions": [],
+                "mcqs": [
+                    {
+                        "question": "What is Python?",
+                        "options": ["A programming language", "A snake", "An IDE", "None"],
+                        "answer": "A programming language"
+                    }
+                ],
+                "project_task": [],
+                "skills": ["Python"]
+            }
+            await extract_paper_task_skills_logic(str(paper_id), paper["task_file_path"], "mcq")
+
+            # Check that paper is updated in DB
+            response = client.get(f"/api/v1/task-papers/{paper_id}")
+            assert response.status_code == 200
+            assert response.json()["paper_type"] == "mcq"
+            assert len(response.json()["mcqs"]) == 1
+            assert response.json()["mcqs"][0]["question"] == "What is Python?"
+
+            # 5. List with filtering by paper_type
+            response = client.get(f"/api/v1/task-papers?paper_type=mcq")
+            assert response.status_code == 200
+            assert len(response.json()) >= 1
+            assert response.json()[0]["paper_type"] == "mcq"
+
+            # 5b. Verify all-content endpoint aggregates MCQs
+            response = client.get(f"/api/v1/task-papers/all-content")
+            assert response.status_code == 200
+            all_content = response.json()
+            assert len(all_content) == 3
+            mcq_questions = [m["question"] for m in all_content[2]]
+            assert "What is Python?" in mcq_questions
+            assert "answer" not in all_content[2][0]
+
+            # 6. Assign predefined MCQ paper to candidate
+            assign_payload = {
+                "candidate_id": str(candidate_id),
+                "mode": "predefined",
+                "paper_id": paper_id
+            }
+            response = client.post("/api/v1/task-papers/assign", json=assign_payload)
+            assert response.status_code == 200
+            assigned = response.json()
+            assert len(assigned["mcqs"]) == 1
+            assert assigned["mcqs"][0]["question"] == "What is Python?"
+
+            # Check assigned task download (should render MCQs in PDF)
+            response = client.get(f"/api/v1/task-papers/assigned/{candidate_id}/task/file")
+            assert response.status_code == 200
+            assert response.headers["content-type"] == "application/pdf"
+
+            # 7. Assign custom paper with custom MCQs
+            assign_custom = {
+                "candidate_id": str(candidate_id),
+                "mode": "custom",
+                "mcqs": [
+                    {
+                        "question": "What is FastAPI?",
+                        "options": ["A framework", "A database", "A server", "None"],
+                        "answer": "A framework"
+                    }
+                ]
+            }
+            response = client.post("/api/v1/task-papers/assign", json=assign_custom)
+            assert response.status_code == 200
+            custom_assigned = response.json()
+            assert len(custom_assigned["mcqs"]) == 1
+            assert custom_assigned["mcqs"][0]["question"] == "What is FastAPI?"
+
+    finally:
+        app.dependency_overrides.clear()
+        async with engine.begin() as conn:
+            await conn.execute(text("DELETE FROM candidate_test_paper_histories WHERE candidate_id = :id"), {"id": candidate_id})
+            await conn.execute(text("DELETE FROM candidate_test_papers WHERE job_id = :id"), {"id": job_id})
+            await conn.execute(text("DELETE FROM candidate_stages WHERE id = :id"), {"id": candidate_stage_id})
+            await conn.execute(text("DELETE FROM job_stage_configs WHERE id = :id"), {"id": job_stage_id})
+            await conn.execute(text("DELETE FROM stage_templates WHERE id = :id"), {"id": template_id})
+            await conn.execute(text("DELETE FROM candidates WHERE id = :id"), {"id": candidate_id})
+            await conn.execute(text("DELETE FROM question_set_papers WHERE department_id = :id"), {"id": department_id})
+            await conn.execute(text("DELETE FROM job_tech_stacks WHERE job_id = :id"), {"id": job_id})
+            await conn.execute(text("DELETE FROM jobs WHERE id = :id"), {"id": job_id})
+            await conn.execute(text("DELETE FROM tech_stacks WHERE id = :id"), {"id": tech_stack_id})
+            await conn.execute(text("DELETE FROM departments WHERE id = :id"), {"id": department_id})
+            await conn.execute(text("DELETE FROM job_positions WHERE id = :id"), {"id": position_id})
+            await conn.execute(text("DELETE FROM users WHERE id = :id"), {"id": user_id})
+            await conn.execute(text("DELETE FROM roles WHERE id = :id"), {"id": role_id})
+
+        try:
+            from app.v1.core.storage import resolve_storage_path
+            from app.v1.core.config import settings
+            tasks_dir = resolve_storage_path(settings.TASK_UPLOAD_DIR)
+            f_path = tasks_dir / f"paper_{paper_id}.pdf"
+            if f_path.is_file():
+                f_path.unlink()
         except Exception:
             pass
 

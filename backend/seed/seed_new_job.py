@@ -168,6 +168,8 @@ REQUIRED_SKILLS = [
 async def ensure_job(session, creator_id, skills: list[Skill]) -> Job:
     # Resolve or create the department FK
     department = await ensure_department(session, JOB_DEPARTMENT)
+    from seed.seed_positions import ensure_position
+    position = await ensure_position(session, "Intermediate Developer")
 
     job = (
         (
@@ -184,6 +186,7 @@ async def ensure_job(session, creator_id, skills: list[Skill]) -> Job:
 
     if job:
         job.department_id = department.id
+        job.position_id = position.id
         job.jd_text = JOB_DESCRIPTION
         job.jd_json = JOB_JSON
         job.is_active = True
@@ -191,6 +194,7 @@ async def ensure_job(session, creator_id, skills: list[Skill]) -> Job:
         job = Job(
             title=JOB_TITLE,
             department_id=department.id,
+            position_id=position.id,
             jd_text=JOB_DESCRIPTION,
             jd_json=JOB_JSON,
             jd_embedding=None,
@@ -199,6 +203,7 @@ async def ensure_job(session, creator_id, skills: list[Skill]) -> Job:
         )
         session.add(job)
         await session.flush()
+
 
     job_text = build_job_text(job)
     job.jd_embedding = embedding_service.encode_jd(job_text) if job_text else None

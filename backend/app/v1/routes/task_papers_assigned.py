@@ -6,6 +6,7 @@ from typing import Any, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import FileResponse, RedirectResponse
 from sqlalchemy import delete, select
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.v1.db.session import get_db
@@ -107,7 +108,8 @@ async def assign_test_paper_to_candidate(
             )
 
         # Fetch candidate's job position level
-        job = await db.get(Job, job_id)
+        stmt_job = select(Job).options(selectinload(Job.tech_stacks)).where(Job.id == job_id)
+        job = (await db.execute(stmt_job)).scalar_one_or_none()
         if not job or not job.position_id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -124,7 +126,8 @@ async def assign_test_paper_to_candidate(
     else:
         # Assign at Job level (public/common test paper for this job)
         job_id = assign_data.job_id
-        job = await db.get(Job, job_id)
+        stmt_job = select(Job).options(selectinload(Job.tech_stacks)).where(Job.id == job_id)
+        job = (await db.execute(stmt_job)).scalar_one_or_none()
         if not job or not job.position_id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -143,6 +146,7 @@ async def assign_test_paper_to_candidate(
 
     assigned_name = ""
     assigned_questions = []
+    assigned_mcqs = []
     assigned_task = ""
     assigned_file_path = None
     assigned_skills = None
@@ -163,6 +167,7 @@ async def assign_test_paper_to_candidate(
         assigned_name = paper.name
         # Allow overriding template questions/tasks manually
         assigned_questions = assign_data.questions if assign_data.questions is not None else paper.questions
+        assigned_mcqs = [m.model_dump() if hasattr(m, "model_dump") else m for m in assign_data.mcqs] if assign_data.mcqs is not None else paper.mcqs
         assigned_task = assign_data.project_task if assign_data.project_task is not None else paper.project_task
         assigned_file_path = paper.task_file_path
         assigned_skills = paper.task_skills
@@ -174,9 +179,11 @@ async def assign_test_paper_to_candidate(
             stmt = stmt.where(QuestionSetPaper.id.in_(assign_data.source_paper_ids))
         else:
             # Fallback to candidate's applied job matching if no specific sources are chosen
+            job_tech_stack_ids = [ts.id for ts in job.tech_stacks]
             stmt = stmt.where(
-                QuestionSetPaper.job_id == job_id,
+                QuestionSetPaper.department_id == job.department_id,
                 QuestionSetPaper.position_id == position_id,
+                QuestionSetPaper.tech_stack_id.in_(job_tech_stack_ids) if job_tech_stack_ids else False
             )
         res = await db.execute(stmt)
         papers = res.scalars().all()
@@ -187,16 +194,28 @@ async def assign_test_paper_to_candidate(
                 detail="No question set papers available for this job and experience level to generate a random test.",
             )
 
-        # Collect all questions from matching papers
+        # Collect all questions and MCQs from matching papers
         all_questions = []
+        all_mcqs = []
         for p in papers:
             if p.questions:
                 all_questions.extend(p.questions)
+            if p.mcqs:
+                all_mcqs.extend(p.mcqs)
 
         # Ensure we have at least 5 unique questions or fallback to total pool
         unique_questions = list(set(all_questions))
         if len(unique_questions) < 5:
             unique_questions = all_questions
+
+        # De-duplicate MCQs by question text
+        seen_mcq_questions = set()
+        unique_mcqs = []
+        for m in all_mcqs:
+            q_text = m.get("question") if isinstance(m, dict) else getattr(m, "question", "")
+            if q_text and q_text not in seen_mcq_questions:
+                seen_mcq_questions.add(q_text)
+                unique_mcqs.append(m)
 
         # Select one task randomly (associated file path comes from that same chosen paper)
         chosen_paper = random.choice(papers)
@@ -212,15 +231,22 @@ async def assign_test_paper_to_candidate(
         else:
             assigned_questions = []
 
+        if unique_mcqs:
+            selected_mcqs = random.sample(unique_mcqs, min(5, len(unique_mcqs)))
+            assigned_mcqs = [m.model_dump() if hasattr(m, "model_dump") else m for m in selected_mcqs]
+        else:
+            assigned_mcqs = []
+
     elif assign_data.mode == "custom":
-        if not assign_data.questions:
+        if not assign_data.questions and not assign_data.mcqs and not assign_data.project_task:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="'questions' list is required when mode is 'custom'.",
+                detail="At least one of 'questions', 'mcqs', or 'project_task' is required when mode is 'custom'.",
             )
 
         assigned_name = "Custom Test Paper"
-        assigned_questions = assign_data.questions
+        assigned_questions = assign_data.questions or []
+        assigned_mcqs = [m.model_dump() if hasattr(m, "model_dump") else m for m in assign_data.mcqs] if assign_data.mcqs else []
         assigned_task = assign_data.project_task or []
         assigned_file_path = None
         assigned_skills = None
@@ -237,6 +263,11 @@ async def assign_test_paper_to_candidate(
         raw_text_parts = []
         if assigned_questions:
             raw_text_parts.extend(assigned_questions)
+        if assigned_mcqs:
+            for m in assigned_mcqs:
+                q_text = m.get("question") if isinstance(m, dict) else getattr(m, "question", "")
+                if q_text:
+                    raw_text_parts.append(q_text)
         if assigned_task:
             if isinstance(assigned_task, list):
                 raw_text_parts.extend(assigned_task)
@@ -253,6 +284,14 @@ async def assign_test_paper_to_candidate(
                 import logging
                 logging.getLogger(__name__).error("Dynamic skill extraction failed during assignment: %s", e)
 
+    # Ensure project_task is list[str]
+    assigned_task_list = []
+    if assigned_task:
+        if isinstance(assigned_task, list):
+            assigned_task_list = assigned_task
+        elif isinstance(assigned_task, str):
+            assigned_task_list = [assigned_task] if assigned_task.strip() else []
+
     # Persist the assigned test paper
     new_paper = CandidateTestPaper(
         candidate_id=candidate_id,
@@ -260,7 +299,8 @@ async def assign_test_paper_to_candidate(
         position_id=position_id,
         name=assigned_name,
         questions=assigned_questions,
-        project_task=assigned_task,
+        mcqs=assigned_mcqs,
+        project_task=assigned_task_list,
         task_file_path=assigned_file_path,
         task_skills=assigned_skills,
     )
@@ -272,7 +312,8 @@ async def assign_test_paper_to_candidate(
             job_id=job_id,
             name=assigned_name,
             questions=assigned_questions,
-            project_task=assigned_task,
+            mcqs=assigned_mcqs,
+            project_task=assigned_task_list,
             task_file_path=assigned_file_path,
             task_skills=assigned_skills,
             user_id=user.id,
@@ -363,7 +404,9 @@ async def get_candidate_test_paper(
                 if job_paper:
                     if (paper.name != job_paper.name or
                         paper.project_task != job_paper.project_task or
-                        paper.task_file_path != job_paper.task_file_path):
+                        paper.task_file_path != job_paper.task_file_path or
+                        paper.questions != job_paper.questions or
+                        paper.mcqs != job_paper.mcqs):
                         paper.job_default_paper_changed = True
                         paper.job_default_paper_name = job_paper.name
                         paper.job_default_paper_id = job_paper.id
@@ -578,8 +621,10 @@ async def download_candidate_task_file(
             res_orig = await db.execute(stmt_orig)
             orig_paper = res_orig.scalar_one_or_none()
             if orig_paper:
-                # Compare questions list and project task
-                if orig_paper.questions == test_paper.questions and orig_paper.project_task == test_paper.project_task:
+                # Compare questions, mcqs and project task
+                if (orig_paper.questions == test_paper.questions and 
+                    orig_paper.project_task == test_paper.project_task and
+                    getattr(orig_paper, "mcqs", []) == getattr(test_paper, "mcqs", [])):
                     is_modified = False
 
     # 5. If it's a PDF and not modified, or if it's a non-PDF file, serve it directly

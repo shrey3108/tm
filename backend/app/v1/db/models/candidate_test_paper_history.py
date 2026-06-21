@@ -55,6 +55,12 @@ class CandidateTestPaperHistory(Base):
         nullable=False,
     )
 
+    mcqs: Mapped[list[dict]] = mapped_column(
+        JSONB,
+        nullable=False,
+        default=list,
+    )
+
     project_task: Mapped[list[str]] = mapped_column(
         JSONB,
         nullable=False,

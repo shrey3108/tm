@@ -1,6 +1,6 @@
 import os
 import uuid
-from typing import Optional
+from typing import Optional, Any
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, status, File as FastAPIFile, UploadFile, Form, Request, Response
@@ -13,7 +13,8 @@ from app.v1.core.storage import resolve_storage_path, to_storage_relative_path
 from app.v1.db.session import get_db
 from app.v1.dependencies import check_permission
 from app.v1.db.models.question_set_paper import QuestionSetPaper
-from app.v1.db.models.jobs import Job
+from app.v1.db.models.departments import Department
+from app.v1.db.models.tech_stacks import TechStack
 from app.v1.db.models.job_positions import JobPosition
 from app.v1.schemas.task_papers import QuestionSetPaperRead, QuestionAction, TaskAction
 from app.v1.schemas.user import UserRead
@@ -26,19 +27,35 @@ router = APIRouter()
 
 @router.post("/upload", response_model=list[QuestionSetPaperRead], status_code=status.HTTP_201_CREATED)
 async def upload_question_set_papers(
-    job_id: uuid.UUID = Form(..., description="The associated job ID"),
+    department_id: uuid.UUID = Form(..., description="The associated department ID"),
     position_id: uuid.UUID = Form(..., description="The associated job position level ID"),
+    tech_stack_id: uuid.UUID = Form(..., description="The associated tech stack ID"),
+    paper_type: str = Form("normal", description="The type of paper content to extract: 'normal', 'mcq', or 'task'"),
     task_file: UploadFile = FastAPIFile(..., description="A test paper PDF/Word file"),
     db: AsyncSession = Depends(get_db),
     user: UserRead = Depends(check_permission("questions:upload")),
 ):
-    """Upload a test paper file directly for a specific job and experience position level."""
-    # Verify job exists
-    job = await db.get(Job, job_id)
-    if not job:
+    """Upload a test paper file directly for a specific department, experience position level, and tech stack."""
+    if paper_type not in ["normal", "mcq", "task"]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Job with ID {job_id} does not exist.",
+            detail=f"Unsupported paper type: {paper_type}. Supported types are 'normal', 'mcq', and 'task'.",
+        )
+
+    # Verify department exists
+    dept = await db.get(Department, department_id)
+    if not dept:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Department with ID {department_id} does not exist.",
+        )
+
+    # Verify tech stack exists
+    tech = await db.get(TechStack, tech_stack_id)
+    if not tech:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"TechStack with ID {tech_stack_id} does not exist.",
         )
 
     # Verify position level exists
@@ -78,9 +95,12 @@ async def upload_question_set_papers(
     db_paper = QuestionSetPaper(
         id=paper_id,
         name=task_file.filename,
-        job_id=job_id,
+        department_id=department_id,
+        tech_stack_id=tech_stack_id,
         position_id=position_id,
+        paper_type=paper_type,
         questions=[],
+        mcqs=[],
         project_task=[],
         task_file_path=stored_file_path,
         task_skills=None,
@@ -92,7 +112,7 @@ async def upload_question_set_papers(
 
     # Trigger celery task to extract skills, questions, and task details in background
     from app.v1.services.admin.job_tasks import extract_paper_task_skills_task
-    extract_paper_task_skills_task.delay(str(db_paper.id), db_paper.task_file_path)
+    extract_paper_task_skills_task.delay(str(db_paper.id), db_paper.task_file_path, paper_type)
 
     return [db_paper]
 
@@ -114,9 +134,12 @@ async def create_manual_question_set_paper(
     db_paper = QuestionSetPaper(
         id=paper_id,
         name=paper_name,
-        job_id=payload.job_id,
+        department_id=payload.department_id,
+        tech_stack_id=payload.tech_stack_id,
         position_id=payload.position_id,
+        paper_type=payload.paper_type,
         questions=payload.questions,
+        mcqs=[m.model_dump() for m in payload.mcqs] if payload.mcqs else [],
         project_task=payload.project_task,
         task_file_path=None,
         task_skills=None,
@@ -127,7 +150,7 @@ async def create_manual_question_set_paper(
     await db.refresh(db_paper)
     
     # Trigger celery task to extract skills from manually provided text
-    if db_paper.questions or db_paper.project_task:
+    if db_paper.questions or db_paper.mcqs or db_paper.project_task:
         from app.v1.services.admin.job_tasks import extract_paper_skills_from_text_task
         extract_paper_skills_from_text_task.delay(str(db_paper.id))
 
@@ -139,38 +162,90 @@ async def create_manual_question_set_paper(
 async def get_question_set_papers(
     request: Request,
     response: Response,
-    job_id: Optional[uuid.UUID] = None,
+    department_id: Optional[uuid.UUID] = None,
     position_id: Optional[uuid.UUID] = None,
+    tech_stack_id: Optional[uuid.UUID] = None,
+    paper_type: Optional[str] = None,
+    job_id: Optional[uuid.UUID] = None,
     db: AsyncSession = Depends(get_db),
     user: UserRead = Depends(check_permission("candidates:access")),
 ):
-    """List all predefined Question Set Papers, with optional filtering by job and experience level."""
+    """List all predefined Question Set Papers, with optional filtering by department, position, tech stack, paper type, and job."""
     query = select(QuestionSetPaper)
     if job_id:
-        query = query.where(QuestionSetPaper.job_id == job_id)
-    if position_id:
-        query = query.where(QuestionSetPaper.position_id == position_id)
+        from app.v1.db.models.jobs import Job
+        from sqlalchemy.orm import selectinload
+        stmt_job = select(Job).options(selectinload(Job.tech_stacks)).where(Job.id == job_id)
+        job = (await db.execute(stmt_job)).scalar_one_or_none()
+        if job:
+            job_tech_stack_ids = [ts.id for ts in job.tech_stacks]
+            query = query.where(
+                QuestionSetPaper.department_id == job.department_id,
+                QuestionSetPaper.position_id == job.position_id,
+                QuestionSetPaper.tech_stack_id.in_(job_tech_stack_ids) if job_tech_stack_ids else False
+            )
+    else:
+        if department_id:
+            query = query.where(QuestionSetPaper.department_id == department_id)
+        if position_id:
+            query = query.where(QuestionSetPaper.position_id == position_id)
+        if tech_stack_id:
+            query = query.where(QuestionSetPaper.tech_stack_id == tech_stack_id)
+            
+    if paper_type:
+        query = query.where(QuestionSetPaper.paper_type == paper_type)
     result = await db.execute(query)
     items = result.scalars().all()
     return [QuestionSetPaperRead.model_validate(item) for item in items]
 
 
-@router.get("/all-content", response_model=list[list[str]])
+@router.get("/all-content", response_model=list[list[Any]])
 @cache_response(ttl_seconds=300)
 async def get_all_questions_and_tasks(
     request: Request,
     response: Response,
+    department_id: Optional[uuid.UUID] = None,
+    position_id: Optional[uuid.UUID] = None,
+    tech_stack_id: Optional[uuid.UUID] = None,
+    paper_type: Optional[str] = None,
+    job_id: Optional[uuid.UUID] = None,
     db: AsyncSession = Depends(get_db),
     user: UserRead = Depends(check_permission("candidates:access")),
 ):
-    """Retrieve all unique questions and tasks across all predefined question set papers as an array of two arrays."""
-    result = await db.execute(select(QuestionSetPaper.questions, QuestionSetPaper.project_task))
+    """Retrieve unique questions, tasks, and MCQs across predefined question set papers, with optional filtering by job, department, position, tech stack, and paper type."""
+    query = select(QuestionSetPaper.questions, QuestionSetPaper.project_task, QuestionSetPaper.mcqs)
+    if job_id:
+        from app.v1.db.models.jobs import Job
+        from sqlalchemy.orm import selectinload
+        stmt_job = select(Job).options(selectinload(Job.tech_stacks)).where(Job.id == job_id)
+        job = (await db.execute(stmt_job)).scalar_one_or_none()
+        if job:
+            job_tech_stack_ids = [ts.id for ts in job.tech_stacks]
+            query = query.where(
+                QuestionSetPaper.department_id == job.department_id,
+                QuestionSetPaper.position_id == job.position_id,
+                QuestionSetPaper.tech_stack_id.in_(job_tech_stack_ids) if job_tech_stack_ids else False
+            )
+    else:
+        if department_id:
+            query = query.where(QuestionSetPaper.department_id == department_id)
+        if position_id:
+            query = query.where(QuestionSetPaper.position_id == position_id)
+        if tech_stack_id:
+            query = query.where(QuestionSetPaper.tech_stack_id == tech_stack_id)
+            
+    if paper_type:
+        query = query.where(QuestionSetPaper.paper_type == paper_type)
+        
+    result = await db.execute(query)
     items = result.all()
     
     all_questions = set()
     all_tasks = set()
+    all_mcqs = []
+    seen_mcq_questions = set()
     
-    for questions, tasks in items:
+    for questions, tasks, mcqs in items:
         if questions:
             for q in questions:
                 if isinstance(q, str):
@@ -187,8 +262,19 @@ async def get_all_questions_and_tasks(
                     val = t.get('task') or t.get('content') or t.get('task_title') or t.get('title')
                     if val and isinstance(val, str):
                         all_tasks.add(val)
+        if mcqs:
+            for m in mcqs:
+                if isinstance(m, dict):
+                    q_text = m.get("question")
+                    if q_text and q_text not in seen_mcq_questions:
+                        seen_mcq_questions.add(q_text)
+                        # Exclude the answer key to show only the question and options
+                        all_mcqs.append({
+                            "question": q_text,
+                            "options": m.get("options", [])
+                        })
                 
-    return [list(all_questions), list(all_tasks)]
+    return [list(all_questions), list(all_tasks), all_mcqs]
 
 
 @router.get("/{paper_id}", response_model=QuestionSetPaperRead)

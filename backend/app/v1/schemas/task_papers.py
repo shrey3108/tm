@@ -5,10 +5,19 @@ from typing import Literal, Optional
 from pydantic import BaseModel, Field, field_validator
 
 
+class MCQItem(BaseModel):
+    question: str = Field(..., description="The MCQ question text")
+    options: list[str] = Field(..., description="Options for the MCQ (e.g. four choices)")
+    answer: str = Field(..., description="The correct option / answer")
+
+
 class QuestionSetPaperCreate(BaseModel):
-    job_id: uuid.UUID = Field(..., description="The associated job ID")
+    department_id: uuid.UUID = Field(..., description="The associated department ID")
     position_id: uuid.UUID = Field(..., description="The associated job position level ID")
-    questions: list[str] = Field(..., description="Questions for this paper")
+    tech_stack_id: uuid.UUID = Field(..., description="The associated tech stack ID")
+    paper_type: Literal["normal", "mcq", "task"] = Field("normal", description="The type of the paper")
+    questions: list[str] = Field(default_factory=list, description="Questions for this paper")
+    mcqs: list[MCQItem] = Field(default_factory=list, description="Multiple choice questions for this paper")
     project_task: list[str] = Field(default_factory=list, description="The project task description")
 
 
@@ -22,9 +31,12 @@ class TaskAction(BaseModel):
 class QuestionSetPaperRead(BaseModel):
     id: uuid.UUID
     name: str
-    job_id: uuid.UUID
+    department_id: uuid.UUID
     position_id: uuid.UUID
+    tech_stack_id: uuid.UUID
+    paper_type: str
     questions: list[str]
+    mcqs: list[MCQItem] = Field(default_factory=list)
     project_task: list[str]
     task_file_path: Optional[str] = None
     task_skills: Optional[list[str]] = None
@@ -50,6 +62,7 @@ class CandidateTestPaperRead(BaseModel):
     position_id: uuid.UUID
     name: str
     questions: list[str]
+    mcqs: list[MCQItem] = Field(default_factory=list)
     project_task: list[str]
     task_file_path: Optional[str] = None
     task_skills: Optional[list[str]] = None
@@ -77,6 +90,7 @@ class CandidateTestPaperHistoryRead(BaseModel):
     job_id: uuid.UUID
     name: str
     questions: list[str]
+    mcqs: list[MCQItem] = Field(default_factory=list)
     project_task: list[str]
     task_file_path: Optional[str] = None
     task_skills: Optional[list[str]] = None
@@ -113,6 +127,9 @@ class CandidateTestPaperAssign(BaseModel):
     )
     questions: Optional[list[str]] = Field(
         None, description="Custom questions (required if mode is 'custom')"
+    )
+    mcqs: Optional[list[MCQItem]] = Field(
+        None, description="Custom MCQs (used if mode is 'custom')"
     )
     project_task: Optional[str] = Field(
         None, description="The custom project task description (required if mode is 'custom')"

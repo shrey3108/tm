@@ -51,10 +51,11 @@ class JobAdminService:
         department_ids: list[uuid.UUID] | None = None,
         priority_ids: list[uuid.UUID] | None = None,
         position_ids: list[uuid.UUID] | None = None,
+        tech_stack_ids: list[uuid.UUID] | None = None,
     ) -> JobsListRead:
         """Get all jobs with pagination and global dashboard summaries."""
         # 0. Cache lookup
-        cache_key = f"jobs:list:{skip}:{limit}:{query or 'none'}:{sorted(status) if status else 'all'}:{department_ids}:{priority_ids}:{position_ids}"
+        cache_key = f"jobs:list:{skip}:{limit}:{query or 'none'}:{sorted(status) if status else 'all'}:{department_ids}:{priority_ids}:{position_ids}:{tech_stack_ids}"
         cached = await cache.get(cache_key)
         if cached:
             try:
@@ -70,7 +71,8 @@ class JobAdminService:
             status=status, 
             department_ids=department_ids,
             priority_ids=priority_ids,
-            position_ids=position_ids
+            position_ids=position_ids,
+            tech_stack_ids=tech_stack_ids
         )
 
         from app.v1.services.hr_decision_service import hr_decision_service
@@ -244,6 +246,17 @@ class JobAdminService:
             for skill_id in job_in.skill_ids:
                 await skill_service.get_skill_by_id(db, skill_id)
 
+        # Validate tech stacks existence if provided
+        if job_in.tech_stack_ids:
+            from app.v1.services.admin.tech_stack_service import tech_stack_service
+            for ts_id in job_in.tech_stack_ids:
+                ts = await tech_stack_service.get_tech_stack_by_id(db, ts_id)
+                if not ts:
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        detail=f"TechStack with ID {ts_id} not found.",
+                    )
+
         # Validate (title + position_id) uniqueness against ACTIVE jobs only.
         # Inactive duplicates are allowed because the user may want to re-create
         # the same (title, position) combo while older inactive copies still exist.
@@ -331,6 +344,7 @@ class JobAdminService:
                 "priority_id": str(job.priority_id),
                 "position_id": str(job.position_id),
                 "skill_ids": [str(s.id) for s in job.skills],
+                "tech_stack_ids": [str(t.id) for t in job.tech_stacks],
                 "stage_ids": [str(s.id) for s in job.stages],
                 "is_active": job.is_active,
                 "created_at": job.created_at.isoformat() if job.created_at else None
@@ -381,6 +395,16 @@ class JobAdminService:
                     # Skip invalid skill IDs (like the 3fa85f64 dummy placeholder)
                     continue
             job_update.skill_ids = valid_skill_ids
+
+        # Filter out invalid tech_stack_ids if provided
+        if job_update.tech_stack_ids:
+            from app.v1.services.admin.tech_stack_service import tech_stack_service
+            valid_ts_ids = []
+            for ts_id in job_update.tech_stack_ids:
+                ts = await tech_stack_service.get_tech_stack_by_id(db, ts_id)
+                if ts:
+                    valid_ts_ids.append(ts_id)
+            job_update.tech_stack_ids = valid_ts_ids
 
         # Validate (title + position_id) uniqueness against ACTIVE jobs only.
         # We check whenever title, position_id, or is_active is being changed —
@@ -460,7 +484,7 @@ class JobAdminService:
             "updated_fields": list(updated_fields_map.keys()),
         }
         # Add specific values for important fields to make audit logs readable
-        for field in ["priority_id", "title", "department_id", "position_id", "is_active"]:
+        for field in ["priority_id", "title", "department_id", "position_id", "is_active", "tech_stack_ids"]:
             if field in updated_fields_map:
                 log_details[field] = str(updated_fields_map[field])
 

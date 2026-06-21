@@ -11,15 +11,16 @@ from app.v1.db.base_class import Base
 from app.v1.utils.uuid import UUIDHelper
 
 if TYPE_CHECKING:
-    from app.v1.db.models.jobs import Job
     from app.v1.db.models.job_positions import JobPosition
+    from app.v1.db.models.departments import Department
+    from app.v1.db.models.tech_stacks import TechStack
 
 
 class QuestionSetPaper(Base):
     """QuestionSetPaper ORM model.
 
-    Represents a predefined pool of 5 questions and a project task
-    associated with a specific Job and JobPosition (experience level).
+    Represents a predefined pool of questions and a project task
+    associated with a specific Department, TechStack, and JobPosition (experience level).
     """
 
     __tablename__ = "question_set_papers"
@@ -37,9 +38,15 @@ class QuestionSetPaper(Base):
         nullable=False,
     )
 
-    job_id: Mapped[uuid.UUID] = mapped_column(
+    department_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("jobs.id", ondelete="CASCADE"),
+        ForeignKey("departments.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+
+    tech_stack_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("tech_stacks.id", ondelete="CASCADE"),
         nullable=False,
     )
 
@@ -49,9 +56,21 @@ class QuestionSetPaper(Base):
         nullable=False,
     )
 
+    paper_type: Mapped[str] = mapped_column(
+        Text,
+        nullable=False,
+        default="normal",
+    )
+
     questions: Mapped[list[str]] = mapped_column(
         JSONB,
         nullable=False,
+    )
+
+    mcqs: Mapped[list[dict]] = mapped_column(
+        JSONB,
+        nullable=False,
+        default=list,
     )
 
     project_task: Mapped[list[str]] = mapped_column(
@@ -82,8 +101,12 @@ class QuestionSetPaper(Base):
     )
 
     # RELATIONSHIPS
-    job: Mapped["Job"] = relationship(
-        "Job", foreign_keys=[job_id]
+    department: Mapped["Department"] = relationship(
+        "Department", foreign_keys=[department_id]
+    )
+
+    tech_stack: Mapped["TechStack"] = relationship(
+        "TechStack", foreign_keys=[tech_stack_id]
     )
 
     position: Mapped["JobPosition"] = relationship(

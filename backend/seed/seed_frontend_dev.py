@@ -116,6 +116,8 @@ REQUIRED_SKILLS = [
 async def ensure_job(session, creator_id, skills: list[Skill]) -> Job:
     # Resolve or create the department FK
     department = await ensure_department(session, JOB_DEPARTMENT)
+    from seed.seed_positions import ensure_position
+    position = await ensure_position(session, "Intermediate Developer")
 
     # Check if job already exists
     stmt = select(Job).where(
@@ -126,6 +128,7 @@ async def ensure_job(session, creator_id, skills: list[Skill]) -> Job:
 
     if job:
         job.department_id = department.id
+        job.position_id = position.id
         job.jd_text = JOB_DESCRIPTION
         job.jd_json = JOB_JSON
         job.vacancy = 5
@@ -134,6 +137,7 @@ async def ensure_job(session, creator_id, skills: list[Skill]) -> Job:
         job = Job(
             title=JOB_TITLE,
             department_id=department.id,
+            position_id=position.id,
             jd_text=JOB_DESCRIPTION,
             jd_json=JOB_JSON,
             vacancy=5,
@@ -142,6 +146,7 @@ async def ensure_job(session, creator_id, skills: list[Skill]) -> Job:
         )
         session.add(job)
         await session.flush()
+
 
     # Update embedding
     job_text = build_job_text(job)

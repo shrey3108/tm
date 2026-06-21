@@ -185,6 +185,8 @@ async def ensure_job(
 
     # Resolve or create the department FK
     department = await ensure_department(session, department_name)
+    from seed.seed_positions import ensure_position
+    position = await ensure_position(session, "Senior Developer")
 
     job = (
         (
@@ -201,6 +203,7 @@ async def ensure_job(
 
     if job:
         job.department_id = department.id
+        job.position_id = position.id
         job.jd_text = description
         job.jd_json = job_json
         job.is_active = True
@@ -208,12 +211,14 @@ async def ensure_job(
         job = Job(
             title=title,
             department_id=department.id,
+            position_id=position.id,
             jd_text=description,
             jd_json=job_json,
             jd_embedding=None,
             created_by=creator_id,
             is_active=True,
         )
+
         session.add(job)
         await session.flush()
 

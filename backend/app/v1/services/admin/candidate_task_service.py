@@ -157,44 +157,111 @@ Output Format Example (JSON ONLY):
             if client:
                 await client.close()
 
-    async def extract_paper_details_from_text(self, raw_text: str) -> dict:
+    async def extract_paper_details_from_text(self, raw_text: str, paper_type: str = "normal") -> dict:
         """Call LLM directly using openai client to extract questions, project task description, and technical skills."""
-        system_prompt = (
-            "You are an expert technical recruiter and data extractor.\n"
-            "Your task is to analyze a candidate task/assignment description (which is formatted in Markdown) and extract:\n"
-            "1. All technical interview questions found in the document exactly as written (verbatim).\n"
-            "2. A concise description/summary of the project task.\n"
-            "3. All relevant technical skills required to complete it.\n"
-            "CRITICAL RULES:\n"
-            "1. You MUST output ONLY valid JSON format.\n"
-            "2. Your output MUST be a JSON object with exactly three keys:\n"
-            "   - 'questions': an array of strings representing the questions.\n"
-            "   - 'project_task': an array of strings representing the project tasks or descriptions.\n"
-            "   - 'skills': an array of strings representing unique technical skill names.\n"
-            "3. IMPORTANT FOR QUESTIONS: Extract the questions VERBATIM. Do NOT rephrase them. "
-            "If a question is preceded by a Problem Statement, Table Structure, Sample Data, Code, or any other context, "
-            "you MUST include all of that context and markdown tables as part of the question string. "
-            "Do not split a question from its associated context or tables. Treat the context and the question as one single logical block.\n"
-            "4. Do NOT invent or hallucinate any questions. If there are 3 questions, output 3. If there are 10, output 10.\n"
-            "5. Do NOT include any conversational text, explanations, or markdown formatting outside the JSON."
-        )
-        
-        user_prompt = f"""
-Analyze the following task description and extract the required details. Remember to preserve context like tables and code blocks inside the question strings.
+        if paper_type == "mcq":
+            system_prompt = (
+                "You are an expert technical recruiter and data extractor.\n"
+                "Your task is to analyze a document containing multiple-choice questions (MCQs) and extract:\n"
+                "1. All multiple choice questions found in the document. For each question, extract:\n"
+                "   - 'question': the question text (verbatim)\n"
+                "   - 'options': a list of strings representing the options/choices\n"
+                "   - 'answer': the correct option or answer text\n"
+                "2. All relevant technical skills required to answer the MCQs.\n"
+                "CRITICAL RULES:\n"
+                "1. You MUST output ONLY valid JSON format.\n"
+                "2. Your output MUST be a JSON object with exactly four keys:\n"
+                "   - 'questions': must be an empty list [].\n"
+                "   - 'mcqs': an array of objects representing the MCQs, each having 'question', 'options', and 'answer' keys.\n"
+                "   - 'project_task': must be an empty list [].\n"
+                "   - 'skills': an array of strings representing unique technical skill names.\n"
+                "3. Do NOT include any conversational text, explanations, or markdown formatting outside the JSON."
+            )
+            user_prompt = f"""
+Analyze the following document and extract the MCQs and skills:
+
+DOCUMENT CONTENT:
+{raw_text[:10000]}
+
+Output Format Example (JSON ONLY):
+{{
+  "questions": [],
+  "mcqs": [
+    {{
+      "question": "What is the output of print(type(1/2)) in Python 3?",
+      "options": ["<class 'int'>", "<class 'float'>", "<class 'double'>", "<class 'number'>"],
+      "answer": "<class 'float'>"
+    }}
+  ],
+  "project_task": [],
+  "skills": ["Python"]
+}}
+"""
+        elif paper_type == "task":
+            system_prompt = (
+                "You are an expert technical recruiter and data extractor.\n"
+                "Your task is to analyze a project task/assignment description document and extract:\n"
+                "1. The project task instructions/descriptions verbatim.\n"
+                "2. All relevant technical skills required to complete it.\n"
+                "CRITICAL RULES:\n"
+                "1. You MUST output ONLY valid JSON format.\n"
+                "2. Your output MUST be a JSON object with exactly four keys:\n"
+                "   - 'questions': must be an empty list [].\n"
+                "   - 'mcqs': must be an empty list [].\n"
+                "   - 'project_task': an array of strings representing the project task descriptions.\n"
+                "   - 'skills': an array of strings representing unique technical skill names.\n"
+                "3. Do NOT include any conversational text, explanations, or markdown formatting outside the JSON."
+            )
+            user_prompt = f"""
+Analyze the following task description and extract the project task details and skills:
 
 TASK DESCRIPTION:
 {raw_text[:10000]}
 
 Output Format Example (JSON ONLY):
 {{
-  "questions": [
-    "Write a Python function that takes two strings as input...",
-    "**Problem Statement:**\\nYou are given a table...\\n\\n| Column | Type |\\n|---|---|\\n...\\n\\nQuestion: Write an SQL query..."
+  "questions": [],
+  "mcqs": [],
   "project_task": [
-    "Build a REST API for user authentication.",
-    "Implement rate limiting."
+    "Build a REST API using FastAPI with user authentication.",
+    "Write unit tests for all endpoints."
   ],
-  "skills": ["Skill1", "Skill2", "Skill3"]
+  "skills": ["FastAPI", "Python", "Unit Testing"]
+}}
+"""
+        else:
+            system_prompt = (
+                "You are an expert technical recruiter and data extractor.\n"
+                "Your task is to analyze a document containing descriptive/theory questions and extract:\n"
+                "1. All descriptive technical interview questions found in the document exactly as written (verbatim).\n"
+                "2. All relevant technical skills required to answer them.\n"
+                "CRITICAL RULES:\n"
+                "1. You MUST output ONLY valid JSON format.\n"
+                "2. Your output MUST be a JSON object with exactly four keys:\n"
+                "   - 'questions': an array of strings representing the questions.\n"
+                "   - 'mcqs': must be an empty list [].\n"
+                "   - 'project_task': must be an empty list [].\n"
+                "   - 'skills': an array of strings representing unique technical skill names.\n"
+                "3. IMPORTANT FOR QUESTIONS: Extract the questions VERBATIM. Do NOT rephrase them. "
+                "If a question is preceded by a Problem Statement, Table Structure, Sample Data, Code, or any other context, "
+                "you MUST include all of that context and markdown tables as part of the question string.\n"
+                "4. Do NOT include any conversational text, explanations, or markdown formatting outside the JSON."
+            )
+            user_prompt = f"""
+Analyze the following document and extract the questions and skills:
+
+DOCUMENT CONTENT:
+{raw_text[:10000]}
+
+Output Format Example (JSON ONLY):
+{{
+  "questions": [
+    "Explain the difference between deep copy and shallow copy in Python.",
+    "**Problem Statement:**\\nWrite a function to...\\n\\nQuestion: How would you optimize this?"
+  ],
+  "mcqs": [],
+  "project_task": [],
+  "skills": ["Python"]
 }}
 """
 
@@ -236,6 +303,10 @@ Output Format Example (JSON ONLY):
             if not isinstance(questions, list):
                 questions = []
             
+            mcqs = data.get("mcqs", [])
+            if not isinstance(mcqs, list):
+                mcqs = []
+            
             project_task = data.get("project_task", [])
             if not isinstance(project_task, list):
                 project_task = [str(project_task)] if project_task else []
@@ -248,6 +319,7 @@ Output Format Example (JSON ONLY):
             
             return {
                 "questions": questions,
+                "mcqs": mcqs,
                 "project_task": project_task,
                 "skills": cleaned_skills
             }
@@ -255,7 +327,8 @@ Output Format Example (JSON ONLY):
         except Exception as e:
             logger.error("LLM task paper details extraction failed: %s", e)
             return {
-                "questions": [f"Technical Question {i}" for i in range(1, 6)],
+                "questions": [],
+                "mcqs": [],
                 "project_task": [],
                 "skills": []
             }

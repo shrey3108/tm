@@ -101,6 +101,16 @@ def generate_candidate_task_pdf_file(
         for i, q in enumerate(test_paper.questions):
             text_content += f"{i+1}. {q}\n\n"
     
+    if getattr(test_paper, "mcqs", None):
+        text_content += "Multiple Choice Questions:\n"
+        for i, mcq in enumerate(test_paper.mcqs):
+            q_text = mcq.get("question") if isinstance(mcq, dict) else getattr(mcq, "question", "")
+            options = mcq.get("options") if isinstance(mcq, dict) else getattr(mcq, "options", [])
+            text_content += f"{i+1}. {q_text}\n"
+            for opt in options:
+                text_content += f"   - {opt}\n"
+            text_content += "\n"
+
     if test_paper.project_task:
         text_content += f"Project Task:\n"
         for t in test_paper.project_task:

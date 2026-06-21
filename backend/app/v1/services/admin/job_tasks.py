@@ -94,7 +94,7 @@ def extract_task_skills_task(job_id_str: str, file_path_str: str):
         _log.exception(f"Failed to run extract_task_skills_task for job {job_id_str}")
 
 
-async def extract_paper_task_skills_logic(paper_id_str: str, file_path_str: str):
+async def extract_paper_task_skills_logic(paper_id_str: str, file_path_str: str, paper_type: str = "normal"):
     """Logic to extract skills from a QuestionSetPaper's task file and update the database."""
     from app.v1.db.models.question_set_paper import QuestionSetPaper
     from app.v1.services.admin.candidate_task_service import candidate_task_service
@@ -120,9 +120,10 @@ async def extract_paper_task_skills_logic(paper_id_str: str, file_path_str: str)
             return
 
         _log.info(f"Extracting details from paper task document using LLM: {paper_id}")
-        extracted_data = await candidate_task_service.extract_paper_details_from_text(raw_text)
+        extracted_data = await candidate_task_service.extract_paper_details_from_text(raw_text, paper_type)
 
         paper.questions = extracted_data["questions"]
+        paper.mcqs = extracted_data["mcqs"]
         paper.project_task = extracted_data["project_task"]
         paper.task_skills = extracted_data["skills"]
         
@@ -140,10 +141,10 @@ async def extract_paper_task_skills_logic(paper_id_str: str, file_path_str: str)
 
 
 @celery_app.task(name="extract_paper_task_skills_task")
-def extract_paper_task_skills_task(paper_id_str: str, file_path_str: str):
+def extract_paper_task_skills_task(paper_id_str: str, file_path_str: str, paper_type: str = "normal"):
     """Celery task wrapper for predefined paper task PDF skill extraction."""
     try:
-        asyncio.run(run_with_cleanup(extract_paper_task_skills_logic(paper_id_str, file_path_str)))
+        asyncio.run(run_with_cleanup(extract_paper_task_skills_logic(paper_id_str, file_path_str, paper_type)))
     except Exception as exc:
         _log.exception(f"Failed to run extract_paper_task_skills_task for paper {paper_id_str}")
 
@@ -161,10 +162,12 @@ async def extract_paper_skills_from_text_logic(paper_id_str: str):
             _log.error(f"QuestionSetPaper not found for text background extraction: {paper_id}")
             return
 
-        # Combine questions and tasks into a single text block
+        # Combine questions, mcqs and tasks into a single text block
         text_parts = []
         if paper.questions:
             text_parts.append("Questions:\n" + "\n".join(f"- {q}" for q in paper.questions))
+        if paper.mcqs:
+            text_parts.append("MCQs:\n" + "\n".join(f"- {m.get('question') if isinstance(m, dict) else m}" for m in paper.mcqs))
         if paper.project_task:
             text_parts.append("Tasks:\n" + "\n".join(f"- {t}" for t in paper.project_task))
 
