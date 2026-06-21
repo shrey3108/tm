@@ -26,7 +26,7 @@ import {
     useEnhanceCriterionPromptMutation,
     useUpdateCriterionMutation,
 } from "@/hooks/mutations/admin/useJobCriteria";
-import { useJobCriteria } from "@/hooks/queries/admin/useJobCriteria";
+import { useJobCriteria, useJobCriteriaById } from "@/hooks/queries/admin/useJobCriteria";
 import type { CriterionRead } from "@/types/admin";
 import { slugify } from "@/utils/slug";
 
@@ -37,7 +37,7 @@ import { slugify } from "@/utils/slug";
 export default function AdminJobCriteriaForm() {
     const navigate = useNavigate();
     const location = useLocation();
-    const { slug } = useParams<{ slug?: string }>();
+    const { slug, id: paramId } = useParams<{ slug?: string, id?: string }>();
     const toast = useToast();
 
     const createMutation = useCreateCriterionMutation();
@@ -46,7 +46,10 @@ export default function AdminJobCriteriaForm() {
     const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
     const { data: criteria, loading: isLoadingCriteria } = useJobCriteria(0, 100);
-    const criterion = criteria.find(c => slugify(c.name) === slug || c.id === (location.state as any)?.id);
+    const { data: criterionData, loading: isLoadingCriterionData } = useJobCriteriaById(location.state?.id as string);
+
+    const criterion = paramId ? criterionData : criteria.find(c => slugify(c.name) === slug || c.id === (location.state as any)?.id);
+    const isFetchingData = paramId ? isLoadingCriterionData : isLoadingCriteria;
 
     const [isEditMode, setIsEditMode] = useState(false);
 
@@ -80,7 +83,7 @@ export default function AdminJobCriteriaForm() {
             setIsEditMode(true);
             if (stateData?.criteria) {
                 initializeForm(stateData.criteria);
-            } else if (!isLoadingCriteria) {
+            } else if (!isFetchingData) {
                 if (criterion) {
                     initializeForm(criterion);
                 } else {
@@ -89,7 +92,7 @@ export default function AdminJobCriteriaForm() {
                 }
             }
         }
-    }, [slug, location.state, form, toast, navigate, criterion, isLoadingCriteria]);
+    }, [slug, location.state, form, toast, navigate, criterion, isFetchingData]);
 
     const onSubmit = async (values: JobCriteriaCreateFormValues) => {
         try {

@@ -121,16 +121,8 @@ async def test_execute_evaluation_with_custom_prompt_version(
     mock_task = MagicMock()
     mock_task.request.retries = 0
     
-    # Temporarily override settings to lightweight mode for test expectation
-    from github_code_evaluator.app.v1.core.config import settings as app_settings
-    original_lightweight = app_settings.EVALUATION_LIGHTWEIGHT_MODE
-    app_settings.EVALUATION_LIGHTWEIGHT_MODE = True
-    
-    try:
-        # Run execute_evaluation
-        result = await execute_evaluation(mock_task, mock_eval.evaluation_id, "Developer", "", "Junior")
-    finally:
-        app_settings.EVALUATION_LIGHTWEIGHT_MODE = original_lightweight
+    # Run execute_evaluation
+    result = await execute_evaluation(mock_task, mock_eval.evaluation_id, "Developer", "", "Junior")
     
     # Verify evaluation prompt version was set to v2.0.0
     assert mock_eval.prompt_version == "v2.0.0"

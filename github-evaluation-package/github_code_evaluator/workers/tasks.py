@@ -301,7 +301,7 @@ async def execute_evaluation(
             # 7. Call LLM for qualitative evaluation
             logger.info("Calling LLM evaluator...")
             repo_context = RepositoryService.prepare_evaluation_context(
-                tree, content, lightweight=settings.EVALUATION_LIGHTWEIGHT_MODE
+                tree, content
             )
             
             try:
@@ -382,7 +382,7 @@ async def execute_evaluation(
 
             # Programmatically adjust security score based on risks list and secrets detection
             if has_secrets:
-                report_score_val = 1.0
+                report_score_val = 0.0
             elif not filtered_risks:
                 report_score_val = 5.0
             else:
@@ -390,10 +390,10 @@ async def execute_evaluation(
                 if llm_sec_score is None:
                     llm_sec_score = report_json.get("scores", {}).get("security")
                 try:
-                    report_score_val = float(llm_sec_score) if llm_sec_score is not None else 1.0
+                    report_score_val = float(llm_sec_score) if llm_sec_score is not None else 0.0
                 except (ValueError, TypeError):
-                    report_score_val = 1.0
-                report_score_val = max(1.0, min(5.0, report_score_val))
+                    report_score_val = 0.0
+                report_score_val = max(0.0, min(5.0, report_score_val))
 
             # Synchronize report_json variables and raw_scores
             report_json["security_score"] = report_score_val
@@ -527,20 +527,20 @@ async def execute_evaluation(
             extra_pts = [p for p in (report_json.get("extraordinary_points") or []) if p and str(p).strip()]
             extra_scr = report_json.get("extraordinary_score")
             try:
-                extra_scr_val = float(extra_scr) if extra_scr is not None else 1.0
+                extra_scr_val = float(extra_scr) if extra_scr is not None else 0.0
             except (ValueError, TypeError):
-                extra_scr_val = 1.0
+                extra_scr_val = 0.0
 
             if extra_pts and extra_scr_val == 0.0:
                 extra_scr_val = min(5.0, 2.0 + len(extra_pts) * 1.0)
                 
-            extra_scr_val = max(1.0, min(5.0, extra_scr_val))
+            extra_scr_val = max(0.0, min(5.0, extra_scr_val))
 
             def parse_score(val):
                 try:
-                    return max(1.0, min(5.0, float(val) if val is not None else 1.0))
+                    return max(0.0, min(5.0, float(val) if val is not None else 0.0))
                 except (ValueError, TypeError):
-                    return 1.0
+                    return 0.0
 
             # 9. Extract and combine suggested interview questions
             combined_qs = []

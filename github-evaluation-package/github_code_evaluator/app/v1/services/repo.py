@@ -216,18 +216,10 @@ class RepositoryService:
 
     @staticmethod
     def prepare_evaluation_context(
-        tree_str: str, content_str: str, lightweight: bool = True, filter_mode: str = None
+        tree_str: str, content_str: str, filter_mode: str = None
     ) -> str:
         """Filters and formats repository context to fit within LLM prompt limits safely."""
-        # Auto-enable lightweight mode if content size is too large (> 150KB) to prevent token window errors
-        if not lightweight and len(content_str) > 150000:
-            logger.warning(
-                f"Repository content is too large ({len(content_str)} chars). "
-                f"Auto-switching to lightweight context preparation to prevent token overflow."
-            )
-            lightweight = True
-
-        if not lightweight and not filter_mode:
+        if not filter_mode:
             return f"DIRECTORY TREE:\n{tree_str}\n\nCODE CONTENT:\n{content_str}"
         files = {}
         # Pattern to capture filename and content blocks from GitIngest concat format
@@ -291,111 +283,6 @@ class RepositoryService:
             files = filtered_files
 
         if filter_mode in ("code", "logic"):
-            if not lightweight:
-                reconstructed_parts = []
-                for fname, fcontent in files.items():
-                    reconstructed_parts.append(
-                        f"=========================================\n"
-                        f"FILE: {fname}\n"
-                        f"=========================================\n"
-                        f"{fcontent}\n"
-                    )
-                reconstructed_content = "".join(reconstructed_parts)
-                return f"DIRECTORY TREE:\n{tree_str}\n\nCODE CONTENT:\n{reconstructed_content}"
-            else:
-                context_parts = []
-                context_parts.append(f"DIRECTORY TREE:\n{tree_str}\n")
-
-                # Sort files to prioritize core logic over tests/fixtures/mocks/demos
-                def file_priority(item):
-                    fname, _ = item
-                    fname_lower = fname.lower()
-                    # Core logic has higher priority (0), tests/mocks/demos have lower priority (1)
-                    is_test_or_mock = any(p in fname_lower for p in ["test", "spec", "mock", "fixture", "demo"])
-                    return 1 if is_test_or_mock else 0
-
-                sorted_files = sorted(files.items(), key=file_priority)
-
-                # Maximum characters allowed in the code context to fit safely in LLM prompt
-                max_chars = 400000
-                current_chars = len(context_parts[0])
-                truncated_files = []
-
-                for fname, fcontent in sorted_files:
-                    if current_chars >= max_chars:
-                        truncated_files.append(fname)
-                        continue
-
-                    lines = fcontent.split("\n")
-                    snippet = "\n".join(lines[:150])
-                    if len(lines) > 150:
-                        snippet += "\n... [TRUNCATED CODE LINES] ..."
-
-                    file_block = f"FILE (Snippet): {fname}\n{snippet}\n"
-
-                    if current_chars + len(file_block) > max_chars:
-                        available_space = max_chars - current_chars
-                        if available_space > 200:
-                            file_block = file_block[:available_space] + "\n... [TRUNCATED FOR SIZE LIMIT] ...\n"
-                            context_parts.append(file_block)
-                            current_chars += len(file_block)
-                        truncated_files.append(fname)
-                    else:
-                        context_parts.append(file_block)
-                        current_chars += len(file_block)
-
-                if truncated_files:
-                    truncation_summary = (
-                        f"\n... [TRUNCATED {len(truncated_files)} FILES TO FIT WITHIN PROMPT LIMITS] ...\n"
-                        f"Omitted files: {', '.join(truncated_files[:20])}"
-                    )
-                    if len(truncated_files) > 20:
-                        truncation_summary += " and others."
-                    context_parts.append(truncation_summary)
-
-                return "\n".join(context_parts)
-
-        if filter_mode == "non_code":
-            if not lightweight:
-                reconstructed_parts = []
-                for fname, fcontent in files.items():
-                    reconstructed_parts.append(
-                        f"=========================================\n"
-                        f"FILE: {fname}\n"
-                        f"=========================================\n"
-                        f"{fcontent}\n"
-                    )
-                reconstructed_content = "".join(reconstructed_parts)
-                return f"DIRECTORY TREE:\n{tree_str}\n\nCODE CONTENT:\n{reconstructed_content}"
-            else:
-                context_parts = []
-                context_parts.append(f"DIRECTORY TREE:\n{tree_str}\n")
-                readme_key = next((k for k in files if k.lower() == "readme.md"), None)
-                if readme_key:
-                    readme_content = files[readme_key]
-                    if len(readme_content) > 2000:
-                        readme_content = (
-                            readme_content[:2000]
-                            + "\n... [TRUNCATED FOR LENGTH] ..."
-                        )
-                    context_parts.append(f"FILE: {readme_key}\n{readme_content}\n")
-                dep_files = [
-                    "requirements.txt",
-                    "package.json",
-                    "go.mod",
-                    "cargo.toml",
-                    "dockerfile",
-                    "docker-compose.yml",
-                    "pyproject.toml",
-                ]
-                for dep_file in dep_files:
-                    dep_key = next((k for k in files if k.lower() == dep_file), None)
-                    if dep_key:
-                        context_parts.append(f"FILE: {dep_key}\n{files[dep_key]}\n")
-                return "\n".join(context_parts)
-
-        # Default full context formatting
-        if not lightweight:
             reconstructed_parts = []
             for fname, fcontent in files.items():
                 reconstructed_parts.append(
@@ -407,55 +294,29 @@ class RepositoryService:
             reconstructed_content = "".join(reconstructed_parts)
             return f"DIRECTORY TREE:\n{tree_str}\n\nCODE CONTENT:\n{reconstructed_content}"
 
-        context_parts = []
-        context_parts.append(f"DIRECTORY TREE:\n{tree_str}\n")
-
-        # 1. README.md
-        readme_key = next((k for k in files if k.lower() == "readme.md"), None)
-        if readme_key:
-            readme_content = files[readme_key]
-            if len(readme_content) > 2000:
-                readme_content = (
-                    readme_content[:2000]
-                    + "\n... [TRUNCATED FOR LENGTH] ..."
+        if filter_mode == "non_code":
+            reconstructed_parts = []
+            for fname, fcontent in files.items():
+                reconstructed_parts.append(
+                    f"=========================================\n"
+                    f"FILE: {fname}\n"
+                    f"=========================================\n"
+                    f"{fcontent}\n"
                 )
-            context_parts.append(f"FILE: {readme_key}\n{readme_content}\n")
+            reconstructed_content = "".join(reconstructed_parts)
+            return f"DIRECTORY TREE:\n{tree_str}\n\nCODE CONTENT:\n{reconstructed_content}"
 
-        # 2. Config / dependencies
-        dep_files = [
-            "requirements.txt",
-            "package.json",
-            "go.mod",
-            "cargo.toml",
-            "dockerfile",
-            "docker-compose.yml",
-            "pyproject.toml",
-        ]
-        for dep_file in dep_files:
-            dep_key = next((k for k in files if k.lower() == dep_file), None)
-            if dep_key:
-                context_parts.append(f"FILE: {dep_key}\n{files[dep_key]}\n")
-
-        # 3. Main entry code snippets
-        entry_patterns = [
-            "app.py",
-            "main.py",
-            "index.js",
-            "server.js",
-            "index.ts",
-            "server.ts",
-            "run.py",
-        ]
-        for entry_pattern in entry_patterns:
-            entry_key = next((k for k in files if k.lower() == entry_pattern), None)
-            if entry_key:
-                lines = files[entry_key].split("\n")
-                snippet = "\n".join(lines[:60])
-                if len(lines) > 60:
-                    snippet += "\n... [TRUNCATED CODE LINES] ..."
-                context_parts.append(f"FILE (Snippet): {entry_key}\n{snippet}\n")
-
-        return "\n".join(context_parts)
+        # Default full context formatting
+        reconstructed_parts = []
+        for fname, fcontent in files.items():
+            reconstructed_parts.append(
+                f"=========================================\n"
+                f"FILE: {fname}\n"
+                f"=========================================\n"
+                f"{fcontent}\n"
+            )
+        reconstructed_content = "".join(reconstructed_parts)
+        return f"DIRECTORY TREE:\n{tree_str}\n\nCODE CONTENT:\n{reconstructed_content}"
 
     @staticmethod
     def scan_for_secrets(local_dir: str) -> List[Dict[str, Any]]:

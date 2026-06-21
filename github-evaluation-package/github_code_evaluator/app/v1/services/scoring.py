@@ -48,20 +48,20 @@ class ScoringService:
         ]
 
         for cat in categories:
-            val = raw_scores.get(cat, 1.0)
+            val = raw_scores.get(cat, 0.0)
             if isinstance(val, dict):
-                raw_score = float(val.get("score", 1.0))
+                raw_score = float(val.get("score", 0.0))
             else:
                 raw_score = float(val)
             weight = float(weights.get(cat, 0.0))
 
-            # Apply security penalty rule: force raw score to 1.0 if secrets are found
+            # Apply security penalty rule: force raw score to 0.0 if secrets are found
             if cat == "security" and has_secrets:
-                logger.warning("Secret detected: forcing Security score to 1.0")
-                raw_score = 1.0
+                logger.warning("Secret detected: forcing Security score to 0.0")
+                raw_score = 0.0
 
-            # Ensure bounds (1.0 to 5.0)
-            raw_score = max(1.0, min(5.0, raw_score))
+            # Ensure bounds (0.0 to 5.0)
+            raw_score = max(0.0, min(5.0, raw_score))
 
             weighted_score = raw_score * weight
             total_weighted += weighted_score

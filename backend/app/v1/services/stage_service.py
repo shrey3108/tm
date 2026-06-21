@@ -21,6 +21,9 @@ class StageService:
     async def get_all_templates(self, *args, **kwargs) -> list[StageTemplate]:
         return await template_service.get_all_templates(*args, **kwargs)
 
+    async def get_template(self, *args, **kwargs) -> StageTemplate:
+        return await template_service.get_template(*args, **kwargs)
+
     async def create_template(self, *args, **kwargs) -> StageTemplate:
         return await template_service.create_template(*args, **kwargs)
 

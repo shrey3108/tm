@@ -78,14 +78,13 @@ class Settings(BaseSettings):
 
     # Prompt Configurations
     EVALUATION_PROMPT_VERSION: str = "v1"
-    EVALUATION_LIGHTWEIGHT_MODE: bool = False
     EVALUATION_LLM_TIMEOUT: float = 300.0
 
     @model_validator(mode="after")
     def validate_llm_credentials(self) -> "Settings":
         """Ensure API credentials are valid on startup."""
-        if not self.EVALUATION_LIGHTWEIGHT_MODE and not self.OPENAI_API_KEY:
-            raise ValueError("OPENAI_API_KEY must be set when EVALUATION_LIGHTWEIGHT_MODE is False")
+        if not self.OPENAI_API_KEY:
+            raise ValueError("OPENAI_API_KEY must be set")
         return self
 
     @computed_field
