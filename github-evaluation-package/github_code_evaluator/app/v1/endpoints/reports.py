@@ -149,10 +149,10 @@ async def get_evaluation_report(
     if evaluation.status == "cloning_error":
         error_msg = "Evaluation stopped: The GitHub repository is private or inaccessible."
 
-    arch_score = max(1.0, float(scores_dict.get("architecture").score) if "architecture" in scores_dict else (float(report.architecture_score) if report and report.architecture_score is not None else 1.0))
-    code_score = max(1.0, float(scores_dict.get("code_quality").score) if "code_quality" in scores_dict else (float(report.code_quality_score) if report and report.code_quality_score is not None else 1.0))
-    sec_score = max(1.0, float(scores_dict.get("security").score) if "security" in scores_dict else (float(report.security_score) if report and report.security_score is not None else 1.0))
-    extra_score = max(1.0, float(report.extraordinary_score) if report and report.extraordinary_score is not None else 1.0)
+    arch_score = max(0.0, float(scores_dict.get("architecture").score) if "architecture" in scores_dict else (float(report.architecture_score) if report and report.architecture_score is not None else 0.0))
+    code_score = max(0.0, float(scores_dict.get("code_quality").score) if "code_quality" in scores_dict else (float(report.code_quality_score) if report and report.code_quality_score is not None else 0.0))
+    sec_score = max(0.0, float(scores_dict.get("security").score) if "security" in scores_dict else (float(report.security_score) if report and report.security_score is not None else 0.0))
+    extra_score = max(0.0, float(report.extraordinary_score) if report and report.extraordinary_score is not None else 0.0)
 
     response_payload = ReportResponse(
         evaluation_id=evaluation.evaluation_id,

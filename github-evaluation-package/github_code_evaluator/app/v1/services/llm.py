@@ -244,10 +244,16 @@ You must score the following 6 categories on a scale of 0 to 5 (where 0 is compl
 5. performance (e.g. scalability, resource efficiency, latency, caching, optimization, and time/space complexity of the implementation — evaluate: 1. if algorithm logic and time/space complexity are used/considered, and 2. if so, how good they are.)
 6. documentation (e.g. README clarity, code comments, architecture diagrams, setup guides?)
 
+SCORING BENCHMARK RULES:
+- For every category, if the repository's implementation is satisfactory, standard, or acceptable, the maximum score you can give is 3.5. Scores above 3.5 (up to 5.0) are strictly reserved for exceptionally good, highly optimized, or advanced work. 
+- ABSOLUTELY DO NOT give a perfect 5.0 in ANY category (Correctness, Architecture, Code Quality, Security, Performance, Documentation) just because a project is small, simple, or lacks obvious errors/vulnerabilities. The absence of errors does NOT equal a 5.0. To earn > 3.5, the codebase must actively demonstrate advanced capabilities or exceptional implementation. Do not inflate scores for basic satisfactory implementations.
+
 LOGICAL CONSISTENCY AND CONTRADICTION RULES:
 - The entire evaluation report must be logically consistent. Under no circumstances should different sections, reviews, or scores contradict each other.
 - If a skill, tool, or feature is noted/analyzed as present, implemented, or used in one part of the report (e.g., in the jd_alignment, strengths, or stack detection), it must NOT be declared as missing, absent, or neglected in another part of the report (e.g., in the project_alignment, weaknesses, or reports). Both sections must align on whether a capability exists in the repository.
 - Ensure that the global reviews (architecture_review, code_quality_review) align with the respective category scores and the specific alignment reviews.
+- ABSOLUTE BAN ON CONTRADICTORY QUALIFIERS: If a file (like a README) or feature is empty or completely missing, you MUST ONLY describe it as "completely empty" or "non-existent". You are FORBIDDEN from using words like "minimal", "sparse", or "insufficient" to describe it. 
+- WARNING: Saying "Documentation is minimal" when the README is empty is a logical hallucination. "Minimal" implies that some content exists. If there is NO content, you MUST say "Documentation is absent" or "Documentation is non-existent". Do NOT evaluate or summarize the contents of a missing or empty file.
 
 Expected JSON structure:
 {{
@@ -326,6 +332,48 @@ Expected JSON structure:
 }}
 """
 
+    def _sanitize_contradictions(self, report_json: Dict[str, Any]) -> None:
+        """Post-processing step to forcefully remove known LLM hallucinations where it calls missing features 'minimal'."""
+        
+        doc_score = report_json.get("scores", {}).get("documentation")
+        is_doc_absent = False
+        try:
+            if doc_score is not None and float(doc_score) <= 0.0:
+                is_doc_absent = True
+        except (ValueError, TypeError):
+            pass
+
+        def replace_minimal(text: str) -> str:
+            if not text or not isinstance(text, str):
+                return text
+            
+            if is_doc_absent:
+                text = text.replace("Documentation remains minimal", "Documentation is completely absent")
+                text = text.replace("documentation remains minimal", "documentation is completely absent")
+                text = text.replace("docstrings are sparse", "docstrings are completely absent")
+                text = text.replace("Docstrings are sparse", "Docstrings are completely absent")
+                text = text.replace("minimal documentation", "no documentation")
+                text = text.replace("Minimal documentation", "No documentation")
+            return text
+
+        for key in ["jd_alignment_report", "project_alignment_report", "architecture_review", "code_quality_review"]:
+            if key in report_json:
+                report_json[key] = replace_minimal(report_json[key])
+                
+        for align_key in ["jd_alignment", "project_alignment"]:
+            if align_key in report_json and isinstance(report_json[align_key], dict):
+                align = report_json[align_key]
+                for field in ["alignment_review", "correctness_review", "security_review", "performance_review", "documentation_review", "code_quality_review", "architecture_review"]:
+                    if field in align:
+                        align[field] = replace_minimal(align[field])
+                        
+        if "weaknesses" in report_json:
+            report_json["weaknesses"] = [replace_minimal(w) for w in report_json["weaknesses"]]
+        
+        for align_key in ["jd_alignment", "project_alignment"]:
+            if align_key in report_json and isinstance(report_json[align_key], dict) and "weaknesses" in report_json[align_key]:
+                report_json[align_key]["weaknesses"] = [replace_minimal(w) for w in report_json[align_key]["weaknesses"]]
+
     async def evaluate_repository(
         self,
         repo_name: str,
@@ -344,10 +392,10 @@ Expected JSON structure:
         if tree_str is not None and content_str is not None:
             from github_code_evaluator.app.v1.services.repo import RepositoryService
             repo_context_code = RepositoryService.prepare_evaluation_context(
-                tree_str, content_str, filter_mode="code", lightweight=settings.EVALUATION_LIGHTWEIGHT_MODE
+                tree_str, content_str, filter_mode="code"
             )
             repo_context_non_code = RepositoryService.prepare_evaluation_context(
-                tree_str, content_str, filter_mode="non_code", lightweight=settings.EVALUATION_LIGHTWEIGHT_MODE
+                tree_str, content_str, filter_mode="non_code"
             )
             
             prompt_code = self.build_prompt(
@@ -440,7 +488,13 @@ Expected JSON structure:
 
         report_code, report_non_code = await asyncio.gather(run_code(), run_non_code())
 
-        return self.combine_reports(report_code, report_non_code)
+        # Merge the two reports
+        final_report = self.combine_reports(report_code, report_non_code)
+        
+        # Sanitize known LLM linguistic hallucinations forcefully
+        self._sanitize_contradictions(final_report)
+
+        return final_report
 
     def combine_reports(self, report_code: Dict[str, Any], report_non_code: Dict[str, Any]) -> Dict[str, Any]:
         """Combine correctness, code_quality, architecture, security, performance, and documentation from report_code, and the rest from report_non_code."""
@@ -454,14 +508,14 @@ Expected JSON structure:
         extra_pts = [p for p in (combined.get("extraordinary_points") or []) if p and str(p).strip()]
         extra_scr = report_non_code.get("extraordinary_score")
         try:
-            extra_scr_val = float(extra_scr) if extra_scr is not None else 1.0
+            extra_scr_val = float(extra_scr) if extra_scr is not None else 0.0
         except (ValueError, TypeError):
-            extra_scr_val = 1.0
+            extra_scr_val = 0.0
 
         if extra_pts and extra_scr_val == 0.0:
             extra_scr_val = min(5.0, 2.0 + len(extra_pts) * 1.0)
         
-        combined["extraordinary_score"] = max(1.0, min(5.0, extra_scr_val))
+        combined["extraordinary_score"] = max(0.0, min(5.0, extra_scr_val))
             
         # Root level fields from report_code
         for key in ["security_risks", "architecture_review", "code_quality_review"]:
@@ -470,20 +524,20 @@ Expected JSON structure:
         for score_key in ["architecture_score", "code_quality_score", "security_score"]:
             val = report_code.get(score_key)
             try:
-                val_float = float(val) if val is not None else 1.0
+                val_float = float(val) if val is not None else 0.0
             except (ValueError, TypeError):
-                val_float = 1.0
-            combined[score_key] = max(1.0, min(5.0, val_float))
+                val_float = 0.0
+            combined[score_key] = max(0.0, min(5.0, val_float))
             
         # Scores combined
         combined["scores"] = {}
         for cat in ["correctness", "code_quality", "architecture", "security", "performance", "documentation"]:
             val = report_code.get("scores", {}).get(cat)
             try:
-                val_float = float(val) if val is not None else 1.0
+                val_float = float(val) if val is not None else 0.0
             except (ValueError, TypeError):
-                val_float = 1.0
-            combined["scores"][cat] = max(1.0, min(5.0, val_float))
+                val_float = 0.0
+            combined["scores"][cat] = max(0.0, min(5.0, val_float))
         
         # Alignment reports
         for align_key in ["jd_alignment", "project_alignment"]:
@@ -494,10 +548,10 @@ Expected JSON structure:
             for cat in ["correctness", "code_quality", "architecture", "security", "performance", "documentation"]:
                 val = non_code_align.get("scores", {}).get(cat)
                 try:
-                    val_float = float(val) if val is not None else 1.0
+                    val_float = float(val) if val is not None else 0.0
                 except (ValueError, TypeError):
-                    val_float = 1.0
-                align_scores[cat] = max(1.0, min(5.0, val_float))
+                    val_float = 0.0
+                align_scores[cat] = max(0.0, min(5.0, val_float))
                 
             combined[align_key] = {
                 "strengths": non_code_align.get("strengths", []),

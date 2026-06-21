@@ -113,15 +113,7 @@ async def test_security_score_override_no_risks(
     mock_task = MagicMock()
     mock_task.request.retries = 0
     
-    # Temporarily set lightweight mode
-    from github_code_evaluator.app.v1.core.config import settings as app_settings
-    original_lightweight = app_settings.EVALUATION_LIGHTWEIGHT_MODE
-    app_settings.EVALUATION_LIGHTWEIGHT_MODE = True
-    
-    try:
-        await execute_evaluation(mock_task, mock_eval.evaluation_id, "Developer", "", "Junior")
-    finally:
-        app_settings.EVALUATION_LIGHTWEIGHT_MODE = original_lightweight
+    await execute_evaluation(mock_task, mock_eval.evaluation_id, "Developer", "", "Junior")
         
     # Verify report records
     reports = [r for r in added_records if isinstance(r, EvaluationReport)]
@@ -190,15 +182,7 @@ async def test_security_score_override_with_actual_risks(
     mock_task = MagicMock()
     mock_task.request.retries = 0
     
-    # Temporarily set lightweight mode
-    from github_code_evaluator.app.v1.core.config import settings as app_settings
-    original_lightweight = app_settings.EVALUATION_LIGHTWEIGHT_MODE
-    app_settings.EVALUATION_LIGHTWEIGHT_MODE = True
-    
-    try:
-        await execute_evaluation(mock_task, mock_eval.evaluation_id, "Developer", "", "Junior")
-    finally:
-        app_settings.EVALUATION_LIGHTWEIGHT_MODE = original_lightweight
+    await execute_evaluation(mock_task, mock_eval.evaluation_id, "Developer", "", "Junior")
         
     # Verify report records
     reports = [r for r in added_records if isinstance(r, EvaluationReport)]
@@ -267,15 +251,7 @@ async def test_security_score_override_with_secrets(
     mock_task = MagicMock()
     mock_task.request.retries = 0
     
-    # Temporarily set lightweight mode
-    from github_code_evaluator.app.v1.core.config import settings as app_settings
-    original_lightweight = app_settings.EVALUATION_LIGHTWEIGHT_MODE
-    app_settings.EVALUATION_LIGHTWEIGHT_MODE = True
-    
-    try:
-        await execute_evaluation(mock_task, mock_eval.evaluation_id, "Developer", "", "Junior")
-    finally:
-        app_settings.EVALUATION_LIGHTWEIGHT_MODE = original_lightweight
+    await execute_evaluation(mock_task, mock_eval.evaluation_id, "Developer", "", "Junior")
         
     # Verify report records
     reports = [r for r in added_records if isinstance(r, EvaluationReport)]
@@ -379,15 +355,7 @@ async def test_overall_score_average(
     mock_task = MagicMock()
     mock_task.request.retries = 0
     
-    # Temporarily set lightweight mode
-    from github_code_evaluator.app.v1.core.config import settings as app_settings
-    original_lightweight = app_settings.EVALUATION_LIGHTWEIGHT_MODE
-    app_settings.EVALUATION_LIGHTWEIGHT_MODE = True
-    
-    try:
-        await execute_evaluation(mock_task, mock_eval.evaluation_id, "Developer", "", "Junior")
-    finally:
-        app_settings.EVALUATION_LIGHTWEIGHT_MODE = original_lightweight
+    await execute_evaluation(mock_task, mock_eval.evaluation_id, "Developer", "", "Junior")
         
     # Verify overall score on the evaluation record is the average (4.0 + 3.0) / 2.0 = 3.5
     assert mock_eval.overall_score == 3.5
