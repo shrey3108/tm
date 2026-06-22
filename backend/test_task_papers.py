@@ -62,15 +62,26 @@ async def test_task_papers_flow():
             {"id": department_id, "name": f"Test Department {test_id_suffix}"},
         )
 
-        # Create tech stack
-        tech_stack_id = UUIDHelper.generate_uuid7()
-        await conn.execute(
-            text(
-                "INSERT INTO tech_stacks (id, name, description, created_at, updated_at) "
-                "VALUES (:id, :name, 'Test Tech Stack', NOW(), NOW())"
-            ),
-            {"id": tech_stack_id, "name": f"Test Tech Stack {test_id_suffix}"},
-        )
+        # Select or insert FastAPI, Python, Asyncio skills
+        skill_names = ["FastAPI", "Python", "Asyncio"]
+        job_skill_ids = []
+        created_skill_ids = []
+        for name in skill_names:
+            res_skill = await conn.execute(
+                text("SELECT id FROM skills WHERE name = :name"),
+                {"name": name}
+            )
+            row = res_skill.fetchone()
+            if row:
+                skill_id = row[0]
+            else:
+                skill_id = UUIDHelper.generate_uuid7()
+                await conn.execute(
+                    text("INSERT INTO skills (id, name, description) VALUES (:id, :name, 'Test Skill Description')"),
+                    {"id": skill_id, "name": name}
+                )
+                created_skill_ids.append(skill_id)
+            job_skill_ids.append(skill_id)
 
         # Create position level
         position_id = UUIDHelper.generate_uuid7()
@@ -92,14 +103,15 @@ async def test_task_papers_flow():
             {"id": job_id, "title": job_title, "department_id": department_id, "position_id": position_id},
         )
 
-        # Link job to tech stack
-        await conn.execute(
-            text(
-                "INSERT INTO job_tech_stacks (job_id, tech_stack_id) "
-                "VALUES (:job_id, :tech_stack_id)"
-            ),
-            {"job_id": job_id, "tech_stack_id": tech_stack_id},
-        )
+        # Link job to skills
+        for skill_id in job_skill_ids:
+            await conn.execute(
+                text(
+                    "INSERT INTO job_skills (job_id, skill_id) "
+                    "VALUES (:job_id, :skill_id)"
+                ),
+                {"job_id": job_id, "skill_id": skill_id},
+            )
 
         # Create candidate linked to job
         candidate_id = UUIDHelper.generate_uuid7()
@@ -171,7 +183,7 @@ async def test_task_papers_flow():
             data = {
                 "department_id": str(department_id),
                 "position_id": str(position_id),
-                "tech_stack_id": str(tech_stack_id),
+                "skill_ids": ",".join(str(sid) for sid in job_skill_ids),
             }
             response = client.post("/api/v1/task-papers/upload", data=data, files=files_a)
             assert response.status_code == 201
@@ -525,12 +537,13 @@ async def test_task_papers_flow():
                 text("DELETE FROM question_set_papers WHERE department_id = :id"), {"id": department_id}
             )
             await conn.execute(
-                text("DELETE FROM job_tech_stacks WHERE job_id = :id"), {"id": job_id}
+                text("DELETE FROM job_skills WHERE job_id = :id"), {"id": job_id}
             )
             await conn.execute(text("DELETE FROM jobs WHERE id = :id"), {"id": job_id})
-            await conn.execute(
-                text("DELETE FROM tech_stacks WHERE id = :id"), {"id": tech_stack_id}
-            )
+            for cid in created_skill_ids:
+                await conn.execute(
+                    text("DELETE FROM skills WHERE id = :id"), {"id": cid}
+                )
             await conn.execute(
                 text("DELETE FROM departments WHERE id = :id"), {"id": department_id}
             )
@@ -593,15 +606,21 @@ async def test_task_papers_mcq_flow():
             {"id": department_id, "name": f"Test Department {test_id_suffix}"},
         )
 
-        # Create tech stack
-        tech_stack_id = UUIDHelper.generate_uuid7()
-        await conn.execute(
-            text(
-                "INSERT INTO tech_stacks (id, name, description, created_at, updated_at) "
-                "VALUES (:id, :name, 'Test Tech Stack', NOW(), NOW())"
-            ),
-            {"id": tech_stack_id, "name": f"Test Tech Stack {test_id_suffix}"},
+        # Select or insert Python skill
+        res_skill = await conn.execute(
+            text("SELECT id FROM skills WHERE name = 'Python'")
         )
+        row = res_skill.fetchone()
+        created_skill_ids = []
+        if row:
+            skill_id = row[0]
+        else:
+            skill_id = UUIDHelper.generate_uuid7()
+            await conn.execute(
+                text("INSERT INTO skills (id, name, description) VALUES (:id, 'Python', 'Test Skill Description')"),
+                {"id": skill_id}
+            )
+            created_skill_ids.append(skill_id)
 
         # Create position level
         position_id = UUIDHelper.generate_uuid7()
@@ -623,13 +642,13 @@ async def test_task_papers_mcq_flow():
             {"id": job_id, "title": job_title, "department_id": department_id, "position_id": position_id},
         )
 
-        # Link job to tech stack
+        # Link job to skill
         await conn.execute(
             text(
-                "INSERT INTO job_tech_stacks (job_id, tech_stack_id) "
-                "VALUES (:job_id, :tech_stack_id)"
+                "INSERT INTO job_skills (job_id, skill_id) "
+                "VALUES (:job_id, :skill_id)"
             ),
-            {"job_id": job_id, "tech_stack_id": tech_stack_id},
+            {"job_id": job_id, "skill_id": skill_id},
         )
 
         # Create candidate linked to job
@@ -698,7 +717,7 @@ async def test_task_papers_mcq_flow():
             data = {
                 "department_id": str(department_id),
                 "position_id": str(position_id),
-                "tech_stack_id": str(tech_stack_id),
+                "skill_ids": str(skill_id),
                 "paper_type": "mcq"
             }
             response = client.post("/api/v1/task-papers/upload", data=data, files=files)
@@ -792,9 +811,10 @@ async def test_task_papers_mcq_flow():
             await conn.execute(text("DELETE FROM stage_templates WHERE id = :id"), {"id": template_id})
             await conn.execute(text("DELETE FROM candidates WHERE id = :id"), {"id": candidate_id})
             await conn.execute(text("DELETE FROM question_set_papers WHERE department_id = :id"), {"id": department_id})
-            await conn.execute(text("DELETE FROM job_tech_stacks WHERE job_id = :id"), {"id": job_id})
+            await conn.execute(text("DELETE FROM job_skills WHERE job_id = :id"), {"id": job_id})
             await conn.execute(text("DELETE FROM jobs WHERE id = :id"), {"id": job_id})
-            await conn.execute(text("DELETE FROM tech_stacks WHERE id = :id"), {"id": tech_stack_id})
+            for cid in created_skill_ids:
+                await conn.execute(text("DELETE FROM skills WHERE id = :id"), {"id": cid})
             await conn.execute(text("DELETE FROM departments WHERE id = :id"), {"id": department_id})
             await conn.execute(text("DELETE FROM job_positions WHERE id = :id"), {"id": position_id})
             await conn.execute(text("DELETE FROM users WHERE id = :id"), {"id": user_id})

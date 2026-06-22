@@ -108,7 +108,7 @@ async def assign_test_paper_to_candidate(
             )
 
         # Fetch candidate's job position level
-        stmt_job = select(Job).options(selectinload(Job.tech_stacks)).where(Job.id == job_id)
+        stmt_job = select(Job).options(selectinload(Job.skills)).where(Job.id == job_id)
         job = (await db.execute(stmt_job)).scalar_one_or_none()
         if not job or not job.position_id:
             raise HTTPException(
@@ -126,7 +126,7 @@ async def assign_test_paper_to_candidate(
     else:
         # Assign at Job level (public/common test paper for this job)
         job_id = assign_data.job_id
-        stmt_job = select(Job).options(selectinload(Job.tech_stacks)).where(Job.id == job_id)
+        stmt_job = select(Job).options(selectinload(Job.skills)).where(Job.id == job_id)
         job = (await db.execute(stmt_job)).scalar_one_or_none()
         if not job or not job.position_id:
             raise HTTPException(
@@ -178,13 +178,16 @@ async def assign_test_paper_to_candidate(
         if assign_data.source_paper_ids:
             stmt = stmt.where(QuestionSetPaper.id.in_(assign_data.source_paper_ids))
         else:
-            # Fallback to candidate's applied job matching if no specific sources are chosen
-            job_tech_stack_ids = [ts.id for ts in job.tech_stacks]
+            job_skill_ids = [s.id for s in job.skills]
             stmt = stmt.where(
                 QuestionSetPaper.department_id == job.department_id,
-                QuestionSetPaper.position_id == position_id,
-                QuestionSetPaper.tech_stack_id.in_(job_tech_stack_ids) if job_tech_stack_ids else False
+                QuestionSetPaper.position_id == position_id
             )
+            if job_skill_ids:
+                from app.v1.db.models.skills import Skill
+                stmt = stmt.where(QuestionSetPaper.skills.any(Skill.id.in_(job_skill_ids)))
+            else:
+                stmt = stmt.where(False)
         res = await db.execute(stmt)
         papers = res.scalars().all()
 

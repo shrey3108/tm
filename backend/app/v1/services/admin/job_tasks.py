@@ -126,6 +126,18 @@ async def extract_paper_task_skills_logic(paper_id_str: str, file_path_str: str,
         paper.mcqs = extracted_data["mcqs"]
         paper.project_task = extracted_data["project_task"]
         paper.task_skills = extracted_data["skills"]
+
+        # Sync with database skills table
+        if extracted_data["skills"]:
+            from app.v1.db.models.skills import Skill
+            from sqlalchemy import func
+            stmt_skills = select(Skill).where(
+                func.lower(Skill.name).in_([s.lower() for s in extracted_data["skills"]])
+            )
+            matched_skills = (await session.execute(stmt_skills)).scalars().all()
+            paper.skills = list(matched_skills)
+        else:
+            paper.skills = []
         
         session.add(paper)
         await session.commit()
@@ -188,6 +200,18 @@ async def extract_paper_skills_from_text_logic(paper_id_str: str):
         extracted_skills = await candidate_task_service._extract_skills_from_text(raw_text)
 
         paper.task_skills = extracted_skills
+
+        # Sync with database skills table
+        if extracted_skills:
+            from app.v1.db.models.skills import Skill
+            from sqlalchemy import func
+            stmt_skills = select(Skill).where(
+                func.lower(Skill.name).in_([s.lower() for s in extracted_skills])
+            )
+            matched_skills = (await session.execute(stmt_skills)).scalars().all()
+            paper.skills = list(matched_skills)
+        else:
+            paper.skills = []
         
         session.add(paper)
         await session.commit()

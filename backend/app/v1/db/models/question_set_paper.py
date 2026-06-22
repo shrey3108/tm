@@ -8,12 +8,13 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
 from app.v1.db.base_class import Base
+from app.v1.db.models.question_set_paper_skills import question_set_paper_skills
 from app.v1.utils.uuid import UUIDHelper
 
 if TYPE_CHECKING:
     from app.v1.db.models.job_positions import JobPosition
     from app.v1.db.models.departments import Department
-    from app.v1.db.models.tech_stacks import TechStack
+    from app.v1.db.models.skills import Skill
 
 
 class QuestionSetPaper(Base):
@@ -44,11 +45,7 @@ class QuestionSetPaper(Base):
         nullable=False,
     )
 
-    tech_stack_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("tech_stacks.id", ondelete="CASCADE"),
-        nullable=False,
-    )
+
 
     position_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
@@ -105,8 +102,10 @@ class QuestionSetPaper(Base):
         "Department", foreign_keys=[department_id]
     )
 
-    tech_stack: Mapped["TechStack"] = relationship(
-        "TechStack", foreign_keys=[tech_stack_id]
+    skills: Mapped[list["Skill"]] = relationship(
+        "Skill",
+        secondary=question_set_paper_skills,
+        lazy="selectin",
     )
 
     position: Mapped["JobPosition"] = relationship(
