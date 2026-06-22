@@ -174,7 +174,7 @@ async def assign_test_paper_to_candidate(
 
     elif assign_data.mode == "random":
         # Fetch all question set papers matching the candidate's job and position level
-        stmt = select(QuestionSetPaper)
+        stmt = select(QuestionSetPaper).options(selectinload(QuestionSetPaper.tech_stack))
         if assign_data.source_paper_ids:
             stmt = stmt.where(QuestionSetPaper.id.in_(assign_data.source_paper_ids))
         else:
@@ -198,10 +198,16 @@ async def assign_test_paper_to_candidate(
         all_questions = []
         all_mcqs = []
         for p in papers:
+            tech_name = p.tech_stack.name if p.tech_stack else "Unknown"
+            tag = f"[{tech_name}]"
+            
             if p.questions:
-                all_questions.extend(p.questions)
+                all_questions.extend([f"{tag} {q}" for q in p.questions])
             if p.mcqs:
-                all_mcqs.extend(p.mcqs)
+                for m in p.mcqs:
+                    new_m = m.copy() if isinstance(m, dict) else getattr(m, "model_dump", lambda: m)()
+                    new_m["question"] = f"{tag} {new_m.get('question', '')}"
+                    all_mcqs.append(new_m)
 
         # Ensure we have at least 5 unique questions or fallback to total pool
         unique_questions = list(set(all_questions))
@@ -219,7 +225,9 @@ async def assign_test_paper_to_candidate(
 
         # Select one task randomly (associated file path comes from that same chosen paper)
         chosen_paper = random.choice(papers)
-        assigned_task = chosen_paper.project_task
+        tech_name = chosen_paper.tech_stack.name if chosen_paper.tech_stack else "Unknown"
+        tag = f"[{tech_name}]"
+        assigned_task = [f"{tag} {t}" for t in chosen_paper.project_task] if chosen_paper.project_task else []
         assigned_file_path = chosen_paper.task_file_path
         
         assigned_skills = None  # Will be extracted dynamically
