@@ -6,20 +6,26 @@ import { QUERY_CONFIG } from "@/constants/queryConfig";
 
 /**
  * Hook to retrieve the list of predefined question set paper templates.
- * Optionally filters by job and/or position level.
+ * Optionally filters by job, position level, department, skill, and paper type.
  */
 export const useQuestionSetPapers = ({
   jobId,
   positionId,
+  departmentId,
+  skillId,
+  paperType,
   options,
 }: {
   jobId?: string;
   positionId?: string;
+  departmentId?: string;
+  skillId?: string;
+  paperType?: string;
   options?: Record<string, any>;
 } = {}) => {
   const res = useQuery({
-    queryKey: [QUERY_KEYS.TASK_PAPERS.LIST, jobId, positionId],
-    queryFn: () => taskService.getQuestionSetPapers(jobId, positionId),
+    queryKey: [QUERY_KEYS.TASK_PAPERS.LIST, jobId, positionId, departmentId, skillId, paperType],
+    queryFn: () => taskService.getQuestionSetPapers({ jobId, positionId, departmentId, skillId, paperType }),
     staleTime: QUERY_CONFIG.TASK_PAPER.staleTime,
     ...options,
   });

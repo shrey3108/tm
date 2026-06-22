@@ -15,14 +15,18 @@ export function useUploadQuestionSetPaperMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({
-      jobId,
+      departmentId,
       positionId,
+      skillIds,
+      paperType,
       file,
     }: {
-      jobId: string;
+      departmentId: string;
       positionId: string;
+      skillIds: string[];
+      paperType: "normal" | "mcq" | "task";
       file: File;
-    }) => taskService.uploadQuestionSetPaper({ jobId, positionId, file }),
+    }) => taskService.uploadQuestionSetPaper({ departmentId, positionId, skillIds, paperType, file }),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.TASK_PAPERS.LIST],

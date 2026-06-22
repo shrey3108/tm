@@ -98,7 +98,12 @@ export function SendQuestionPaperDialog({
   const [selectedPaperId, setSelectedPaperId] = useState<string>("");
   const [customQuestions, setCustomQuestions] = useState<string[]>([]);
   const [customProjectTask, setCustomProjectTask] = useState<string>("");
+  const [randomQuestionCount, setRandomQuestionCount] = useState<number>(5);
   const [showCreateForm, setShowCreateForm] = useState<boolean>(false);
+
+  const totalUniqueQuestionsCount = useMemo(() => {
+    return new Set(predefinedPapers?.flatMap((p) => p.questions || []) || []).size;
+  }, [predefinedPapers]);
 
   // Bulk mode states
   const [bulkAssignedPaper, setBulkAssignedPaper] = useState<any | null>(null);
@@ -150,6 +155,7 @@ export function SendQuestionPaperDialog({
     if (isOpen) {
       setCustomQuestions([]);
       setCustomProjectTask("");
+      setRandomQuestionCount(5);
       setBulkAssignedPaper(null);
       setAssignedPapersList([]);
       setShowCreateForm(false);
@@ -212,12 +218,18 @@ export function SendQuestionPaperDialog({
       //   return;
       // }
       else if (mode === "custom") {
-        if (customQuestions.length !== 5) {
-          toast.error("Please select exactly 5 questions.");
+        if (customQuestions.length === 0) {
+          toast.error("Please select at least 1 question.");
           return;
         }
         if (!customProjectTask.trim()) {
           toast.error("Please provide a project task description.");
+          return;
+        }
+      }
+      else if (mode === "random") {
+        if (!randomQuestionCount || randomQuestionCount < 1) {
+          toast.error("Please select at least 1 question.");
           return;
         }
       }
@@ -227,12 +239,14 @@ export function SendQuestionPaperDialog({
         let payload: CandidateTestPaperAssign = {
           mode,
           job_id: job?.id,
-          position_id: job?.position_id,
           source_paper_ids: mode === "random" ? predefinedPapers.map((paper) => paper.id) : []
         };
         // if (mode === "predefined") {
         //   payload.paper_id = selectedPaperId;
         // }
+        if (mode === "random") {
+          payload.question_count = randomQuestionCount;
+        }
         if (mode === "custom") {
           payload.questions = customQuestions.map((q) => q.trim());
           payload.project_task = customProjectTask.trim();
@@ -252,7 +266,6 @@ export function SendQuestionPaperDialog({
       let payload: CandidateTestPaperAssign = {
         mode,
         job_id: job?.id,
-        position_id: job?.position_id,
         source_paper_ids: mode === "random" ? predefinedPapers.map((paper) => paper.id) : []
       };
 
@@ -272,8 +285,8 @@ export function SendQuestionPaperDialog({
       //   payload.paper_id = selectedPaperId;
       // } 
       else if (mode === "custom") {
-        if (customQuestions.length !== 5) {
-          toast.error("Please select exactly 5 questions.");
+        if (customQuestions.length === 0) {
+          toast.error("Please select at least 1 question.");
           return;
         }
         if (!customProjectTask.trim()) {
@@ -282,6 +295,13 @@ export function SendQuestionPaperDialog({
         }
         payload.questions = customQuestions.map((q) => q.trim());
         payload.project_task = customProjectTask.trim();
+      }
+      else if (mode === "random") {
+        if (!randomQuestionCount || randomQuestionCount < 1) {
+          toast.error("Please select at least 1 question.");
+          return;
+        }
+        payload.question_count = randomQuestionCount;
       }
 
       toast.info("Assigning test paper...");
@@ -582,6 +602,9 @@ export function SendQuestionPaperDialog({
                       <RandomizedPaperView
                         jobTitle={job?.title}
                         positionName={job?.position?.name}
+                        questionCount={randomQuestionCount}
+                        onQuestionCountChange={setRandomQuestionCount}
+                        maxQuestions={totalUniqueQuestionsCount}
                       />
                     )}
 

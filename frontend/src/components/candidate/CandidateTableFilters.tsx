@@ -370,7 +370,7 @@ export const CandidateTableFilters = ({
                 </CollapsibleFilterSection>
 
                 {/* Test Email Filter */}
-                <CollapsibleFilterSection title="Test Email Sent" count={testEmailSentFilter !== undefined ? 1 : 0}>
+                <CollapsibleFilterSection title="Test Email Status" count={testEmailSentFilter !== undefined ? 1 : 0}>
                   <div className="flex items-center justify-center gap-2 pt-1">
                     <Button
                       type="button"
@@ -464,7 +464,7 @@ export const CandidateTableFilters = ({
               </SheetFooter>
             </SheetContent>
           </Sheet>
-          <div>
+          {job ? <div className="flex gap-2">
             <Button
               variant="outline"
               className="rounded-xl gap-2 px-3 border border-muted-foreground/20 hover:bg-muted/10 bg-background transition-all cursor-pointer"
@@ -472,7 +472,7 @@ export const CandidateTableFilters = ({
               <ExternalLink className="h-4 w-4 text-muted-foreground" />
             </Button>
 
-          </div>
+          </div> : null}
         </div>
 
         {/* Result Count Area (Anchored Right) */}

@@ -48,8 +48,7 @@ export const StageCandidatesHeader = ({
   stageName,
   candidateId,
   githubUrl,
-  transcriptHistory,
-  hasError // TODO: FIX IT
+  transcriptHistory
 }: StageCandidatesHeaderProps) => {
   const [isProjectSubmissionDialogOpen, setIsProjectSubmissionDialogOpen] = useState(false);
   const [isSendQuestionPaperDialogOpen, setIsSendQuestionPaperDialogOpen] = useState(false);
@@ -62,13 +61,6 @@ export const StageCandidatesHeader = ({
   const isGithubUploaded = !!githubUrl &&
     githubUrl.toLowerCase().startsWith("http") &&
     (githubUrl.toLowerCase().includes("github.com") || githubUrl.toLowerCase().includes("gitlab.com"));
-
-  // console.log(isUploaded, !job?.is_active, transcriptHistory, hasError)
-  const handleViewCandidateAssignedTask = () => {
-    if (!candidateAssignedTaskBlob) return;
-    const url = URL.createObjectURL(candidateAssignedTaskBlob);
-    window.open(url, "_blank");
-  };
 
   return (
     <AppPageHeader

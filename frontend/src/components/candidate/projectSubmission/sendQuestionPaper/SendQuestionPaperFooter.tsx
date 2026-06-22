@@ -36,7 +36,7 @@ export function SendQuestionPaperFooter({
     isAssignPending ||
     (mode === "predefined" && !selectedPaperId) ||
     (mode === "custom" &&
-      (customQuestions.length !== 5 || !customProjectTask.trim()));
+      (customQuestions.length === 0 || !customProjectTask.trim()));
 
   return (
     <DialogFooter className="p-1 border-t border-muted-foreground/10 bg-muted/20 shrink-0 gap-2 flex items-center justify-end flex-row">

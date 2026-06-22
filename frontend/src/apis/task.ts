@@ -104,20 +104,26 @@ export const taskService = {
   },
 
   /**
-   * Uploads a predefined test paper file (PDF or Word) for a specific job and position level.
+   * Uploads a predefined test paper file (PDF or Word) for a specific department, position level, and skills.
    */
   uploadQuestionSetPaper: async ({
-    jobId,
+    departmentId,
     positionId,
+    skillIds,
+    paperType,
     file,
   }: {
-    jobId: string;
+    departmentId: string;
     positionId: string;
+    skillIds: string[];
+    paperType: "normal" | "mcq" | "task";
     file: File;
   }): Promise<QuestionSetPaperRead[]> => {
     const formData = new FormData();
-    formData.append("job_id", jobId);
+    formData.append("department_id", departmentId);
     formData.append("position_id", positionId);
+    formData.append("skill_ids", JSON.stringify(skillIds));
+    formData.append("paper_type", paperType);
     formData.append("task_file", file);
     const response = await client.post<QuestionSetPaperRead[]>(
       "/task-papers/upload",
@@ -148,14 +154,32 @@ export const taskService = {
    * Lists all available predefined test paper templates, optionally filtered.
    */
   getQuestionSetPapers: async (
-    jobId?: string,
+    jobIdOrFilters?: string | {
+      departmentId?: string;
+      positionId?: string;
+      skillId?: string;
+      paperType?: string;
+      jobId?: string;
+    },
     positionId?: string
   ): Promise<QuestionSetPaperRead[]> => {
-    const response = await client.get<QuestionSetPaperRead[]>("/task-papers", {
-      params: {
-        job_id: jobId || undefined,
+    let params: Record<string, any> = {};
+    if (typeof jobIdOrFilters === "object" && jobIdOrFilters !== null) {
+      params = {
+        department_id: jobIdOrFilters.departmentId || undefined,
+        position_id: jobIdOrFilters.positionId || undefined,
+        skill_id: jobIdOrFilters.skillId || undefined,
+        paper_type: jobIdOrFilters.paperType || undefined,
+        job_id: jobIdOrFilters.jobId || undefined,
+      };
+    } else {
+      params = {
+        job_id: jobIdOrFilters || undefined,
         position_id: positionId || undefined,
-      },
+      };
+    }
+    const response = await client.get<QuestionSetPaperRead[]>("/task-papers", {
+      params,
     });
     return response.data;
   },
