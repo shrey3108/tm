@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -98,6 +98,7 @@ export function SendQuestionPaperDialog({
   const [selectedPaperId, setSelectedPaperId] = useState<string>("");
   const [customQuestions, setCustomQuestions] = useState<string[]>([]);
   const [customProjectTask, setCustomProjectTask] = useState<string>("");
+  const [showCreateForm, setShowCreateForm] = useState<boolean>(false);
 
   // Bulk mode states
   const [bulkAssignedPaper, setBulkAssignedPaper] = useState<any | null>(null);
@@ -109,6 +110,41 @@ export function SendQuestionPaperDialog({
     ? (bulkAssignedPaper || (emailFilterState ? assignedPaper : null))
     : assignedPaper;
 
+  const canSendEmail = useMemo(() => {
+    if (isBulkMode && selectedCandidates) {
+      return selectedCandidates.some((candidate) => {
+        const isTechnicalRound =
+          candidate.current_stage?.template_name?.toLowerCase().includes("technical") ||
+          candidate.current_stage?.template_name?.toLowerCase().includes("practical") ||
+          false;
+        const isPendingStatus =
+          candidate.current_stage?.status === "pending" ||
+          candidate.hr_decision === "pending" ||
+          candidate.current_stage?.hr_decision === "pending" ||
+          false;
+        return isTechnicalRound && isPendingStatus;
+      });
+    }
+
+    const candidate = selectedCandidates && selectedCandidates.length === 1
+      ? selectedCandidates[0]
+      : candidateDetails;
+      
+    if (!candidate) return false;
+
+    const isTechnicalRound =
+      candidate.current_stage?.template_name?.toLowerCase().includes("technical") ||
+      candidate.current_stage?.template_name?.toLowerCase().includes("practical") ||
+      false;
+    const isPendingStatus =
+      candidate.current_stage?.status === "pending" ||
+      candidate.hr_decision === "pending" ||
+      candidate.current_stage?.hr_decision === "pending" ||
+      false;
+    
+    return isTechnicalRound && isPendingStatus;
+  }, [isBulkMode, selectedCandidates, candidateDetails]);
+
   // Reset custom questions and task description when dialog opens
   useEffect(() => {
     if (isOpen) {
@@ -116,6 +152,7 @@ export function SendQuestionPaperDialog({
       setCustomProjectTask("");
       setBulkAssignedPaper(null);
       setAssignedPapersList([]);
+      setShowCreateForm(false);
     }
   }, [isOpen]);
 
@@ -495,14 +532,27 @@ export function SendQuestionPaperDialog({
                   <LoadingSpinner message="Loading question set templates..." />
                 ) : !predefinedPapers || predefinedPapers.length === 0 ? (
                   hasManagePermission && job?.id && job?.position_id ? (
-                    <div className="p-1">
-                      <ManualPaperCreateForm
-                        jobId={job.id}
-                        positionId={job.position_id}
-                        onSuccess={handleManualPaperCreated}
-                        onCancel={() => onOpenChange(false)}
-                      />
-                    </div>
+                    !showCreateForm ? (
+                      <div className="flex flex-col items-center justify-center h-full gap-2">
+                        <div className="text-center py-4 border border-dashed border-border/60 rounded-2xl bg-card/10 text-muted-foreground max-w-md mx-auto">
+                          <p className="font-semibold text-foreground/80">No Question Set Papers Found</p>
+                          <p className="text-sm mt-1 max-w-md mx-auto">
+                            There are no predefined question set papers for the selected job and experience level.
+                            Upload a document to automatically extract questions, or define one manually below!
+                          </p>
+                        </div>
+                        <Button onClick={() => setShowCreateForm(true)}>Add</Button>
+                      </div>
+                    ) : (
+                      <div className="p-1">
+                        <ManualPaperCreateForm
+                          jobId={job.id}
+                          positionId={job.position_id}
+                          onSuccess={handleManualPaperCreated}
+                          onCancel={() => setShowCreateForm(false)}
+                        />
+                      </div>
+                    )
                   ) : (
                     <div className="flex flex-col items-center justify-center p-8 text-center border-2 border-dashed border-muted-foreground/25 rounded-2xl bg-muted/10 max-w-md mx-auto my-8">
                       <AlertTriangle className="h-10 w-10 text-amber-500 mb-4" />
@@ -576,6 +626,7 @@ export function SendQuestionPaperDialog({
               isAssignPending={assignMutation.isPending}
               isSendEmailPending={sendEmailMutation.isPending}
               isEmailAlreadySent={isEmailAlreadySent}
+              canSendEmail={canSendEmail}
               onAssign={handleAssign}
               onSendEmail={handleSendEmail}
             />

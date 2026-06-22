@@ -258,7 +258,7 @@ export default function QuestionsBank() {
                   <p className="font-semibold text-foreground/80">No Question Set Papers Found</p>
                   <p className="text-sm mt-1 max-w-md mx-auto">
                     There are no predefined question set papers for the selected job and experience level.
-                    Upload a document to automatically extract questions, or define one manually below!
+                    Upload a document to automatically extract questions.
                   </p>
                 </div>
                 <Button onClick={() => setShowCreateForm(true)}>Add</Button>

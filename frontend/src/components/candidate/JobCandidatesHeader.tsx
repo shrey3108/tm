@@ -52,6 +52,7 @@ export const JobCandidatesHeader = ({
     if (isSendQuestionPaperDisabled) return "Select at least one candidate to proceed";
     return undefined;
   }, [job?.is_active, showSendQuestionPaper, isSendQuestionPaperDisabled]);
+  console.log(showSendQuestionPaper);
   return (
     <AppPageHeader
       title={job?.title || "Loading..."}
@@ -89,7 +90,7 @@ export const JobCandidatesHeader = ({
             size="sm"
             className="h-9 rounded-xl shrink-0 font-medium"
             onClick={onSendQuestionPaperClick}
-            disabled={isSendQuestionPaperDisabled || !showSendQuestionPaper || !job?.is_active}
+            disabled={!showSendQuestionPaper || !job?.is_active}
             title={disabledTooltip}
           >
             {buttonLabel}

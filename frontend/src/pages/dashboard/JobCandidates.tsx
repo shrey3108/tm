@@ -167,7 +167,7 @@ export default function JobCandidates() {
     setRowSelection({});
   }, [pageIndex, pageSize, activeFilters]);
 
-  // Compute showCheckboxes: Stage has Technical Practical Round and HR Decision is Pending
+  // Compute showCheckboxes: Only display after round is Technical Practical Round and decision is pending
   const showCheckboxes = useMemo(() => {
     const selectedStageConfigs = job?.stages?.filter((s) => activeFilters.stage_id?.includes(s.id)) || [];
     const hasTechnicalPracticalRoundSelected = selectedStageConfigs.some(
@@ -247,9 +247,9 @@ export default function JobCandidates() {
         setJdVersion={setJdVersion}
         viewMode={viewMode}
         setViewMode={setViewMode}
-        showSendQuestionPaper={showCheckboxes}
+        showSendQuestionPaper={true}
         onSendQuestionPaperClick={() => setIsSendQuestionPaperDialogOpen(true)}
-        isSendQuestionPaperDisabled={selectedCandidates.length === 0}
+        isSendQuestionPaperDisabled={false}
         emailFilterState={resolvedEmailState}
       />
 

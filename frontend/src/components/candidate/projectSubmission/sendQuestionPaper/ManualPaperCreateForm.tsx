@@ -135,7 +135,7 @@ export function ManualPaperCreateForm({
 
             <ul className="list-decimal pl-5 space-y-2 overflow-y-auto pr-1 w-full">
               {questionFields.map((field, idx) => (
-                <li key={field.id} className="group w-full my-1">
+                <li key={field.id} className="group w-full my-1.5">
                   <div className="flex items-center justify-between gap-2 w-full">
                     <FormField
                       control={control}

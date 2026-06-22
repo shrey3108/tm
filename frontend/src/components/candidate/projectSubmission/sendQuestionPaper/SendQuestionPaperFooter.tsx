@@ -14,6 +14,7 @@ interface SendQuestionPaperFooterProps {
   onAssign: () => void;
   onSendEmail: () => void;
   isEmailAlreadySent?: boolean;
+  canSendEmail?: boolean;
 }
 
 export function SendQuestionPaperFooter({
@@ -27,7 +28,8 @@ export function SendQuestionPaperFooter({
   isSendEmailPending,
   onAssign,
   onSendEmail,
-  isEmailAlreadySent
+  isEmailAlreadySent,
+  canSendEmail = true
 }: SendQuestionPaperFooterProps) {
 
   const isAssignDisabled =
@@ -49,25 +51,26 @@ export function SendQuestionPaperFooter({
       </Button>
 
       {hasAssignedPaper ? (
-        <Button
-          type="button"
-          className="rounded-xl px-3 font-semibold gap-1.5"
-          onClick={onSendEmail}
-          disabled={isAssignDisabled}
-
-        >
-          {isSendEmailPending ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Sending email...
-            </>
-          ) : (
-            <>
-              <Mail className="h-4 w-4" />
-              {isEmailAlreadySent ? "Re-Send" : "Send"}  to Candidate via Email
-            </>
-          )}
-        </Button>
+        canSendEmail ? (
+          <Button
+            type="button"
+            className="rounded-xl px-3 font-semibold gap-1.5"
+            onClick={onSendEmail}
+            disabled={isAssignDisabled}
+          >
+            {isSendEmailPending ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Sending email...
+              </>
+            ) : (
+              <>
+                <Mail className="h-4 w-4" />
+                {isEmailAlreadySent ? "Re-Send" : "Send"}  to Candidate via Email
+              </>
+            )}
+          </Button>
+        ) : null
       ) : (
         <Button
           type="button"
