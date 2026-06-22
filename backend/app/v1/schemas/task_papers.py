@@ -148,3 +148,8 @@ class CandidateTestPaperBulkEmailSend(BaseModel):
     candidate_emails: Optional[list[str]] = Field(None, description="List of candidate email addresses to send the test paper to")
     paper_id: uuid.UUID = Field(..., description="The ID of the CandidateTestPaper to send")
     force: bool = Field(False, description="Force send the emails even if they have already been sent before")
+
+class TaskPaperPreviewResponse(BaseModel):
+    questions: list[str] = Field(default_factory=list, description="List of randomly selected questions with tech stack tags")
+    mcqs: list[MCQItem] = Field(default_factory=list, description="List of randomly selected MCQs with tech stack tags")
+    project_task: list[str] = Field(default_factory=list, description="List of randomly selected project tasks with tech stack tags")

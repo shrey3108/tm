@@ -3,7 +3,7 @@ import uuid
 import random
 from typing import Any, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from fastapi.responses import FileResponse, RedirectResponse
 from sqlalchemy import delete, select
 from sqlalchemy.orm import selectinload
@@ -21,7 +21,7 @@ from app.v1.utils.pdf_generator import generate_candidate_task_pdf_file
 from app.v1.db.models.candidates import Candidate
 from app.v1.db.models.jobs import Job
 from app.v1.db.models.job_positions import JobPosition
-from app.v1.schemas.task_papers import CandidateTestPaperRead, CandidateTestPaperAssign
+from app.v1.schemas.task_papers import CandidateTestPaperRead, CandidateTestPaperAssign, TaskPaperPreviewResponse
 from app.v1.schemas.user import UserRead
 from app.v1.schemas.upload import CandidateTaskRead, JobCandidateSkillsRead
 from app.v1.services.admin.candidate_task_service import candidate_task_service
@@ -174,7 +174,7 @@ async def assign_test_paper_to_candidate(
 
     elif assign_data.mode == "random":
         # Fetch all question set papers matching the candidate's job and position level
-        stmt = select(QuestionSetPaper).options(selectinload(QuestionSetPaper.tech_stack))
+        stmt = select(QuestionSetPaper).options(selectinload(QuestionSetPaper.skills))
         if assign_data.source_paper_ids:
             stmt = stmt.where(QuestionSetPaper.id.in_(assign_data.source_paper_ids))
         else:
@@ -201,8 +201,11 @@ async def assign_test_paper_to_candidate(
         all_questions = []
         all_mcqs = []
         for p in papers:
-            tech_name = p.tech_stack.name if p.tech_stack else "Unknown"
-            tag = f"[{tech_name}]"
+            if p.skills:
+                skill_names = ", ".join(s.name for s in p.skills)
+                tag = f"[{skill_names}]"
+            else:
+                tag = "[Unknown]"
             
             if p.questions:
                 all_questions.extend([f"{tag} {q}" for q in p.questions])
@@ -228,8 +231,12 @@ async def assign_test_paper_to_candidate(
 
         # Select one task randomly (associated file path comes from that same chosen paper)
         chosen_paper = random.choice(papers)
-        tech_name = chosen_paper.tech_stack.name if chosen_paper.tech_stack else "Unknown"
-        tag = f"[{tech_name}]"
+        if chosen_paper.skills:
+            skill_names = ", ".join(s.name for s in chosen_paper.skills)
+            tag = f"[{skill_names}]"
+        else:
+            tag = "[Unknown]"
+            
         assigned_task = [f"{tag} {t}" for t in chosen_paper.project_task] if chosen_paper.project_task else []
         assigned_file_path = chosen_paper.task_file_path
         
