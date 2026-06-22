@@ -2,7 +2,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import type { QuestionSetPaperRead } from "@/types/taskPaper";
-import { toast } from "sonner";
 import { CheckCircle2, AlertTriangle, HelpCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
@@ -30,10 +29,6 @@ export function CustomPaperForm({
     if (customQuestions.includes(question)) {
       onCustomQuestionsChange(customQuestions.filter((q) => q !== question));
     } else {
-      if (customQuestions.length >= 5) {
-        toast.warning("You can only select exactly 5 questions.");
-        return;
-      }
       onCustomQuestionsChange([...customQuestions, question]);
     }
   };
@@ -45,16 +40,7 @@ export function CustomPaperForm({
       onCustomQuestionsChange(customQuestions.filter((q) => !paperQuestions.includes(q)));
     } else {
       const missing = paperQuestions.filter((q) => !customQuestions.includes(q));
-      const spaceLeft = 5 - customQuestions.length;
-      if (spaceLeft <= 0) {
-        toast.warning("You can only select exactly 5 questions.");
-        return;
-      }
-      const toAdd = missing.slice(0, spaceLeft);
-      onCustomQuestionsChange([...customQuestions, ...toAdd]);
-      if (missing.length > spaceLeft) {
-        toast.info(`Selected ${spaceLeft} questions from the set. Maximum of 5 questions reached.`);
-      }
+      onCustomQuestionsChange([...customQuestions, ...missing]);
     }
   };
 
@@ -71,25 +57,25 @@ export function CustomPaperForm({
     <div className="space-y-4 animate-in fade-in duration-300">
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label>
+          <Label className="flex items-center gap-1.5 font-semibold text-sm">
             <HelpCircle className="h-4 w-4 text-primary" />
-            Select Exactly 5 Interview Questions
+            Select Interview Questions
           </Label>
           <Badge
             variant="outline"
             className={cn(
               "px-2.5 py-0.5 rounded-full font-semibold border text-xs flex items-center gap-1 transition-all",
-              customQuestions.length === 5
+              customQuestions.length >= 1
                 ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
                 : "bg-amber-500/10 text-amber-500 border-amber-500/20"
             )}
           >
-            {customQuestions.length === 5 ? (
+            {customQuestions.length >= 1 ? (
               <CheckCircle2 className="h-3.5 w-3.5" />
             ) : (
               <AlertTriangle className="h-3.5 w-3.5" />
             )}
-            {customQuestions.length} / 5 Selected
+            {customQuestions.length} {customQuestions.length === 1 ? "Question" : "Questions"} Selected
           </Badge>
         </div>
 
@@ -125,21 +111,18 @@ export function CustomPaperForm({
                   <div className="divide-y divide-border/20">
                     {paper.questions.map((q, qIdx) => {
                       const isChecked = customQuestions.includes(q);
-                      const isLimitReached = customQuestions.length >= 5 && !isChecked;
                       return (
                         <div
                           key={qIdx}
                           className={cn(
                             "flex items-start gap-3 px-2 py-1.5 transition-colors",
-                            isChecked ? "bg-primary/5" : "hover:bg-muted/20",
-                            isLimitReached && "opacity-60"
+                            isChecked ? "bg-primary/5" : "hover:bg-muted/20"
                           )}
                         >
                           <Checkbox
                             id={`q-${paper.id}-${qIdx}`}
                             checked={isChecked}
                             onCheckedChange={() => handleToggleQuestion(q)}
-                            disabled={isLimitReached}
                             className="mt-0.5"
                           />
                           <Label
@@ -160,7 +143,7 @@ export function CustomPaperForm({
             })}
           </div>
         )}
-        {totalUniqueQuestionsCount < 5 && <p className="text-red-500 italic text-center">Not enough questions available. <Link to="/dashboard/questions-bank" className="hover:underline cursor-pointer">Add questions here</Link></p>}
+        {totalUniqueQuestionsCount < 1 && <p className="text-red-500 italic text-center">No questions available. <Link to="/dashboard/questions-bank" className="hover:underline cursor-pointer">Add questions here</Link></p>}
       </div>
       <div className="pt-2 border-t border-border/20">
         <label className="text-base font-bold text-muted-foreground block mb-2">

@@ -11,6 +11,7 @@ import type { QuestionSetPaperRead } from "@/types/taskPaper";
 import { extractErrorMessage } from "@/utils/error";
 import { manualQuestionPaperSchema, type ManualQuestionPaperFormValues } from "@/schemas/taskPaper";
 import { Required } from "@/components/job-form/Required";
+import { useJob } from "@/hooks/queries/jobs";
 
 interface ManualPaperCreateFormProps {
   jobId: string;
@@ -26,6 +27,7 @@ export function ManualPaperCreateForm({
   onCancel,
 }: ManualPaperCreateFormProps) {
   const createPaperMutation = useCreateQuestionSetPaperMutation();
+  const { data: job } = useJob(jobId);
 
   const form = useForm<ManualQuestionPaperFormValues>({
     resolver: zodResolver(manualQuestionPaperSchema),
@@ -59,12 +61,19 @@ export function ManualPaperCreateForm({
         ? values.project_tasks.map((t) => t.value.trim()).filter(Boolean)
         : [];
 
+      if (!job?.department_id || !job?.skills || job.skills.length === 0) {
+        toast.error("The selected job must have a department and at least one skill configured in job settings.");
+        return;
+      }
+
       const payload = {
-        // name: values.name.trim(),
-        job_id: jobId,
+        department_id: job.department_id,
         position_id: positionId,
+        skill_ids: job.skills.map((s) => s.id),
+        paper_type: "normal" as const,
         questions: values.questions.map((q) => q.value.trim()),
-        project_task: filteredProjectTasks.length > 0 ? filteredProjectTasks : undefined,
+        project_task: filteredProjectTasks,
+        mcqs: [],
       };
 
       const result = await createPaperMutation.mutateAsync(payload);

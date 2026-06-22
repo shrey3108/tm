@@ -17,5 +17,4 @@ export { default as CreateJobPriorityModal } from "@/components/modal/CreateJobP
 export { default as PositionModal } from "@/components/modal/PositionModal";
 export { default as QuestionModal } from "@/components/modal/QuestionModal";
 export { default as ProjectTaskModal } from "@/components/modal/ProjectTaskModal";
-
-
+export { default as MCQModal } from "@/components/modal/MCQModal";

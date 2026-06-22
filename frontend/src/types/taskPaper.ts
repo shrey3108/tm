@@ -1,13 +1,24 @@
+import type { SkillRead } from "./admin";
+
 /**
  * TypeScript types for Predefined Question Set Papers and Candidate Assignments.
  */
 
+export interface MCQItem {
+  question: string;
+  options: string[];
+  answer: string;
+}
+
 export interface QuestionSetPaperRead {
   id: string;
   name: string;
-  job_id: string;
+  department_id: string;
   position_id: string;
+  skills: SkillRead[];
+  paper_type: string;
   questions: string[];
+  mcqs: MCQItem[];
   project_task: string[];
   task_file_path: string | null;
   task_skills: string[] | null;
@@ -16,37 +27,45 @@ export interface QuestionSetPaperRead {
 }
 
 export interface QuestionSetPaperCreate {
-  // name: string;
-  job_id: string;
+  department_id: string;
   position_id: string;
+  skill_ids: string[];
+  paper_type: "normal" | "mcq" | "task";
   questions: string[];
-  project_task?: string[];
+  mcqs?: MCQItem[];
+  project_task: string[];
 }
 
 
 export interface CandidateTestPaperRead {
   id: string;
-  candidate_id: string;
+  candidate_id: string | null;
   job_id: string;
   position_id: string;
   name: string;
   questions: string[];
+  mcqs: MCQItem[];
   project_task: string[];
   task_file_path: string | null;
   task_skills: string[] | null;
   email_sent_count?: number;
   created_at: string;
+  job_default_paper_changed: boolean;
+  job_default_paper_name: string | null;
+  job_default_paper_id: string | null;
 }
 
 export interface CandidateTestPaperAssign {
   candidate_id?: string;
   job_id?: string;
-  position_id?: string;
-  source_paper_ids?: string[]
   mode: "predefined" | "random" | "custom";
   paper_id?: string;
+  source_paper_ids?: string[];
+  base_paper_id?: string;
   questions?: string[];
+  mcqs?: MCQItem[];
   project_task?: string;
+  question_count?: number;
 }
 
 export interface CandidateTestPaperEmailSend {

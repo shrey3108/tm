@@ -52,7 +52,7 @@ export const JobCandidatesHeader = ({
     if (isSendQuestionPaperDisabled) return "Select at least one candidate to proceed";
     return undefined;
   }, [job?.is_active, showSendQuestionPaper, isSendQuestionPaperDisabled]);
-  console.log(showSendQuestionPaper);
+
   return (
     <AppPageHeader
       title={job?.title || "Loading..."}
