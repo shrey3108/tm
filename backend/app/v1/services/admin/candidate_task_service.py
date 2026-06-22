@@ -484,4 +484,96 @@ Output Format Example (JSON ONLY):
         except Exception:
             pass
 
+    async def generate_random_paper_for_job(self, db: AsyncSession, job, candidate_id: uuid.UUID | None = None):
+        """Generates a random CandidateTestPaper from bank matching job's dept/pos/skills.
+        Returns the CandidateTestPaper instance without committing to DB, or None if no matching questions.
+        """
+        import random
+        from app.v1.db.models.skills import Skill
+        from app.v1.db.models.question_set_paper import QuestionSetPaper
+        from app.v1.db.models.candidate_test_paper import CandidateTestPaper
+        
+        stmt = select(QuestionSetPaper).options(selectinload(QuestionSetPaper.skills))
+        
+        job_skill_ids = [s.id for s in job.skills] if job.skills else []
+        stmt = stmt.where(
+            QuestionSetPaper.department_id == job.department_id,
+            QuestionSetPaper.position_id == job.position_id
+        )
+        if job_skill_ids:
+            stmt = stmt.where(QuestionSetPaper.skills.any(Skill.id.in_(job_skill_ids)))
+        else:
+            return None
+            
+        res = await db.execute(stmt)
+        papers = res.scalars().all()
+
+        if not papers:
+            return None
+
+        # Collect all questions and MCQs from matching papers
+        all_questions = []
+        all_mcqs = []
+        for p in papers:
+            if p.skills:
+                skill_names = ", ".join(s.name for s in p.skills)
+                tag = f"[{skill_names}]"
+            else:
+                tag = "[Unknown]"
+            
+            if p.questions:
+                all_questions.extend([f"{tag} {q}" for q in p.questions])
+            if p.mcqs:
+                for m in p.mcqs:
+                    new_m = m.copy() if isinstance(m, dict) else getattr(m, "model_dump", lambda: m)()
+                    new_m["question"] = f"{tag} {new_m.get('question', '')}"
+                    all_mcqs.append(new_m)
+
+        # Ensure we have at least 5 unique questions or fallback to total pool
+        unique_questions = list(set(all_questions))
+        
+        # De-duplicate MCQs by question text
+        seen_mcq_questions = set()
+        unique_mcqs = []
+        for m in all_mcqs:
+            q_text = m.get("question") if isinstance(m, dict) else getattr(m, "question", "")
+            if q_text and q_text not in seen_mcq_questions:
+                seen_mcq_questions.add(q_text)
+                unique_mcqs.append(m)
+
+        # Select one task randomly
+        chosen_paper = random.choice(papers)
+        if chosen_paper.skills:
+            skill_names = ", ".join(s.name for s in chosen_paper.skills)
+            tag = f"[{skill_names}]"
+        else:
+            tag = "[Unknown]"
+            
+        assigned_task = [f"{tag} {t}" for t in chosen_paper.project_task] if chosen_paper.project_task else []
+        assigned_file_path = chosen_paper.task_file_path
+        
+        assigned_name = f"Randomized Test Paper ({job.title})"
+
+        assigned_questions = random.sample(unique_questions, min(5, len(unique_questions))) if unique_questions else []
+        
+        if unique_mcqs:
+            selected_mcqs = random.sample(unique_mcqs, min(5, len(unique_mcqs)))
+            assigned_mcqs = [m.model_dump() if hasattr(m, "model_dump") else m for m in selected_mcqs]
+        else:
+            assigned_mcqs = []
+
+        new_paper = CandidateTestPaper(
+            job_id=job.id,
+            candidate_id=candidate_id,
+            position_id=job.position_id,
+            name=assigned_name,
+            questions=assigned_questions,
+            mcqs=assigned_mcqs,
+            project_task=assigned_task,
+            task_file_path=assigned_file_path,
+            task_skills=None
+        )
+        
+        return new_paper
+
 candidate_task_service = CandidateTaskService()

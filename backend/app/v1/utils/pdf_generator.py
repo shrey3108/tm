@@ -89,91 +89,130 @@ def generate_candidate_task_pdf_file(
     test_paper: CandidateTestPaper,
     job_name: str = ""
 ) -> str:
-    doc = fitz.open()
+    import re
+    from reportlab.lib.pagesizes import letter
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.enums import TA_RIGHT
+    from reportlab.lib import colors
+
+    temp_pdf_rl = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
+    temp_pdf_rl.close()
+
+    # Generate document layout with ReportLab
+    doc_rl = SimpleDocTemplate(
+        temp_pdf_rl.name, 
+        pagesize=letter, 
+        rightMargin=50, 
+        leftMargin=50, 
+        topMargin=100,  # leave space for logo
+        bottomMargin=80 # leave space for footer
+    )
     
-    # Prepare text content - show job name instead of paper type
+    styles = getSampleStyleSheet()
+    title_style = styles['Heading1']
+    normal_style = styles['Normal']
+    normal_style.fontSize = 11
+    normal_style.spaceAfter = 10
+    
+    tag_style = ParagraphStyle(
+        name='TagStyle',
+        parent=styles['Normal'],
+        fontSize=10,
+        textColor=colors.gray,
+        alignment=TA_RIGHT
+    )
+
+    Story = []
     display_title = job_name if job_name else test_paper.name
-    text_content = f"Test Paper: {display_title}\n"
-    text_content += "-" * 50 + "\n\n"
+    Story.append(Paragraph(f"Test Paper: {display_title}", title_style))
+    Story.append(Spacer(1, 20))
     
+    def add_question(q_text, prefix):
+        match = re.match(r'^\[(.*?)\] (.*)', q_text)
+        if match:
+            tag = f"[{match.group(1)}]"
+            text = match.group(2)
+        else:
+            tag = ""
+            text = q_text
+            
+        p_text = Paragraph(f"<b>{prefix}</b> {text}", normal_style)
+        if tag:
+            p_tag = Paragraph(tag, tag_style)
+            t = Table([[p_text, p_tag]], colWidths=[400, 100])
+            t.setStyle(TableStyle([
+                ('VALIGN', (0,0), (-1,-1), 'TOP'),
+                ('LEFTPADDING', (0,0), (-1,-1), 0),
+                ('RIGHTPADDING', (0,0), (-1,-1), 0),
+                ('BOTTOMPADDING', (0,0), (-1,-1), 10),
+            ]))
+            Story.append(t)
+        else:
+            Story.append(p_text)
+
     if test_paper.questions:
-        text_content += "Questions:\n"
+        Story.append(Paragraph("<b>Questions:</b>", styles['Heading2']))
         questions = test_paper.questions if isinstance(test_paper.questions, list) else [test_paper.questions]
         for i, q in enumerate(questions):
-            text_content += f"{i+1}. {q}\n\n"
-    
+            add_question(q, f"{i+1}.")
+            
     if getattr(test_paper, "mcqs", None):
-        text_content += "Multiple Choice Questions:\n"
+        Story.append(Paragraph("<b>Multiple Choice Questions:</b>", styles['Heading2']))
         for i, mcq in enumerate(test_paper.mcqs):
             q_text = mcq.get("question") if isinstance(mcq, dict) else getattr(mcq, "question", "")
+            add_question(q_text, f"{i+1}.")
             options = mcq.get("options") if isinstance(mcq, dict) else getattr(mcq, "options", [])
-            text_content += f"{i+1}. {q_text}\n"
             for opt in options:
-                text_content += f"   - {opt}\n"
-            text_content += "\n"
-
+                Story.append(Paragraph(f"   - {opt}", normal_style))
+            Story.append(Spacer(1, 10))
+            
     if test_paper.project_task:
-        text_content += f"Project Task:\n"
+        Story.append(Paragraph("<b>Project Task:</b>", styles['Heading2']))
         tasks = test_paper.project_task if isinstance(test_paper.project_task, list) else [test_paper.project_task]
         for t in tasks:
-            text_content += f"- {t}\n"
-        text_content += "\n"
+            add_question(t, "-")
+            
+    doc_rl.build(Story)
 
-    rect = fitz.Rect(50, 110, 550, 750)
-    lines = text_content.split("\n")
-    remaining_lines = lines
+    # Post-process with PyMuPDF to add logo and footer
+    doc = fitz.open(temp_pdf_rl.name)
     
-    while remaining_lines:
-        page = doc.new_page()
-        
-        # Insert Logo at Top Left
-        logo_path = os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "frontend", "src", "assets", "logo.svg")
-        if os.path.exists(logo_path):
-            try:
-                svg_doc = fitz.open(logo_path)
-                pdf_bytes = svg_doc.convert_to_pdf()
-                pdf_doc = fitz.open("pdf", pdf_bytes)
-                page.show_pdf_page(fitz.Rect(50, 40, 200, 80), pdf_doc, 0)
-            except Exception as e:
-                print(f"Failed to load logo: {e}")
-        
-        # Add Footer
-        footer_text = "32, SAI ASHISH SOCIETY PART-1, BEHIND VIJAY SALES, NR. CHANDNI CHOWK,\nPIPLOD, SURAT 395007 | www.augustinfotech.com"
+    logo_path = os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "frontend", "src", "assets", "logo.svg")
+    has_logo = False
+    pdf_doc_logo = None
+    if os.path.exists(logo_path):
+        try:
+            svg_doc = fitz.open(logo_path)
+            pdf_bytes = svg_doc.convert_to_pdf()
+            pdf_doc_logo = fitz.open("pdf", pdf_bytes)
+            has_logo = True
+        except Exception as e:
+            print(f"Failed to load logo: {e}")
+
+    footer_text = "32, SAI ASHISH SOCIETY PART-1, BEHIND VIJAY SALES, NR. CHANDNI CHOWK,\nPIPLOD, SURAT 395007 | www.augustinfotech.com"
+
+    for page in doc:
+        if has_logo and pdf_doc_logo:
+            page.show_pdf_page(fitz.Rect(50, 40, 200, 80), pdf_doc_logo, 0)
+            
         page.insert_textbox(
-            fitz.Rect(50, 780, 550, 830), 
+            fitz.Rect(50, 750, 550, 800), 
             footer_text, 
             fontsize=10, 
             fontname="hebo", 
             align=fitz.TEXT_ALIGN_CENTER
         )
-        
-        fitted_lines_count = 0
-        temp_text = ""
-        
-        for line in remaining_lines:
-            test_text = temp_text + line + "\n"
-            
-            test_doc = fitz.open()
-            test_page = test_doc.new_page()
-            rc = test_page.insert_textbox(rect, test_text, fontsize=11, fontname="helv")
-            test_doc.close()
-            
-            if rc >= 0:
-                temp_text = test_text
-                fitted_lines_count += 1
-            else:
-                break
-                
-        if fitted_lines_count == 0:
-            page.insert_textbox(rect, remaining_lines[0], fontsize=11, fontname="helv")
-            remaining_lines = remaining_lines[1:]
-        else:
-            page.insert_textbox(rect, temp_text.rstrip("\n"), fontsize=11, fontname="helv")
-            remaining_lines = remaining_lines[fitted_lines_count:]
 
-    # Save to temp file
-    temp_pdf = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
-    temp_pdf.close() # Close the file handle so PyMuPDF can write to it on Windows
-    doc.save(temp_pdf.name)
+    temp_pdf_final = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
+    temp_pdf_final.close()
+    doc.save(temp_pdf_final.name)
     doc.close()
-    return temp_pdf.name
+    
+    # Cleanup intermediate file
+    try:
+        os.unlink(temp_pdf_rl.name)
+    except:
+        pass
+        
+    return temp_pdf_final.name
