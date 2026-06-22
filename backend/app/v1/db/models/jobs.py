@@ -21,10 +21,7 @@ if TYPE_CHECKING:
     from app.v1.db.models.user import User
     from app.v1.db.models.job_priorities import JobPriority
     from app.v1.db.models.job_positions import JobPosition
-    from app.v1.db.models.tech_stacks import TechStack
-
 from app.v1.db.models.job_skills import job_skills
-from app.v1.db.models.job_tech_stacks import job_tech_stacks
 from app.v1.utils.uuid import UUIDHelper
 
 
@@ -195,11 +192,7 @@ class Job(Base):
         secondary=job_skills,
         back_populates="jobs",
     )
-    tech_stacks: Mapped[list["TechStack"]] = relationship(
-        "TechStack",
-        secondary=job_tech_stacks,
-        back_populates="jobs",
-    )
+
     stages: Mapped[list["JobStageConfig"]] = relationship(
         "JobStageConfig",
         back_populates="job",
@@ -246,7 +239,4 @@ class Job(Base):
             for v in self.versions
         ]
 
-    @property
-    def tech_stack_ids(self) -> list[uuid.UUID]:
-        """Return list of tech stack IDs linked to this job (used in serialisation)."""
-        return [ts.id for ts in self.tech_stacks] if self.tech_stacks else []
+

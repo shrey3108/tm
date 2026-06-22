@@ -24,7 +24,6 @@ from app.v1.routes.job_stages import router as job_stages_router
 from app.v1.routes.candidate_stages import router as candidate_stages_router
 from app.v1.routes.job_positions import router as job_positions_router
 from app.v1.routes.task_papers import router as task_papers_router
-from app.v1.routes.tech_stacks import router as tech_stacks_router
 
 api_router = APIRouter()
 
@@ -45,6 +44,5 @@ api_router.include_router(job_stages_router, tags=["job-stages"])
 api_router.include_router(candidate_stages_router, tags=["candidate-stages"])
 api_router.include_router(job_positions_router, prefix="/job-positions", tags=["job-positions"])
 api_router.include_router(task_papers_router, prefix="/task-papers", tags=["task-papers"])
-api_router.include_router(tech_stacks_router, prefix="/tech-stacks", tags=["tech-stacks"])
 
 

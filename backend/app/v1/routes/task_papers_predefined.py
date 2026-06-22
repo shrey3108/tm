@@ -14,7 +14,7 @@ from app.v1.db.session import get_db
 from app.v1.dependencies import check_permission
 from app.v1.db.models.question_set_paper import QuestionSetPaper
 from app.v1.db.models.departments import Department
-from app.v1.db.models.tech_stacks import TechStack
+from app.v1.db.models.skills import Skill
 from app.v1.db.models.job_positions import JobPosition
 from app.v1.schemas.task_papers import QuestionSetPaperRead, QuestionAction, TaskAction
 from app.v1.schemas.user import UserRead
@@ -29,13 +29,13 @@ router = APIRouter()
 async def upload_question_set_papers(
     department_id: uuid.UUID = Form(..., description="The associated department ID"),
     position_id: uuid.UUID = Form(..., description="The associated job position level ID"),
-    tech_stack_id: uuid.UUID = Form(..., description="The associated tech stack ID"),
+    skill_ids: Optional[str] = Form(None, description="Comma-separated or JSON list of associated skill IDs"),
     paper_type: str = Form("normal", description="The type of paper content to extract: 'normal', 'mcq', or 'task'"),
     task_file: UploadFile = FastAPIFile(..., description="A test paper PDF/Word file"),
     db: AsyncSession = Depends(get_db),
     user: UserRead = Depends(check_permission("questions:upload")),
 ):
-    """Upload a test paper file directly for a specific department, experience position level, and tech stack."""
+    """Upload a test paper file directly for a specific department, experience position level, and skills."""
     if paper_type not in ["normal", "mcq", "task"]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -50,14 +50,6 @@ async def upload_question_set_papers(
             detail=f"Department with ID {department_id} does not exist.",
         )
 
-    # Verify tech stack exists
-    tech = await db.get(TechStack, tech_stack_id)
-    if not tech:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"TechStack with ID {tech_stack_id} does not exist.",
-        )
-
     # Verify position level exists
     position = await db.get(JobPosition, position_id)
     if not position:
@@ -65,6 +57,21 @@ async def upload_question_set_papers(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Job position level with ID {position_id} does not exist.",
         )
+
+    # Parse skill_ids if provided
+    parsed_skill_ids = []
+    if skill_ids:
+        import json
+        try:
+            parsed_skill_ids = [uuid.UUID(x) for x in json.loads(skill_ids)]
+        except Exception:
+            parsed_skill_ids = [uuid.UUID(x.strip()) for x in skill_ids.split(",") if x.strip()]
+
+    # Fetch skills
+    skills = []
+    if parsed_skill_ids:
+        stmt_skills = select(Skill).where(Skill.id.in_(parsed_skill_ids))
+        skills = (await db.execute(stmt_skills)).scalars().all()
 
     # Validate file extension
     file_extension = Path(task_file.filename).suffix.lower()
@@ -96,7 +103,6 @@ async def upload_question_set_papers(
         id=paper_id,
         name=task_file.filename,
         department_id=department_id,
-        tech_stack_id=tech_stack_id,
         position_id=position_id,
         paper_type=paper_type,
         questions=[],
@@ -105,6 +111,7 @@ async def upload_question_set_papers(
         task_file_path=stored_file_path,
         task_skills=None,
     )
+    db_paper.skills = list(skills)
     db.add(db_paper)
     await db.commit()
     await cache.clear("cache:GET:/api/v1/task-papers*")
@@ -131,11 +138,16 @@ async def create_manual_question_set_paper(
     from datetime import datetime
     paper_name = f"Custom Paper - {datetime.utcnow().strftime('%Y-%m-%d %H:%M')}"
 
+    # Fetch skills
+    skills = []
+    if payload.skill_ids:
+        stmt_skills = select(Skill).where(Skill.id.in_(payload.skill_ids))
+        skills = (await db.execute(stmt_skills)).scalars().all()
+
     db_paper = QuestionSetPaper(
         id=paper_id,
         name=paper_name,
         department_id=payload.department_id,
-        tech_stack_id=payload.tech_stack_id,
         position_id=payload.position_id,
         paper_type=payload.paper_type,
         questions=payload.questions,
@@ -144,6 +156,7 @@ async def create_manual_question_set_paper(
         task_file_path=None,
         task_skills=None,
     )
+    db_paper.skills = list(skills)
     db.add(db_paper)
     await db.commit()
     await cache.clear("cache:GET:/api/v1/task-papers*")
@@ -164,33 +177,36 @@ async def get_question_set_papers(
     response: Response,
     department_id: Optional[uuid.UUID] = None,
     position_id: Optional[uuid.UUID] = None,
-    tech_stack_id: Optional[uuid.UUID] = None,
+    skill_id: Optional[uuid.UUID] = None,
     paper_type: Optional[str] = None,
     job_id: Optional[uuid.UUID] = None,
     db: AsyncSession = Depends(get_db),
     user: UserRead = Depends(check_permission("candidates:access")),
 ):
-    """List all predefined Question Set Papers, with optional filtering by department, position, tech stack, paper type, and job."""
+    """List all predefined Question Set Papers, with optional filtering by department, position, skill, paper type, and job."""
     query = select(QuestionSetPaper)
     if job_id:
         from app.v1.db.models.jobs import Job
         from sqlalchemy.orm import selectinload
-        stmt_job = select(Job).options(selectinload(Job.tech_stacks)).where(Job.id == job_id)
+        stmt_job = select(Job).options(selectinload(Job.skills)).where(Job.id == job_id)
         job = (await db.execute(stmt_job)).scalar_one_or_none()
         if job:
-            job_tech_stack_ids = [ts.id for ts in job.tech_stacks]
+            job_skill_ids = [s.id for s in job.skills]
             query = query.where(
                 QuestionSetPaper.department_id == job.department_id,
-                QuestionSetPaper.position_id == job.position_id,
-                QuestionSetPaper.tech_stack_id.in_(job_tech_stack_ids) if job_tech_stack_ids else False
+                QuestionSetPaper.position_id == job.position_id
             )
+            if job_skill_ids:
+                query = query.where(QuestionSetPaper.skills.any(Skill.id.in_(job_skill_ids)))
+            else:
+                query = query.where(False)
     else:
         if department_id:
             query = query.where(QuestionSetPaper.department_id == department_id)
         if position_id:
             query = query.where(QuestionSetPaper.position_id == position_id)
-        if tech_stack_id:
-            query = query.where(QuestionSetPaper.tech_stack_id == tech_stack_id)
+        if skill_id:
+            query = query.where(QuestionSetPaper.skills.any(Skill.id == skill_id))
             
     if paper_type:
         query = query.where(QuestionSetPaper.paper_type == paper_type)
@@ -206,33 +222,36 @@ async def get_all_questions_and_tasks(
     response: Response,
     department_id: Optional[uuid.UUID] = None,
     position_id: Optional[uuid.UUID] = None,
-    tech_stack_id: Optional[uuid.UUID] = None,
+    skill_id: Optional[uuid.UUID] = None,
     paper_type: Optional[str] = None,
     job_id: Optional[uuid.UUID] = None,
     db: AsyncSession = Depends(get_db),
     user: UserRead = Depends(check_permission("candidates:access")),
 ):
-    """Retrieve unique questions, tasks, and MCQs across predefined question set papers, with optional filtering by job, department, position, tech stack, and paper type."""
+    """Retrieve unique questions, tasks, and MCQs across predefined question set papers, with optional filtering by job, department, position, skill, and paper type."""
     query = select(QuestionSetPaper.questions, QuestionSetPaper.project_task, QuestionSetPaper.mcqs)
     if job_id:
         from app.v1.db.models.jobs import Job
         from sqlalchemy.orm import selectinload
-        stmt_job = select(Job).options(selectinload(Job.tech_stacks)).where(Job.id == job_id)
+        stmt_job = select(Job).options(selectinload(Job.skills)).where(Job.id == job_id)
         job = (await db.execute(stmt_job)).scalar_one_or_none()
         if job:
-            job_tech_stack_ids = [ts.id for ts in job.tech_stacks]
+            job_skill_ids = [s.id for s in job.skills]
             query = query.where(
                 QuestionSetPaper.department_id == job.department_id,
-                QuestionSetPaper.position_id == job.position_id,
-                QuestionSetPaper.tech_stack_id.in_(job_tech_stack_ids) if job_tech_stack_ids else False
+                QuestionSetPaper.position_id == job.position_id
             )
+            if job_skill_ids:
+                query = query.where(QuestionSetPaper.skills.any(Skill.id.in_(job_skill_ids)))
+            else:
+                query = query.where(False)
     else:
         if department_id:
             query = query.where(QuestionSetPaper.department_id == department_id)
         if position_id:
             query = query.where(QuestionSetPaper.position_id == position_id)
-        if tech_stack_id:
-            query = query.where(QuestionSetPaper.tech_stack_id == tech_stack_id)
+        if skill_id:
+            query = query.where(QuestionSetPaper.skills.any(Skill.id == skill_id))
             
     if paper_type:
         query = query.where(QuestionSetPaper.paper_type == paper_type)

@@ -12,7 +12,6 @@ from seed.seed_stages import main as seed_stages_main
 from seed.seed_system_settings import seed_system_settings as seed_system_settings_main
 from seed.seed_priorities import main as seed_priorities_main
 from seed.seed_positions import main as seed_positions_main
-from seed.seed_tech_stacks import main as seed_tech_stacks_main
 from seed.seed_criteria import seed as seed_criteria_main
 from seed.seed_job import main as seed_job_main
 from seed.seed_new_job import main as seed_new_job_main
@@ -26,7 +25,6 @@ SEED_STEPS = [
     ("seed_system_settings.py", seed_system_settings_main),
     ("seed_priorities.py", seed_priorities_main),
     ("seed_positions.py", seed_positions_main),
-    ("seed_tech_stacks.py", seed_tech_stacks_main),
     ("seed_criteria.py", seed_criteria_main),
     ("seed_job.py", seed_job_main),
     ("seed_new_job.py", seed_new_job_main),

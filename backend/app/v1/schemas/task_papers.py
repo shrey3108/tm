@@ -3,18 +3,19 @@ import uuid
 from datetime import datetime
 from typing import Literal, Optional
 from pydantic import BaseModel, Field, field_validator
+from app.v1.schemas.skill import SkillRead
 
 
 class MCQItem(BaseModel):
     question: str = Field(..., description="The MCQ question text")
     options: list[str] = Field(..., description="Options for the MCQ (e.g. four choices)")
-    answer: str = Field(..., description="The correct option / answer")
+    answer: Optional[str] = Field(None, description="The correct option / answer")
 
 
 class QuestionSetPaperCreate(BaseModel):
     department_id: uuid.UUID = Field(..., description="The associated department ID")
     position_id: uuid.UUID = Field(..., description="The associated job position level ID")
-    tech_stack_id: uuid.UUID = Field(..., description="The associated tech stack ID")
+    skill_ids: list[uuid.UUID] = Field(default_factory=list, description="The associated skill IDs")
     paper_type: Literal["normal", "mcq", "task"] = Field("normal", description="The type of the paper")
     questions: list[str] = Field(default_factory=list, description="Questions for this paper")
     mcqs: list[MCQItem] = Field(default_factory=list, description="Multiple choice questions for this paper")
@@ -33,7 +34,7 @@ class QuestionSetPaperRead(BaseModel):
     name: str
     department_id: uuid.UUID
     position_id: uuid.UUID
-    tech_stack_id: uuid.UUID
+    skills: list[SkillRead] = Field(default_factory=list)
     paper_type: str
     questions: list[str]
     mcqs: list[MCQItem] = Field(default_factory=list)
