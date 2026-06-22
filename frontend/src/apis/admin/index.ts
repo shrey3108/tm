@@ -18,3 +18,5 @@ export * from "./jobPriority";
 export * from "./jobPosition";
 export * from "./prompt";
 export * from "./criteria";
+export * from "./techStack";
+

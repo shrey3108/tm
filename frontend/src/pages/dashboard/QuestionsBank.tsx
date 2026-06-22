@@ -12,7 +12,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner, SearchableSelect } from "@/components/shared";
 import { Label } from "@/components";
-import { Badge } from "@/components/ui/badge";
 import PermissionGuard from "@/components/auth/PermissionGuard";
 import { PERMISSIONS, hasPermissions } from "@/lib/permissions";
 import { useAppSelector } from "@/store/hooks";
@@ -104,10 +103,6 @@ export default function QuestionsBank() {
   // Mutations for templates/papers
   const uploadMutation = useUploadQuestionSetPaperMutation();
   const deleteMutation = useDeleteQuestionSetPaperMutation();
-
-  const allSkills = Array.from(
-    new Set((questionPapers || []).flatMap((paper) => paper.task_skills || []))
-  );
 
   // File Upload Handlers
   const handleUploadClick = () => {
@@ -285,20 +280,6 @@ export default function QuestionsBank() {
             />
             {/* Extracted Skills Section */}
 
-            {allSkills.length > 0 && (
-              <div className="rounded-2xl border border-border/50 bg-card/10 p-2 space-y-1">
-                <h3 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground px-1">
-                  Extracted Skills
-                </h3>
-                <div className="flex flex-wrap gap-1.5 px-1 pb-0.5">
-                  {allSkills.map((skill, sIdx) => (
-                    <Badge key={sIdx} variant="outline" className="bg-background/50 text-xs">
-                      {skill}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
 
         )}

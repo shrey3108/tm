@@ -299,6 +299,32 @@ export const departmentUpdateSchema = departmentBaseSchema.partial();
 /** Type inferred from departmentUpdateSchema. */
 export type DepartmentUpdateFormValues = z.infer<typeof departmentUpdateSchema>;
 
+// --- Tech Stack Schemas ---
+
+const techStackBaseSchema = z.object({
+  /** Name of the tech stack (minimum 2 characters) */
+  name: nameSchema(2, "Tech stack name"),
+  /** Optional description of the tech stack */
+  description: z.string().trim().optional().nullable(),
+});
+
+/**
+ * Schema for creating a new tech stack.
+ */
+export const techStackCreateSchema = techStackBaseSchema;
+
+/** Type inferred from techStackCreateSchema. */
+export type TechStackCreateFormValues = z.infer<typeof techStackCreateSchema>;
+
+/**
+ * Schema for updating an existing tech stack.
+ */
+export const techStackUpdateSchema = techStackBaseSchema.partial();
+
+/** Type inferred from techStackUpdateSchema. */
+export type TechStackUpdateFormValues = z.infer<typeof techStackUpdateSchema>;
+
+
 // --- Job Criteria Schemas ---
 
 const jobCriteriaBaseSchema = z.object({

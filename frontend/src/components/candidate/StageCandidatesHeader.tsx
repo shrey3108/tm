@@ -5,7 +5,7 @@ import type { Job } from "@/types/job";
 import { TranscriptUpload } from "./TranscriptUpload";
 import { ProjectSubmissionDialog } from "./projectSubmission/ProjectSubmissionDialog";
 import { SendQuestionPaperDialog } from "./projectSubmission/SendQuestionPaperDialog";
-import { useCandidateTestPaper } from "@/hooks/queries/taskPapers/useTaskPaperQueries";
+import { useCandidateTestPaper, useDownloadCandidateAssignedTaskFile } from "@/hooks/queries/taskPapers/useTaskPaperQueries";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 interface StageCandidatesHeaderProps {
   /** Associated job for the candidate stage view */
@@ -55,14 +55,21 @@ export const StageCandidatesHeader = ({
   const [isSendQuestionPaperDialogOpen, setIsSendQuestionPaperDialogOpen] = useState(false);
   const { data: assignedPaper } = useCandidateTestPaper(candidateId);
   // console.log(assignedPaper);
-
+  const { data: candidateAssignedTaskBlob } = useDownloadCandidateAssignedTaskFile(candidateId);
+  console.log(candidateAssignedTaskBlob)
   const isTranscriptAdded = !!transcriptHistory && transcriptHistory.length > 0;
 
   const isGithubUploaded = !!githubUrl &&
     githubUrl.toLowerCase().startsWith("http") &&
     (githubUrl.toLowerCase().includes("github.com") || githubUrl.toLowerCase().includes("gitlab.com"));
 
-  console.log(isUploaded, !job?.is_active, transcriptHistory, hasError)
+  // console.log(isUploaded, !job?.is_active, transcriptHistory, hasError)
+  const handleViewCandidateAssignedTask = () => {
+    if (!candidateAssignedTaskBlob) return;
+    const url = URL.createObjectURL(candidateAssignedTaskBlob);
+    window.open(url, "_blank");
+  };
+
   return (
     <AppPageHeader
       headingClassName="text-lg sm:text-xl capitalize"
@@ -155,5 +162,3 @@ export const StageCandidatesHeader = ({
     />
   );
 };
-
-

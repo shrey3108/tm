@@ -294,6 +294,38 @@ export interface SkillUpdate extends Partial<SkillCreate> { }
 export interface SkillRead extends SkillBase { }
 
 /**
+ * Tech Stack Management Types
+ */
+
+/**
+ * Shared fields for a tech stack.
+ */
+export interface TechStackBase {
+  name: string;
+  description?: string | null;
+}
+
+/**
+ * Payload for creating a new tech stack.
+ */
+export interface TechStackCreate extends TechStackBase { }
+
+/**
+ * Payload for updating an existing tech stack.
+ */
+export interface TechStackUpdate {
+  name?: string;
+  description?: string | null;
+}
+
+/**
+ * Tech stack returned from read operations.
+ */
+export interface TechStackRead extends TechStackBase {
+  id: string;
+}
+
+/**
  * Department Management Types
  */
 

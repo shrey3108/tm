@@ -183,7 +183,7 @@ const RoleModal = ({ show, handleClose, onSuccess, editRoleId }: RoleModalProps)
 
               <div className="flex-1 flex flex-col min-h-0 space-y-3">
                 <div className="flex sm:flex-row sm:items-center gap-2 px-2">
-                  <FormLabel className="text-md font-semibold">Assign Permissions <Required /></FormLabel>
+                  <FormLabel className="text-md font-semibold">Search Permissions </FormLabel>
                   <Input
                     placeholder="Search permissions..."
                     value={searchTerm}

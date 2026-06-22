@@ -303,6 +303,7 @@ export default function JobCandidates() {
                       candidates={candidates}
                       passing_threshold={job?.passing_threshold}
                       isServerSide={true}
+                      job={job}
                       showLocationFilter={true}
                       showStatusFilter={true}
                       stageOptions={job?.stages?.map(s => ({ id: s.id, name: s.template.name })) || []}

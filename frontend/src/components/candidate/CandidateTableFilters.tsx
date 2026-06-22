@@ -1,12 +1,11 @@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Filter, Star } from "lucide-react";
+import { Filter, Star, ExternalLink } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import type { DateRange } from "react-day-picker";
 import { Separator } from "@/components/ui/separator";
-// import { FILTER_DISPLAY_LIMIT } from "@/constants";
 import { useMemo, useState } from "react";
 import {
   Sheet,
@@ -18,6 +17,8 @@ import {
   SheetFooter
 } from "@/components/ui/sheet";
 import { CollapsibleFilterSection, CheckboxListFilter } from "@/components/shared/FilterComponents";
+import { useJobTask } from "@/hooks/queries/jobs";
+import type { Job } from "@/types/job";
 
 
 interface CandidateTableFiltersProps {
@@ -70,6 +71,7 @@ interface CandidateTableFiltersProps {
   testEmailSentFilter?: string;
   setTestEmailSentFilter?: (value: string | undefined) => void;
   isTestPaperFilterEnabled?: boolean;
+  job?: Job | null
 }
 
 export const CandidateTableFilters = ({
@@ -108,10 +110,12 @@ export const CandidateTableFilters = ({
   testEmailSentFilter,
   setTestEmailSentFilter = () => { },
   isTestPaperFilterEnabled = false,
+  job
 }: CandidateTableFiltersProps) => {
 
   const [hoverValue, setHoverValue] = useState<number | null>(0);
-
+  const res = useJobTask(job?.id)
+  console.log(res);
   // @ts-ignore
   const _filteredActivityOptions = useMemo(() => {
     if (!activitySessionOptions) return [];
@@ -460,6 +464,15 @@ export const CandidateTableFilters = ({
               </SheetFooter>
             </SheetContent>
           </Sheet>
+          <div>
+            <Button
+              variant="outline"
+              className="rounded-xl gap-2 px-3 border border-muted-foreground/20 hover:bg-muted/10 bg-background transition-all cursor-pointer"
+            >
+              <ExternalLink className="h-4 w-4 text-muted-foreground" />
+            </Button>
+
+          </div>
         </div>
 
         {/* Result Count Area (Anchored Right) */}

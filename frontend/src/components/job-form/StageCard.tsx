@@ -104,7 +104,7 @@ export const StageCard = ({
         variant="ghost"
         size="icon"
         onClick={() => onRemove(stage.id)}
-        disabled={isRemoving}
+        disabled={isRemoving || stage.template?.name === 'Resume Screening'}
         className="shrink-0 h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
       >
         {isRemoving ? (

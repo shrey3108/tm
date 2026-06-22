@@ -46,6 +46,7 @@ export function ProjectSubmissionDialog({
   stageId,
   onSuccess,
 }: ProjectSubmissionDialogProps) {
+
   const { mutateAsync: evaluateGithub, isPending: isEvaluating } = useEvaluateGithubMutation();
 
   // Fetch candidate's assigned task paper

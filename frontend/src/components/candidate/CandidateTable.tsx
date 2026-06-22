@@ -17,6 +17,7 @@ import { CandidateTableFilters } from "./CandidateTableFilters";
 import type { UnifiedCandidate } from "@/types/candidate";
 import type { DateRange } from "react-day-picker";
 import { Checkbox } from "@/components/ui/checkbox";
+import type { Job } from "@/types/job";
 
 export interface CandidateTableProps<T extends UnifiedCandidate> {
   candidates: T[];
@@ -41,6 +42,7 @@ export interface CandidateTableProps<T extends UnifiedCandidate> {
   rowSelection?: Record<string, boolean>;
   onRowSelectionChange?: OnChangeFn<Record<string, boolean>>;
   showCheckboxes?: boolean;
+  job?: Job | null
 }
 
 export function CandidateTable<T extends UnifiedCandidate>({
@@ -66,6 +68,7 @@ export function CandidateTable<T extends UnifiedCandidate>({
   rowSelection,
   onRowSelectionChange,
   showCheckboxes = false,
+  job
 }: CandidateTableProps<T>) {
   const {
     nameFilter,
@@ -195,6 +198,7 @@ export function CandidateTable<T extends UnifiedCandidate>({
         testEmailSentFilter={testEmailSentFilter}
         setTestEmailSentFilter={setTestEmailSentFilter}
         isTestPaperFilterEnabled={isTestPaperFilterEnabled}
+        job={job}
       />
 
       <DataTable

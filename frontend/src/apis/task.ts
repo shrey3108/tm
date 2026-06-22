@@ -25,6 +25,15 @@ export const taskService = {
   },
 
   /**
+   * Retrieves the task file path and extracted skills for a job.
+   * @param jobId - The UUID of the job
+   * @returns Promise resolving to the job task configuration
+   */
+  getJobAssignedTask: async (jobId: string): Promise<JobTask> => {
+    const response = await client.get<JobTask>(`/task-papers/assigned/job/${jobId}`);
+    return response.data;
+  },
+  /**
    * Uploads a candidate task PDF for a specific job and extracts skills.
    * @param jobId - The UUID of the job
    * @param file - The task PDF file to upload
