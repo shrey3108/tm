@@ -21,7 +21,7 @@ class TaskItem(BaseModel):
 class QuestionSetPaperCreate(BaseModel):
     department_id: uuid.UUID = Field(..., description="The associated department ID")
     position_id: uuid.UUID = Field(..., description="The associated job position level ID")
-    skill_ids: list[uuid.UUID] = Field(default_factory=list, description="The associated skill IDs")
+    skill_ids: list[uuid.UUID] = Field(..., description="The associated skill IDs", min_length=1)
     paper_type: Literal["normal", "mcq", "task", "mixed"] = Field("mixed", description="The type of the paper")
     questions: list[str] = Field(default_factory=list, description="Questions for this paper")
     mcqs: list[MCQItem] = Field(default_factory=list, description="Multiple choice questions for this paper")

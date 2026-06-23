@@ -358,6 +358,24 @@ Output Format Example (JSON ONLY):
             for skill_id in job_in.skill_ids:
                 await skill_service.get_skill_by_id(db, skill_id)
 
+        # Check if a matching question paper exists
+        from app.v1.db.models.question_set_paper import QuestionSetPaper
+        from app.v1.db.models.skills import Skill
+        from sqlalchemy import select
+        
+        stmt = select(QuestionSetPaper).where(
+            QuestionSetPaper.department_id == job_in.department_id,
+            QuestionSetPaper.position_id == job_in.position_id
+        )
+        if job_in.skill_ids:
+            stmt = stmt.where(QuestionSetPaper.skills.any(Skill.id.in_(job_in.skill_ids)))
+        
+        has_question_bank = False
+        if job_in.skill_ids:
+            res = await db.execute(stmt)
+            if res.scalars().first():
+                has_question_bank = True
+
         # Validate (title + position_id) uniqueness against ACTIVE jobs only.
         # Inactive duplicates are allowed because the user may want to re-create
         # the same (title, position) combo while older inactive copies still exist.
@@ -453,11 +471,13 @@ Output Format Example (JSON ONLY):
 
         # Attempt to auto-generate a random question paper from question bank
         from app.v1.services.admin.candidate_task_service import candidate_task_service
+        job.default_paper_assigned = False
         try:
             random_paper = await candidate_task_service.generate_random_paper_for_job(db=db, job=job)
             if random_paper:
                 db.add(random_paper)
                 await db.commit()
+                job.default_paper_assigned = True
                 logger.info(f"Auto-generated random question paper for new job {job.id}")
         except Exception as e:
             logger.warning(f"Could not auto-generate random paper for job {job.id}: {e}")
@@ -471,6 +491,9 @@ Output Format Example (JSON ONLY):
         from app.v1.core.cache import cache
         await cache.clear(pattern="jobs:list:*")
         await cache.clear(pattern="jobs:search:*")
+
+        if not has_question_bank:
+            job.message = "There is no question available you need to add it manualy"
 
         return JobRead.model_validate(job)
 

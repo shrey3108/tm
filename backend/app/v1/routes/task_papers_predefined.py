@@ -29,7 +29,7 @@ router = APIRouter()
 async def upload_question_set_papers(
     department_id: uuid.UUID = Form(..., description="The associated department ID"),
     position_id: uuid.UUID = Form(..., description="The associated job position level ID"),
-    skill_ids: Optional[str] = Form(None, description="Comma-separated or JSON list of associated skill IDs"),
+    skill_ids: str = Form(..., description="Comma-separated or JSON list of associated skill IDs"),
     paper_type: str = Form("mixed", description="The type of paper content to extract: 'normal', 'mcq', 'task', or 'mixed'"),
     task_file: UploadFile = FastAPIFile(..., description="A test paper PDF/Word file"),
     db: AsyncSession = Depends(get_db),
@@ -69,6 +69,12 @@ async def upload_question_set_papers(
     if parsed_skill_ids:
         stmt_skills = select(Skill).where(Skill.id.in_(parsed_skill_ids))
         skills = (await db.execute(stmt_skills)).scalars().all()
+        
+    if not skills:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="At least one valid skill ID must be provided.",
+        )
 
     # Validate file extension
     file_extension = Path(task_file.filename).suffix.lower()
@@ -140,6 +146,12 @@ async def create_manual_question_set_paper(
     if payload.skill_ids:
         stmt_skills = select(Skill).where(Skill.id.in_(payload.skill_ids))
         skills = (await db.execute(stmt_skills)).scalars().all()
+
+    if not skills:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="At least one valid skill ID must be provided.",
+        )
 
     db_paper = QuestionSetPaper(
         id=paper_id,

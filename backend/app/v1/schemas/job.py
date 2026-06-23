@@ -157,6 +157,8 @@ class JobRead(JobBase):
     total_candidates: int | None = None
     current_session_candidates: int | None = None
     activity_sessions: list[JobActivitySession] | None = None
+    default_paper_assigned: bool = False
+    message: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
