@@ -159,7 +159,51 @@ Output Format Example (JSON ONLY):
 
     async def extract_paper_details_from_text(self, raw_text: str, paper_type: str = "normal") -> dict:
         """Call LLM directly using openai client to extract questions, project task description, and technical skills."""
-        if paper_type == "mcq":
+        if paper_type == "mixed":
+            system_prompt = (
+                "You are an expert technical recruiter and data extractor.\n"
+                "Your task is to analyze a mixed document containing descriptive questions, multiple-choice questions (MCQs), and project tasks.\n"
+                "Extract all of them carefully:\n"
+                "1. Descriptive Questions: Extract verbatim into 'questions'.\n"
+                "2. MCQs: Extract 'question', 'options', and 'answer' into 'mcqs'.\n"
+                "3. Project Tasks: Extract instructions into 'project_task' as an array of objects. Each object must have:\n"
+                "   - 'task': The main task title or short description.\n"
+                "   - 'instructions': Detailed task instructions (string).\n"
+                "   - 'prerequisites': A list of strings representing prerequisites.\n"
+                "4. Skills: Extract all required technical skills into 'skills'.\n"
+                "CRITICAL RULES:\n"
+                "1. You MUST output ONLY valid JSON format.\n"
+                "2. Your output MUST be a JSON object with exactly four keys: 'questions', 'mcqs', 'project_task', and 'skills'.\n"
+                "3. IMPORTANT FOR QUESTIONS: Extract questions VERBATIM. Do NOT rephrase them. Include any context.\n"
+                "4. Do NOT include any conversational text, explanations, or markdown formatting outside the JSON."
+            )
+            user_prompt = f"""
+Analyze the following mixed document and extract the questions, MCQs, project tasks, and skills:
+
+DOCUMENT CONTENT:
+{raw_text[:10000]}
+
+Output Format Example (JSON ONLY):
+{{
+  "questions": ["Explain React Hooks."],
+  "mcqs": [
+    {{
+      "question": "What is the output of print(type(1/2)) in Python 3?",
+      "options": ["<class 'int'>", "<class 'float'>", "<class 'double'>", "<class 'number'>"],
+      "answer": "<class 'float'>"
+    }}
+  ],
+  "project_task": [
+    {{
+      "task": "Build a REST API",
+      "instructions": "Use FastAPI with user authentication and JWT. Write unit tests.",
+      "prerequisites": ["Python", "FastAPI"]
+    }}
+  ],
+  "skills": ["React", "FastAPI", "Python"]
+}}
+"""
+        elif paper_type == "mcq":
             system_prompt = (
                 "You are an expert technical recruiter and data extractor.\n"
                 "Your task is to analyze a document containing multiple-choice questions (MCQs) and extract:\n"
@@ -201,14 +245,17 @@ Output Format Example (JSON ONLY):
             system_prompt = (
                 "You are an expert technical recruiter and data extractor.\n"
                 "Your task is to analyze a project task/assignment description document and extract:\n"
-                "1. The project task instructions/descriptions verbatim.\n"
+                "1. The project task instructions/descriptions verbatim into 'project_task' as an array of objects. Each object must have:\n"
+                "   - 'task': The main task title or short description.\n"
+                "   - 'instructions': Detailed task instructions (string).\n"
+                "   - 'prerequisites': A list of strings representing prerequisites.\n"
                 "2. All relevant technical skills required to complete it.\n"
                 "CRITICAL RULES:\n"
                 "1. You MUST output ONLY valid JSON format.\n"
                 "2. Your output MUST be a JSON object with exactly four keys:\n"
                 "   - 'questions': must be an empty list [].\n"
                 "   - 'mcqs': must be an empty list [].\n"
-                "   - 'project_task': an array of strings representing the project task descriptions.\n"
+                "   - 'project_task': an array of structured objects.\n"
                 "   - 'skills': an array of strings representing unique technical skill names.\n"
                 "3. Do NOT include any conversational text, explanations, or markdown formatting outside the JSON."
             )
@@ -223,8 +270,11 @@ Output Format Example (JSON ONLY):
   "questions": [],
   "mcqs": [],
   "project_task": [
-    "Build a REST API using FastAPI with user authentication.",
-    "Write unit tests for all endpoints."
+    {{
+      "task": "Build a REST API",
+      "instructions": "Use FastAPI with user authentication and JWT. Write unit tests.",
+      "prerequisites": ["Python", "FastAPI"]
+    }}
   ],
   "skills": ["FastAPI", "Python", "Unit Testing"]
 }}

@@ -12,21 +12,47 @@ class MCQItem(BaseModel):
     answer: Optional[str] = Field(None, description="The correct option / answer")
 
 
+class TaskItem(BaseModel):
+    task: str = Field(..., description="The main project task description or title")
+    instructions: str = Field(..., description="Detailed instructions for the task")
+    prerequisites: list[str] = Field(default_factory=list, description="Prerequisites or requirements for the task")
+
+
 class QuestionSetPaperCreate(BaseModel):
     department_id: uuid.UUID = Field(..., description="The associated department ID")
     position_id: uuid.UUID = Field(..., description="The associated job position level ID")
     skill_ids: list[uuid.UUID] = Field(default_factory=list, description="The associated skill IDs")
-    paper_type: Literal["normal", "mcq", "task"] = Field("normal", description="The type of the paper")
+    paper_type: Literal["normal", "mcq", "task", "mixed"] = Field("mixed", description="The type of the paper")
     questions: list[str] = Field(default_factory=list, description="Questions for this paper")
     mcqs: list[MCQItem] = Field(default_factory=list, description="Multiple choice questions for this paper")
-    project_task: list[str] = Field(default_factory=list, description="The project task description")
+    project_task: list[TaskItem] = Field(default_factory=list, description="The structured project task definitions")
+
+    @field_validator("project_task", mode="before")
+    @classmethod
+    def coerce_project_task(cls, v):
+        if not v: return []
+        if isinstance(v, str): v = [v] if v.strip() else []
+        new_tasks = []
+        for item in v:
+            if isinstance(item, str):
+                new_tasks.append({"task": item, "instructions": "", "prerequisites": []})
+            else:
+                new_tasks.append(item)
+        return new_tasks
 
 
 class QuestionAction(BaseModel):
     question: str = Field(..., description="The content of the question")
 
 class TaskAction(BaseModel):
-    task: str = Field(..., description="The content of the project task")
+    task: TaskItem = Field(..., description="The structured project task content")
+
+    @field_validator("task", mode="before")
+    @classmethod
+    def coerce_task(cls, v):
+        if isinstance(v, str):
+            return {"task": v, "instructions": "", "prerequisites": []}
+        return v
 
 
 class QuestionSetPaperRead(BaseModel):
@@ -38,7 +64,7 @@ class QuestionSetPaperRead(BaseModel):
     paper_type: str
     questions: list[str]
     mcqs: list[MCQItem] = Field(default_factory=list)
-    project_task: list[str]
+    project_task: list[TaskItem] = Field(default_factory=list)
     task_file_path: Optional[str] = None
     task_skills: Optional[list[str]] = None
     created_at: datetime
@@ -47,10 +73,27 @@ class QuestionSetPaperRead(BaseModel):
     @field_validator("project_task", mode="before")
     @classmethod
     def coerce_project_task_to_list(cls, v):
-        """Handle legacy DB rows where project_task was stored as a plain string."""
+        """Handle legacy DB rows and output structured objects."""
+        if not v:
+            return []
         if isinstance(v, str):
-            return [v] if v.strip() else []
-        return v or []
+            return [{"task": v, "instructions": "", "prerequisites": []}] if v.strip() else []
+            
+        new_tasks = []
+        for item in v:
+            if isinstance(item, str):
+                new_tasks.append({"task": item, "instructions": "", "prerequisites": []})
+            elif isinstance(item, dict):
+                if "task" not in item:
+                    item["task"] = item.get("title", item.get("content", "Untitled Task"))
+                if "instructions" not in item:
+                    item["instructions"] = ""
+                if "prerequisites" not in item:
+                    item["prerequisites"] = []
+                new_tasks.append(item)
+            else:
+                new_tasks.append(item)
+        return new_tasks
 
     class Config:
         from_attributes = True
@@ -68,7 +111,7 @@ class CandidateTestPaperRead(BaseModel):
     name: str
     questions: list[str]
     mcqs: list[MCQItem] = Field(default_factory=list)
-    project_task: list[str]
+    project_task: list[TaskItem]
     task_file_path: Optional[str] = None
     task_skills: Optional[list[str]] = None
     email_sent_count: int = 0
@@ -80,10 +123,27 @@ class CandidateTestPaperRead(BaseModel):
     @field_validator("project_task", mode="before")
     @classmethod
     def coerce_project_task_to_list(cls, v):
-        """Handle legacy DB rows where project_task was stored as a plain string."""
+        """Handle legacy DB rows and output structured objects."""
+        if not v:
+            return []
         if isinstance(v, str):
-            return [v] if v.strip() else []
-        return v or []
+            return [{"task": v, "instructions": "", "prerequisites": []}] if v.strip() else []
+            
+        new_tasks = []
+        for item in v:
+            if isinstance(item, str):
+                new_tasks.append({"task": item, "instructions": "", "prerequisites": []})
+            elif isinstance(item, dict):
+                if "task" not in item:
+                    item["task"] = item.get("title", item.get("content", "Untitled Task"))
+                if "instructions" not in item:
+                    item["instructions"] = ""
+                if "prerequisites" not in item:
+                    item["prerequisites"] = []
+                new_tasks.append(item)
+            else:
+                new_tasks.append(item)
+        return new_tasks
 
     class Config:
         from_attributes = True
@@ -96,7 +156,7 @@ class CandidateTestPaperHistoryRead(BaseModel):
     name: str
     questions: list[str]
     mcqs: list[MCQItem] = Field(default_factory=list)
-    project_task: list[str]
+    project_task: list[TaskItem]
     task_file_path: Optional[str] = None
     task_skills: Optional[list[str]] = None
     assigned_at: datetime
@@ -105,10 +165,27 @@ class CandidateTestPaperHistoryRead(BaseModel):
     @field_validator("project_task", mode="before")
     @classmethod
     def coerce_project_task_to_list(cls, v):
-        """Handle legacy DB rows where project_task was stored as a plain string."""
+        """Handle legacy DB rows and output structured objects."""
+        if not v:
+            return []
         if isinstance(v, str):
-            return [v] if v.strip() else []
-        return v or []
+            return [{"task": v, "instructions": "", "prerequisites": []}] if v.strip() else []
+            
+        new_tasks = []
+        for item in v:
+            if isinstance(item, str):
+                new_tasks.append({"task": item, "instructions": "", "prerequisites": []})
+            elif isinstance(item, dict):
+                if "task" not in item:
+                    item["task"] = item.get("title", item.get("content", "Untitled Task"))
+                if "instructions" not in item:
+                    item["instructions"] = ""
+                if "prerequisites" not in item:
+                    item["prerequisites"] = []
+                new_tasks.append(item)
+            else:
+                new_tasks.append(item)
+        return new_tasks
 
     class Config:
         from_attributes = True

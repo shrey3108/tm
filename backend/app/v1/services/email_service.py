@@ -225,7 +225,19 @@ async def send_candidate_task_email_via_smtp(
             details_html += '<div class="details-title">Project Tasks:</div>'
             details_html += '<ul class="questions-list">'
             for task in test_paper.project_task:
-                task_html = markdown_to_html(task)
+                if isinstance(task, dict):
+                    task_name = task.get("task", task.get("title", task.get("content", "Untitled Task")))
+                    instructions = task.get("instructions")
+                    prereqs = task.get("prerequisites")
+                    
+                    text = str(task_name)
+                    if instructions:
+                        text += f"\n\n**Instructions:**\n{instructions}"
+                    if prereqs and isinstance(prereqs, list) and len(prereqs) > 0:
+                        text += f"\n\n**Prerequisites:** {', '.join(prereqs)}"
+                    task_html = markdown_to_html(text)
+                else:
+                    task_html = markdown_to_html(str(task))
                 details_html += f'<li style="margin-bottom: 10px; font-size: 14px; line-height: 1.5; color: #4b5563;">{task_html}</li>'
             details_html += '</ul>'
         if external_url:

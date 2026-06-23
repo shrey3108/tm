@@ -103,7 +103,9 @@ async def extract_paper_task_skills_logic(paper_id_str: str, file_path_str: str,
     file_path = Path(file_path_str)
 
     async with async_session_maker() as session:
-        paper = await session.get(QuestionSetPaper, paper_id)
+        from sqlalchemy.orm import selectinload
+        stmt = select(QuestionSetPaper).options(selectinload(QuestionSetPaper.skills)).where(QuestionSetPaper.id == paper_id)
+        paper = (await session.execute(stmt)).scalar_one_or_none()
         if not paper:
             _log.error(f"QuestionSetPaper not found for background extraction: {paper_id}")
             return
@@ -135,10 +137,11 @@ async def extract_paper_task_skills_logic(paper_id_str: str, file_path_str: str,
                 func.lower(Skill.name).in_([s.lower() for s in extracted_data["skills"]])
             )
             matched_skills = (await session.execute(stmt_skills)).scalars().all()
-            paper.skills = list(matched_skills)
-        else:
-            paper.skills = []
-        
+            
+            existing_skill_ids = {s.id for s in paper.skills}
+            new_skills = [s for s in matched_skills if s.id not in existing_skill_ids]
+            paper.skills.extend(new_skills)
+            
         session.add(paper)
         await session.commit()
         _log.info(f"Successfully updated paper {paper_id} with extracted details: {extracted_data}")
@@ -169,7 +172,9 @@ async def extract_paper_skills_from_text_logic(paper_id_str: str):
     paper_id = uuid.UUID(paper_id_str)
 
     async with async_session_maker() as session:
-        paper = await session.get(QuestionSetPaper, paper_id)
+        from sqlalchemy.orm import selectinload
+        stmt = select(QuestionSetPaper).options(selectinload(QuestionSetPaper.skills)).where(QuestionSetPaper.id == paper_id)
+        paper = (await session.execute(stmt)).scalar_one_or_none()
         if not paper:
             _log.error(f"QuestionSetPaper not found for text background extraction: {paper_id}")
             return
@@ -209,9 +214,10 @@ async def extract_paper_skills_from_text_logic(paper_id_str: str):
                 func.lower(Skill.name).in_([s.lower() for s in extracted_skills])
             )
             matched_skills = (await session.execute(stmt_skills)).scalars().all()
-            paper.skills = list(matched_skills)
-        else:
-            paper.skills = []
+            
+            existing_skill_ids = {s.id for s in paper.skills}
+            new_skills = [s for s in matched_skills if s.id not in existing_skill_ids]
+            paper.skills.extend(new_skills)
         
         session.add(paper)
         await session.commit()

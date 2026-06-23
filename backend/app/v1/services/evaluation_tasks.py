@@ -319,7 +319,7 @@ def evaluate_candidate_practical_task(
                     "code_quality": "code_quality_review",
                     "correctness": "correctness_review",
                     "security": "security_review",
-                    "documentation": "documentation_review"
+                    "documentation": "_review"
                 }
                 review_key = key_map.get(cat_name)
                 if review_key and review_key in alignment_dict:

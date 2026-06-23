@@ -30,17 +30,14 @@ async def upload_question_set_papers(
     department_id: uuid.UUID = Form(..., description="The associated department ID"),
     position_id: uuid.UUID = Form(..., description="The associated job position level ID"),
     skill_ids: Optional[str] = Form(None, description="Comma-separated or JSON list of associated skill IDs"),
-    paper_type: str = Form("normal", description="The type of paper content to extract: 'normal', 'mcq', or 'task'"),
+    paper_type: str = Form("mixed", description="The type of paper content to extract: 'normal', 'mcq', 'task', or 'mixed'"),
     task_file: UploadFile = FastAPIFile(..., description="A test paper PDF/Word file"),
     db: AsyncSession = Depends(get_db),
     user: UserRead = Depends(check_permission("questions:upload")),
 ):
     """Upload a test paper file directly for a specific department, experience position level, and skills."""
-    if paper_type not in ["normal", "mcq", "task"]:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Unsupported paper type: {paper_type}. Supported types are 'normal', 'mcq', and 'task'.",
-        )
+    # Force paper_type to mixed to extract everything (questions, tasks, mcqs) simultaneously
+    paper_type = "mixed"
 
     # Verify department exists
     dept = await db.get(Department, department_id)
@@ -152,7 +149,7 @@ async def create_manual_question_set_paper(
         paper_type=payload.paper_type,
         questions=payload.questions,
         mcqs=[m.model_dump() for m in payload.mcqs] if payload.mcqs else [],
-        project_task=payload.project_task,
+        project_task=[t.model_dump() for t in payload.project_task] if payload.project_task else [],
         task_file_path=None,
         task_skills=None,
     )
@@ -235,7 +232,7 @@ async def get_question_set_papers(
 
 
 
-@router.get("/all-content", response_model=list[list[Any]])
+@router.get("/all-content", response_model=dict[str, list[Any]])
 @cache_response(ttl_seconds=300)
 async def get_all_questions_and_tasks(
     request: Request,
@@ -334,7 +331,11 @@ async def get_all_questions_and_tasks(
         t_list = t_list[skip:]
         all_mcqs = all_mcqs[skip:]
                 
-    return [q_list, t_list, all_mcqs]
+    return {
+        "questions": q_list,
+        "project_task": t_list,
+        "mcqs": all_mcqs
+    }
 
 
 @router.get("/{paper_id}", response_model=QuestionSetPaperRead)
@@ -538,12 +539,12 @@ async def add_task_to_paper(
             detail="Question set paper not found.",
         )
     
-    task_text = payload.task
-    if not task_text:
-        raise HTTPException(status_code=400, detail="Task text is required.")
+    task_obj = payload.task
+    if not task_obj:
+        raise HTTPException(status_code=400, detail="Task object is required.")
 
     new_tasks = list(paper.project_task) if paper.project_task else []
-    new_tasks.append(task_text)
+    new_tasks.append(task_obj.model_dump())
     paper.project_task = new_tasks
     
     await db.commit()
@@ -571,15 +572,15 @@ async def update_task_in_paper(
             detail="Question set paper not found.",
         )
     
-    task_text = payload.task
-    if not task_text:
-        raise HTTPException(status_code=400, detail="Task text is required.")
+    task_obj = payload.task
+    if not task_obj:
+        raise HTTPException(status_code=400, detail="Task object is required.")
 
     if not paper.project_task or index < 0 or index >= len(paper.project_task):
         raise HTTPException(status_code=400, detail="Invalid task index.")
 
     new_tasks = list(paper.project_task)
-    new_tasks[index] = task_text
+    new_tasks[index] = task_obj.model_dump()
     paper.project_task = new_tasks
     
     await db.commit()

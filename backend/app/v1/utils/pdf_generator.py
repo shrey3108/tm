@@ -171,7 +171,18 @@ def generate_candidate_task_pdf_file(
         Story.append(Paragraph("<b>Project Task:</b>", styles['Heading2']))
         tasks = test_paper.project_task if isinstance(test_paper.project_task, list) else [test_paper.project_task]
         for t in tasks:
-            add_question(t, "-")
+            if isinstance(t, dict):
+                task_name = t.get("task", t.get("title", t.get("content", "Untitled Task")))
+                instructions = t.get("instructions")
+                prereqs = t.get("prerequisites")
+                text = str(task_name)
+                if instructions:
+                    text += f" | Instructions: {instructions}"
+                if prereqs and isinstance(prereqs, list) and len(prereqs) > 0:
+                    text += f" | Prerequisites: {', '.join(prereqs)}"
+                add_question(text, "-")
+            else:
+                add_question(str(t), "-")
             
     doc_rl.build(Story)
 

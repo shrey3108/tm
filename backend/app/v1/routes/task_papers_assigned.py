@@ -288,9 +288,15 @@ async def assign_test_paper_to_candidate(
                     raw_text_parts.append(q_text)
         if assigned_task:
             if isinstance(assigned_task, list):
-                raw_text_parts.extend(assigned_task)
+                for t in assigned_task:
+                    if isinstance(t, str):
+                        raw_text_parts.append(t)
+                    elif isinstance(t, dict):
+                        task_name = t.get("task", t.get("title", t.get("content", "")))
+                        instructions = t.get("instructions", "")
+                        raw_text_parts.append(f"{task_name} {instructions}")
             else:
-                raw_text_parts.append(assigned_task)
+                raw_text_parts.append(str(assigned_task))
         
         if raw_text_parts:
             raw_text = "\n\n".join(raw_text_parts)

@@ -117,8 +117,14 @@ async def preview_random_questions(
     else:
         tag = "[Unknown]"
         
-    assigned_task = [f"{tag} {t}" for t in chosen_paper.project_task] if chosen_paper.project_task else []
-
+    assigned_task = []
+    if chosen_paper.project_task:
+        for t in chosen_paper.project_task:
+            if isinstance(t, str):
+                assigned_task.append(f"{tag} {t}")
+            elif isinstance(t, dict):
+                task_name = t.get("task", t.get("title", "Untitled Task"))
+                assigned_task.append(f"{tag} {task_name}")
     return TaskPaperPreviewResponse(
         questions=assigned_questions,
         mcqs=assigned_mcqs,
