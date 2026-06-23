@@ -79,6 +79,7 @@ class Settings(BaseSettings):
     # Prompt Configurations
     EVALUATION_PROMPT_VERSION: str = "v1"
     EVALUATION_LLM_TIMEOUT: float = 300.0
+    EVALUATION_LIGHTWEIGHT_MODE: bool = True
 
     @model_validator(mode="after")
     def validate_llm_credentials(self) -> "Settings":

@@ -35,8 +35,8 @@ def test_calculate_scores_with_secrets_penalty():
     # Pass has_secrets=True
     scores, overall = ScoringService.calculate_scores(raw_scores, has_secrets=True)
 
-    # Security score should be forced to 1.0
-    assert scores["security"]["score"] == 1.0
+    # Security score should be forced to 0.0
+    assert scores["security"]["score"] == 0.0
     assert scores["security"]["weighted_score"] == 0.0
     # Overall score should remain 3.8 because security weight is 0.0
     assert overall == 3.8

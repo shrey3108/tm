@@ -393,10 +393,12 @@ async def test_task_papers_flow():
                 "How do you handle memory management in Python?",
                 "Explain __slots__.",
             ]
+            import re
             for q in random_assigned["questions"]:
-                assert q in pooled_questions
+                assert re.sub(r"^\[.*?\]\s*", "", q) in pooled_questions
             # Project task should be either from paper A or paper B
-            assert random_assigned["project_task"] in [
+            clean_project_task = [re.sub(r"^\[.*?\]\s*", "", t) for t in random_assigned["project_task"]]
+            assert clean_project_task in [
                 ["Build a REST API with FastAPI."],
                 ["Implement a task runner in Python."],
             ]

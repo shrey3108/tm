@@ -54,7 +54,7 @@ package = false
 
 [tool.uv.sources]
 torch = { index = "pytorch-cpu" }
-github-code-evaluator = { path = "./github-evaluation-package" }
+github-code-evaluator = { path = "./github-evaluation-package", editable = true }
 
 # temp solution for modules not found
 [project.scripts]

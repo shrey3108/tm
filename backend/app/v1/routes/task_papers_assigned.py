@@ -236,7 +236,6 @@ async def assign_test_paper_to_candidate(
             tag = f"[{skill_names}]"
         else:
             tag = "[Unknown]"
-            
         assigned_task = [f"{tag} {t}" for t in chosen_paper.project_task] if chosen_paper.project_task else []
         assigned_file_path = chosen_paper.task_file_path
         

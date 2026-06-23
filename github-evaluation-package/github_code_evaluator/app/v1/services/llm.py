@@ -242,7 +242,7 @@ You must score the following 6 categories on a scale of 0 to 5 (where 0 is compl
 3. architecture (e.g. design patterns, modularity, SoC, separation of concerns, scalability?)
 4. security (e.g. secret handling, input validation, dependency security, safe execution? When evaluating security, do not perform a strict 'hard check' or automatically default the score to 0.0 for minor/medium security issues. Do not check for or require advanced security measures; if basic or mid-level security practices like input validation, sanitization, basic authentication/authorization, or secure configs are available, this is considered good/satisfactory and should receive a high score without deductions for lack of enterprise-grade security.)
 5. performance (e.g. scalability, resource efficiency, latency, caching, optimization, and time/space complexity of the implementation — evaluate: 1. if algorithm logic and time/space complexity are used/considered, and 2. if so, how good they are.)
-6. documentation (e.g. README clarity, code comments, architecture diagrams, setup guides?)
+6. documentation (e.g. README clarity, architecture diagrams, setup guides?)
 
 SCORING BENCHMARK RULES:
 - For every category, if the repository's implementation is satisfactory, standard, or acceptable, the maximum score you can give is 3.5. Scores above 3.5 (up to 5.0) are strictly reserved for exceptionally good, highly optimized, or advanced work. 
@@ -392,10 +392,10 @@ Expected JSON structure:
         if tree_str is not None and content_str is not None:
             from github_code_evaluator.app.v1.services.repo import RepositoryService
             repo_context_code = RepositoryService.prepare_evaluation_context(
-                tree_str, content_str, filter_mode="code"
+                tree_str, content_str, filter_mode="code", lightweight=settings.EVALUATION_LIGHTWEIGHT_MODE
             )
             repo_context_non_code = RepositoryService.prepare_evaluation_context(
-                tree_str, content_str, filter_mode="non_code"
+                tree_str, content_str, filter_mode="non_code", lightweight=settings.EVALUATION_LIGHTWEIGHT_MODE
             )
             
             prompt_code = self.build_prompt(

@@ -256,13 +256,13 @@ async def test_security_score_override_with_secrets(
     # Verify report records
     reports = [r for r in added_records if isinstance(r, EvaluationReport)]
     assert len(reports) == 1
-    # Score should be 1.0 since secrets were detected
-    assert reports[0].security_score == 1.0
+    # Score should be 0.0 since secrets were detected
+    assert reports[0].security_score == 0.0
     
     # Verify scores stored in EvaluationScore
     scores = [s for s in added_records if isinstance(s, EvaluationScore) and s.category == "security"]
     assert len(scores) == 1
-    assert scores[0].score == 1.0
+    assert scores[0].score == 0.0
 
 
 @pytest.mark.anyio

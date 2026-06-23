@@ -1,8 +1,13 @@
 import uuid
 import logging
+import re
+import json
+import openai
 from datetime import datetime, timedelta
 from typing import Any
 
+from app.v1.core.config import settings
+from app.v1.db.models.skills import Skill
 from app.v1.db.models.jobs import Job
 from app.v1.repository.job_repository import job_repository
 from app.v1.schemas.job import (
@@ -40,6 +45,110 @@ class JobAdminService:
     """
     Service for admin-level job management operations.
     """
+
+    async def extract_skills_from_jd(self, db: AsyncSession, jd_text: str) -> list[uuid.UUID]:
+        """
+        Automatically parse the jd_text using LLM to extract skills,
+        create them in the database if they do not exist, and return their IDs.
+        If LLM extraction fails, fallback to regex database keyword matching.
+        """
+        if not jd_text or not jd_text.strip():
+            return []
+
+        extracted_skill_names = []
+
+        system_prompt = (
+            "You are an expert technical recruiter and skill analyst.\n"
+            "Your task is to analyze a Job Description (JD) text and extract all relevant technical, conceptual, and professional skills required for this job.\n"
+            "CRITICAL:\n"
+            "1. You MUST output ONLY valid JSON format.\n"
+            "2. Your output MUST be a JSON object with a single key 'skills' which is an array of strings representing the unique skill names.\n"
+            "3. Do NOT include any conversational text, explanations, or markdown formatting (like ```json).\n"
+            "4. Be precise and use standard technology/concept names (e.g. 'FastAPI', 'React', 'CSS', 'Database Design')."
+        )
+        
+        user_prompt = f"""
+Analyze the following Job Description and extract the required skills:
+
+JOB DESCRIPTION:
+{jd_text[:8000]}
+
+Output Format Example (JSON ONLY):
+{{
+  "skills": ["Skill1", "Skill2", "Skill3"]
+}}
+"""
+
+        try:
+            base_url = settings.OLLAMA_URL
+            if not base_url.endswith("/"):
+                base_url += "/"
+            if "/v1" not in base_url:
+                base_url += "v1"
+
+            client = openai.AsyncOpenAI(
+                base_url=base_url,
+                api_key=settings.OLLAMA_API_KEY or "ollama"
+            )
+            response = await client.chat.completions.create(
+                model=settings.OLLAMA_MODEL,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                response_format={"type": "json_object"},
+                temperature=0.1,
+                timeout=15.0
+            )
+
+            response_text = response.choices[0].message.content or "{}"
+            response_text = response_text.strip()
+            
+            if response_text.startswith("```json"):
+                response_text = response_text[7:]
+            if response_text.startswith("```"):
+                response_text = response_text[3:]
+            if response_text.endswith("```"):
+                response_text = response_text[:-3]
+            response_text = response_text.strip()
+
+            data = json.loads(response_text)
+            skills = data.get("skills", [])
+            extracted_skill_names = [str(skill).strip() for skill in skills if skill]
+        except Exception as e:
+            logger.warning(f"LLM JD skill extraction failed or timed out: {e}. Falling back to database keyword matching.")
+            extracted_skill_names = []
+
+        stmt_all = select(Skill)
+        all_db_skills = (await db.execute(stmt_all)).scalars().all()
+
+        matched_skill_ids = []
+        
+        if extracted_skill_names:
+            for skill_name in extracted_skill_names:
+                matched_skill = None
+                for db_skill in all_db_skills:
+                    if db_skill.name.lower() == skill_name.lower():
+                        matched_skill = db_skill
+                        break
+                
+                if matched_skill:
+                    matched_skill_ids.append(matched_skill.id)
+                else:
+                    new_skill = Skill(
+                        name=skill_name,
+                        description="Auto-extracted skill from JD description."
+                    )
+                    db.add(new_skill)
+                    await db.flush()
+                    matched_skill_ids.append(new_skill.id)
+        else:
+            for db_skill in all_db_skills:
+                pattern = r'\b' + re.escape(db_skill.name.lower()) + r'\b'
+                if re.search(pattern, jd_text.lower()):
+                    matched_skill_ids.append(db_skill.id)
+
+        return list(set(matched_skill_ids))
 
     async def get_all_jobs(
         self, 
@@ -235,6 +344,11 @@ class JobAdminService:
         self, db: AsyncSession, admin_user_id: uuid.UUID, job_in: JobCreate
     ) -> JobRead:
         """Create a new job."""
+        # Auto-extract skills from jd_text if provided
+        if job_in.jd_text and job_in.jd_text.strip():
+            extracted_ids = await self.extract_skills_from_jd(db, job_in.jd_text)
+            job_in.skill_ids = list(set((job_in.skill_ids or []) + extracted_ids))
+
         # Validate department existence if provided
         if job_in.department_id:
             await department_service.get_department_by_id(db, job_in.department_id)
@@ -369,7 +483,15 @@ class JobAdminService:
         background_tasks=None,
     ) -> JobRead:
         # Update a job. Auto-triggers mass refresh if custom_extraction_fields changed.
-        await self.get_job_by_id(db=db, job_id=job_id)
+        current_job = await self.get_job_by_id(db=db, job_id=job_id)
+
+        # Auto-extract skills from jd_text if provided in the update request
+        if job_update.jd_text and job_update.jd_text.strip():
+            extracted_ids = await self.extract_skills_from_jd(db, job_update.jd_text)
+            current_skill_ids = job_update.skill_ids
+            if current_skill_ids is None:
+                current_skill_ids = [s.id for s in current_job.skills]
+            job_update.skill_ids = list(set(current_skill_ids + extracted_ids))
 
         # Filter out invalid department_id if provided
         if job_update.department_id:

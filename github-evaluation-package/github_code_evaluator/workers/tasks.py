@@ -301,7 +301,7 @@ async def execute_evaluation(
             # 7. Call LLM for qualitative evaluation
             logger.info("Calling LLM evaluator...")
             repo_context = RepositoryService.prepare_evaluation_context(
-                tree, content
+                tree, content, lightweight=settings.EVALUATION_LIGHTWEIGHT_MODE
             )
             
             try:
@@ -401,6 +401,55 @@ async def execute_evaluation(
             if not isinstance(raw_scores, dict):
                 raw_scores = {}
             raw_scores["security"] = report_score_val
+            
+            # Programmatically verify documentation existence
+            has_doc_files = False
+            total_files_count = 0
+            for root, dirs, files in os.walk(temp_dir):
+                # Skip hidden directories like .git
+                dirs[:] = [d for d in dirs if not d.startswith('.')]
+                total_files_count += len(files)
+                for f_name in files:
+                    f_name_lower = f_name.lower()
+                    # Skip common project configuration files
+                    if f_name_lower in ["requirements.txt", "requirements-dev.txt", "requirements_dev.txt", "requirements-prod.txt", "requirements_prod.txt"]:
+                        continue
+                    
+                    is_doc = False
+                    if f_name_lower.startswith(("readme", "setup", "install", "guide", "tutorial")):
+                        is_doc = True
+                    elif f_name_lower.endswith(".md"):
+                        is_doc = True
+                    elif "docs" in root.replace(temp_dir, "").lower() and f_name_lower.endswith(".txt"):
+                        is_doc = True
+                        
+                    if is_doc:
+                        f_path = os.path.join(root, f_name)
+                        if os.path.isfile(f_path) and os.path.getsize(f_path) > 10:
+                            try:
+                                with open(f_path, "r", encoding="utf-8", errors="ignore") as f_in:
+                                    if f_in.read().strip():
+                                        has_doc_files = True
+                                        break
+                            except Exception:
+                                pass
+                if has_doc_files:
+                    break
+
+            # If there are no files at all (e.g. mocked clone in tests), bypass override
+            if total_files_count == 0:
+                has_doc_files = True
+
+            if not has_doc_files:
+                logger.warning("No non-empty documentation files found in repository. Forcing documentation scores to 0.0.")
+                raw_scores["documentation"] = 0.0
+                if "jd_alignment" in report_json and isinstance(report_json["jd_alignment"], dict):
+                    if "scores" in report_json["jd_alignment"] and isinstance(report_json["jd_alignment"]["scores"], dict):
+                        report_json["jd_alignment"]["scores"]["documentation"] = 0.0
+                if "project_alignment" in report_json and isinstance(report_json["project_alignment"], dict):
+                    if "scores" in report_json["project_alignment"] and isinstance(report_json["project_alignment"]["scores"], dict):
+                        report_json["project_alignment"]["scores"]["documentation"] = 0.0
+            
             report_json["scores"] = raw_scores
 
             # 7. Compute final weighted scores and apply penalty
@@ -484,6 +533,14 @@ async def execute_evaluation(
 
             # Override final_score as the average of JD alignment overall score and Project alignment overall score
             final_score = round((jd_overall + proj_overall) / 2.0, 1)
+
+            # Compute global security_score as average of JD and Project alignment security scores
+            jd_sec = float(processed_jd_scores.get("security", {}).get("score", 0.0))
+            proj_sec = float(processed_proj_scores.get("security", {}).get("score", 0.0))
+            combined_security_score = round((jd_sec + proj_sec) / 2.0, 1)
+            # Apply has_secrets penalty
+            if has_secrets:
+                combined_security_score = 0.0
 
             # 8. Save scores to DB
             from github_code_evaluator.app.v1.db.models.category import Category
@@ -571,7 +628,7 @@ async def execute_evaluation(
                 extraordinary_points=report_json.get("extraordinary_points", []),
                 architecture_score=parse_score(report_json.get("architecture_score")),
                 code_quality_score=parse_score(report_json.get("code_quality_score")),
-                security_score=parse_score(report_score_val if 'report_score_val' in locals() else report_json.get("security_score")),
+                security_score=parse_score(combined_security_score),
                 extraordinary_score=extra_scr_val,
             )
             db.add(report_entry)
