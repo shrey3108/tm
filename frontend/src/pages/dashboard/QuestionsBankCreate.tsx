@@ -1,27 +1,65 @@
-import { useState, useEffect, useCallback } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { X, Save } from "lucide-react";
+import { X, Save, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { QuestionsList } from "@/components/candidate/projectSubmission/QuestionsList";
 import AppPageShell from "@/components/shared/AppPageShell";
 import PageHeader from "@/components/shared/PageHeader";
-import { SearchableSelect } from "@/components/shared";
+import { SearchableSelect, LoadingSpinner } from "@/components/shared";
 import { useDebouncedValue } from "@/hooks";
 import { useDepartment } from "@/hooks/queries/admin/useDepartment";
 import { useJobPosition } from "@/hooks/queries/admin/useJobPosition";
-import { useCreateQuestionSetPaperMutation } from "@/hooks/mutations/taskPapers/useTaskPaperMutations";
-import type { QuestionSetPaperRead, MCQItem, TaskItem } from "@/types/taskPaper";
+import { QuestionsBankSkillSelector } from "@/components/questions-bank/QuestionsBankSkillSelector";
+import { Form } from "@/components/ui/form";
+import { Required } from "@/components/job-form/Required";
+import PermissionGuard from "@/components/auth/PermissionGuard";
+import { PERMISSIONS, hasPermissions } from "@/lib/permissions";
+import { cn } from "@/lib/utils";
+import { useAppSelector } from "@/store/hooks";
+import { selectCurrentUser } from "@/store/slices/authSlice";
+import {
+  useQuestionSetPaper,
+  useQuestionSetPapers,
+} from "@/hooks/queries/taskPapers/useTaskPaperQueries";
+import {
+  useCreateQuestionSetPaperMutation,
+  useAddQuestionToPaperMutation,
+  useUpdateQuestionInPaperMutation,
+  useAddProjectTaskToPaperMutation,
+  useUpdateProjectTaskInPaperMutation,
+  useAddMCQToPaperMutation,
+  useUpdateMCQInPaperMutation,
+  useUploadQuestionSetPaperMutation,
+} from "@/hooks/mutations/taskPapers/useTaskPaperMutations";
+import type { MCQItem, TaskItem } from "@/types/taskPaper";
+import { mcqSchema } from "@/schemas/taskPaper";
+import { questionSchema, projectTaskSchema } from "@/schemas/admin";
 import { extractErrorMessage } from "@/utils/error";
+import { slugify } from "@/utils/slug";
+
+// Form field components
+import { SingleQuestionFormFields } from "@/components/questions-bank/SingleQuestionFormFields";
+import { MCQFormFields } from "@/components/questions-bank/MCQFormFields";
+import { ProjectTaskFormFields } from "@/components/questions-bank/ProjectTaskFormFields";
+
+// Shadcn UI components
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function QuestionsBankCreate() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { slug } = useParams();
+
+  const user = useAppSelector(selectCurrentUser);
+  const isAllowedToManage = hasPermissions(user?.permissions, PERMISSIONS.QUESTIONS_MANAGE, "any");
+
+  const isEditMode = !!slug && slug !== "new";
 
   // Get initial values from routing state if redirecting from main page
   const {
+    paperId: initialPaperId,
     departmentId: initialDeptId,
     positionId: initialPositionId,
   } = (location.state as any) || {};
@@ -38,7 +76,43 @@ export default function QuestionsBankCreate() {
   const { data: departments, loading: loadingDepts } = useDepartment(0, 100, debouncedDeptSearch);
   const { data: positions, loading: loadingPositions } = useJobPosition(0, 100);
 
+  // Queries for Edit Mode
+  const { data: fetchedPaper, loading: loadingFetchedPaper, refetch: refetchFetchedPaper } = useQuestionSetPaper(initialPaperId);
+  const { data: allPapers = [], loading: loadingAllPapers, refetch: refetchAllPapers } = useQuestionSetPapers({
+    options: { enabled: isEditMode && !initialPaperId }
+  });
+
+  const paperToEdit = useMemo(() => {
+    if (!isEditMode) return null;
+    if (initialPaperId) return fetchedPaper;
+    return allPapers.find((p) => slugify(p.name) === slug) || null;
+  }, [isEditMode, initialPaperId, fetchedPaper, allPapers, slug]);
+
+  const loadingPaper = isEditMode && (initialPaperId ? loadingFetchedPaper : loadingAllPapers);
+
+  const refetchPaper = useCallback(() => {
+    if (initialPaperId) {
+      refetchFetchedPaper();
+    } else {
+      refetchAllPapers();
+    }
+  }, [initialPaperId, refetchFetchedPaper, refetchAllPapers]);
+
+  // Mutations
   const createPaperMutation = useCreateQuestionSetPaperMutation();
+  const addQuestionMutation = useAddQuestionToPaperMutation();
+  const updateQuestionMutation = useUpdateQuestionInPaperMutation();
+
+  const addProjectTaskMutation = useAddProjectTaskToPaperMutation();
+  const updateProjectTaskMutation = useUpdateProjectTaskInPaperMutation();
+
+  const addMCQMutation = useAddMCQToPaperMutation();
+  const updateMCQMutation = useUpdateMCQInPaperMutation();
+
+  const uploadMutation = useUploadQuestionSetPaperMutation();
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState<boolean>(false);
 
   // Setup React Hook Form to use SkillSelectorSection
   const form = useForm({
@@ -47,109 +121,118 @@ export default function QuestionsBankCreate() {
     },
   });
 
-  const selectedSkillIds = form.watch("skill_ids");
+  const selectedSkillIds = form.watch("skill_ids") || [];
 
-  // Local Paper state to keep track of designed questions/MCQs/tasks
-  const [localPaper, setLocalPaper] = useState<QuestionSetPaperRead>({
-    id: "new-paper",
-    name: "New Question Set Paper",
-    department_id: departmentId,
-    position_id: positionId,
-    skills: [],
-    paper_type: "normal",
-    questions: [],
-    mcqs: [],
-    project_task: [],
-    task_file_path: null,
-    task_skills: [],
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  });
+  // Single-Question Form state
+  const [contentType, setContentType] = useState<"question" | "mcq" | "project_task">("question");
+  const [questionText, setQuestionText] = useState<string>("");
+  const [mcqQuestion, setMCQQuestion] = useState<string>("");
+  const [mcqOptions, setMCQOptions] = useState<string[]>(["", "", "", ""]);
+  const [mcqAnswer, setMCQAnswer] = useState<string>("");
+  const [taskDescription, setTaskDescription] = useState<string>("");
+  const [taskInstructions, setTaskInstructions] = useState<string>("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Sync position and department IDs to localPaper
+  // Clear validation errors when changing content type
   useEffect(() => {
-    setLocalPaper((prev) => ({
-      ...prev,
-      position_id: positionId,
-      department_id: departmentId,
-    }));
-  }, [positionId, departmentId]);
+    setErrors({});
+  }, [contentType]);
 
-  // QuestionsList Handlers updating local state
-  const handleAddQuestion = (text: string) => {
-    setLocalPaper((prev) => ({
-      ...prev,
-      questions: [...prev.questions, text],
-    }));
+  // Sync backend paper state to local Form in Edit Mode
+  useEffect(() => {
+    if (isEditMode && paperToEdit) {
+      setDepartmentId(paperToEdit.department_id || "");
+      setPositionId(paperToEdit.position_id || "");
+
+      const skillIds = paperToEdit.skills?.map((s) => s.id) || paperToEdit.task_skills || [];
+      form.reset({ skill_ids: skillIds });
+
+      // Determine content type and pre-populate
+      if (paperToEdit.mcqs && paperToEdit.mcqs.length > 0) {
+        setContentType("mcq");
+        setMCQQuestion(paperToEdit.mcqs[0].question || "");
+
+        const rawOptions = paperToEdit.mcqs[0].options || [];
+        const optionA = rawOptions[0] || "";
+        const optionB = rawOptions[1] || "";
+        const optionC = rawOptions[2] || "";
+        const optionD = rawOptions[3] || "";
+        setMCQOptions([optionA, optionB, optionC, optionD]);
+
+        const answerText = paperToEdit.mcqs[0].answer || "";
+        let answerLetter = "A";
+        if (answerText === optionB) answerLetter = "B";
+        else if (answerText === optionC) answerLetter = "C";
+        else if (answerText === optionD) answerLetter = "D";
+
+        setMCQAnswer(answerLetter);
+      } else if (paperToEdit.project_task && paperToEdit.project_task.length > 0) {
+        setContentType("project_task");
+        const task = paperToEdit.project_task[0];
+        if (typeof task === "string") {
+          setTaskDescription(task);
+          setTaskInstructions("");
+        } else {
+          setTaskDescription((task as any)?.task || "");
+          setTaskInstructions((task as any)?.instructions || "");
+        }
+      } else {
+        setContentType("question");
+        setQuestionText(paperToEdit.questions?.[0] || "");
+      }
+    }
+  }, [isEditMode, paperToEdit, form]);
+
+
+
+  // File Upload handlers
+  const handleUploadClick = () => {
+    if (!departmentId) {
+      toast.error("Please select a department first.");
+      return;
+    }
+    if (!positionId) {
+      toast.error("Please select experience / position level first.");
+      return;
+    }
+    fileInputRef.current?.click();
   };
 
-  const handleUpdateQuestion = (index: number, text: string) => {
-    setLocalPaper((prev) => {
-      const nextQuestions = [...prev.questions];
-      nextQuestions[index] = text;
-      return { ...prev, questions: nextQuestions };
-    });
-  };
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-  const handleDeleteQuestion = (index: number) => {
-    setLocalPaper((prev) => {
-      const nextQuestions = [...prev.questions];
-      nextQuestions.splice(index, 1);
-      return { ...prev, questions: nextQuestions };
-    });
-  };
+    if (!isEditMode && selectedSkillIds.length === 0) {
+      toast.error("Please select at least one skill for the new question bank.");
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      return;
+    }
 
-  const handleAddMCQ = (mcq: MCQItem) => {
-    setLocalPaper((prev) => ({
-      ...prev,
-      mcqs: [...(prev.mcqs || []), mcq],
-    }));
-  };
-
-  const handleUpdateMCQ = (index: number, mcq: MCQItem) => {
-    setLocalPaper((prev) => {
-      const nextMCQs = [...(prev.mcqs || [])];
-      nextMCQs[index] = mcq;
-      return { ...prev, mcqs: nextMCQs };
-    });
-  };
-
-  const handleDeleteMCQ = (index: number) => {
-    setLocalPaper((prev) => {
-      const nextMCQs = [...(prev.mcqs || [])];
-      nextMCQs.splice(index, 1);
-      return { ...prev, mcqs: nextMCQs };
-    });
-  };
-
-  const handleAddTask = (text: TaskItem | string) => {
-    setLocalPaper((prev) => ({
-      ...prev,
-      project_task: [...(prev.project_task || []), text],
-    }));
-  };
-
-  const handleUpdateTask = (index: number, text: TaskItem | string) => {
-    setLocalPaper((prev) => {
-      const nextTasks = [...(prev.project_task || [])];
-      nextTasks[index] = text;
-      return { ...prev, project_task: nextTasks };
-    });
-  };
-
-  const handleDeleteTask = (index: number) => {
-    setLocalPaper((prev) => {
-      const nextTasks = [...(prev.project_task || [])];
-      nextTasks.splice(index, 1);
-      return { ...prev, project_task: nextTasks };
-    });
-  };
-
-  const handleUpdateSkills = (skills: string[]) => {
-    setLocalPaper((prev) => ({
-      ...prev,
-      task_skills: skills,
-    }));
+    setIsUploading(true);
+    try {
+      await uploadMutation.mutateAsync({
+        departmentId,
+        positionId,
+        skillIds: isEditMode ? [] : selectedSkillIds,
+        paperType: "mixed",
+        file: file,
+      });
+      toast.success(`Successfully uploaded and triggered AI extraction for '${file.name}'!`);
+      if (!isEditMode) {
+        navigate("/dashboard/questions-bank");
+      } else {
+        refetchPaper();
+      }
+    } catch (err: unknown) {
+      toast.error(extractErrorMessage(err, `Failed to upload file.`));
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
   };
 
   // Submit/Save Action
@@ -167,42 +250,181 @@ export default function QuestionsBankCreate() {
       return;
     }
 
-    const totalQuestions =
-      localPaper.questions.length +
-      (localPaper.mcqs?.length || 0) +
-      localPaper.project_task.length;
+    // Validate content based on selected type
+    let questionTextPayload = "";
+    if (contentType === "question") {
+      const result = questionSchema.safeParse({
+        question: questionText,
+      });
 
-    if (totalQuestions === 0) {
-      toast.error("Please add at least one question, MCQ, or project task.");
-      return;
+      if (!result.success) {
+        const newErrors: Record<string, string> = {};
+        result.error.issues.forEach((issue) => {
+          const path = issue.path[0] as string;
+          newErrors[path] = issue.message;
+        });
+        setErrors(newErrors);
+        toast.error(result.error.issues[0].message);
+        return;
+      }
+      questionTextPayload = questionText.trim();
     }
 
-    // Determine the paper type based on what content is dominant
-    let paperType: "normal" | "mcq" | "task" = "normal";
-    if ((localPaper.mcqs?.length || 0) > 0) {
-      paperType = "mcq";
-    } else if (localPaper.project_task.length > 0) {
-      paperType = "task";
-    }
+    let mcqItemPayload: MCQItem | null = null;
+    if (contentType === "mcq") {
+      const result = mcqSchema.safeParse({
+        question: mcqQuestion,
+        optionA: mcqOptions[0] || "",
+        optionB: mcqOptions[1] || "",
+        optionC: mcqOptions[2] || "",
+        optionD: mcqOptions[3] || "",
+        answer: mcqAnswer,
+      });
 
-    try {
-      const payload = {
-        department_id: departmentId,
-        position_id: positionId,
-        skill_ids: selectedSkillIds,
-        paper_type: paperType,
-        questions: localPaper.questions,
-        mcqs: localPaper.mcqs || [],
-        project_task: localPaper.project_task,
+      if (!result.success) {
+        const newErrors: Record<string, string> = {};
+        result.error.issues.forEach((issue) => {
+          const path = issue.path[0] as string;
+          newErrors[path] = issue.message;
+        });
+        setErrors(newErrors);
+        toast.error(result.error.issues[0].message);
+        return;
+      }
+
+      let answerText = mcqOptions[0];
+      if (mcqAnswer === "B") answerText = mcqOptions[1];
+      else if (mcqAnswer === "C") answerText = mcqOptions[2];
+      else if (mcqAnswer === "D") answerText = mcqOptions[3];
+
+      const optionsList = [
+        mcqOptions[0].trim(),
+        mcqOptions[1].trim(),
+        mcqOptions[2].trim(),
+        mcqOptions[3].trim(),
+      ].filter(Boolean);
+
+      mcqItemPayload = {
+        question: mcqQuestion.trim(),
+        options: optionsList,
+        answer: answerText.trim(),
       };
+    }
 
-      await createPaperMutation.mutateAsync(payload);
-      toast.success("Successfully created question paper template! Skills are being extracted in the background.");
-      navigate("/dashboard/questions-bank");
-    } catch (err: unknown) {
-      toast.error(extractErrorMessage(err, "Failed to create question set paper."));
+    let projectTaskItemPayload: TaskItem | null = null;
+    if (contentType === "project_task") {
+      const result = projectTaskSchema.safeParse({
+        project_task: taskDescription,
+        instructions: taskInstructions,
+      });
+
+      if (!result.success) {
+        const newErrors: Record<string, string> = {};
+        result.error.issues.forEach((issue) => {
+          const path = issue.path[0] as string;
+          newErrors[path] = issue.message;
+        });
+        setErrors(newErrors);
+        toast.error(result.error.issues[0].message);
+        return;
+      }
+
+      projectTaskItemPayload = {
+        task: taskDescription.trim(),
+        instructions: taskInstructions.trim(),
+      };
+    }
+
+    if (isEditMode && paperToEdit) {
+      // Edit Mode
+      try {
+        if (contentType === "question") {
+          if (paperToEdit.questions && paperToEdit.questions.length > 0) {
+            await updateQuestionMutation.mutateAsync({
+              paperId: paperToEdit.id,
+              index: 0,
+              question: questionTextPayload,
+            });
+          } else {
+            await addQuestionMutation.mutateAsync({
+              paperId: paperToEdit.id,
+              question: questionTextPayload,
+            });
+          }
+        } else if (contentType === "mcq") {
+          if (paperToEdit.mcqs && paperToEdit.mcqs.length > 0) {
+            await updateMCQMutation.mutateAsync({
+              paperId: paperToEdit.id,
+              index: 0,
+              mcq: mcqItemPayload!,
+            });
+          } else {
+            await addMCQMutation.mutateAsync({
+              paperId: paperToEdit.id,
+              mcq: mcqItemPayload!,
+            });
+          }
+        } else if (contentType === "project_task") {
+          if (paperToEdit.project_task && paperToEdit.project_task.length > 0) {
+            await updateProjectTaskMutation.mutateAsync({
+              paperId: paperToEdit.id,
+              index: 0,
+              projectTask: projectTaskItemPayload!,
+            });
+          } else {
+            await addProjectTaskMutation.mutateAsync({
+              paperId: paperToEdit.id,
+              projectTask: projectTaskItemPayload!,
+            });
+          }
+        }
+        toast.success("Successfully updated question set paper!");
+        navigate("/dashboard/questions-bank");
+      } catch (err: unknown) {
+        toast.error(extractErrorMessage(err, "Failed to update question set paper."));
+      }
+    } else {
+      // Create Mode
+      let paperType: "normal" | "mcq" | "task" = "normal";
+      if (contentType === "mcq") {
+        paperType = "mcq";
+      } else if (contentType === "project_task") {
+        paperType = "task";
+      }
+
+      try {
+        const payload = {
+          department_id: departmentId,
+          position_id: positionId,
+          skill_ids: selectedSkillIds,
+          paper_type: paperType,
+          questions: contentType === "question" ? [questionTextPayload] : [],
+          mcqs: contentType === "mcq" ? [mcqItemPayload!] : [],
+          project_task: contentType === "project_task" ? [projectTaskItemPayload!] : [],
+        };
+
+        await createPaperMutation.mutateAsync(payload);
+        toast.success("Successfully created question paper template!");
+        navigate("/dashboard/questions-bank");
+      } catch (err: unknown) {
+        toast.error(extractErrorMessage(err, "Failed to create question set paper."));
+      }
     }
   };
+
+  const typeOptions = [
+    { id: "question", label: "Normal Question" },
+    { id: "mcq", label: "Multiple Choice (MCQ)" },
+    { id: "project_task", label: "Project Task" },
+  ] as const;
+
+  if (loadingPaper) {
+    return (
+      <AppPageShell width="wide">
+        <LoadingSpinner message="Loading question set paper..." />
+      </AppPageShell>
+    );
+  }
 
   return (
     <AppPageShell
@@ -211,7 +433,7 @@ export default function QuestionsBankCreate() {
       className="animate-in fade-in duration-500 bg-background"
     >
       <PageHeader
-        title="Define Question Paper"
+        title={isEditMode ? `Edit Question Paper: ${paperToEdit?.name || ""}` : "Define Question"}
         actions={
           <Button
             variant="ghost"
@@ -226,25 +448,23 @@ export default function QuestionsBankCreate() {
         }
       />
 
-      <div className="mx-auto w-full space-y-6">
-        {/* Selection Form Card */}
-        <div className="app-surface-card space-y-6 p-4 sm:p-5">
-          <div>
-            <h2 className="text-lg font-bold tracking-tight">Paper Association Details</h2>
-
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Department */}
-            <div className="flex flex-col gap-1.5">
-              <Label className="text-sm font-semibold">Department</Label>
+      <div className="mx-auto w-full space-y-2">
+        {/* Unified Selector/Filter row (matching listing page style) */}
+        <div className="rounded-xl border border-border bg-card p-2 shadow-xs">
+          <div className={cn(
+            "grid grid-cols-1 sm:grid-cols-2 gap-2 w-full",
+            isAllowedToManage ? "lg:grid-cols-4" : "lg:grid-cols-3"
+          )}>
+            {/* Department Selector */}
+            <div className="flex flex-col gap-0.5 w-full">
+              <Label className="text-xs font-semibold">Select Department <Required /></Label>
               <SearchableSelect
                 value={departmentId}
                 onValueChange={setDepartmentId}
                 options={departments?.map((dept) => ({ id: dept.id, label: dept.name })) || []}
                 placeholder="Choose a department..."
                 searchPlaceholder="Search departments..."
-                disabled={!departments || departments.length === 0}
+                disabled={isEditMode || !departments || departments.length === 0}
                 loading={loadingDepts}
                 loadingPlaceholder="Loading departments..."
                 emptyMessage="No departments found"
@@ -254,62 +474,161 @@ export default function QuestionsBankCreate() {
               />
             </div>
 
-            {/* Experience / Position Level */}
-            <div className="flex flex-col gap-1.5">
-              <Label className="text-sm font-semibold">Experience / Position Level</Label>
+            {/* Experience / Position Level Selector */}
+            <div className="flex flex-col gap-0.5 w-full">
+              <Label className="text-xs font-semibold">Experience / Position Level <Required /></Label>
               <SearchableSelect
                 value={positionId}
                 onValueChange={setPositionId}
                 options={positions?.map((pos) => ({ id: pos.id, label: pos.name })) || []}
-                placeholder="Choose experience / position level..."
+                placeholder="Choose position level..."
                 searchPlaceholder="Search position levels..."
-                disabled={loadingPositions}
+                disabled={isEditMode || loadingPositions}
                 loading={loadingPositions}
                 loadingPlaceholder="Loading positions..."
                 emptyMessage="No position levels found"
                 moreText="position levels"
               />
             </div>
+
+            {/* Question Type Selector */}
+            <div className="flex flex-col gap-0.5 w-full">
+              <Label className="text-xs font-semibold">Question Type</Label>
+              <Select value={contentType} onValueChange={(val: any) => setContentType(val)} disabled={isEditMode}>
+                <SelectTrigger className="w-full h-11 bg-input/20 hover:bg-input/30 text-sm rounded-xl px-3 justify-between font-normal text-foreground inline-flex items-center cursor-pointer transition-all border border-border/50 outline-none focus:border-border/50">
+                  <SelectValue placeholder="Select type..." className="w-full">
+                    {
+                      typeOptions.find(
+                        (opt) => opt.id === contentType,
+                      )?.label
+                    }
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {typeOptions.map((opt) => (
+                    <SelectItem key={opt.id} value={opt.id} className="text-xs font-semibold">
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Action Upload Widget */}
+            <PermissionGuard permissions={PERMISSIONS.QUESTIONS_MANAGE} hideWhenDenied>
+              <div className="flex flex-col gap-0.5 w-full">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  accept=".pdf,.doc,.docx"
+                  className="hidden"
+                />
+                <Label className="text-xs font-semibold invisible">Upload</Label>
+                <button
+                  type="button"
+                  onClick={handleUploadClick}
+                  disabled={!departmentId || !positionId || isUploading}
+                  className="w-full h-11 bg-input/20 hover:bg-input/30 text-sm rounded-xl px-3 justify-center font-normal text-foreground inline-flex items-center cursor-pointer transition-all border border-border/50 outline-none focus:border-border/50 gap-1.5 disabled:pointer-events-none disabled:opacity-50"
+                >
+                  <Upload className="h-4 w-4" />
+                  {isUploading ? "Uploading..." : "Upload Document"}
+                </button>
+              </div>
+            </PermissionGuard>
           </div>
         </div>
 
-        {/* Questions Designer */}
-        <div className="app-surface-card space-y-3 p-2">
-          <div>
-            <h2 className="text-lg font-bold tracking-tight">Question Set</h2>
+        {/* Question Form Card */}
+        <div className="app-surface-card space-y-2 p-2">
+          <div className="flex flex-col gap-2">
+            {/* Dynamic fields based on Question Type */}
+            {contentType === "question" && (
+              <SingleQuestionFormFields
+                questionText={questionText}
+                onQuestionChange={setQuestionText}
+                error={errors.question}
+              />
+            )}
 
+            {contentType === "mcq" && (
+              <MCQFormFields
+                mcqQuestion={mcqQuestion}
+                onMCQQuestionChange={setMCQQuestion}
+                mcqOptions={mcqOptions}
+                onMCQOptionsChange={setMCQOptions}
+                mcqAnswer={mcqAnswer}
+                onMCQAnswerChange={setMCQAnswer}
+                errors={errors}
+                onClearError={(field) => setErrors((prev) => ({ ...prev, [field]: "" }))}
+              />
+            )}
+
+            {contentType === "project_task" && (
+              <ProjectTaskFormFields
+                taskDescription={taskDescription}
+                onDescriptionChange={setTaskDescription}
+                taskInstructions={taskInstructions}
+                onInstructionsChange={setTaskInstructions}
+                errors={errors}
+                onClearError={(field) => setErrors((prev) => ({ ...prev, [field]: "" }))}
+              />
+            )}
           </div>
-          <QuestionsList
-            paper={localPaper}
-            onAddQuestion={handleAddQuestion}
-            onUpdateQuestion={handleUpdateQuestion}
-            onDeleteQuestion={handleDeleteQuestion}
-            onAddMCQ={handleAddMCQ}
-            onUpdateMCQ={handleUpdateMCQ}
-            onDeleteMCQ={handleDeleteMCQ}
-            onAddTask={handleAddTask}
-            onUpdateTask={handleUpdateTask}
-            onDeleteTask={handleDeleteTask}
-            onUpdateSkills={handleUpdateSkills}
-            form={form}
-          />
+        </div>
+
+        {/* Skills Selector Card */}
+        <div className="app-surface-card space-y-2 p-2">
+          <div className="space-y-2">
+            <Label className="text-sm font-semibold">Associated Tech Stack Skills {!isEditMode && <Required />}</Label>
+            <div className="pt-1 w-full">
+              {isEditMode ? (
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {paperToEdit?.skills && paperToEdit.skills.length > 0 ? (
+                    paperToEdit.skills.map((skill) => (
+                      <span
+                        key={skill.id}
+                        className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20"
+                      >
+                        {skill.name}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-xs text-muted-foreground italic">No skills associated with this question bank yet.</span>
+                  )}
+                </div>
+              ) : (
+                <Form {...form}>
+                  <QuestionsBankSkillSelector
+                    initialSelectedSkills={[]}
+                    placeholderMessage="Select stacks/skills to link to this question bank."
+                  />
+                </Form>
+              )}
+            </div>
+            {isEditMode && (
+              <p className="text-[11px] text-muted-foreground font-medium pt-1">
+                Note: Skills are automatically updated and linked based on the question details when you save.
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Form Actions */}
-        <div className="flex flex-wrap items-center justify-center gap-4 border-t pt-8">
+        <div className="flex flex-wrap items-center justify-center gap-2 border-t pt-2">
           <Button
             onClick={handleSavePaper}
-            disabled={createPaperMutation.isPending}
+            disabled={createPaperMutation.isPending || isUploading}
             className="rounded-xl font-bold bg-primary hover:bg-primary/95 text-primary-foreground shadow-md hover:shadow-lg transition-all"
           >
             <Save className="h-4 w-4 mr-2" />
-            {createPaperMutation.isPending ? "Creating..." : "Create Question Bank"}
+            {isEditMode ? "Save Changes" : createPaperMutation.isPending ? "Creating..." : "Create Question Bank"}
           </Button>
           <Button
             type="button"
             variant="outline"
             onClick={() => navigate("/dashboard/questions-bank")}
-            disabled={createPaperMutation.isPending}
+            disabled={createPaperMutation.isPending || isUploading}
             className="rounded-xl font-semibold"
           >
             Cancel

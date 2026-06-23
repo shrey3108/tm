@@ -306,26 +306,7 @@ export function useDeleteProjectTaskFromPaperMutation() {
   });
 }
 
-/**
- * Hook to update skills of a predefined question set paper.
- */
-export function useUpdateQuestionSetPaperSkillsMutation() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({
-      paperId,
-      skillIds,
-    }: {
-      paperId: string;
-      skillIds: string[];
-    }) => taskService.updateQuestionSetPaperSkills(paperId, skillIds),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: [QUERY_KEYS.TASK_PAPERS.LIST],
-      });
-    },
-  });
-}
+
 
 /**
  * Hook to add a new MCQ to a predefined question set paper.

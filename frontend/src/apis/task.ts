@@ -499,19 +499,7 @@ export const taskService = {
     return response.data;
   },
 
-  /**
-   * Updates the skills associated with a predefined question set paper.
-   */
-  updateQuestionSetPaperSkills: async (
-    paperId: string,
-    skillIds: string[]
-  ): Promise<QuestionSetPaperRead> => {
-    const response = await client.put<QuestionSetPaperRead>(
-      `/task-papers/${paperId}/skills`,
-      { skill_ids: skillIds }
-    );
-    return response.data;
-  },
+
 
   /**
    * Retrieves the assignment and email log history for a specific candidate.

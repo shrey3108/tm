@@ -1,16 +1,9 @@
-import { type RefObject } from "react";
-import { Upload, Plus, ChevronDown } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components";
 import { SearchableSelect } from "@/components/shared";
 import PermissionGuard from "@/components/auth/PermissionGuard";
 import { PERMISSIONS } from "@/lib/permissions";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 interface QuestionsBankFiltersProps {
   selectedDeptId: string;
@@ -25,14 +18,17 @@ interface QuestionsBankFiltersProps {
   positions: Array<{ id: string; name: string }> | null;
   loadingPositions: boolean;
 
+  selectedSkillId: string;
+  setSelectedSkillId: (id: string) => void;
+  skills: Array<{ id: string; name: string }> | null;
+  loadingSkills: boolean;
+  isSkillSearching: boolean;
+  handleSkillSearch: (query: string) => void;
+
   selectedContentType: string;
   setSelectedContentType: (type: string) => void;
 
-  isUploading: boolean;
-  handleUploadClick: () => void;
-  fileInputRef: RefObject<HTMLInputElement | null>;
-  handleFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  handleAddDropdownSelect: (type: "question" | "project_task" | "mcq") => void;
+  onCreateNew: () => void;
 }
 
 export function QuestionsBankFilters({
@@ -46,13 +42,15 @@ export function QuestionsBankFilters({
   setSelectedPositionId,
   positions,
   loadingPositions,
+  selectedSkillId,
+  setSelectedSkillId,
+  skills,
+  loadingSkills,
+  isSkillSearching,
+  handleSkillSearch,
   selectedContentType,
   setSelectedContentType,
-  isUploading,
-  handleUploadClick,
-  fileInputRef,
-  handleFileChange,
-  handleAddDropdownSelect,
+  onCreateNew,
 }: QuestionsBankFiltersProps) {
   const contentTypeOptions = [
     { id: "all", label: "All Types" },
@@ -63,7 +61,7 @@ export function QuestionsBankFilters({
 
   return (
     <div className="flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3 rounded-xl border border-border bg-card p-2 shadow-xs">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1 flex-1">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-1 flex-1">
         {/* Department Selector */}
         <div className="flex flex-col gap-0.5 w-full">
           <Label className="text-xs font-semibold">Select Department</Label>
@@ -102,6 +100,27 @@ export function QuestionsBankFilters({
           />
         </div>
 
+        {/* Skill Selector */}
+        <div className="flex flex-col gap-0.5 w-full">
+          <Label className="text-xs font-semibold">Select Skill</Label>
+          <SearchableSelect
+            value={selectedSkillId}
+            onValueChange={setSelectedSkillId}
+            options={skills?.map((skill) => ({ id: skill.id, label: skill.name })) || []}
+            placeholder="All skills"
+            searchPlaceholder="Search skills..."
+            disabled={loadingSkills}
+            loading={loadingSkills}
+            loadingPlaceholder="Loading skills..."
+            emptyMessage="No skills found"
+            moreText="skills"
+            onSearch={handleSkillSearch}
+            asyncLoading={isSkillSearching}
+            onClear={() => setSelectedSkillId("")}
+            clearLabel="Clear skill filter"
+          />
+        </div>
+
         {/* Content Type Selector */}
         <div className="flex flex-col gap-0.5 w-full">
           <Label className="text-xs font-semibold">Content Type</Label>
@@ -121,55 +140,14 @@ export function QuestionsBankFilters({
       {/* Action Upload Widget */}
       <div className="flex items-end justify-end shrink-0 gap-2 xl:self-end">
         <PermissionGuard permissions={PERMISSIONS.QUESTIONS_MANAGE} hideWhenDenied>
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleFileChange}
-            accept=".pdf,.doc,.docx"
-            className="hidden"
-          />
           <Button
-            onClick={handleUploadClick}
-            disabled={!selectedDeptId || isUploading}
-            variant="outline"
-            className="rounded-xl border border-muted-foreground/10 px-5 font-semibold text-center h-11"
+            onClick={onCreateNew}
+            disabled={!selectedDeptId}
+            className="rounded-xl px-5 font-semibold text-center h-11 gap-1.5"
           >
-            <Upload className="h-4 w-4 mr-2" />
-            {isUploading ? "Uploading..." : "Upload new set"}
+            <Plus className="h-4 w-4" />
+            Create New
           </Button>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger>
-              <Button
-                disabled={!selectedDeptId}
-                className="rounded-xl px-5 font-semibold text-center h-11 gap-1.5"
-              >
-                <Plus className="h-4 w-4" />
-                Add
-                <ChevronDown className="h-4 w-4 opacity-70" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="rounded-xl p-1.5 min-w-[160px]">
-              <DropdownMenuItem
-                onClick={() => handleAddDropdownSelect("question")}
-                className="rounded-lg font-medium cursor-pointer"
-              >
-                Normal Question
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => handleAddDropdownSelect("mcq")}
-                className="rounded-lg font-medium cursor-pointer"
-              >
-                MCQ (Multiple Choice)
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => handleAddDropdownSelect("project_task")}
-                className="rounded-lg font-medium cursor-pointer"
-              >
-                Project Task
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </PermissionGuard>
       </div>
     </div>

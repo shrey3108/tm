@@ -1,67 +1,50 @@
-import { useState, useCallback, useEffect, useRef, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import AppPageShell from "@/components/shared/AppPageShell";
 import AppPageHeader from "@/components/shared/AppPageHeader";
 import { useQuestionSetPapers } from "@/hooks/queries/taskPapers/useTaskPaperQueries";
 import {
-  useUploadQuestionSetPaperMutation,
-  useAddQuestionToPaperMutation,
-  useUpdateQuestionInPaperMutation,
   useDeleteQuestionFromPaperMutation,
-  useAddProjectTaskToPaperMutation,
-  useUpdateProjectTaskInPaperMutation,
   useDeleteProjectTaskFromPaperMutation,
-  useAddMCQToPaperMutation,
-  useUpdateMCQInPaperMutation,
   useDeleteMCQFromPaperMutation,
-  useCreateQuestionSetPaperMutation
 } from "@/hooks/mutations/taskPapers/useTaskPaperMutations";
 import { LoadingSpinner, DataTable } from "@/components/shared";
 import { useDebouncedValue } from "@/hooks";
 import { extractErrorMessage } from "@/utils/error";
 import { useDepartment } from "@/hooks/queries/admin/useDepartment";
 import { useJobPosition } from "@/hooks/queries/admin/useJobPosition";
-import type { MCQItem, TaskItem } from "@/types/taskPaper";
+import { useSkill } from "@/hooks/queries/admin/useSkill";
+import { slugify } from "@/utils/slug";
 
 // Sub-components
 import { QuestionsBankFilters } from "@/components/questions-bank/QuestionsBankFilters";
-import { QuestionsBankSkills } from "@/components/questions-bank/QuestionsBankSkills";
 import { QuestionsBankModals } from "@/components/questions-bank/QuestionsBankModals";
 import { getQuestionsBankColumns, type FlatItem } from "@/components/questions-bank/QuestionsBankColumns";
-import { useForm } from "react-hook-form";
-import { Form } from "@/components/ui/form";
-import { QuestionsBankSkillSelector } from "@/components/questions-bank/QuestionsBankSkillSelector";
-import { Required } from "@/components/job-form/Required";
 
 export default function QuestionsBank() {
+  const navigate = useNavigate();
   const [selectedDeptId, setSelectedDeptId] = useState<string>("");
-  const [isUploading, setIsUploading] = useState<boolean>(false);
   const [deptSearch, setDeptSearch] = useState<string>("");
 
   const [selectedPositionId, setSelectedPositionId] = useState<string>("");
+  const [selectedSkillId, setSelectedSkillId] = useState<string>("");
+  const [skillSearch, setSkillSearch] = useState<string>("");
   const [selectedContentType, setSelectedContentType] = useState<string>("all");
-
-  // Form state for creating a new question paper template with skills
-  const newPaperForm = useForm({
-    defaultValues: {
-      skill_ids: [] as string[],
-    },
-  });
-
-  const newPaperSkillIds = newPaperForm.watch("skill_ids") || [];
-
-  // Reset new paper skills form when department or position level changes
-  useEffect(() => {
-    newPaperForm.reset({ skill_ids: [] });
-  }, [selectedDeptId, selectedPositionId]);
 
   // Debounce search query for backend API calls
   const debouncedDeptSearch = useDebouncedValue(deptSearch);
+  const debouncedSkillSearch = useDebouncedValue(skillSearch);
 
   // Fetch departments list
   const { data: departments, loading: loadingDepts } = useDepartment(0, 100, debouncedDeptSearch);
   const isDeptSearching = deptSearch !== debouncedDeptSearch;
   const handleDeptSearch = useCallback((query: string) => setDeptSearch(query), []);
+
+  // Fetch skills list
+  const { data: skills, loading: loadingSkills } = useSkill(0, 100, debouncedSkillSearch);
+  const isSkillSearching = skillSearch !== debouncedSkillSearch;
+  const handleSkillSearch = useCallback((query: string) => setSkillSearch(query), []);
 
   useEffect(() => {
     if (departments.length > 0 && !selectedDeptId) {
@@ -69,7 +52,7 @@ export default function QuestionsBank() {
     }
   }, [departments, selectedDeptId]);
 
-  // Fetch predefined Question Set Papers with polling if any paper is still extracting questions
+  // Fetch predefined Question Set Papers
   const {
     data: questionPapers = [],
     loading: loadingPapers,
@@ -77,73 +60,11 @@ export default function QuestionsBank() {
   } = useQuestionSetPapers({
     departmentId: selectedDeptId || undefined,
     positionId: selectedPositionId || undefined,
-    options: {
-      enabled: !!selectedDeptId,
-      refetchInterval: (query: unknown) => {
-        // @ts-expect-error type checking compatibility
-        const papers = (query as { state?: { data?: { questions?: string[] }[] }[] })?.state?.data;
-        const hasProcessing = Array.isArray(papers) && papers.some(
-          (paper) => !paper.questions || paper.questions.length === 0
-        );
-        return hasProcessing ? 15000 : false;
-      }
-    }
+    skillId: selectedSkillId || undefined,
   });
-
-  const firstPaper = questionPapers[0];
-
-  // Mutations for templates/papers
-  const uploadMutation = useUploadQuestionSetPaperMutation();
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch positions for filters
   const { data: positions, loading: loadingPositions } = useJobPosition(0, 100);
-
-  const handleUploadClick = useCallback(() => {
-    if (!selectedDeptId) {
-      toast.error("Please select a department first.");
-      return;
-    }
-    if (!selectedPositionId) {
-      toast.error("Please select an experience/position level first.");
-      return;
-    }
-    fileInputRef.current?.click();
-  }, [selectedDeptId, selectedPositionId]);
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!firstPaper && newPaperSkillIds.length === 0) {
-      toast.error("Please select at least one skill for the new question bank.");
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-      return;
-    }
-
-    setIsUploading(true);
-    try {
-      await uploadMutation.mutateAsync({
-        departmentId: selectedDeptId,
-        positionId: selectedPositionId,
-        skillIds: firstPaper ? [] : newPaperSkillIds,
-        paperType: "mixed",
-        file: file,
-      });
-      toast.success(`Successfully uploaded and triggered AI extraction for '${file.name}'!`);
-      newPaperForm.reset({ skill_ids: [] });
-      refetchPapers();
-    } catch (err: unknown) {
-      toast.error(extractErrorMessage(err, `Failed to upload file.`));
-    } finally {
-      setIsUploading(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-    }
-  };
 
   // Flatten the papers into a list of questions, project tasks, and MCQs
   const flatItems = useMemo(() => {
@@ -165,6 +86,7 @@ export default function QuestionsBank() {
               itemIndex: idx,
               rawData: q,
               paperName: paper.name,
+              skills: paper.skills,
             });
           }
         });
@@ -184,6 +106,7 @@ export default function QuestionsBank() {
                 itemIndex: idx,
                 rawData: task,
                 paperName: paper.name,
+                skills: paper.skills,
               });
             }
           }
@@ -204,6 +127,7 @@ export default function QuestionsBank() {
                 itemIndex: idx,
                 rawData: mcq,
                 paperName: paper.name,
+                skills: paper.skills,
               });
             }
           }
@@ -222,38 +146,35 @@ export default function QuestionsBank() {
     return flatItems.filter((item) => item.type === selectedContentType);
   }, [flatItems, selectedContentType]);
 
-  // Modal states and handlers
-  const [activeModal, setActiveModal] = useState<"question" | "mcq" | "task" | "delete" | null>(null);
-  const [modalMode, setModalMode] = useState<"add" | "edit">("add");
+  // Modal states and handlers (only delete modal is kept)
+  const [activeModal, setActiveModal] = useState<"delete" | null>(null);
   const [selectedItem, setSelectedItem] = useState<FlatItem | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   // Mutation Hooks
-  const addQuestionMutation = useAddQuestionToPaperMutation();
-  const updateQuestionMutation = useUpdateQuestionInPaperMutation();
   const deleteQuestionMutation = useDeleteQuestionFromPaperMutation();
-
-  const addProjectTaskMutation = useAddProjectTaskToPaperMutation();
-  const updateProjectTaskMutation = useUpdateProjectTaskInPaperMutation();
   const deleteProjectTaskMutation = useDeleteProjectTaskFromPaperMutation();
-
-  const addMCQMutation = useAddMCQToPaperMutation();
-  const updateMCQMutation = useUpdateMCQInPaperMutation();
   const deleteMCQMutation = useDeleteMCQFromPaperMutation();
 
-  const createPaperMutation = useCreateQuestionSetPaperMutation();
+  const handleCreateNew = useCallback(() => {
+    navigate("/dashboard/questions-bank/new", {
+      state: {
+        departmentId: selectedDeptId,
+        positionId: selectedPositionId,
+      },
+    });
+  }, [navigate, selectedDeptId, selectedPositionId]);
 
   const handleEditClick = useCallback((item: FlatItem) => {
-    setSelectedItem(item);
-    setModalMode("edit");
-    if (item.type === "question") {
-      setActiveModal("question");
-    } else if (item.type === "project_task") {
-      setActiveModal("task");
-    } else if (item.type === "mcq") {
-      setActiveModal("mcq");
-    }
-  }, []);
+    const slug = slugify(item.paperName || "new-paper");
+    navigate(`/dashboard/questions-bank/${slug}/edit`, {
+      state: {
+        paperId: item.paperId,
+        departmentId: selectedDeptId,
+        positionId: selectedPositionId,
+      },
+    });
+  }, [navigate, selectedDeptId, selectedPositionId]);
 
   const handleDeleteClick = useCallback((item: FlatItem) => {
     setSelectedItem(item);
@@ -288,177 +209,6 @@ export default function QuestionsBank() {
     }
   };
 
-  const handleSaveQuestion = async (content: string) => {
-    setIsSaving(true);
-    try {
-      if (modalMode === "add") {
-        const firstPaper = questionPapers[0];
-        if (firstPaper) {
-          await addQuestionMutation.mutateAsync({ paperId: firstPaper.id, question: content });
-        } else {
-          if (!selectedDeptId) {
-            toast.error("Please select a department first.");
-            setIsSaving(false);
-            return;
-          }
-          if (!selectedPositionId) {
-            toast.error("Please select an experience/position level first.");
-            setIsSaving(false);
-            return;
-          }
-          if (newPaperSkillIds.length === 0) {
-            toast.error("Please select at least one skill for the new question bank.");
-            setIsSaving(false);
-            return;
-          }
-          await createPaperMutation.mutateAsync({
-            department_id: selectedDeptId,
-            position_id: selectedPositionId,
-            skill_ids: newPaperSkillIds,
-            paper_type: "normal",
-            questions: [content],
-            project_task: [],
-            mcqs: [],
-          });
-          newPaperForm.reset({ skill_ids: [] });
-        }
-        toast.success("Question added successfully.");
-      } else if (modalMode === "edit" && selectedItem) {
-        await updateQuestionMutation.mutateAsync({
-          paperId: selectedItem.paperId,
-          index: selectedItem.itemIndex,
-          question: content,
-        });
-        toast.success("Question updated successfully.");
-      }
-      refetchPapers();
-    } catch (err: unknown) {
-      toast.error(extractErrorMessage(err, "Failed to save question."));
-    } finally {
-      setIsSaving(false);
-      setActiveModal(null);
-      setSelectedItem(null);
-    }
-  };
-
-  const handleSaveProjectTask = async (content: TaskItem) => {
-    setIsSaving(true);
-    try {
-      if (modalMode === "add") {
-        const firstPaper = questionPapers[0];
-        if (firstPaper) {
-          await addProjectTaskMutation.mutateAsync({ paperId: firstPaper.id, projectTask: content });
-        } else {
-          if (!selectedDeptId) {
-            toast.error("Please select a department first.");
-            setIsSaving(false);
-            return;
-          }
-          if (!selectedPositionId) {
-            toast.error("Please select an experience/position level first.");
-            setIsSaving(false);
-            return;
-          }
-          if (newPaperSkillIds.length === 0) {
-            toast.error("Please select at least one skill for the new question bank.");
-            setIsSaving(false);
-            return;
-          }
-          await createPaperMutation.mutateAsync({
-            department_id: selectedDeptId,
-            position_id: selectedPositionId,
-            skill_ids: newPaperSkillIds,
-            paper_type: "task",
-            questions: [],
-            project_task: [content],
-            mcqs: [],
-          });
-          newPaperForm.reset({ skill_ids: [] });
-        }
-        toast.success("Project task added successfully.");
-      } else if (modalMode === "edit" && selectedItem) {
-        await updateProjectTaskMutation.mutateAsync({
-          paperId: selectedItem.paperId,
-          index: selectedItem.itemIndex,
-          projectTask: content,
-        });
-        toast.success("Project task updated successfully.");
-      }
-      refetchPapers();
-    } catch (err: unknown) {
-      toast.error(extractErrorMessage(err, "Failed to save project task."));
-    } finally {
-      setIsSaving(false);
-      setActiveModal(null);
-      setSelectedItem(null);
-    }
-  };
-
-  const handleSaveMCQ = async (mcq: MCQItem) => {
-    setIsSaving(true);
-    try {
-      if (modalMode === "add") {
-        const firstPaper = questionPapers[0];
-        if (firstPaper) {
-          await addMCQMutation.mutateAsync({ paperId: firstPaper.id, mcq });
-        } else {
-          if (!selectedDeptId) {
-            toast.error("Please select a department first.");
-            setIsSaving(false);
-            return;
-          }
-          if (!selectedPositionId) {
-            toast.error("Please select an experience/position level first.");
-            setIsSaving(false);
-            return;
-          }
-          if (newPaperSkillIds.length === 0) {
-            toast.error("Please select at least one skill for the new question bank.");
-            setIsSaving(false);
-            return;
-          }
-          await createPaperMutation.mutateAsync({
-            department_id: selectedDeptId,
-            position_id: selectedPositionId,
-            skill_ids: newPaperSkillIds,
-            paper_type: "mcq",
-            questions: [],
-            project_task: [],
-            mcqs: [mcq],
-          });
-          newPaperForm.reset({ skill_ids: [] });
-        }
-        toast.success("MCQ added successfully.");
-      } else if (modalMode === "edit" && selectedItem) {
-        await updateMCQMutation.mutateAsync({
-          paperId: selectedItem.paperId,
-          index: selectedItem.itemIndex,
-          mcq,
-        });
-        toast.success("MCQ updated successfully.");
-      }
-      refetchPapers();
-    } catch (err: unknown) {
-      toast.error(extractErrorMessage(err, "Failed to save MCQ."));
-    } finally {
-      setIsSaving(false);
-      setActiveModal(null);
-      setSelectedItem(null);
-    }
-  };
-
-  const handleAddDropdownSelect = useCallback((type: "question" | "project_task" | "mcq") => {
-    setModalMode("add");
-    setSelectedItem(null);
-    if (type === "question") {
-      setActiveModal("question");
-    } else if (type === "project_task") {
-      setActiveModal("task");
-    } else if (type === "mcq") {
-      setActiveModal("mcq");
-    }
-  }, []);
-
   const columns = useMemo(
     () => getQuestionsBankColumns({
       onEdit: handleEditClick,
@@ -484,13 +234,15 @@ export default function QuestionsBank() {
           setSelectedPositionId={setSelectedPositionId}
           positions={positions}
           loadingPositions={loadingPositions}
+          selectedSkillId={selectedSkillId}
+          setSelectedSkillId={setSelectedSkillId}
+          skills={skills}
+          loadingSkills={loadingSkills}
+          isSkillSearching={isSkillSearching}
+          handleSkillSearch={handleSkillSearch}
           selectedContentType={selectedContentType}
           setSelectedContentType={setSelectedContentType}
-          isUploading={isUploading}
-          handleUploadClick={handleUploadClick}
-          fileInputRef={fileInputRef}
-          handleFileChange={handleFileChange}
-          handleAddDropdownSelect={handleAddDropdownSelect}
+          onCreateNew={handleCreateNew}
         />
 
         {/* Loading papers state / DataTable */}
@@ -519,42 +271,15 @@ export default function QuestionsBank() {
               totalRecords={filteredFlatItems.length}
               entityName="Items"
             />
-
-            {/* Reactive Skills Accordion or Selector */}
-            {firstPaper ? (
-              <QuestionsBankSkills
-                firstPaper={firstPaper}
-                refetchPapers={refetchPapers}
-              />
-            ) : (
-              <div className="border border-border bg-card rounded-xl p-4 mt-2 space-y-4">
-                <div className="space-y-1">
-                  <h3 className="text-sm font-bold tracking-tight text-foreground">Skills for New Question Bank <Required /></h3>
-                  <p className="text-xs text-muted-foreground font-medium">
-                    Select the skills to link to the new question bank template.
-                  </p>
-                </div>
-                <Form {...newPaperForm}>
-                  <QuestionsBankSkillSelector
-                    placeholderMessage="Assign relevant skills to the new question bank."
-                  />
-                </Form>
-              </div>
-            )}
           </div>
         )}
       </div>
 
-      {/* Interactive Modals */}
+      {/* Delete Modal only */}
       <QuestionsBankModals
         activeModal={activeModal}
-        modalMode={modalMode}
-        selectedItem={selectedItem}
         isSaving={isSaving}
         handleClose={handleCloseModals}
-        handleSaveQuestion={handleSaveQuestion}
-        handleSaveProjectTask={handleSaveProjectTask}
-        handleSaveMCQ={handleSaveMCQ}
         handleConfirmDelete={handleConfirmDelete}
       />
     </AppPageShell>

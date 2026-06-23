@@ -13,7 +13,6 @@ export interface MCQItem {
 export interface TaskItem {
   task: string;
   instructions: string;
-  prerequisites: string[];
 }
 
 export interface QuestionSetPaperRead {

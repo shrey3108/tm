@@ -31,7 +31,6 @@ interface ProjectTaskModalProps {
 const DEFAULT_VALUES: ProjectTaskFormValues = {
   project_task: "",
   instructions: "",
-  prerequisites: "",
 };
 
 export default function ProjectTaskModal({
@@ -52,27 +51,20 @@ export default function ProjectTaskModal({
         return {
           project_task: val,
           instructions: "",
-          prerequisites: "",
         };
       }
       return {
         project_task: val.task || "",
         instructions: val.instructions || "",
-        prerequisites: Array.isArray(val.prerequisites) ? val.prerequisites.join("\n") : "",
       };
     },
     []
   );
 
   const onSubmit = async (data: ProjectTaskFormValues) => {
-    const prerequisitesArray = data.prerequisites
-      ? data.prerequisites.split("\n").map((p) => p.trim()).filter(Boolean)
-      : [];
-
     await onSave({
       task: data.project_task.trim(),
       instructions: data.instructions.trim(),
-      prerequisites: prerequisitesArray,
     });
     handleClose();
   };
@@ -144,25 +136,6 @@ export default function ProjectTaskModal({
               )}
             />
 
-            <FormField
-              control={control}
-              name="prerequisites"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Prerequisites</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="e.g. Node.js >= 18&#10;Basic knowledge of React..."
-                      disabled={isSaving}
-                      rows={3}
-                      {...field}
-                      className="w-full"
-                    />
-                  </FormControl>
-                  <FormMessage className="text-xs font-semibold text-destructive animate-in fade-in slide-in-from-top-1 duration-200" />
-                </FormItem>
-              )}
-            />
 
             <DialogFooter>
               <Button

@@ -64,8 +64,6 @@ export function AssignedPaperView({
               const isString = typeof task === "string";
               const taskText = isString ? task : task?.task || "";
               const instructions = isString ? "" : task?.instructions || "";
-              const prerequisites = isString ? [] : task?.prerequisites || [];
-
               return (
                 <li key={idx} className="space-y-2.5">
                   <div className="text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap font-semibold">
@@ -77,21 +75,6 @@ export function AssignedPaperView({
                       <p className="text-sm text-foreground/80 whitespace-pre-wrap leading-relaxed">
                         {instructions}
                       </p>
-                    </div>
-                  )}
-                  {prerequisites && prerequisites.length > 0 && (
-                    <div className="pl-3 space-y-1">
-                      <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block">Prerequisites</span>
-                      <div className="flex flex-wrap gap-1.5 pt-0.5">
-                        {prerequisites.map((req, rIdx) => (
-                          <span
-                            key={rIdx}
-                            className="inline-flex items-center px-2 py-0.5 rounded-md bg-primary/10 text-primary text-xs font-semibold"
-                          >
-                            {req}
-                          </span>
-                        ))}
-                      </div>
                     </div>
                   )}
                 </li>

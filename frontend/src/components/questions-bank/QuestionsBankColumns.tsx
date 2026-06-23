@@ -19,6 +19,7 @@ export interface FlatItem {
   itemIndex: number;    // index within the paper's array
   rawData?: any;        // full MCQItem for edit modal
   paperName?: string;   // paper name for optional column
+  skills?: Array<{ id: string; name: string }>;
 }
 
 interface ColumnHandlers {
@@ -66,6 +67,29 @@ export const getQuestionsBankColumns = ({
           <Badge className={cn("px-2.5 py-0.5 rounded-full text-xs font-semibold border", typeStyles[row.original.type])}>
             {typeLabels[row.original.type]}
           </Badge>
+        );
+      },
+    },
+    {
+      accessorKey: "skills",
+      header: () => <div className="font-semibold">Skills</div>,
+      cell: ({ row }) => {
+        const skills = row.original.skills;
+        if (!skills || skills.length === 0) {
+          return <span className="text-muted-foreground text-xs italic">—</span>;
+        }
+        return (
+          <div className="flex flex-wrap gap-1 max-w-[200px]">
+            {skills.map((skill) => (
+              <Badge
+                key={skill.id}
+                variant="secondary"
+                className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-secondary/40 hover:bg-secondary text-secondary-foreground border border-muted-foreground/5 transition-colors whitespace-nowrap"
+              >
+                {skill.name}
+              </Badge>
+            ))}
+          </div>
         );
       },
     },
