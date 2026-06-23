@@ -3,7 +3,7 @@ import uuid
 from typing import Optional, Any
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException, status, File as FastAPIFile, UploadFile, Form, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, status, File as FastAPIFile, UploadFile, Form, Request, Response, Query
 from fastapi.responses import FileResponse, RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -170,7 +170,10 @@ async def create_manual_question_set_paper(
     return db_paper
 
 
-@router.get("", response_model=list[QuestionSetPaperRead])
+from sqlalchemy import func
+from app.v1.schemas.task_papers import QuestionSetPaperListRead
+
+@router.get("", response_model=QuestionSetPaperListRead)
 @cache_response(ttl_seconds=300)
 async def get_question_set_papers(
     request: Request,
@@ -180,10 +183,13 @@ async def get_question_set_papers(
     skill_id: Optional[uuid.UUID] = None,
     paper_type: Optional[str] = None,
     job_id: Optional[uuid.UUID] = None,
+    q: Optional[str] = Query(None, description="Search term for paper name"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
     user: UserRead = Depends(check_permission("candidates:access")),
 ):
-    """List all predefined Question Set Papers, with optional filtering by department, position, skill, paper type, and job."""
+    """List predefined Question Set Papers, with optional pagination, search, and filtering."""
     query = select(QuestionSetPaper)
     if job_id:
         from app.v1.db.models.jobs import Job
@@ -210,9 +216,23 @@ async def get_question_set_papers(
             
     if paper_type:
         query = query.where(QuestionSetPaper.paper_type == paper_type)
+        
+    if q:
+        query = query.where(QuestionSetPaper.name.ilike(f"%{q}%"))
+        
+    # Get total count before pagination
+    count_query = select(func.count()).select_from(query.subquery())
+    total = (await db.execute(count_query)).scalar() or 0
+
+    # Apply pagination and sorting
+    query = query.order_by(QuestionSetPaper.created_at.desc()).offset(skip).limit(limit)
+    
     result = await db.execute(query)
     items = result.scalars().all()
-    return [QuestionSetPaperRead.model_validate(item) for item in items]
+    
+    data = [QuestionSetPaperRead.model_validate(item) for item in items]
+    return QuestionSetPaperListRead(data=data, total=total)
+
 
 
 @router.get("/all-content", response_model=list[list[Any]])
@@ -225,10 +245,13 @@ async def get_all_questions_and_tasks(
     skill_id: Optional[uuid.UUID] = None,
     paper_type: Optional[str] = None,
     job_id: Optional[uuid.UUID] = None,
+    q: Optional[str] = Query(None, description="Search term for question/task text"),
+    skip: int = Query(0, ge=0),
+    limit: Optional[int] = Query(None, ge=1),
     db: AsyncSession = Depends(get_db),
     user: UserRead = Depends(check_permission("candidates:access")),
 ):
-    """Retrieve unique questions, tasks, and MCQs across predefined question set papers, with optional filtering by job, department, position, skill, and paper type."""
+    """Retrieve unique questions, tasks, and MCQs across predefined question set papers, with optional filtering, search, and pagination."""
     query = select(QuestionSetPaper.questions, QuestionSetPaper.project_task, QuestionSetPaper.mcqs)
     if job_id:
         from app.v1.db.models.jobs import Job
@@ -266,11 +289,11 @@ async def get_all_questions_and_tasks(
     
     for questions, tasks, mcqs in items:
         if questions:
-            for q in questions:
-                if isinstance(q, str):
-                    all_questions.add(q)
-                elif isinstance(q, dict):
-                    val = q.get('question') or q.get('content')
+            for question_item in questions:
+                if isinstance(question_item, str):
+                    all_questions.add(question_item)
+                elif isinstance(question_item, dict):
+                    val = question_item.get('question') or question_item.get('content')
                     if val and isinstance(val, str):
                         all_questions.add(val)
         if tasks:
@@ -292,8 +315,26 @@ async def get_all_questions_and_tasks(
                             "question": q_text,
                             "options": m.get("options", [])
                         })
+                        
+    if q:
+        q_lower = q.lower()
+        all_questions = {x for x in all_questions if q_lower in x.lower()}
+        all_tasks = {x for x in all_tasks if q_lower in x.lower()}
+        all_mcqs = [m for m in all_mcqs if q_lower in m.get("question", "").lower()]
+
+    q_list = list(all_questions)
+    t_list = list(all_tasks)
+    
+    if limit is not None:
+        q_list = q_list[skip:skip + limit]
+        t_list = t_list[skip:skip + limit]
+        all_mcqs = all_mcqs[skip:skip + limit]
+    elif skip > 0:
+        q_list = q_list[skip:]
+        t_list = t_list[skip:]
+        all_mcqs = all_mcqs[skip:]
                 
-    return [list(all_questions), list(all_tasks), all_mcqs]
+    return [q_list, t_list, all_mcqs]
 
 
 @router.get("/{paper_id}", response_model=QuestionSetPaperRead)

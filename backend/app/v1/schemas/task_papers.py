@@ -55,6 +55,10 @@ class QuestionSetPaperRead(BaseModel):
     class Config:
         from_attributes = True
 
+class QuestionSetPaperListRead(BaseModel):
+    data: list[QuestionSetPaperRead]
+    total: int
+
 
 class CandidateTestPaperRead(BaseModel):
     id: uuid.UUID
