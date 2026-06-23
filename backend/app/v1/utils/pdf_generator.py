@@ -172,21 +172,17 @@ def generate_candidate_task_pdf_file(
         has_top_content = False
         for t in tasks:
             if isinstance(t, dict):
-                if t.get("instructions") or (t.get("prerequisites") and isinstance(t.get("prerequisites"), list) and len(t.get("prerequisites")) > 0):
+                if t.get("instructions") or False:
                     has_top_content = True
                     break
                     
         if has_top_content:
-            Story.append(Paragraph("<b>Project Instructions & Prerequisites:</b>", styles['Heading2']))
+            Story.append(Paragraph("<b>Project Instructions:</b>", styles['Heading2']))
             for t in tasks:
                 if isinstance(t, dict):
                     instructions = t.get("instructions")
-                    prereqs = t.get("prerequisites")
                     if instructions:
                         Story.append(Paragraph(f"<b>Instructions:</b> {sanitize_for_pdf(instructions)}", normal_style))
-                    if prereqs and isinstance(prereqs, list) and len(prereqs) > 0:
-                        prereq_str = ', '.join(prereqs)
-                        Story.append(Paragraph(f"<b>Prerequisites:</b> {sanitize_for_pdf(prereq_str)}", normal_style))
             Story.append(Spacer(1, 10))
 
     if test_paper.questions:

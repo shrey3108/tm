@@ -228,13 +228,10 @@ async def send_candidate_task_email_via_smtp(
                 if isinstance(task, dict):
                     task_name = task.get("task", task.get("title", task.get("content", "Untitled Task")))
                     instructions = task.get("instructions")
-                    prereqs = task.get("prerequisites")
-                    
-                    text = str(task_name)
                     if instructions:
-                        text += f"\n\n**Instructions:**\n{instructions}"
-                    if prereqs and isinstance(prereqs, list) and len(prereqs) > 0:
-                        text += f"\n\n**Prerequisites:** {', '.join(prereqs)}"
+                        text = f"{task_name}\n\n**Instructions:**\n{instructions}"
+                    else:
+                        text = str(task_name)
                     task_html = markdown_to_html(text)
                 else:
                     task_html = markdown_to_html(str(task))

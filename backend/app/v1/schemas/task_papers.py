@@ -15,7 +15,6 @@ class MCQItem(BaseModel):
 class TaskItem(BaseModel):
     task: str = Field(..., description="The main project task description or title")
     instructions: str = Field(..., description="Detailed instructions for the task")
-    prerequisites: list[str] = Field(default_factory=list, description="Prerequisites or requirements for the task")
 
 
 class QuestionSetPaperCreate(BaseModel):
@@ -35,7 +34,7 @@ class QuestionSetPaperCreate(BaseModel):
         new_tasks = []
         for item in v:
             if isinstance(item, str):
-                new_tasks.append({"task": item, "instructions": "", "prerequisites": []})
+                new_tasks.append({"task": item, "instructions": ""})
             else:
                 new_tasks.append(item)
         return new_tasks
@@ -54,7 +53,7 @@ class TaskAction(BaseModel):
     @classmethod
     def coerce_task(cls, v):
         if isinstance(v, str):
-            return {"task": v, "instructions": "", "prerequisites": []}
+            return {"task": v, "instructions": ""}
         return v
 
 
@@ -80,19 +79,17 @@ class QuestionSetPaperRead(BaseModel):
         if not v:
             return []
         if isinstance(v, str):
-            return [{"task": v, "instructions": "", "prerequisites": []}] if v.strip() else []
+            return [{"task": v, "instructions": ""}] if v.strip() else []
             
         new_tasks = []
         for item in v:
             if isinstance(item, str):
-                new_tasks.append({"task": item, "instructions": "", "prerequisites": []})
+                new_tasks.append({"task": item, "instructions": ""})
             elif isinstance(item, dict):
                 if "task" not in item:
                     item["task"] = item.get("title", item.get("content", "Untitled Task"))
                 if "instructions" not in item:
                     item["instructions"] = ""
-                if "prerequisites" not in item:
-                    item["prerequisites"] = []
                 new_tasks.append(item)
             else:
                 new_tasks.append(item)
@@ -130,19 +127,17 @@ class CandidateTestPaperRead(BaseModel):
         if not v:
             return []
         if isinstance(v, str):
-            return [{"task": v, "instructions": "", "prerequisites": []}] if v.strip() else []
+            return [{"task": v, "instructions": ""}] if v.strip() else []
             
         new_tasks = []
         for item in v:
             if isinstance(item, str):
-                new_tasks.append({"task": item, "instructions": "", "prerequisites": []})
+                new_tasks.append({"task": item, "instructions": ""})
             elif isinstance(item, dict):
                 if "task" not in item:
                     item["task"] = item.get("title", item.get("content", "Untitled Task"))
                 if "instructions" not in item:
                     item["instructions"] = ""
-                if "prerequisites" not in item:
-                    item["prerequisites"] = []
                 new_tasks.append(item)
             else:
                 new_tasks.append(item)
@@ -172,19 +167,17 @@ class CandidateTestPaperHistoryRead(BaseModel):
         if not v:
             return []
         if isinstance(v, str):
-            return [{"task": v, "instructions": "", "prerequisites": []}] if v.strip() else []
+            return [{"task": v, "instructions": ""}] if v.strip() else []
             
         new_tasks = []
         for item in v:
             if isinstance(item, str):
-                new_tasks.append({"task": item, "instructions": "", "prerequisites": []})
+                new_tasks.append({"task": item, "instructions": ""})
             elif isinstance(item, dict):
                 if "task" not in item:
                     item["task"] = item.get("title", item.get("content", "Untitled Task"))
                 if "instructions" not in item:
                     item["instructions"] = ""
-                if "prerequisites" not in item:
-                    item["prerequisites"] = []
                 new_tasks.append(item)
             else:
                 new_tasks.append(item)

@@ -169,7 +169,7 @@ Output Format Example (JSON ONLY):
                 "3. Project Tasks: Extract instructions into 'project_task' as an array of objects. Each object must have:\n"
                 "   - 'task': The main task title or short description.\n"
                 "   - 'instructions': Detailed task instructions (string).\n"
-                "   - 'prerequisites': A list of strings representing prerequisites.\n"
+                ""
                 "4. Skills: Extract all required technical skills into 'skills'.\n"
                 "CRITICAL RULES:\n"
                 "1. You MUST output ONLY valid JSON format.\n"
@@ -196,8 +196,7 @@ Output Format Example (JSON ONLY):
   "project_task": [
     {{
       "task": "Build a REST API",
-      "instructions": "Use FastAPI with user authentication and JWT. Write unit tests.",
-      "prerequisites": ["Python", "FastAPI"]
+      "instructions": "Use FastAPI with user authentication and JWT. Write unit tests."
     }}
   ],
   "skills": ["React", "FastAPI", "Python"]
@@ -246,9 +245,8 @@ Output Format Example (JSON ONLY):
                 "You are an expert technical recruiter and data extractor.\n"
                 "Your task is to analyze a project task/assignment description document and extract:\n"
                 "1. The project task instructions/descriptions verbatim into 'project_task' as an array of objects. Each object must have:\n"
-                "   - 'task': The main task title or short description.\n"
-                "   - 'instructions': Detailed task instructions (string).\n"
-                "   - 'prerequisites': A list of strings representing prerequisites.\n"
+                "   - 'task': A string representing the main project task description or title.\n"
+                "   - 'instructions': A string representing detailed instructions for the task.\n"
                 "2. All relevant technical skills required to complete it.\n"
                 "CRITICAL RULES:\n"
                 "1. You MUST output ONLY valid JSON format.\n"
@@ -272,8 +270,7 @@ Output Format Example (JSON ONLY):
   "project_task": [
     {{
       "task": "Build a REST API",
-      "instructions": "Use FastAPI with user authentication and JWT. Write unit tests.",
-      "prerequisites": ["Python", "FastAPI"]
+      "instructions": "Use FastAPI with user authentication and JWT. Write unit tests."
     }}
   ],
   "skills": ["FastAPI", "Python", "Unit Testing"]
