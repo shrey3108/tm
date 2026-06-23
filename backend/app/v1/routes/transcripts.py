@@ -45,7 +45,8 @@ async def update_transcript(
     transcript.clean_transcript_text = transcript_in.transcript_text
     
     # Update hash to reflect changes
-    salt_text = transcript_in.transcript_text + f"\n\n[Edit Salt: {uuid.uuid4()}]"
+    from app.v1.utils.uuid import UUIDHelper
+    salt_text = transcript_in.transcript_text + f"\n\n[Edit Salt: {UUIDHelper.generate_uuid7()}]"
     transcript.transcript_hash = hashlib.sha256(salt_text.encode('utf-8')).hexdigest()
     
     await db.flush()
@@ -132,7 +133,8 @@ async def upload_transcript_path(
             continue
             
         # Create a unique filename to avoid collisions
-        unique_filename = f"{uuid.uuid4()}_{f.filename}"
+        from app.v1.utils.uuid import UUIDHelper
+        unique_filename = f"{UUIDHelper.generate_uuid7()}_{f.filename}"
         file_path = upload_dir / unique_filename
         
         content = await f.read()

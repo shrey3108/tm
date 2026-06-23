@@ -236,4 +236,4 @@ class CandidateTestPaperBulkEmailSend(BaseModel):
 class TaskPaperPreviewResponse(BaseModel):
     questions: list[str] = Field(default_factory=list, description="List of randomly selected questions with tech stack tags")
     mcqs: list[MCQItem] = Field(default_factory=list, description="List of randomly selected MCQs with tech stack tags")
-    project_task: list[str] = Field(default_factory=list, description="List of randomly selected project tasks with tech stack tags")
+    project_task: list[TaskItem] = Field(default_factory=list, description="List of randomly selected project tasks with tech stack tags")

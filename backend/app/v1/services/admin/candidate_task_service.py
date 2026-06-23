@@ -565,18 +565,11 @@ Output Format Example (JSON ONLY):
         all_questions = []
         all_mcqs = []
         for p in papers:
-            if p.skills:
-                skill_names = ", ".join(s.name for s in p.skills)
-                tag = f"[{skill_names}]"
-            else:
-                tag = "[Unknown]"
-            
             if p.questions:
-                all_questions.extend([f"{tag} {q}" for q in p.questions])
+                all_questions.extend(p.questions)
             if p.mcqs:
                 for m in p.mcqs:
                     new_m = m.copy() if isinstance(m, dict) else getattr(m, "model_dump", lambda: m)()
-                    new_m["question"] = f"{tag} {new_m.get('question', '')}"
                     all_mcqs.append(new_m)
 
         # Ensure we have at least 5 unique questions or fallback to total pool
@@ -593,21 +586,16 @@ Output Format Example (JSON ONLY):
 
         # Select one task randomly
         chosen_paper = random.choice(papers)
-        if chosen_paper.skills:
-            skill_names = ", ".join(s.name for s in chosen_paper.skills)
-            tag = f"[{skill_names}]"
-        else:
-            tag = "[Unknown]"
             
-        assigned_task = [f"{tag} {t}" for t in chosen_paper.project_task] if chosen_paper.project_task else []
+        assigned_task = chosen_paper.project_task if chosen_paper.project_task else []
         assigned_file_path = chosen_paper.task_file_path
         
         assigned_name = f"Randomized Test Paper ({job.title})"
 
-        assigned_questions = random.sample(unique_questions, min(5, len(unique_questions))) if unique_questions else []
+        assigned_questions = random.sample(unique_questions, min(10, len(unique_questions))) if unique_questions else []
         
         if unique_mcqs:
-            selected_mcqs = random.sample(unique_mcqs, min(5, len(unique_mcqs)))
+            selected_mcqs = random.sample(unique_mcqs, min(10, len(unique_mcqs)))
             assigned_mcqs = [m.model_dump() if hasattr(m, "model_dump") else m for m in selected_mcqs]
         else:
             assigned_mcqs = []

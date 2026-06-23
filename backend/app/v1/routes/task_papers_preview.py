@@ -77,18 +77,11 @@ async def preview_random_questions(
     all_mcqs = []
     
     for p in papers:
-        if p.skills:
-            skill_names = ", ".join(s.name for s in p.skills)
-            tag = f"[{skill_names}]"
-        else:
-            tag = "[Unknown]"
-        
         if p.questions:
-            all_questions.extend([f"{tag} {q}" for q in p.questions])
+            all_questions.extend(p.questions)
         if p.mcqs:
             for m in p.mcqs:
                 new_m = m.copy() if isinstance(m, dict) else getattr(m, "model_dump", lambda: m)()
-                new_m["question"] = f"{tag} {new_m.get('question', '')}"
                 all_mcqs.append(new_m)
 
     unique_questions = list(set(all_questions))
@@ -111,20 +104,10 @@ async def preview_random_questions(
 
     # Select one task randomly
     chosen_paper = random.choice(papers)
-    if chosen_paper.skills:
-        skill_names = ", ".join(s.name for s in chosen_paper.skills)
-        tag = f"[{skill_names}]"
-    else:
-        tag = "[Unknown]"
         
     assigned_task = []
     if chosen_paper.project_task:
-        for t in chosen_paper.project_task:
-            if isinstance(t, str):
-                assigned_task.append(f"{tag} {t}")
-            elif isinstance(t, dict):
-                task_name = t.get("task", t.get("title", "Untitled Task"))
-                assigned_task.append(f"{tag} {task_name}")
+        assigned_task = chosen_paper.project_task
     return TaskPaperPreviewResponse(
         questions=assigned_questions,
         mcqs=assigned_mcqs,
