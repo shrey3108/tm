@@ -44,6 +44,9 @@ class QuestionSetPaperCreate(BaseModel):
 class QuestionAction(BaseModel):
     question: str = Field(..., description="The content of the question")
 
+class MCQAction(BaseModel):
+    mcq: dict = Field(..., description="The content of the multiple choice question")
+
 class TaskAction(BaseModel):
     task: TaskItem = Field(..., description="The structured project task content")
 

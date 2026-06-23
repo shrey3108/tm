@@ -14,6 +14,22 @@ from reportlab.lib.styles import getSampleStyleSheet
 from app.v1.core.config import settings
 from app.v1.core.storage import resolve_storage_path, to_storage_relative_path
 
+def sanitize_for_pdf(text: str) -> str:
+    if not isinstance(text, str):
+        return text
+    replacements = {
+        '\u2018': "'", '\u2019': "'",
+        '\u201c': '"', '\u201d': '"',
+        '\u2013': '-', '\u2014': '--',
+        '\u2026': '...', '\u2022': '*',
+        '\xa0': ' ', '\u00ad': '-',
+    }
+    for search, replace in replacements.items():
+        text = text.replace(search, replace)
+    
+    # Strip non-latin1 to avoid reportlab black squares
+    return text.encode('latin-1', 'ignore').decode('latin-1')
+
 def generate_questions_pdf(paper_name: str, questions: list[str]) -> io.BytesIO:
     """
     Generate a PDF containing the generated test questions using reportlab.
@@ -41,7 +57,7 @@ def generate_questions_pdf(paper_name: str, questions: list[str]) -> io.BytesIO:
     Story.append(Spacer(1, 15))
     
     for i, q in enumerate(questions, 1):
-        Story.append(Paragraph(f"<b>{i}.</b> {q}", question_style))
+        Story.append(Paragraph(f"<b>{i}.</b> {sanitize_for_pdf(q)}", question_style))
         
     doc.build(Story)
     buffer.seek(0)
@@ -124,18 +140,18 @@ def generate_candidate_task_pdf_file(
     )
 
     Story = []
-    display_title = job_name if job_name else test_paper.name
+    display_title = sanitize_for_pdf(job_name if job_name else test_paper.name)
     Story.append(Paragraph(f"Test Paper: {display_title}", title_style))
     Story.append(Spacer(1, 20))
     
     def add_question(q_text, prefix):
         match = re.match(r'^\[(.*?)\] (.*)', q_text)
         if match:
-            tag = f"[{match.group(1)}]"
-            text = match.group(2)
+            tag = sanitize_for_pdf(f"[{match.group(1)}]")
+            text = sanitize_for_pdf(match.group(2))
         else:
             tag = ""
-            text = q_text
+            text = sanitize_for_pdf(q_text)
             
         p_text = Paragraph(f"<b>{prefix}</b> {text}", normal_style)
         if tag:
@@ -151,6 +167,28 @@ def generate_candidate_task_pdf_file(
         else:
             Story.append(p_text)
 
+    if test_paper.project_task:
+        tasks = test_paper.project_task if isinstance(test_paper.project_task, list) else [test_paper.project_task]
+        has_top_content = False
+        for t in tasks:
+            if isinstance(t, dict):
+                if t.get("instructions") or (t.get("prerequisites") and isinstance(t.get("prerequisites"), list) and len(t.get("prerequisites")) > 0):
+                    has_top_content = True
+                    break
+                    
+        if has_top_content:
+            Story.append(Paragraph("<b>Project Instructions & Prerequisites:</b>", styles['Heading2']))
+            for t in tasks:
+                if isinstance(t, dict):
+                    instructions = t.get("instructions")
+                    prereqs = t.get("prerequisites")
+                    if instructions:
+                        Story.append(Paragraph(f"<b>Instructions:</b> {sanitize_for_pdf(instructions)}", normal_style))
+                    if prereqs and isinstance(prereqs, list) and len(prereqs) > 0:
+                        prereq_str = ', '.join(prereqs)
+                        Story.append(Paragraph(f"<b>Prerequisites:</b> {sanitize_for_pdf(prereq_str)}", normal_style))
+            Story.append(Spacer(1, 10))
+
     if test_paper.questions:
         Story.append(Paragraph("<b>Questions:</b>", styles['Heading2']))
         questions = test_paper.questions if isinstance(test_paper.questions, list) else [test_paper.questions]
@@ -164,7 +202,7 @@ def generate_candidate_task_pdf_file(
             add_question(q_text, f"{i+1}.")
             options = mcq.get("options") if isinstance(mcq, dict) else getattr(mcq, "options", [])
             for opt in options:
-                Story.append(Paragraph(f"   - {opt}", normal_style))
+                Story.append(Paragraph(f"   - {sanitize_for_pdf(opt)}", normal_style))
             Story.append(Spacer(1, 10))
             
     if test_paper.project_task:
@@ -173,14 +211,7 @@ def generate_candidate_task_pdf_file(
         for t in tasks:
             if isinstance(t, dict):
                 task_name = t.get("task", t.get("title", t.get("content", "Untitled Task")))
-                instructions = t.get("instructions")
-                prereqs = t.get("prerequisites")
-                text = str(task_name)
-                if instructions:
-                    text += f" | Instructions: {instructions}"
-                if prereqs and isinstance(prereqs, list) and len(prereqs) > 0:
-                    text += f" | Prerequisites: {', '.join(prereqs)}"
-                add_question(text, "-")
+                add_question(str(task_name), "-")
             else:
                 add_question(str(t), "-")
             

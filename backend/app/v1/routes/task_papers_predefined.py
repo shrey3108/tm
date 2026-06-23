@@ -16,7 +16,7 @@ from app.v1.db.models.question_set_paper import QuestionSetPaper
 from app.v1.db.models.departments import Department
 from app.v1.db.models.skills import Skill
 from app.v1.db.models.job_positions import JobPosition
-from app.v1.schemas.task_papers import QuestionSetPaperRead, QuestionAction, TaskAction
+from app.v1.schemas.task_papers import QuestionSetPaperRead, QuestionAction, TaskAction, MCQAction
 from app.v1.schemas.user import UserRead
 from app.v1.utils.uuid import UUIDHelper
 from app.v1.core.decorators import cache_response
@@ -514,6 +514,108 @@ async def delete_question_from_paper(
     new_questions = list(paper.questions)
     new_questions.pop(index)
     paper.questions = new_questions
+    
+    await db.commit()
+    await db.refresh(paper)
+    await cache.clear("cache:GET:/api/v1/task-papers*")
+    
+    from app.v1.services.admin.job_tasks import extract_paper_skills_from_text_task
+    extract_paper_skills_from_text_task.delay(str(paper.id))
+    
+    return QuestionSetPaperRead.model_validate(paper)
+
+@router.post("/{paper_id}/mcqs", response_model=QuestionSetPaperRead, status_code=status.HTTP_201_CREATED)
+async def add_mcq_to_paper(
+    paper_id: uuid.UUID,
+    payload: MCQAction,
+    db: AsyncSession = Depends(get_db),
+    user: UserRead = Depends(check_permission("questions:manage")),
+):
+    """Add a new MCQ to a specific Question Set Paper."""
+    paper = await db.get(QuestionSetPaper, paper_id)
+    if not paper:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Question set paper not found.",
+        )
+    
+    mcq_data = payload.mcq
+    if not mcq_data:
+        raise HTTPException(status_code=400, detail="MCQ data is required.")
+
+    # Create a new list to ensure SQLAlchemy detects the change to JSONB
+    new_mcqs = list(paper.mcqs or [])
+    new_mcqs.append(mcq_data)
+    paper.mcqs = new_mcqs
+    
+    await db.commit()
+    await db.refresh(paper)
+    await cache.clear("cache:GET:/api/v1/task-papers*")
+    
+    from app.v1.services.admin.job_tasks import extract_paper_skills_from_text_task
+    extract_paper_skills_from_text_task.delay(str(paper.id))
+    
+    return QuestionSetPaperRead.model_validate(paper)
+
+@router.put("/{paper_id}/mcqs/{index}", response_model=QuestionSetPaperRead)
+async def update_mcq_in_paper(
+    paper_id: uuid.UUID,
+    index: int,
+    payload: MCQAction,
+    db: AsyncSession = Depends(get_db),
+    user: UserRead = Depends(check_permission("questions:manage")),
+):
+    """Update a specific MCQ in a Question Set Paper by its index."""
+    paper = await db.get(QuestionSetPaper, paper_id)
+    if not paper:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Question set paper not found.",
+        )
+    
+    mcq_data = payload.mcq
+    if not mcq_data:
+        raise HTTPException(status_code=400, detail="MCQ data is required.")
+
+    current_mcqs = paper.mcqs or []
+    if index < 0 or index >= len(current_mcqs):
+        raise HTTPException(status_code=400, detail="Invalid MCQ index.")
+
+    new_mcqs = list(current_mcqs)
+    new_mcqs[index] = mcq_data
+    paper.mcqs = new_mcqs
+    
+    await db.commit()
+    await db.refresh(paper)
+    await cache.clear("cache:GET:/api/v1/task-papers*")
+    
+    from app.v1.services.admin.job_tasks import extract_paper_skills_from_text_task
+    extract_paper_skills_from_text_task.delay(str(paper.id))
+    
+    return QuestionSetPaperRead.model_validate(paper)
+
+@router.delete("/{paper_id}/mcqs/{index}", response_model=QuestionSetPaperRead)
+async def delete_mcq_from_paper(
+    paper_id: uuid.UUID,
+    index: int,
+    db: AsyncSession = Depends(get_db),
+    user: UserRead = Depends(check_permission("questions:manage")),
+):
+    """Delete a specific MCQ from a Question Set Paper by its index."""
+    paper = await db.get(QuestionSetPaper, paper_id)
+    if not paper:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Question set paper not found.",
+        )
+    
+    current_mcqs = paper.mcqs or []
+    if index < 0 or index >= len(current_mcqs):
+        raise HTTPException(status_code=400, detail="Invalid MCQ index.")
+
+    new_mcqs = list(current_mcqs)
+    new_mcqs.pop(index)
+    paper.mcqs = new_mcqs
     
     await db.commit()
     await db.refresh(paper)
