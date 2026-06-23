@@ -2,12 +2,14 @@ import client from "@/apis/client";
 import type { JobTask, DeleteJobTaskResponse } from "@/types/job";
 import type {
   QuestionSetPaperRead,
+  QuestionSetPaperListRead,
   QuestionSetPaperCreate,
   CandidateTestPaperRead,
   CandidateTestPaperAssign,
   CandidateTestPaperEmailSend,
   CandidateTestPaperBulkEmailSend,
   JobCandidateSkillsRead,
+  MCQItem,
 } from "@/types/taskPaper";
 
 /**
@@ -160,9 +162,12 @@ export const taskService = {
       skillId?: string;
       paperType?: string;
       jobId?: string;
+      q?: string;
+      skip?: number;
+      limit?: number;
     },
     positionId?: string
-  ): Promise<QuestionSetPaperRead[]> => {
+  ): Promise<QuestionSetPaperListRead> => {
     let params: Record<string, any> = {};
     if (typeof jobIdOrFilters === "object" && jobIdOrFilters !== null) {
       params = {
@@ -171,6 +176,9 @@ export const taskService = {
         skill_id: jobIdOrFilters.skillId || undefined,
         paper_type: jobIdOrFilters.paperType || undefined,
         job_id: jobIdOrFilters.jobId || undefined,
+        q: jobIdOrFilters.q || undefined,
+        skip: jobIdOrFilters.skip !== undefined ? jobIdOrFilters.skip : undefined,
+        limit: jobIdOrFilters.limit !== undefined ? jobIdOrFilters.limit : undefined,
       };
     } else {
       params = {
@@ -178,9 +186,43 @@ export const taskService = {
         position_id: positionId || undefined,
       };
     }
-    const response = await client.get<QuestionSetPaperRead[]>("/task-papers", {
+    const response = await client.get<QuestionSetPaperListRead>("/task-papers", {
       params,
     });
+    return response.data;
+  },
+
+  /**
+   * Retrieves unique questions, tasks, and MCQs across predefined question set papers.
+   */
+  getAllQuestionsAndTasks: async (
+    filters?: {
+      departmentId?: string;
+      positionId?: string;
+      skillId?: string;
+      paperType?: string;
+      jobId?: string;
+      q?: string;
+      skip?: number;
+      limit?: number;
+    }
+  ): Promise<[string[], string[], MCQItem[]]> => {
+    const params = filters
+      ? {
+          department_id: filters.departmentId || undefined,
+          position_id: filters.positionId || undefined,
+          skill_id: filters.skillId || undefined,
+          paper_type: filters.paperType || undefined,
+          job_id: filters.jobId || undefined,
+          q: filters.q || undefined,
+          skip: filters.skip !== undefined ? filters.skip : undefined,
+          limit: filters.limit !== undefined ? filters.limit : undefined,
+        }
+      : {};
+    const response = await client.get<[string[], string[], MCQItem[]]>(
+      "/task-papers/all-content",
+      { params }
+    );
     return response.data;
   },
 

@@ -18,10 +18,12 @@ import { useSkill } from "@/hooks/queries/admin/useSkill";
 
 interface SkillSelectorSectionProps {
   initialSelectedSkills?: SkillRead[];
+  placeholderMessage?: string
 }
 
 export const SkillSelectorSection = ({
   initialSelectedSkills = [],
+  placeholderMessage = "Select the skills that should be linked to this job. Click a skill to toggle selection."
 }: SkillSelectorSectionProps) => {
   const { control, setValue } = useFormContext();
   const [allSkills, setAllSkills] = useState<SkillRead[]>(initialSelectedSkills);
@@ -105,8 +107,7 @@ export const SkillSelectorSection = ({
 
             <h2 className="text-lg font-bold tracking-tight">Required Skills <Required /></h2>
             <p className="text-muted-foreground text-base font-medium">
-              Select the skills that should be linked to this job. Click a skill to
-              toggle selection.
+              {placeholderMessage}
             </p>
           </div>
 
