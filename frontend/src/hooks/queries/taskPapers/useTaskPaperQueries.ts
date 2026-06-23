@@ -14,6 +14,9 @@ export const useQuestionSetPapers = ({
   departmentId,
   skillId,
   paperType,
+  q,
+  skip,
+  limit,
   options,
 }: {
   jobId?: string;
@@ -21,17 +24,80 @@ export const useQuestionSetPapers = ({
   departmentId?: string;
   skillId?: string;
   paperType?: string;
+  q?: string;
+  skip?: number;
+  limit?: number;
   options?: Record<string, any>;
 } = {}) => {
   const res = useQuery({
-    queryKey: [QUERY_KEYS.TASK_PAPERS.LIST, jobId, positionId, departmentId, skillId, paperType],
-    queryFn: () => taskService.getQuestionSetPapers({ jobId, positionId, departmentId, skillId, paperType }),
+    queryKey: [QUERY_KEYS.TASK_PAPERS.LIST, jobId, positionId, departmentId, skillId, paperType, q, skip, limit],
+    queryFn: () =>
+      taskService.getQuestionSetPapers({
+        jobId,
+        positionId,
+        departmentId,
+        skillId,
+        paperType,
+        q,
+        skip,
+        limit,
+      }),
     staleTime: QUERY_CONFIG.TASK_PAPER.staleTime,
     ...options,
   });
 
   return {
-    data: res.data ?? [],
+    data: res.data?.data ?? [],
+    total: res.data?.total ?? 0,
+    loading: res.isLoading,
+    error: res.error,
+    refetch: res.refetch,
+  };
+};
+
+/**
+ * Hook to retrieve unique questions, tasks, and MCQs across predefined question set papers.
+ */
+export const useAllQuestionsAndTasks = ({
+  jobId,
+  positionId,
+  departmentId,
+  skillId,
+  paperType,
+  q,
+  skip,
+  limit,
+  options,
+}: {
+  jobId?: string;
+  positionId?: string;
+  departmentId?: string;
+  skillId?: string;
+  paperType?: string;
+  q?: string;
+  skip?: number;
+  limit?: number;
+  options?: Record<string, any>;
+} = {}) => {
+  const res = useQuery({
+    queryKey: ["all-content", jobId, positionId, departmentId, skillId, paperType, q, skip, limit],
+    queryFn: () =>
+      taskService.getAllQuestionsAndTasks({
+        jobId,
+        positionId,
+        departmentId,
+        skillId,
+        paperType,
+        q,
+        skip,
+        limit,
+      }),
+    staleTime: QUERY_CONFIG.TASK_PAPER.staleTime,
+    ...options,
+  });
+
+  return {
+    data: res.data ?? [[], [], []],
     loading: res.isLoading,
     error: res.error,
     refetch: res.refetch,

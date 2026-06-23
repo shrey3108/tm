@@ -170,14 +170,14 @@ export function QuestionsList({
       </div>
 
       {/* Questions & Tasks Render */}
-      <div className="space-y-3">
+      <div className="space-y-1.5">
         {/* Normal Questions */}
         {paper.questions?.map((q, index) => {
           globalIndex++;
           return (
             <div
               key={`q-${index}`}
-              className="flex items-start justify-between p-3 rounded-xl border border-border/80 bg-card hover:shadow-sm transition-all animate-in fade-in slide-in-from-bottom-1 duration-200"
+              className="flex items-start justify-between p-1.5 rounded-xl border border-border/80 bg-card hover:shadow-sm transition-all animate-in fade-in slide-in-from-bottom-1 duration-200"
             >
               <div className="space-y-1">
                 <span className="text-xs font-semibold text-primary/80 uppercase tracking-wider">Normal Question</span>
@@ -215,7 +215,7 @@ export function QuestionsList({
           return (
             <div
               key={`mcq-${index}`}
-              className="flex items-start justify-between p-3 rounded-xl border border-border/80 bg-card hover:shadow-sm transition-all animate-in fade-in slide-in-from-bottom-1 duration-200"
+              className="flex items-start justify-between p-1.5 rounded-xl border border-border/80 bg-card hover:shadow-sm transition-all animate-in fade-in slide-in-from-bottom-1 duration-200"
             >
               <div className="space-y-2 flex-1">
                 <div>
@@ -273,7 +273,7 @@ export function QuestionsList({
           return (
             <div
               key={`task-${index}`}
-              className="flex items-start justify-between p-3 rounded-xl border border-border/80 bg-card hover:shadow-sm transition-all animate-in fade-in slide-in-from-bottom-1 duration-200"
+              className="flex items-start justify-between p-1.5 rounded-xl border border-border/80 bg-card hover:shadow-sm transition-all animate-in fade-in slide-in-from-bottom-1 duration-200"
             >
               <div className="space-y-1">
                 <span className="text-xs font-semibold text-primary/80 uppercase tracking-wider">Project Task / Instruction</span>
@@ -355,13 +355,13 @@ export function QuestionsList({
               </Badge>
             ))
           ) : (
-            <p className="text-xs text-muted-foreground italic">No skills linked to this paper.</p>
+            <p className="text-xs text-muted-foreground italic">No skills linked to this question bank.</p>
           )}
 
           <PermissionGuard permissions={PERMISSIONS.QUESTIONS_MANAGE} hideWhenDenied>
             <Form {...form}>
-              <div className="rounded-2xl overflow-hidden">
-                <SkillSelectorSection initialSelectedSkills={[]} />
+              <div className="rounded-2xl overflow-hidden w-full">
+                <SkillSelectorSection initialSelectedSkills={[]} placeholderMessage="Assign relevant skills to this question bank" />
               </div>
             </Form>
           </PermissionGuard>

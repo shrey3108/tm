@@ -26,6 +26,11 @@ export interface QuestionSetPaperRead {
   updated_at: string;
 }
 
+export interface QuestionSetPaperListRead {
+  data: QuestionSetPaperRead[];
+  total: number;
+}
+
 export interface QuestionSetPaperCreate {
   department_id: string;
   position_id: string;
@@ -84,4 +89,24 @@ export interface CandidateTestPaperBulkEmailSend {
 export interface JobCandidateSkillsRead {
   job_skills: string[];
   task_skills: string[];
+}
+
+export interface CandidateTestPaperHistoryRead {
+  id: string;
+  candidate_id: string;
+  job_id: string;
+  name: string;
+  questions: string[];
+  mcqs: MCQItem[];
+  project_task: string[];
+  task_file_path: string | null;
+  task_skills: string[] | null;
+  assigned_at: string;
+  user_id: string | null;
+}
+
+export interface TaskPaperPreviewResponse {
+  questions: string[];
+  mcqs: MCQItem[];
+  project_task: string[];
 }

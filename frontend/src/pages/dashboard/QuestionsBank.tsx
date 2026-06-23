@@ -22,7 +22,7 @@ import { QuestionsList } from "@/components/candidate/projectSubmission/Question
 import { extractErrorMessage } from "@/utils/error";
 import { useDepartment } from "@/hooks/queries/admin/useDepartment";
 import { useJobPosition } from "@/hooks/queries/admin/useJobPosition";
-import { useSkill } from "@/hooks/queries/admin/useSkill";
+// import { useSkill } from "@/hooks/queries/admin/useSkill";
 
 import {
   Dialog,
@@ -45,7 +45,7 @@ export default function QuestionsBank() {
   const [deptSearch, setDeptSearch] = useState<string>("");
 
   const [selectedPositionId, setSelectedPositionId] = useState<string>("");
-  const [selectedSkillId, setSelectedSkillId] = useState<string>("");
+  // const [selectedSkillId, setSelectedSkillId] = useState<string>("");
   const [selectedPaperType, setSelectedPaperType] = useState<string>("");
 
   const paperTypeOptions = [
@@ -76,7 +76,7 @@ export default function QuestionsBank() {
   } = useQuestionSetPapers({
     departmentId: selectedDeptId || undefined,
     positionId: selectedPositionId || undefined,
-    skillId: selectedSkillId || undefined,
+    // skillId: selectedSkillId || undefined,
     paperType: selectedPaperType || undefined,
     options: {
       enabled: !!selectedDeptId,
@@ -105,11 +105,11 @@ export default function QuestionsBank() {
   // Fetch positions & skills for filters & upload modal selection
   const { data: positions, loading: loadingPositions } = useJobPosition(0, 100);
 
-  const [skillSearch, setSkillSearch] = useState<string>("");
-  const debouncedSkillSearch = useDebouncedValue(skillSearch);
-  const { data: skills, loading: loadingSkills } = useSkill(0, 100, debouncedSkillSearch);
-  const isSkillSearching = skillSearch !== debouncedSkillSearch;
-  const handleSkillSearch = useCallback((query: string) => setSkillSearch(query), []);
+  // const [skillSearch, setSkillSearch] = useState<string>("");
+  // const debouncedSkillSearch = useDebouncedValue(skillSearch);
+  // const { data: skills, loading: loadingSkills } = useSkill(0, 100, debouncedSkillSearch);
+  // const isSkillSearching = skillSearch !== debouncedSkillSearch;
+  // const handleSkillSearch = useCallback((query: string) => setSkillSearch(query), []);
 
 
   const handleUploadSubmit = async () => {
@@ -332,10 +332,10 @@ export default function QuestionsBank() {
 
       <div className="space-y-2">
         {/* Top Control Bar */}
-        <div className="flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3 rounded-xl border border-border bg-card p-3 shadow-xs">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 flex-1">
+        <div className="flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3 rounded-xl border border-border bg-card p-2 shadow-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1 flex-1">
             {/* Department Selector */}
-            <div className="flex flex-col gap-1.5 w-full">
+            <div className="flex flex-col gap-0.5 w-full">
               <Label className="text-xs font-semibold">Select Department</Label>
               <SearchableSelect
                 value={selectedDeptId}
@@ -354,7 +354,7 @@ export default function QuestionsBank() {
             </div>
 
             {/* Experience / Position Level Selector */}
-            <div className="flex flex-col gap-1.5 w-full">
+            <div className="flex flex-col gap-0.5 w-full">
               <Label className="text-xs font-semibold">Experience / Position Level</Label>
               <SearchableSelect
                 value={selectedPositionId}
@@ -372,7 +372,7 @@ export default function QuestionsBank() {
               />
             </div>
             {/* Skill Selector */}
-            <div className="flex flex-col gap-1.5 w-full">
+            {/* <div className="flex flex-col gap-0.5 w-full">
               <Label className="text-xs font-semibold">Skill Filter</Label>
               <SearchableSelect
                 value={selectedSkillId}
@@ -390,11 +390,11 @@ export default function QuestionsBank() {
                 onSearch={handleSkillSearch}
                 asyncLoading={isSkillSearching}
               />
-            </div>
+            </div> */}
 
 
             {/* Paper Type Selector */}
-            <div className="flex flex-col gap-1.5 w-full">
+            <div className="flex flex-col gap-0.5 w-full">
               <Label className="text-xs font-semibold">Paper Type</Label>
               <SearchableSelect
                 value={selectedPaperType}
@@ -486,7 +486,7 @@ export default function QuestionsBank() {
 
             {/* Save / Discard panel */}
             {isPaperDirty && (
-              <div className="flex items-center justify-end gap-3 p-3 bg-muted/40 rounded-2xl border border-border/80 animate-pulse fade-in slide-in-from-bottom-2 duration-300 max-w-4xl mx-auto">
+              <div className="flex items-center justify-end gap-3 p-3 bg-muted/40 rounded-2xl border border-border/80 fade-in slide-in-from-bottom-2">
                 <span className="text-xs font-semibold text-muted-foreground mr-auto">
                   You have unsaved changes in this template.
                 </span>
