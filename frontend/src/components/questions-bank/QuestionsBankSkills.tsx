@@ -2,7 +2,7 @@ import { useMemo, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Form } from "@/components/ui/form";
-import { SkillSelectorSection } from "@/components/job-form/SkillSelectorSection";
+import { QuestionsBankSkillSelector } from "./QuestionsBankSkillSelector";
 import { Badge } from "@/components/ui/badge";
 import PermissionGuard from "@/components/auth/PermissionGuard";
 import { PERMISSIONS } from "@/lib/permissions";
@@ -45,19 +45,33 @@ export function QuestionsBankSkills({
     },
   });
 
-  useEffect(() => {
-    form.reset({
-      skill_ids: firstPaperSkillIds,
-    });
-  }, [firstPaperSkillIds, form]);
-
-  const watchedSkillIds = form.watch("skill_ids");
+  const watchedSkillIds = form.watch("skill_ids") || [];
   const lastSavedSkillsRef = useRef<string[]>(firstPaperSkillIds);
+  const prevPaperIdRef = useRef<string | null>(null);
 
+  // Sync backend state to form. Only reset when the paper itself changes, or when the local
+  // form state matches the backend state (to mark the form clean/reset validation).
+  // This prevents in-flight mutations/refetches from overwriting newer user selections.
   useEffect(() => {
-    lastSavedSkillsRef.current = firstPaperSkillIds;
-  }, [firstPaperSkillIds]);
+    const isPaperIdChanged = firstPaper?.id !== prevPaperIdRef.current;
+    if (isPaperIdChanged) {
+      prevPaperIdRef.current = firstPaper?.id || null;
+    }
 
+    const currentSkills = watchedSkillIds || [];
+    const formMatchesBackend =
+      currentSkills.length === firstPaperSkillIds.length &&
+      currentSkills.every((id) => firstPaperSkillIds.includes(id));
+
+    if (isPaperIdChanged || formMatchesBackend) {
+      form.reset({
+        skill_ids: firstPaperSkillIds,
+      });
+      lastSavedSkillsRef.current = firstPaperSkillIds;
+    }
+  }, [firstPaper?.id, firstPaperSkillIds, form, watchedSkillIds]);
+
+  // Debounced auto-save effect to update skills when form value changes.
   useEffect(() => {
     if (!firstPaper?.id || !watchedSkillIds) return;
 
@@ -66,23 +80,29 @@ export function QuestionsBankSkills({
       watchedSkillIds.length !== lastSavedSkillsRef.current.length ||
       watchedSkillIds.some((id) => !lastSavedSkillsRef.current.includes(id));
 
-    if (isDifferent) {
-      const saveSkills = async () => {
-        try {
-          await updateSkillsMutation.mutateAsync({
-            paperId: firstPaper.id,
-            skillIds: watchedSkillIds,
-          });
-          lastSavedSkillsRef.current = watchedSkillIds;
-          toast.success("Skills updated successfully.");
-          refetchPapers();
-        } catch (err: unknown) {
-          toast.error(extractErrorMessage(err, "Failed to update skills."));
-        }
-      };
-      saveSkills();
-    }
-  }, [watchedSkillIds, firstPaper?.id, updateSkillsMutation, refetchPapers]);
+    if (!isDifferent) return;
+
+    // Set a debounce timeout to avoid firing multiple parallel requests on rapid clicks
+    const timeoutId = setTimeout(async () => {
+      try {
+        await updateSkillsMutation.mutateAsync({
+          paperId: firstPaper.id,
+          skillIds: watchedSkillIds,
+        });
+        lastSavedSkillsRef.current = watchedSkillIds;
+        toast.success("Skills updated successfully.");
+        refetchPapers();
+      } catch (err: unknown) {
+        toast.error(extractErrorMessage(err, "Failed to update skills."));
+        // Revert form state back to backend state on error
+        form.reset({
+          skill_ids: firstPaperSkillIds,
+        });
+      }
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [watchedSkillIds, firstPaper?.id, firstPaperSkillIds, updateSkillsMutation, refetchPapers, form]);
 
   return (
     <div className="mt-2">
@@ -117,7 +137,7 @@ export function QuestionsBankSkills({
               <PermissionGuard permissions={PERMISSIONS.QUESTIONS_MANAGE} hideWhenDenied>
                 <div className="pt-1 border-t border-border/40 w-full">
                   <Form {...form}>
-                    <SkillSelectorSection
+                    <QuestionsBankSkillSelector
                       initialSelectedSkills={firstPaperSkills}
                       placeholderMessage="Select the skills to link to this question paper template."
                     />

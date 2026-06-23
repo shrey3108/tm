@@ -15,7 +15,7 @@ import {
 import { useCandidateDetailsQuery } from "@/hooks/queries/candidates";
 import type { Job } from "@/types/job";
 import { LoadingSpinner } from "@/components/shared";
-import type { CandidateTestPaperAssign } from "@/types/taskPaper";
+import type { CandidateTestPaperAssign, MCQItem } from "@/types/taskPaper";
 import { AssignedPaperView } from "./sendQuestionPaper/AssignedPaperView";
 // import { PredefinedPaperForm } from "./sendQuestionPaper/PredefinedPaperForm";
 import { RandomizedPaperView } from "./sendQuestionPaper/RandomizedPaperView";
@@ -98,6 +98,9 @@ export function SendQuestionPaperDialog({
   const [selectedPaperId, setSelectedPaperId] = useState<string>("");
   const [customQuestions, setCustomQuestions] = useState<string[]>([]);
   const [customProjectTask, setCustomProjectTask] = useState<string>("");
+  const [customQuestionText, setCustomQuestionText] = useState<string>("");
+  const [customProjectTaskText, setCustomProjectTaskText] = useState<string>("");
+  const [customMcqs, setCustomMcqs] = useState<MCQItem[]>([]);
   const [randomQuestionCount, setRandomQuestionCount] = useState<number>(5);
   const [showCreateForm, setShowCreateForm] = useState<boolean>(false);
 
@@ -155,6 +158,9 @@ export function SendQuestionPaperDialog({
     if (isOpen) {
       setCustomQuestions([]);
       setCustomProjectTask("");
+      setCustomQuestionText("");
+      setCustomProjectTaskText("");
+      setCustomMcqs([]);
       setRandomQuestionCount(5);
       setBulkAssignedPaper(null);
       setAssignedPapersList([]);
@@ -218,12 +224,17 @@ export function SendQuestionPaperDialog({
       //   return;
       // }
       else if (mode === "custom") {
-        if (customQuestions.length === 0) {
-          toast.error("Please select at least 1 question.");
+        // Merge selected questions with textarea questions
+        const textQuestions = customQuestionText.split("\n").map(q => q.trim()).filter(q => q.length > 0);
+        const allQuestions = [...customQuestions, ...textQuestions];
+        const finalTask = customProjectTaskText.trim() || customProjectTask.trim();
+
+        if (allQuestions.length === 0) {
+          toast.error("Please select or type at least 1 question.");
           return;
         }
-        if (!customProjectTask.trim()) {
-          toast.error("Please provide a project task description.");
+        if (!finalTask) {
+          toast.error("Please select or type a project task description.");
           return;
         }
       }
@@ -248,8 +259,12 @@ export function SendQuestionPaperDialog({
           payload.question_count = randomQuestionCount;
         }
         if (mode === "custom") {
-          payload.questions = customQuestions.map((q) => q.trim());
-          payload.project_task = customProjectTask.trim();
+          const textQuestions = customQuestionText.split("\n").map(q => q.trim()).filter(q => q.length > 0);
+          payload.questions = [...customQuestions, ...textQuestions].map((q) => q.trim());
+          payload.project_task = (customProjectTaskText.trim() || customProjectTask.trim());
+          if (customMcqs.length > 0) {
+            payload.mcqs = customMcqs;
+          }
         }
 
         const result = await assignMutation.mutateAsync(payload);
@@ -285,16 +300,23 @@ export function SendQuestionPaperDialog({
       //   payload.paper_id = selectedPaperId;
       // } 
       else if (mode === "custom") {
-        if (customQuestions.length === 0) {
-          toast.error("Please select at least 1 question.");
+        const textQuestions = customQuestionText.split("\n").map(q => q.trim()).filter(q => q.length > 0);
+        const allQuestions = [...customQuestions, ...textQuestions];
+        const finalTask = customProjectTaskText.trim() || customProjectTask.trim();
+
+        if (allQuestions.length === 0) {
+          toast.error("Please select or type at least 1 question.");
           return;
         }
-        if (!customProjectTask.trim()) {
-          toast.error("Please provide a project task description.");
+        if (!finalTask) {
+          toast.error("Please select or type a project task description.");
           return;
         }
-        payload.questions = customQuestions.map((q) => q.trim());
-        payload.project_task = customProjectTask.trim();
+        payload.questions = allQuestions.map((q) => q.trim());
+        payload.project_task = finalTask;
+        if (customMcqs.length > 0) {
+          payload.mcqs = customMcqs;
+        }
       }
       else if (mode === "random") {
         if (!randomQuestionCount || randomQuestionCount < 1) {
@@ -616,6 +638,12 @@ export function SendQuestionPaperDialog({
                         onCustomQuestionsChange={setCustomQuestions}
                         customProjectTask={customProjectTask}
                         onCustomProjectTaskChange={setCustomProjectTask}
+                        customQuestionText={customQuestionText}
+                        onCustomQuestionTextChange={setCustomQuestionText}
+                        customProjectTaskText={customProjectTaskText}
+                        onCustomProjectTaskTextChange={setCustomProjectTaskText}
+                        customMcqs={customMcqs}
+                        onCustomMcqsChange={setCustomMcqs}
                       />
                     )}
                   </>
