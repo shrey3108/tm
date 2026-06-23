@@ -13,7 +13,7 @@ import { useDebouncedValue } from "@/hooks";
 import { useDepartment } from "@/hooks/queries/admin/useDepartment";
 import { useJobPosition } from "@/hooks/queries/admin/useJobPosition";
 import { useCreateQuestionSetPaperMutation } from "@/hooks/mutations/taskPapers/useTaskPaperMutations";
-import type { QuestionSetPaperRead, MCQItem } from "@/types/taskPaper";
+import type { QuestionSetPaperRead, MCQItem, TaskItem } from "@/types/taskPaper";
 import { extractErrorMessage } from "@/utils/error";
 
 export default function QuestionsBankCreate() {
@@ -122,14 +122,14 @@ export default function QuestionsBankCreate() {
     });
   };
 
-  const handleAddTask = (text: string) => {
+  const handleAddTask = (text: TaskItem | string) => {
     setLocalPaper((prev) => ({
       ...prev,
       project_task: [...(prev.project_task || []), text],
     }));
   };
 
-  const handleUpdateTask = (index: number, text: string) => {
+  const handleUpdateTask = (index: number, text: TaskItem | string) => {
     setLocalPaper((prev) => {
       const nextTasks = [...(prev.project_task || [])];
       nextTasks[index] = text;

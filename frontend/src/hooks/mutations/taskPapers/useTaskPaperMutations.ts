@@ -6,6 +6,8 @@ import type {
   CandidateTestPaperEmailSend,
   CandidateTestPaperBulkEmailSend,
   QuestionSetPaperCreate,
+  MCQItem,
+  TaskItem,
 } from "@/types/taskPaper";
 
 /**
@@ -24,7 +26,7 @@ export function useUploadQuestionSetPaperMutation() {
       departmentId: string;
       positionId: string;
       skillIds: string[];
-      paperType: "normal" | "mcq" | "task";
+      paperType: "normal" | "mcq" | "task" | "mixed";
       file: File;
     }) => taskService.uploadQuestionSetPaper({ departmentId, positionId, skillIds, paperType, file }),
     onSuccess: () => {
@@ -250,7 +252,7 @@ export function useAddProjectTaskToPaperMutation() {
       projectTask,
     }: {
       paperId: string;
-      projectTask: string;
+      projectTask: TaskItem | string;
     }) => taskService.addProjectTaskToPaper(paperId, projectTask),
     onSuccess: () => {
       queryClient.invalidateQueries({
@@ -273,7 +275,7 @@ export function useUpdateProjectTaskInPaperMutation() {
     }: {
       paperId: string;
       index: number;
-      projectTask: string;
+      projectTask: TaskItem | string;
     }) => taskService.updateProjectTaskInPaper(paperId, index, projectTask),
     onSuccess: () => {
       queryClient.invalidateQueries({
@@ -303,4 +305,91 @@ export function useDeleteProjectTaskFromPaperMutation() {
     },
   });
 }
+
+/**
+ * Hook to update skills of a predefined question set paper.
+ */
+export function useUpdateQuestionSetPaperSkillsMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      paperId,
+      skillIds,
+    }: {
+      paperId: string;
+      skillIds: string[];
+    }) => taskService.updateQuestionSetPaperSkills(paperId, skillIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.TASK_PAPERS.LIST],
+      });
+    },
+  });
+}
+
+/**
+ * Hook to add a new MCQ to a predefined question set paper.
+ */
+export function useAddMCQToPaperMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      paperId,
+      mcq,
+    }: {
+      paperId: string;
+      mcq: MCQItem;
+    }) => taskService.addMCQToPaper(paperId, mcq),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.TASK_PAPERS.LIST],
+      });
+    },
+  });
+}
+
+/**
+ * Hook to update an MCQ in a predefined question set paper.
+ */
+export function useUpdateMCQInPaperMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      paperId,
+      index,
+      mcq,
+    }: {
+      paperId: string;
+      index: number;
+      mcq: MCQItem;
+    }) => taskService.updateMCQInPaper(paperId, index, mcq),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.TASK_PAPERS.LIST],
+      });
+    },
+  });
+}
+
+/**
+ * Hook to delete an MCQ from a predefined question set paper.
+ */
+export function useDeleteMCQFromPaperMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      paperId,
+      index,
+    }: {
+      paperId: string;
+      index: number;
+    }) => taskService.deleteMCQFromPaper(paperId, index),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.TASK_PAPERS.LIST],
+      });
+    },
+  });
+}
+
 

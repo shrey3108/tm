@@ -249,8 +249,7 @@ export default function JobCandidates() {
         setViewMode={setViewMode}
         showSendQuestionPaper={true}
         onSendQuestionPaperClick={() => setIsSendQuestionPaperDialogOpen(true)}
-        isSendQuestionPaperDisabled={false}
-        emailFilterState={resolvedEmailState}
+        emailFilterState={selectedCandidates.length > 0 ? resolvedEmailState : undefined}
       />
 
       <div className="relative min-h-[400px]">

@@ -62,7 +62,7 @@ export function AssignedPaperView({
           <ul className="pl-3 list-decimal space-y-1">
             {assignedPaper.project_task.map((task, idx) => (
               <li key={idx} className="text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap">
-                {task}
+                {typeof task === "string" ? task : task?.task || ""}
               </li>
             ))}
           </ul>

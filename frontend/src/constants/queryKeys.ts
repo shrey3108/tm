@@ -41,7 +41,8 @@ export const QUERY_KEYS = {
     JOB_VERSION: "jobVersion",
     TASK: "jobTask",
     TASK_DOWNLOAD: "candidateTaskDownload",
-    TITLES_GROUPED: "jobTitlesGrouped"
+    TITLES_GROUPED: "jobTitlesGrouped",
+    TASK_ASSIGNED: "taskAssigned",
   },
   TASK_PAPERS: {
     LIST: "taskPapersList",

@@ -269,7 +269,7 @@ export function SendQuestionPaperDialog({
         source_paper_ids: mode === "random" ? predefinedPapers.map((paper) => paper.id) : []
       };
 
-      if (selectedCandidates) {
+      if (selectedCandidates && selectedCandidates.length > 0) {
         if (!candidateId) {
           toast.error("Candidate ID is required to assign a test paper.");
           return;
@@ -307,7 +307,7 @@ export function SendQuestionPaperDialog({
       toast.info("Assigning test paper...");
       await assignMutation.mutateAsync(payload);
       toast.success(
-        selectedCandidates
+        selectedCandidates && selectedCandidates.length > 0
           ? "Test paper successfully assigned to candidate!"
           : "Default test paper successfully assigned to job!"
       );
@@ -443,7 +443,7 @@ export function SendQuestionPaperDialog({
           {/* Header */}
           <DialogHeader className="p-2.5 pb-1.5 border-b border-muted-foreground/10 shrink-0">
             <DialogTitle className="text-xl font-bold tracking-tight flex items-center gap-2">
-              {selectedCandidates ? (
+              {selectedCandidates && selectedCandidates.length > 0 ? (
                 <>
                   {finalAssignedPaper ?
                     <>

@@ -25,7 +25,7 @@ const ProfilePage = lazy(() => import("@/pages/Profile"));
 const CandidatesStages = lazy(() => import("@/pages/dashboard/CandidatesStages"));
 const TranscriptPage = lazy(() => import("@/pages/dashboard/TranscriptPage"));
 const QuestionsBank = lazy(() => import("@/pages/dashboard/QuestionsBank"));
-const QuestionsBankCreate = lazy(() => import("@/pages/dashboard/QuestionsBankCreate"));
+// const QuestionsBankCreate = lazy(() => import("@/pages/dashboard/QuestionsBankCreate")); // NOTE: Not used - CRUD now handled inpage  on QuestionsBank page
 
 // Admin pages 
 const AdminDashboard = lazy(() => import("@/pages/Admin/AdminDashboard"));
@@ -138,6 +138,7 @@ const AppRoutes = () => {
               </RoleRoute>
             }
           />
+          {/* NOTE: Not used - CRUD now handled inpage  on QuestionsBank page
           <Route
             path="questions-bank/new"
             element={
@@ -146,6 +147,7 @@ const AppRoutes = () => {
               </RoleRoute>
             }
           />
+          */}
           <Route path="profile" element={<ProfilePage />} />
           {/* Admin Routes */}
           <Route

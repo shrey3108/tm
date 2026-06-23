@@ -56,3 +56,23 @@ export const useDownloadJobTask = (jobId: string | null | undefined) => {
 };
 
 
+
+/**
+ * Hook for retrieving the assigned task for a job.
+ * @param jobId - The UUID of the job
+ */
+export const useJobAssignedTask = (jobId: string | null | undefined) => {
+  const res = useQuery({
+    queryKey: [QUERY_KEYS.JOBS.TASK_ASSIGNED, jobId],
+    queryFn: () => taskService.getJobAssignedTask(jobId!),
+    enabled: !!jobId,
+    staleTime: QUERY_CONFIG.JOB_DETAIL.staleTime,
+  });
+
+  return {
+    data: res.data ?? null,
+    loading: res.isLoading,
+    error: res.error,
+    refetch: res.refetch,
+  };
+};

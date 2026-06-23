@@ -10,6 +10,9 @@ import type {
   CandidateTestPaperBulkEmailSend,
   JobCandidateSkillsRead,
   MCQItem,
+  CandidateTestPaperHistoryRead,
+  TaskPaperPreviewResponse,
+  TaskItem,
 } from "@/types/taskPaper";
 
 /**
@@ -118,7 +121,7 @@ export const taskService = {
     departmentId: string;
     positionId: string;
     skillIds: string[];
-    paperType: "normal" | "mcq" | "task";
+    paperType: "normal" | "mcq" | "task" | "mixed";
     file: File;
   }): Promise<QuestionSetPaperRead[]> => {
     const formData = new FormData();
@@ -209,15 +212,15 @@ export const taskService = {
   ): Promise<[string[], string[], MCQItem[]]> => {
     const params = filters
       ? {
-          department_id: filters.departmentId || undefined,
-          position_id: filters.positionId || undefined,
-          skill_id: filters.skillId || undefined,
-          paper_type: filters.paperType || undefined,
-          job_id: filters.jobId || undefined,
-          q: filters.q || undefined,
-          skip: filters.skip !== undefined ? filters.skip : undefined,
-          limit: filters.limit !== undefined ? filters.limit : undefined,
-        }
+        department_id: filters.departmentId || undefined,
+        position_id: filters.positionId || undefined,
+        skill_id: filters.skillId || undefined,
+        paper_type: filters.paperType || undefined,
+        job_id: filters.jobId || undefined,
+        q: filters.q || undefined,
+        skip: filters.skip !== undefined ? filters.skip : undefined,
+        limit: filters.limit !== undefined ? filters.limit : undefined,
+      }
       : {};
     const response = await client.get<[string[], string[], MCQItem[]]>(
       "/task-papers/all-content",
@@ -412,13 +415,54 @@ export const taskService = {
     );
     return response.data;
   },
+  /**
+   * Adds a mcq to a predefined question set paper.
+   */
+  addMCQToPaper: async (
+    paperId: string,
+    mcq: MCQItem
+  ): Promise<QuestionSetPaperRead> => {
+    const response = await client.post<QuestionSetPaperRead>(
+      `/task-papers/${paperId}/mcqs`,
+      { mcq }
+    );
+    return response.data;
+  },
+
+  /**
+   * Updates an existing msq in a predefined question set paper.
+   */
+  updateMCQInPaper: async (
+    paperId: string,
+    index: number,
+    mcq: MCQItem
+  ): Promise<QuestionSetPaperRead> => {
+    const response = await client.put<QuestionSetPaperRead>(
+      `/task-papers/${paperId}/mcqs/${index}`,
+      { mcq }
+    );
+    return response.data;
+  },
+
+  /**
+   * Deletes a mcq from a predefined question set paper.
+   */
+  deleteMCQFromPaper: async (
+    paperId: string,
+    index: number
+  ): Promise<QuestionSetPaperRead> => {
+    const response = await client.delete<QuestionSetPaperRead>(
+      `/task-papers/${paperId}/mcqs/${index}`
+    );
+    return response.data;
+  },
 
   /**
    * Adds a project task to a predefined question set paper.
    */
   addProjectTaskToPaper: async (
     paperId: string,
-    projectTask: string
+    projectTask: TaskItem | string
   ): Promise<QuestionSetPaperRead> => {
     const response = await client.post<QuestionSetPaperRead>(
       `/task-papers/${paperId}/tasks`,
@@ -433,7 +477,7 @@ export const taskService = {
   updateProjectTaskInPaper: async (
     paperId: string,
     index: number,
-    projectTask: string
+    projectTask: TaskItem | string
   ): Promise<QuestionSetPaperRead> => {
     const response = await client.put<QuestionSetPaperRead>(
       `/task-papers/${paperId}/tasks/${index}`,
@@ -451,6 +495,72 @@ export const taskService = {
   ): Promise<QuestionSetPaperRead> => {
     const response = await client.delete<QuestionSetPaperRead>(
       `/task-papers/${paperId}/tasks/${index}`
+    );
+    return response.data;
+  },
+
+  /**
+   * Updates the skills associated with a predefined question set paper.
+   */
+  updateQuestionSetPaperSkills: async (
+    paperId: string,
+    skillIds: string[]
+  ): Promise<QuestionSetPaperRead> => {
+    const response = await client.put<QuestionSetPaperRead>(
+      `/task-papers/${paperId}/skills`,
+      { skill_ids: skillIds }
+    );
+    return response.data;
+  },
+
+  /**
+   * Retrieves the assignment and email log history for a specific candidate.
+   */
+  getCandidateTestPaperHistory: async (
+    candidateId: string
+  ): Promise<CandidateTestPaperHistoryRead[]> => {
+    const response = await client.get<CandidateTestPaperHistoryRead[]>(
+      `/task-papers/assigned/${candidateId}/history`
+    );
+    return response.data;
+  },
+
+  /**
+   * Retrieves the assignment and email log history for all candidates under a specific job.
+   */
+  getJobTestPaperHistory: async (
+    jobId: string
+  ): Promise<CandidateTestPaperHistoryRead[]> => {
+    const response = await client.get<CandidateTestPaperHistoryRead[]>(
+      `/task-papers/assigned/job/${jobId}/history`
+    );
+    return response.data;
+  },
+
+  /**
+   * Generates a random preview of questions, MCQs, and project tasks based on a job's skills
+   * or explicitly provided department, position, and skills.
+   */
+  previewRandomQuestions: async (
+    params: {
+      jobId?: string;
+      departmentId?: string;
+      positionId?: string;
+      skillIds?: string[];
+      count?: number;
+    }
+  ): Promise<TaskPaperPreviewResponse> => {
+    const response = await client.get<TaskPaperPreviewResponse>(
+      "/task-papers/preview-random",
+      {
+        params: {
+          job_id: params.jobId || undefined,
+          department_id: params.departmentId || undefined,
+          position_id: params.positionId || undefined,
+          skill_ids: params.skillIds || undefined,
+          count: params.count || undefined,
+        },
+      }
     );
     return response.data;
   },

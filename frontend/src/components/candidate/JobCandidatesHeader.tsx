@@ -37,7 +37,7 @@ export const JobCandidatesHeader = ({
   setViewMode,
   showSendQuestionPaper = false,
   onSendQuestionPaperClick,
-  isSendQuestionPaperDisabled = true,
+  // isSendQuestionPaperDisabled = true,
   emailFilterState,
 }: JobCandidatesHeaderProps) => {
   const buttonLabel = useMemo(() => {
@@ -48,10 +48,8 @@ export const JobCandidatesHeader = ({
 
   const disabledTooltip = useMemo(() => {
     if (!job?.is_active) return "This action is disabled for inactive jobs";
-    if (!showSendQuestionPaper) return undefined;
-    if (isSendQuestionPaperDisabled) return "Select at least one candidate to proceed";
     return undefined;
-  }, [job?.is_active, showSendQuestionPaper, isSendQuestionPaperDisabled]);
+  }, [job?.is_active]);
 
   return (
     <AppPageHeader

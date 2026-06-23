@@ -161,7 +161,8 @@ export function CustomPaperForm({
               {predefinedPapers.map((paper) => {
                 if (!paper.project_task || paper.project_task.length === 0) return null;
                 return paper.project_task.map((task, taskIdx) => {
-                  const isSelected = customProjectTask === task;
+                  const taskText = typeof task === "string" ? task : task?.task || "";
+                  const isSelected = customProjectTask === taskText;
                   const optionId = `task-${paper.id}-${taskIdx}`;
                   return (
                     <div
@@ -172,10 +173,10 @@ export function CustomPaperForm({
                           ? "bg-primary/5 border-primary shadow-sm"
                           : "bg-card border-border/40 hover:border-muted-foreground/20"
                       )}
-                      onClick={() => onCustomProjectTaskChange(task)}
+                      onClick={() => onCustomProjectTaskChange(taskText)}
                     >
                       <RadioGroupItem
-                        value={task}
+                        value={taskText}
                         id={optionId}
                         className="mt-0.5"
                         onClick={(e) => e.stopPropagation()}
@@ -187,7 +188,7 @@ export function CustomPaperForm({
                       >
                         <span className="text-sm font-bold text-foreground block"> Task #{taskIdx + 1}</span>
                         <span className="text-xs text-foreground/80 leading-relaxed whitespace-pre-wrap">
-                          {task}
+                          {taskText}
                         </span>
                       </label>
                     </div>

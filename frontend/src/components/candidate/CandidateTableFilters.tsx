@@ -1,6 +1,6 @@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Filter, Star, ExternalLink } from "lucide-react";
+import { Filter, Star, ExternalLink, Loader2 } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -17,7 +17,9 @@ import {
   SheetFooter
 } from "@/components/ui/sheet";
 import { CollapsibleFilterSection, CheckboxListFilter } from "@/components/shared/FilterComponents";
-import { useJobTask } from "@/hooks/queries/jobs";
+import { useJobTask, useJobAssignedTask } from "@/hooks/queries/jobs";
+import { useQuestionSetPapers, useDownloadPaperTaskFile } from "@/hooks/queries/taskPapers/useTaskPaperQueries";
+import { toast } from "sonner";
 import type { Job } from "@/types/job";
 
 
@@ -116,6 +118,55 @@ export const CandidateTableFilters = ({
   const [hoverValue, setHoverValue] = useState<number | null>(0);
   const res = useJobTask(job?.id)
   console.log(res);
+
+  // Queries for assigned task paper & predefined templates
+  const { data: assignedPaper } = useJobAssignedTask(job?.id);
+  const { data: predefinedPapers } = useQuestionSetPapers({
+    jobId: job?.id,
+    options: { enabled: !!job?.id }
+  });
+
+  // Find matching predefined paper by comparing the task file path
+  const matchingPredefinedPaper = useMemo(() => {
+    if (!assignedPaper?.task_file_path || !predefinedPapers) return null;
+    return predefinedPapers.find(p => p.task_file_path === assignedPaper.task_file_path);
+  }, [assignedPaper?.task_file_path, predefinedPapers]);
+
+  // Hook to download the task file
+  const { refetch: downloadFile, loading: isDownloading } = useDownloadPaperTaskFile(
+    matchingPredefinedPaper?.id,
+    { enabled: false }
+  );
+
+  const handleViewTaskPaper = async () => {
+    if (!assignedPaper) {
+      toast.error("No default question paper is assigned to this job.");
+      return;
+    }
+    if (!assignedPaper.task_file_path) {
+      toast.error("The assigned question paper does not have an associated task file.");
+      return;
+    }
+    if (!matchingPredefinedPaper) {
+      toast.error("Could not find the predefined template for the assigned question paper.");
+      return;
+    }
+
+    try {
+      toast.info("Downloading task file...");
+      const { data: blob } = await downloadFile();
+      if (blob) {
+        const url = URL.createObjectURL(blob);
+        window.open(url, "_blank");
+      } else {
+        toast.error("Failed to download the task file.");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to download the task file.");
+    }
+  };
+
   // @ts-ignore
   const _filteredActivityOptions = useMemo(() => {
     if (!activitySessionOptions) return [];
@@ -468,8 +519,14 @@ export const CandidateTableFilters = ({
             <Button
               variant="outline"
               className="rounded-xl gap-2 px-3 border border-muted-foreground/20 hover:bg-muted/10 bg-background transition-all cursor-pointer"
+              onClick={handleViewTaskPaper}
+              disabled={isDownloading}
             >
-              <ExternalLink className="h-4 w-4 text-muted-foreground" />
+              {isDownloading ? (
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              ) : (
+                <ExternalLink className="h-4 w-4 text-muted-foreground" />
+              )}
             </Button>
 
           </div> : null}

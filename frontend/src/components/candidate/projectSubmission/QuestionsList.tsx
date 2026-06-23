@@ -8,7 +8,7 @@ import {
   ProjectTaskModal,
   MCQModal,
 } from "@/components/modal";
-import type { QuestionSetPaperRead, MCQItem } from "@/types/taskPaper";
+import type { QuestionSetPaperRead, MCQItem, TaskItem } from "@/types/taskPaper";
 import PermissionGuard from "@/components/auth/PermissionGuard";
 import { PERMISSIONS } from "@/lib/permissions";
 import { CreateSkillModal } from "@/components/modal";
@@ -23,8 +23,8 @@ interface QuestionsListProps {
   onAddMCQ: (mcq: MCQItem) => void;
   onUpdateMCQ: (index: number, mcq: MCQItem) => void;
   onDeleteMCQ: (index: number) => void;
-  onAddTask: (text: string) => void;
-  onUpdateTask: (index: number, text: string) => void;
+  onAddTask: (text: TaskItem | string) => void;
+  onUpdateTask: (index: number, text: TaskItem | string) => void;
   onDeleteTask: (index: number) => void;
   onUpdateSkills: (skills: string[]) => void;
   form: any;
@@ -51,7 +51,7 @@ export function QuestionsList({
 
   // Modal values state
   const [questionText, setQuestionText] = useState("");
-  const [taskText, setTaskText] = useState("");
+  const [taskText, setTaskText] = useState<TaskItem | string>("");
   const [mcqValue, setMCQValue] = useState<MCQItem | null>(null);
 
   // Delete modal state
@@ -92,14 +92,14 @@ export function QuestionsList({
     setActiveModal("task");
   };
 
-  const handleOpenEditTask = (index: number, text: string) => {
+  const handleOpenEditTask = (index: number, text: TaskItem | string) => {
     setModalMode("edit");
     setTaskText(text);
     setSelectedIndex(index);
     setActiveModal("task");
   };
 
-  const handleSaveTask = async (text: string) => {
+  const handleSaveTask = async (text: TaskItem | string) => {
     if (modalMode === "add") {
       onAddTask(text);
     } else if (modalMode === "edit" && selectedIndex !== null) {
@@ -278,7 +278,7 @@ export function QuestionsList({
               <div className="space-y-1">
                 <span className="text-xs font-semibold text-primary/80 uppercase tracking-wider">Project Task / Instruction</span>
                 <p className="text-sm font-medium text-foreground leading-relaxed whitespace-pre-wrap">
-                  {globalIndex}. {t}
+                  {globalIndex}. {typeof t === "string" ? t : (t as any)?.task || (t as any)?.instructions || ""}
                 </p>
               </div>
               <PermissionGuard permissions={PERMISSIONS.QUESTIONS_MANAGE} hideWhenDenied>
@@ -286,7 +286,7 @@ export function QuestionsList({
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => handleOpenEditTask(index, t)}
+                    onClick={() => handleOpenEditTask(index, typeof t === "string" ? t : (t as any)?.task || (t as any)?.instructions || "")}
                     className="h-8 w-8 text-muted-foreground hover:text-primary rounded-lg hover:bg-primary/5 transition-colors"
                   >
                     <Edit2 className="h-3.5 w-3.5" />
@@ -381,7 +381,7 @@ export function QuestionsList({
         show={activeModal === "task"}
         handleClose={() => setActiveModal(null)}
         onSave={handleSaveTask}
-        initialValue={modalMode === "edit" ? taskText : ""}
+        initialValue={modalMode === "edit" ? taskText : null}
         isSaving={false}
       />
 

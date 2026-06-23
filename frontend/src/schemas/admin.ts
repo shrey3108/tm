@@ -436,6 +436,8 @@ export type QuestionFormValues = z.infer<typeof questionSchema>;
  */
 export const projectTaskSchema = z.object({
   project_task: z.string().trim().min(25, "Project task must be at least 25 characters long."),
+  instructions: z.string().trim().min(1, "Instructions are required."),
+  prerequisites: z.string().trim().optional().or(z.literal("")),
 });
 
 /** Type inferred from projectTaskSchema. */

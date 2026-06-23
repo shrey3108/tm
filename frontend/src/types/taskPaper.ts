@@ -10,6 +10,12 @@ export interface MCQItem {
   answer: string;
 }
 
+export interface TaskItem {
+  task: string;
+  instructions: string;
+  prerequisites: string[];
+}
+
 export interface QuestionSetPaperRead {
   id: string;
   name: string;
@@ -19,7 +25,7 @@ export interface QuestionSetPaperRead {
   paper_type: string;
   questions: string[];
   mcqs: MCQItem[];
-  project_task: string[];
+  project_task: (TaskItem | string)[];
   task_file_path: string | null;
   task_skills: string[] | null;
   created_at: string;
@@ -35,10 +41,10 @@ export interface QuestionSetPaperCreate {
   department_id: string;
   position_id: string;
   skill_ids: string[];
-  paper_type: "normal" | "mcq" | "task";
+  paper_type: "normal" | "mcq" | "task" | "mixed";
   questions: string[];
   mcqs?: MCQItem[];
-  project_task: string[];
+  project_task: (TaskItem | string)[];
 }
 
 
@@ -50,7 +56,7 @@ export interface CandidateTestPaperRead {
   name: string;
   questions: string[];
   mcqs: MCQItem[];
-  project_task: string[];
+  project_task: (TaskItem | string)[];
   task_file_path: string | null;
   task_skills: string[] | null;
   email_sent_count?: number;
@@ -98,7 +104,7 @@ export interface CandidateTestPaperHistoryRead {
   name: string;
   questions: string[];
   mcqs: MCQItem[];
-  project_task: string[];
+  project_task: (TaskItem | string)[];
   task_file_path: string | null;
   task_skills: string[] | null;
   assigned_at: string;

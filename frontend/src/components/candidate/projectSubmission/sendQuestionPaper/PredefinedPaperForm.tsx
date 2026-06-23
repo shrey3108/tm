@@ -103,7 +103,7 @@ export function PredefinedPaperForm({
               <ol className="list-decimal pl-5 space-y-1">
                 {selectedPredefinedPaper.project_task.map((task, idx) => (
                   <li key={idx} className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">
-                    {task}
+                    {typeof task === "string" ? task : task?.task || ""}
                   </li>
                 ))}
               </ol>

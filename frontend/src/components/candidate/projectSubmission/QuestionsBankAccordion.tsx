@@ -20,7 +20,7 @@ import {
   useUpdateProjectTaskInPaperMutation,
   useDeleteProjectTaskFromPaperMutation,
 } from "@/hooks/mutations/taskPapers/useTaskPaperMutations";
-import type { QuestionSetPaperRead } from "@/types/taskPaper";
+import type { QuestionSetPaperRead, TaskItem } from "@/types/taskPaper";
 import { extractErrorMessage } from "@/utils/error";
 
 interface QuestionsBankAccordionProps {
@@ -77,7 +77,7 @@ export function QuestionsBankAccordion({
 
   const allProjectTasks = (questionPapers || []).flatMap((paper) =>
     (paper.project_task || []).map((task, idx) => ({
-      text: task,
+      text: typeof task === "string" ? task : task?.task || "",
       index: idx,
       paperId: paper.id,
       paperName: paper.name,
@@ -166,7 +166,7 @@ export function QuestionsBankAccordion({
     setIsProjectTaskModalOpen(true);
   };
 
-  const handleSaveProjectTask = async (text: string) => {
+  const handleSaveProjectTask = async (text: TaskItem | string) => {
     const paperId = selectedProjectTaskPaperId;
     if (!paperId) return;
 
