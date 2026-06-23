@@ -164,6 +164,7 @@ export function useCandidatesStages() {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CANDIDATES.EVALUATION_HISTORY, instanceId] });
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CANDIDATES.TIMELINE, candidate?.id] });
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CANDIDATES.DETAILS, job?.id, candidate?.id] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.TASK_PAPERS.ASSIGNED, candidate?.id] });
       setRefetchTimeline((prev) => prev + 1);
     }
   }, [isPolling, evaluationData, isResponseProcessing, candidate?.id, instanceId, queryClient, job?.id]);

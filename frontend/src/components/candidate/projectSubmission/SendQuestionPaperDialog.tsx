@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from "@/components/ui/button";
 import { FileQuestion, MailIcon, AlertTriangle } from "lucide-react";
 import { useQuestionSetPapers, useCandidateTestPaper } from "@/hooks/queries/taskPapers/useTaskPaperQueries";
+import { useJobAssignedTask } from "@/hooks/queries/jobs/useJobTask";
 import {
   useAssignTestPaperMutation,
   useSendTestPaperEmailMutation,
@@ -67,11 +68,25 @@ export function SendQuestionPaperDialog({
   const bulkProbeCandiateId = isBulkMode && emailFilterState
     ? selectedCandidates?.[0]?.id
     : undefined;
+
   const {
-    data: assignedPaper,
-    loading: loadingAssigned,
-    refetch: refetchAssigned,
-  } = useCandidateTestPaper(isBulkMode ? bulkProbeCandiateId : candidateId);
+    data: candidateAssignedPaper,
+    loading: loadingCandidateAssigned,
+    refetch: refetchCandidateAssigned,
+  } = useCandidateTestPaper(
+    isBulkMode
+      ? bulkProbeCandiateId
+      : (candidateId ? candidateId : undefined)
+  );
+
+  const {
+    data: jobAssignedPaper,
+    loading: loadingJobAssigned,
+    refetch: refetchJobAssigned,
+  } = useJobAssignedTask(
+    !candidateId && !isBulkMode ? job?.id : undefined
+  );
+
   const { data: candidateDetails } = useCandidateDetailsQuery(
     isBulkMode ? undefined : job?.id,
     isBulkMode ? undefined : candidateId
@@ -82,6 +97,29 @@ export function SendQuestionPaperDialog({
     positionId: job?.position_id,
     options: { enabled: isOpen && !!job?.id }
   });
+
+  // Find matching predefined paper by comparing the task file path for job default mode
+  const matchingJobPredefinedPaper = useMemo(() => {
+    if (!jobAssignedPaper?.task_file_path || !predefinedPapers) return null;
+    return predefinedPapers.find(p => p.task_file_path === jobAssignedPaper.task_file_path);
+  }, [jobAssignedPaper?.task_file_path, predefinedPapers]);
+
+  const assignedPaper = useMemo(() => {
+    if (!candidateId && !isBulkMode) {
+      return matchingJobPredefinedPaper;
+    }
+    return candidateAssignedPaper;
+  }, [candidateId, isBulkMode, matchingJobPredefinedPaper, candidateAssignedPaper]);
+
+  const loadingAssigned = (!candidateId && !isBulkMode) ? loadingJobAssigned : loadingCandidateAssigned;
+
+  const refetchAssigned = () => {
+    if (!candidateId && !isBulkMode) {
+      refetchJobAssigned();
+    } else {
+      refetchCandidateAssigned();
+    }
+  };
 
   const currentUser = useAppSelector(selectCurrentUser);
   const hasManagePermission = hasPermissions(currentUser?.permissions, PERMISSIONS.QUESTIONS_MANAGE);
@@ -137,7 +175,7 @@ export function SendQuestionPaperDialog({
     const candidate = selectedCandidates && selectedCandidates.length === 1
       ? selectedCandidates[0]
       : candidateDetails;
-      
+
     if (!candidate) return false;
 
     const isTechnicalRound =
@@ -149,7 +187,7 @@ export function SendQuestionPaperDialog({
       candidate.hr_decision === "pending" ||
       candidate.current_stage?.hr_decision === "pending" ||
       false;
-    
+
     return isTechnicalRound && isPendingStatus;
   }, [isBulkMode, selectedCandidates, candidateDetails]);
 
@@ -284,11 +322,7 @@ export function SendQuestionPaperDialog({
         source_paper_ids: mode === "random" ? predefinedPapers.map((paper) => paper.id) : []
       };
 
-      if (selectedCandidates && selectedCandidates.length > 0) {
-        if (!candidateId) {
-          toast.error("Candidate ID is required to assign a test paper.");
-          return;
-        }
+      if (candidateId) {
         payload.candidate_id = candidateId;
       }
 
@@ -441,7 +475,7 @@ export function SendQuestionPaperDialog({
 
     try {
       toast.info("Removing assignment...");
-      if (assignedPaper && !assignedPaper.candidate_id && job?.id) {
+      if (!candidateId && job?.id) {
         await deleteJobDefaultMutation.mutateAsync(job.id);
         toast.success("Default test paper removed successfully from job.");
       } else {
@@ -456,7 +490,54 @@ export function SendQuestionPaperDialog({
     }
 
   };
-  // console.log(finalAssignedPaper);
+  const resolvedCandidateName = useMemo(() => {
+    if (selectedCandidates && selectedCandidates.length === 1) {
+      return `${selectedCandidates[0]?.first_name || ""} ${selectedCandidates[0]?.last_name || ""}`.trim();
+    }
+    if (candidateDetails) {
+      return `${candidateDetails?.first_name || ""} ${candidateDetails?.last_name || ""}`.trim();
+    }
+    return _candidateName || "Candidate";
+  }, [selectedCandidates, candidateDetails, _candidateName]);
+
+  const titleContent = useMemo(() => {
+    if (isBulkMode) {
+      return {
+        icon: finalAssignedPaper ? <MailIcon className="h-4 w-4 text-primary" /> : <FileQuestion className="h-4 w-4 text-primary" />,
+        text: finalAssignedPaper ? "Send Email to" : "Assign Question Paper to",
+        suffix: `${selectedCandidates.length} Candidates`,
+        hoverCard: null
+      };
+    }
+
+    const hasCandidate = !!candidateId || (selectedCandidates && selectedCandidates.length === 1);
+    if (hasCandidate) {
+      return {
+        icon: finalAssignedPaper ? <MailIcon className="h-4 w-4 text-primary" /> : <FileQuestion className="h-4 w-4 text-primary" />,
+        text: finalAssignedPaper ? "Send Email to" : "Assign Question Paper to",
+        suffix: resolvedCandidateName,
+        hoverCard: finalAssignedPaper ? (
+          <HoverCard>
+            <HoverCardTrigger delay={10} closeDelay={10}>
+              ({finalAssignedPaper?.email_sent_count ?? 0})
+            </HoverCardTrigger>
+            <HoverCardContent className="w-full p-1 py-2 text-xs rounded-lg">
+              <p>{finalAssignedPaper?.email_sent_count ?? 0} times email sent to candidate</p>
+            </HoverCardContent>
+          </HoverCard>
+        ) : null
+      };
+    }
+
+    // Job default mode
+    return {
+      icon: <FileQuestion className="h-4 w-4 text-primary" />,
+      text: finalAssignedPaper ? "View Assigned Paper" : "Set Default Question Paper for All Candidates",
+      suffix: "",
+      hoverCard: null
+    };
+  }, [isBulkMode, finalAssignedPaper, selectedCandidates, candidateId, resolvedCandidateName]);
+
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -465,61 +546,12 @@ export function SendQuestionPaperDialog({
           {/* Header */}
           <DialogHeader className="p-2.5 pb-1.5 border-b border-muted-foreground/10 shrink-0">
             <DialogTitle className="text-xl font-bold tracking-tight flex items-center gap-2">
-              {selectedCandidates && selectedCandidates.length > 0 ? (
-                <>
-                  {finalAssignedPaper ?
-                    <>
-                      <MailIcon className="h-4 w-4 text-primary" />
-                      Send Email to
-                    </>
-                    :
-                    <>
-                      <FileQuestion className="h-4 w-4 text-primary" />
-                      Assign Question Paper to
-                    </>
-                  }
-                  <span className="text-foreground capitalize">
-                    {isBulkMode
-                      ? `${selectedCandidates.length} Candidates`
-                      : `${selectedCandidates[0]?.first_name || ""} ${selectedCandidates[0]?.last_name || ""}`.trim()}
-                  </span>
-                  {!isBulkMode &&
-                    < HoverCard >
-                      <HoverCardTrigger>
-                        ({selectedCandidates[0]?.email_sent_count ?? 0})
-                      </HoverCardTrigger>
-                      <HoverCardContent className="w-full p-1 py-2 text-xs rounded-lg">
-                        <p>{selectedCandidates[0]?.email_sent_count ?? 0} times email send to candidate</p>
-                      </HoverCardContent>
-                    </HoverCard>
-                  }
-                </>
-              ) : (
-                <>
-                  {!finalAssignedPaper ?
-                    <>
-                      <FileQuestion className="h-4 w-4 text-primary" />
-                      <span className="text-foreground">Set Default Question Paper for All Candidates</span>
-                    </>
-                    : <>
-
-                      <MailIcon className="h-4 w-4 text-primary" />
-                      Send Email to<span className="text-foreground capitalize">
-                        {`${candidateDetails?.first_name || ""} ${candidateDetails?.last_name || ""}`.trim()}
-                      </span>
-                      <HoverCard>
-                        <HoverCardTrigger delay={10} closeDelay={10}>
-                          ({finalAssignedPaper?.email_sent_count ?? 0})
-                        </HoverCardTrigger>
-                        <HoverCardContent className="w-full p-1 py-2 text-xs rounded-lg">
-                          <p>{finalAssignedPaper?.email_sent_count ?? 0} times email send to candidate</p>
-                        </HoverCardContent>
-                      </HoverCard>
-
-                    </>}
-
-                </>
+              {titleContent.icon}
+              <span>{titleContent.text}</span>
+              {titleContent.suffix && (
+                <span className="text-foreground capitalize">{titleContent.suffix}</span>
               )}
+              {titleContent.hoverCard}
             </DialogTitle>
             {!finalAssignedPaper && predefinedPapers && predefinedPapers.length > 0 && (
               <div className="flex gap-1">

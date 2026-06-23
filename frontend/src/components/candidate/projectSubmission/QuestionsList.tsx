@@ -12,7 +12,7 @@ import type { QuestionSetPaperRead, MCQItem, TaskItem } from "@/types/taskPaper"
 import PermissionGuard from "@/components/auth/PermissionGuard";
 import { PERMISSIONS } from "@/lib/permissions";
 import { CreateSkillModal } from "@/components/modal";
-import { SkillSelectorSection } from "@/components/job-form/SkillSelectorSection";
+import { QuestionsBankSkillSelector } from "@/components/questions-bank/QuestionsBankSkillSelector";
 import { Form } from "@/components/ui/form";
 
 interface QuestionsListProps {
@@ -361,7 +361,7 @@ export function QuestionsList({
           <PermissionGuard permissions={PERMISSIONS.QUESTIONS_MANAGE} hideWhenDenied>
             <Form {...form}>
               <div className="rounded-2xl overflow-hidden w-full">
-                <SkillSelectorSection initialSelectedSkills={[]} placeholderMessage="Assign relevant skills to this question bank" />
+                <QuestionsBankSkillSelector placeholderMessage="Assign relevant skills to this question bank" />
               </div>
             </Form>
           </PermissionGuard>

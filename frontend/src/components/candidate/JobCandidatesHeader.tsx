@@ -8,6 +8,7 @@ import { PERMISSIONS } from "@/lib/permissions";
 import { Button } from "@/components/ui/button";
 import { BarChart3, Upload, Users } from "lucide-react";
 import { JobStatus } from "@/components/job/JobStatus";
+import { useJobAssignedTask } from "@/hooks/queries/jobs/useJobTask";
 
 interface JobCandidatesHeaderProps {
   job: Job | null;
@@ -40,11 +41,13 @@ export const JobCandidatesHeader = ({
   // isSendQuestionPaperDisabled = true,
   emailFilterState,
 }: JobCandidatesHeaderProps) => {
+  const { data: jobAssignedPaper } = useJobAssignedTask(job?.id);
+
   const buttonLabel = useMemo(() => {
     if (emailFilterState === "sent") return "Re-Send Question Paper";
     if (emailFilterState === "not_sent") return "Send Question Paper";
-    return "Assign Question Paper";
-  }, [emailFilterState]);
+    return jobAssignedPaper ? "View Assign Paper" : "Assign Question";
+  }, [emailFilterState, jobAssignedPaper]);
 
   const disabledTooltip = useMemo(() => {
     if (!job?.is_active) return "This action is disabled for inactive jobs";

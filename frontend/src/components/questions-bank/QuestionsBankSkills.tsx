@@ -58,7 +58,7 @@ export function QuestionsBankSkills({
       prevPaperIdRef.current = firstPaper?.id || null;
     }
 
-    const currentSkills = watchedSkillIds || [];
+    const currentSkills = form.getValues("skill_ids") || [];
     const formMatchesBackend =
       currentSkills.length === firstPaperSkillIds.length &&
       currentSkills.every((id) => firstPaperSkillIds.includes(id));
@@ -69,7 +69,7 @@ export function QuestionsBankSkills({
       });
       lastSavedSkillsRef.current = firstPaperSkillIds;
     }
-  }, [firstPaper?.id, firstPaperSkillIds, form, watchedSkillIds]);
+  }, [firstPaper?.id, firstPaperSkillIds, form]);
 
   // Debounced auto-save effect to update skills when form value changes.
   useEffect(() => {

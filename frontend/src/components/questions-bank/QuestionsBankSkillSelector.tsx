@@ -19,8 +19,10 @@ interface QuestionsBankSkillSelectorProps {
   placeholderMessage?: string;
 }
 
+const EMPTY_ARRAY: SkillRead[] = [];
+
 export function QuestionsBankSkillSelector({
-  initialSelectedSkills = [],
+  initialSelectedSkills = EMPTY_ARRAY,
   placeholderMessage = "Select stacks/skills to link to this question paper template."
 }: QuestionsBankSkillSelectorProps) {
   const { control, setValue } = useFormContext();

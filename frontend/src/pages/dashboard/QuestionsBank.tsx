@@ -28,6 +28,10 @@ import { QuestionsBankFilters } from "@/components/questions-bank/QuestionsBankF
 import { QuestionsBankSkills } from "@/components/questions-bank/QuestionsBankSkills";
 import { QuestionsBankModals } from "@/components/questions-bank/QuestionsBankModals";
 import { getQuestionsBankColumns, type FlatItem } from "@/components/questions-bank/QuestionsBankColumns";
+import { useForm } from "react-hook-form";
+import { Form } from "@/components/ui/form";
+import { QuestionsBankSkillSelector } from "@/components/questions-bank/QuestionsBankSkillSelector";
+import { Required } from "@/components/job-form/Required";
 
 export default function QuestionsBank() {
   const [selectedDeptId, setSelectedDeptId] = useState<string>("");
@@ -36,6 +40,20 @@ export default function QuestionsBank() {
 
   const [selectedPositionId, setSelectedPositionId] = useState<string>("");
   const [selectedContentType, setSelectedContentType] = useState<string>("all");
+
+  // Form state for creating a new question paper template with skills
+  const newPaperForm = useForm({
+    defaultValues: {
+      skill_ids: [] as string[],
+    },
+  });
+
+  const newPaperSkillIds = newPaperForm.watch("skill_ids") || [];
+
+  // Reset new paper skills form when department or position level changes
+  useEffect(() => {
+    newPaperForm.reset({ skill_ids: [] });
+  }, [selectedDeptId, selectedPositionId]);
 
   // Debounce search query for backend API calls
   const debouncedDeptSearch = useDebouncedValue(deptSearch);
@@ -72,6 +90,8 @@ export default function QuestionsBank() {
     }
   });
 
+  const firstPaper = questionPapers[0];
+
   // Mutations for templates/papers
   const uploadMutation = useUploadQuestionSetPaperMutation();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -95,16 +115,25 @@ export default function QuestionsBank() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (!firstPaper && newPaperSkillIds.length === 0) {
+      toast.error("Please select at least one skill for the new question bank.");
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      return;
+    }
+
     setIsUploading(true);
     try {
       await uploadMutation.mutateAsync({
         departmentId: selectedDeptId,
         positionId: selectedPositionId,
-        skillIds: [],
+        skillIds: firstPaper ? [] : newPaperSkillIds,
         paperType: "mixed",
         file: file,
       });
       toast.success(`Successfully uploaded and triggered AI extraction for '${file.name}'!`);
+      newPaperForm.reset({ skill_ids: [] });
       refetchPapers();
     } catch (err: unknown) {
       toast.error(extractErrorMessage(err, `Failed to upload file.`));
@@ -267,15 +296,31 @@ export default function QuestionsBank() {
         if (firstPaper) {
           await addQuestionMutation.mutateAsync({ paperId: firstPaper.id, question: content });
         } else {
+          if (!selectedDeptId) {
+            toast.error("Please select a department first.");
+            setIsSaving(false);
+            return;
+          }
+          if (!selectedPositionId) {
+            toast.error("Please select an experience/position level first.");
+            setIsSaving(false);
+            return;
+          }
+          if (newPaperSkillIds.length === 0) {
+            toast.error("Please select at least one skill for the new question bank.");
+            setIsSaving(false);
+            return;
+          }
           await createPaperMutation.mutateAsync({
             department_id: selectedDeptId,
             position_id: selectedPositionId,
-            skill_ids: [],
+            skill_ids: newPaperSkillIds,
             paper_type: "normal",
             questions: [content],
             project_task: [],
             mcqs: [],
           });
+          newPaperForm.reset({ skill_ids: [] });
         }
         toast.success("Question added successfully.");
       } else if (modalMode === "edit" && selectedItem) {
@@ -304,15 +349,31 @@ export default function QuestionsBank() {
         if (firstPaper) {
           await addProjectTaskMutation.mutateAsync({ paperId: firstPaper.id, projectTask: content });
         } else {
+          if (!selectedDeptId) {
+            toast.error("Please select a department first.");
+            setIsSaving(false);
+            return;
+          }
+          if (!selectedPositionId) {
+            toast.error("Please select an experience/position level first.");
+            setIsSaving(false);
+            return;
+          }
+          if (newPaperSkillIds.length === 0) {
+            toast.error("Please select at least one skill for the new question bank.");
+            setIsSaving(false);
+            return;
+          }
           await createPaperMutation.mutateAsync({
             department_id: selectedDeptId,
             position_id: selectedPositionId,
-            skill_ids: [],
+            skill_ids: newPaperSkillIds,
             paper_type: "task",
             questions: [],
             project_task: [content],
             mcqs: [],
           });
+          newPaperForm.reset({ skill_ids: [] });
         }
         toast.success("Project task added successfully.");
       } else if (modalMode === "edit" && selectedItem) {
@@ -341,15 +402,31 @@ export default function QuestionsBank() {
         if (firstPaper) {
           await addMCQMutation.mutateAsync({ paperId: firstPaper.id, mcq });
         } else {
+          if (!selectedDeptId) {
+            toast.error("Please select a department first.");
+            setIsSaving(false);
+            return;
+          }
+          if (!selectedPositionId) {
+            toast.error("Please select an experience/position level first.");
+            setIsSaving(false);
+            return;
+          }
+          if (newPaperSkillIds.length === 0) {
+            toast.error("Please select at least one skill for the new question bank.");
+            setIsSaving(false);
+            return;
+          }
           await createPaperMutation.mutateAsync({
             department_id: selectedDeptId,
             position_id: selectedPositionId,
-            skill_ids: [],
+            skill_ids: newPaperSkillIds,
             paper_type: "mcq",
             questions: [],
             project_task: [],
             mcqs: [mcq],
           });
+          newPaperForm.reset({ skill_ids: [] });
         }
         toast.success("MCQ added successfully.");
       } else if (modalMode === "edit" && selectedItem) {
@@ -390,11 +467,9 @@ export default function QuestionsBank() {
     [handleEditClick, handleDeleteClick]
   );
 
-  const firstPaper = questionPapers[0];
-
   return (
     <AppPageShell width="wide" className="animate-in fade-in duration-500 bg-background min-h-screen">
-      <AppPageHeader title="Questions Bank" />
+      <AppPageHeader title="Question Bank" />
 
       <div className="space-y-2">
         {/* Top Control Bar */}
@@ -445,12 +520,26 @@ export default function QuestionsBank() {
               entityName="Items"
             />
 
-            {/* Reactive Skills Accordion */}
-            {firstPaper && (
+            {/* Reactive Skills Accordion or Selector */}
+            {firstPaper ? (
               <QuestionsBankSkills
                 firstPaper={firstPaper}
                 refetchPapers={refetchPapers}
               />
+            ) : (
+              <div className="border border-border bg-card rounded-xl p-4 mt-2 space-y-4">
+                <div className="space-y-1">
+                  <h3 className="text-sm font-bold tracking-tight text-foreground">Skills for New Question Bank <Required /></h3>
+                  <p className="text-xs text-muted-foreground font-medium">
+                    Select the skills to link to the new question bank template.
+                  </p>
+                </div>
+                <Form {...newPaperForm}>
+                  <QuestionsBankSkillSelector
+                    placeholderMessage="Assign relevant skills to the new question bank."
+                  />
+                </Form>
+              </div>
             )}
           </div>
         )}

@@ -11,14 +11,6 @@ export function useCreateJobMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: Record<string, any>) => jobService.createJob(data),
-    onMutate: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.JOBS.LIST] });
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.JOBS.ADMIN_LIST] });
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.JOBS.LIST] });
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.JOBS.ADMIN_LIST] });
-    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.JOBS.LIST] });
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.JOBS.ADMIN_LIST] });
@@ -40,12 +32,9 @@ export function useUpdateJobMutation() {
       await queryClient.cancelQueries({ queryKey: [QUERY_KEYS.JOBS.ADMIN_LIST] });
       await queryClient.cancelQueries({ queryKey: [QUERY_KEYS.JOBS.DETAIL, jobId] });
 
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.JOBS.LIST] });
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.JOBS.ADMIN_LIST] });
-
       // Snapshot the previous values
-      const previousJobs = queryClient.getQueryData([QUERY_KEYS.JOBS.LIST]);
-      const previousAdminJobs = queryClient.getQueryData([QUERY_KEYS.JOBS.ADMIN_LIST]);
+      const previousJobsQueries = queryClient.getQueriesData({ queryKey: [QUERY_KEYS.JOBS.LIST] });
+      const previousAdminJobsQueries = queryClient.getQueriesData({ queryKey: [QUERY_KEYS.JOBS.ADMIN_LIST] });
       const previousJobDetail = queryClient.getQueryData([QUERY_KEYS.JOBS.DETAIL, jobId]);
 
       // Optimistically update the detail query if it exists
@@ -99,16 +88,20 @@ export function useUpdateJobMutation() {
         }
       );
 
-      return { previousJobs, previousAdminJobs, previousJobDetail };
+      return { previousJobsQueries, previousAdminJobsQueries, previousJobDetail };
     },
     onError: (_err, { jobId }, context) => {
       // Rollback on error
       if (context) {
-        if (context.previousJobs !== undefined) {
-          queryClient.setQueriesData({ queryKey: [QUERY_KEYS.JOBS.LIST] }, context.previousJobs);
+        if (context.previousJobsQueries) {
+          context.previousJobsQueries.forEach(([queryKey, queryData]) => {
+            queryClient.setQueryData(queryKey, queryData);
+          });
         }
-        if (context.previousAdminJobs !== undefined) {
-          queryClient.setQueriesData({ queryKey: [QUERY_KEYS.JOBS.ADMIN_LIST] }, context.previousAdminJobs);
+        if (context.previousAdminJobsQueries) {
+          context.previousAdminJobsQueries.forEach(([queryKey, queryData]) => {
+            queryClient.setQueryData(queryKey, queryData);
+          });
         }
         if (context.previousJobDetail !== undefined) {
           queryClient.setQueryData([QUERY_KEYS.JOBS.DETAIL, jobId], context.previousJobDetail);
