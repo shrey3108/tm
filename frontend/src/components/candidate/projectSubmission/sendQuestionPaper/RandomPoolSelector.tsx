@@ -97,7 +97,7 @@ export function RandomPoolSelector({
   return (
     <div className="space-y-4 animate-in fade-in duration-300">
       <Accordion
-        type="multiple"
+
         value={openSections}
         onValueChange={setOpenSections}
         className="w-full border rounded-2xl border-border/40 bg-card/25"
@@ -276,7 +276,7 @@ export function RandomPoolSelector({
                             <span
                               key={optIdx}
                               className={cn(
-                                "text-[9px] px-1 py-0.5 rounded border scale-95 origin-left",
+                                "text-sm px-1 py-0.5 rounded border scale-95 origin-left",
                                 opt === m.item.answer
                                   ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/30 font-semibold"
                                   : "bg-muted/30 text-muted-foreground border-border/30"

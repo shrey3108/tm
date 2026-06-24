@@ -309,7 +309,7 @@ export function CustomPaperForm({
                       <span
                         key={optIdx}
                         className={cn(
-                          "text-[10px] px-1.5 py-0.5 rounded-md border",
+                          "text-sm px-1.5 py-0.5 rounded-md border",
                           opt === mcq.answer
                             ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/30 font-semibold"
                             : "bg-muted/30 text-muted-foreground border-border/30"

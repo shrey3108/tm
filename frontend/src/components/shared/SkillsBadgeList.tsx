@@ -41,13 +41,12 @@ const SkillsBadgeList = ({
 
   return (
     <TooltipProvider delay={200}>
-      <div className={cn("flex flex-wrap gap-1.5 items-center", className)}>
+      <div className={cn("flex flex-wrap gap-1.5 items-start", className)}>
         {visibleSkills.map((skill, index) => (
           <Badge
             key={"id" in skill ? skill.id : `${skill.name}-${index}`}
             variant="secondary"
-            className="text-sm font-normal h-5 px-1.5 rounded-md border-muted-foreground/20"
-            title={skill.description || undefined}
+            className="text-sm font-normal px-1.5 py-0.5 rounded-md border-muted-foreground/20 overflow-visible whitespace-normal [word-break:break-word] leading-snug h-auto"
           >
             {skill.name}
           </Badge>

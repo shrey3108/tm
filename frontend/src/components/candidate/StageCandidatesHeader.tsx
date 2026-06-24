@@ -7,7 +7,12 @@ import { ProjectSubmissionDialog } from "./projectSubmission/ProjectSubmissionDi
 import { SendQuestionPaperDialog } from "./projectSubmission/SendQuestionPaperDialog";
 import { CandidateTestPaperHistoryDialog } from "./projectSubmission/CandidateTestPaperHistoryDialog";
 import { useCandidateTestPaper, useDownloadCandidateAssignedTaskFile, useCandidateTestPaperHistory } from "@/hooks/queries/taskPapers/useTaskPaperQueries";
-import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
+
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card"
 import { History } from "lucide-react";
 interface StageCandidatesHeaderProps {
   /** Associated job for the candidate stage view */
@@ -106,14 +111,14 @@ export const StageCandidatesHeader = ({
                     <>
 
                       Send Email
-                      <Tooltip>
-                        <TooltipTrigger>
+                      <HoverCard>
+                        <HoverCardTrigger delay={100} closeDelay={200}>
                           ({assignedPaper?.email_sent_count ?? 0})
-                        </TooltipTrigger>
-                        <TooltipContent>
+                        </HoverCardTrigger>
+                        <HoverCardContent className="w-full p-1 py-2 text-xs rounded-lg">
                           <p>{assignedPaper?.email_sent_count ?? 0} times email send to candidate</p>
-                        </TooltipContent>
-                      </Tooltip>
+                        </HoverCardContent>
+                      </HoverCard>
                     </>
                     : "Assign Question Paper"}
                 </Button>
@@ -125,8 +130,16 @@ export const StageCandidatesHeader = ({
                   >
                     <History className="w-3.5 h-3.5" />
                     Paper History
-                    <span className="inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold rounded-full bg-primary/15 text-primary">
-                      {paperHistory.length}
+                    <span className="inline-flex items-center justify-center w-4 h-4 text-xs">
+                      <HoverCard>
+                        <HoverCardTrigger delay={100} closeDelay={200}>
+                          ({paperHistory.length})
+                        </HoverCardTrigger>
+                        <HoverCardContent className="w-full p-1 py-2 text-xs rounded-lg">
+                          <p>{paperHistory.length} times paper assign to candidate</p>
+                        </HoverCardContent>
+                      </HoverCard>
+
                     </span>
                   </Button>
                 )}
