@@ -103,7 +103,7 @@ export function ModeTabBar({
                 isDisabled && "opacity-40 cursor-not-allowed hover:bg-background hover:text-muted-foreground scale-100 border-border/20"
               )}
             >
-              <Icon className={cn("h-4 w-4 shrink-0", isActive ? "animate-pulse" : "")} />
+              <Icon className={cn("h-4 w-4 shrink-0")} />
               <span>{tab.label}</span>
               {isDisabled && <Lock className="h-3 w-3 shrink-0 opacity-60 ml-0.5" />}
             </button>

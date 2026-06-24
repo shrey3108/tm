@@ -32,9 +32,8 @@ export function ManualPaperCreateForm({
   const form = useForm<ManualQuestionPaperFormValues>({
     resolver: zodResolver(manualQuestionPaperSchema),
     defaultValues: {
-      // name: "",
       questions: [{ value: "" }],
-      project_tasks: [{ value: "" }],
+      project_tasks: [{ value: "", instructions: "" }],
     },
   });
 
@@ -58,7 +57,9 @@ export function ManualPaperCreateForm({
 
     try {
       const filteredProjectTasks = values.project_tasks
-        ? values.project_tasks.map((t) => t.value.trim()).filter(Boolean)
+        ? values.project_tasks
+          .filter((t) => t.value.trim() && t.instructions.trim())
+          .map((t) => `Task:\n${t.value.trim()}\n\nInstructions:\n${t.instructions.trim()}`)
         : [];
 
       if (!job?.department_id || !job?.skills || job.skills.length === 0) {
@@ -102,26 +103,6 @@ export function ManualPaperCreateForm({
             Create Question bank by entering questions & tasks directly
           </p>
         </div>
-
-        {/* Name Input */}
-        {/*<FormField
-          control={control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="text-sm font-semibold text-foreground">
-                Paper Template Name <Required />
-              </FormLabel>
-              <FormControl>
-                <Input
-                  placeholder="e.g. Technical Interview"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />*/}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {/* Questions Section */}
@@ -196,7 +177,7 @@ export function ManualPaperCreateForm({
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => appendProjectTask({ value: "" })}
+                onClick={() => appendProjectTask({ value: "", instructions: "" })}
                 className="h-8 rounded-lg text-xs font-semibold hover:bg-primary/5 hover:text-primary transition-all border-dashed"
               >
                 <Plus className="h-3 w-3 mr-1" /> Add Task
@@ -206,17 +187,52 @@ export function ManualPaperCreateForm({
             <ul className="list-decimal pl-5 space-y-2 overflow-y-auto pr-1 w-full">
               {projectTaskFields.map((field, idx) => (
                 <li key={field.id} className="group w-full my-0.5">
-                  <div className="flex items-center justify-between gap-2 w-full">
+                  <div className="flex flex-col gap-2 w-full bg-muted/5 p-2 rounded-xl border border-border/40 relative">
+                    <div className="flex items-start justify-between gap-2 w-full">
+                      <FormField
+                        control={control}
+                        name={`project_tasks.${idx}.value`}
+                        render={({ field }) => (
+                          <FormItem className="flex-1 space-y-1 w-full">
+                            <FormControl className="w-full">
+                              <Textarea
+                                placeholder={`Task description ${idx + 1}`}
+                                className="min-h-[60px] resize-y"
+                                rows={2}
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          if (projectTaskFields.length === 1) {
+                            form.setValue("project_tasks", [{ value: "", instructions: "" }]);
+                          } else {
+                            removeProjectTask(idx);
+                          }
+                        }}
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/5 rounded-lg shrink-0 mt-0.5 transition-colors absolute -right-2 -top-2 bg-background border shadow-sm"
+                        title="Remove Task"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                     <FormField
                       control={control}
-                      name={`project_tasks.${idx}.value`}
+                      name={`project_tasks.${idx}.instructions`}
                       render={({ field }) => (
-                        <FormItem className="flex-1 space-y-1 w-full">
+                        <FormItem className="flex-1 space-y-1 w-full mt-1">
                           <FormControl className="w-full">
                             <Textarea
-                              placeholder={`Task description ${idx + 1}`}
+                              placeholder={`Instructions ${idx + 1}`}
                               className="min-h-[60px] resize-y"
-                              rows={3}
+                              rows={2}
                               {...field}
                             />
                           </FormControl>
@@ -224,22 +240,6 @@ export function ManualPaperCreateForm({
                         </FormItem>
                       )}
                     />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => {
-                        if (projectTaskFields.length === 1) {
-                          form.setValue("project_tasks", [{ value: "" }]);
-                        } else {
-                          removeProjectTask(idx);
-                        }
-                      }}
-                      className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/5 rounded-lg shrink-0 mt-1.5 transition-colors"
-                      title="Remove Task"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
                   </div>
                 </li>
               ))}

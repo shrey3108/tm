@@ -50,6 +50,7 @@ export function CustomPaperForm({
 
   // Task inline input state
   const [taskInput, setTaskInput] = useState("");
+  const [taskInstructionInput, setTaskInstructionInput] = useState("");
 
   const resetMcqForm = () => {
     setMcqQuestion("");
@@ -117,9 +118,11 @@ export function CustomPaperForm({
   };
 
   const handleAddTask = () => {
-    if (!taskInput.trim()) return;
-    onCustomProjectTasksChange([...customProjectTasks, taskInput.trim()]);
+    if (!taskInput.trim() || !taskInstructionInput.trim()) return;
+    const combinedTask = `Task:\n${taskInput.trim()}\n\nInstructions:\n${taskInstructionInput.trim()}`;
+    onCustomProjectTasksChange([...customProjectTasks, combinedTask]);
     setTaskInput("");
+    setTaskInstructionInput("");
   };
 
   const handleDeleteTask = (index: number) => {
@@ -251,20 +254,32 @@ export function CustomPaperForm({
           </div>
         )}
 
-        <div className="space-y-2">
-          <Textarea
-            value={taskInput}
-            onChange={(e) => setTaskInput(e.target.value)}
-            placeholder="Type your extra project task description here..."
-            className="min-h-[80px] resize-y text-sm rounded-xl border-muted-foreground/20 bg-muted/5 focus:border-primary/50"
-          />
+        <div className="space-y-3">
+          <div>
+            <Label className="text-xs font-semibold mb-1 block">Project Task</Label>
+            <Textarea
+              value={taskInput}
+              onChange={(e) => setTaskInput(e.target.value)}
+              placeholder="Type your extra project task description here..."
+              className="min-h-[80px] resize-y text-sm rounded-xl border-muted-foreground/20 bg-muted/5 focus:border-primary/50"
+            />
+          </div>
+          <div>
+            <Label className="text-xs font-semibold mb-1 block">Instructions</Label>
+            <Textarea
+              value={taskInstructionInput}
+              onChange={(e) => setTaskInstructionInput(e.target.value)}
+              placeholder="Type instructions for the project task here..."
+              className="min-h-[80px] resize-y text-sm rounded-xl border-muted-foreground/20 bg-muted/5 focus:border-primary/50"
+            />
+          </div>
           <Button
             type="button"
             variant="outline"
             size="sm"
             className="w-full rounded-xl border-dashed border-muted-foreground/30 text-muted-foreground hover:text-primary hover:border-primary/40 transition-all font-semibold"
             onClick={handleAddTask}
-            disabled={!taskInput.trim()}
+            disabled={!taskInput.trim() || !taskInstructionInput.trim()}
           >
             <Plus className="h-3.5 w-3.5 mr-1.5" />
             Add Project Task

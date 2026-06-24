@@ -300,12 +300,13 @@ export default function QuestionsBankCreate() {
 
       if (!result.success) {
         const newErrors: Record<string, string> = {};
-        result.error.issues.forEach((issue) => {
-          const path = issue.path[0] as string;
-          newErrors[path] = issue.message;
-        });
+        for (const issue of result.error.issues) {
+          const path = issue.path.join(".");
+          if (!newErrors[path]) {
+            newErrors[path] = issue.message;
+          }
+        }
         setErrors(newErrors);
-        toast.error(result.error.issues[0].message);
         return;
       }
       questionTextPayload = questionText.trim();
@@ -329,7 +330,6 @@ export default function QuestionsBankCreate() {
           newErrors[path] = issue.message;
         });
         setErrors(newErrors);
-        toast.error(result.error.issues[0].message);
         return;
       }
 
@@ -361,12 +361,13 @@ export default function QuestionsBankCreate() {
 
       if (!result.success) {
         const newErrors: Record<string, string> = {};
-        result.error.issues.forEach((issue) => {
-          const path = issue.path[0] as string;
-          newErrors[path] = issue.message;
-        });
+        for (const issue of result.error.issues) {
+          const path = issue.path.join(".");
+          if (!newErrors[path]) {
+            newErrors[path] = issue.message;
+          }
+        }
         setErrors(newErrors);
-        toast.error(result.error.issues[0].message);
         return;
       }
 
