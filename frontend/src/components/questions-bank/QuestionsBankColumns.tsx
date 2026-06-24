@@ -10,6 +10,7 @@ import {
   HoverCardTrigger,
   HoverCardContent,
 } from "@/components/ui/hover-card";
+import { SkillsBadgeList } from "../shared";
 
 export interface FlatItem {
   id: string;
@@ -33,8 +34,8 @@ export const getQuestionsBankColumns = ({
 }: ColumnHandlers): ColumnDef<FlatItem>[] => [
     {
       id: "index",
-      header: () => <div className="pl-4 font-semibold w-12 text-left">Number</div>,
-      cell: ({ row }) => <div className="pl-4 text-left font-medium">{row.index + 1}</div>,
+      header: () => <div className="flex items-center justify-center w-12 font-semibold">Number</div>,
+      cell: ({ row }) => <div className="flex items-center justify-center font-medium">{row.index + 1}</div>,
     },
     {
       accessorKey: "content",
@@ -44,7 +45,7 @@ export const getQuestionsBankColumns = ({
         </div>
       ),
       cell: ({ row }) => (
-        <div className="min-w-[400px] whitespace-pre-wrap py-2 text-foreground/90 font-medium">
+        <div className="min-w-[400px] py-2 font-medium text-sm">
           {row.original.content}
         </div>
       ),
@@ -58,37 +59,32 @@ export const getQuestionsBankColumns = ({
           project_task: "Project Task",
           mcq: "MCQ",
         };
-        const typeStyles: Record<FlatItem["type"], string> = {
-          question: "bg-blue-500/10 text-blue-500 border-blue-500/20 hover:bg-blue-500/20",
-          project_task: "bg-purple-500/10 text-purple-500 border-purple-500/20 hover:bg-purple-500/20",
-          mcq: "bg-green-500/10 text-green-500 border-green-500/20 hover:bg-green-500/20",
-        };
         return (
-          <Badge className={cn("px-2.5 py-0.5 rounded-full text-xs font-semibold border", typeStyles[row.original.type])}>
+          <span className={cn("px-2.5 py-0.5 rounded-full text-sm font-medium")}>
             {typeLabels[row.original.type]}
-          </Badge>
+          </span>
         );
       },
     },
     {
       accessorKey: "skills",
-      header: () => <div className="font-semibold">Skills</div>,
+      header: () => (
+        <div className="flex items-center gap-2 min-w-[160px]">
+          <span className="font-semibold">Skills</span>
+        </div>
+      ),
       cell: ({ row }) => {
         const skills = row.original.skills;
         if (!skills || skills.length === 0) {
-          return <span className="text-muted-foreground text-xs italic">—</span>;
+          return (
+            <div className="min-w-[160px] max-w-[220px]">
+              <span className="text-muted-foreground text-xs italic">N/A</span>
+            </div>
+          );
         }
         return (
-          <div className="flex flex-wrap gap-1 max-w-[200px]">
-            {skills.map((skill) => (
-              <Badge
-                key={skill.id}
-                variant="secondary"
-                className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-secondary/40 hover:bg-secondary text-secondary-foreground border border-muted-foreground/5 transition-colors whitespace-nowrap"
-              >
-                {skill.name}
-              </Badge>
-            ))}
+          <div className="min-w-[160px] max-w-[220px]">
+            <SkillsBadgeList skills={row.original.skills} maxVisible={2} />
           </div>
         );
       },
