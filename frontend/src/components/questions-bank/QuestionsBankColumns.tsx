@@ -1,7 +1,6 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { Edit2, Trash2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import PermissionGuard from "@/components/auth/PermissionGuard";
 import { PERMISSIONS } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
@@ -45,7 +44,7 @@ export const getQuestionsBankColumns = ({
         </div>
       ),
       cell: ({ row }) => (
-        <div className="min-w-[400px] py-2 font-medium text-sm">
+        <div className="min-w-[400px] py-2 font-medium text-sm whitespace-pre-wrap wrap-break-word">
           {row.original.content}
         </div>
       ),

@@ -60,6 +60,8 @@ export default function QuestionsBankCreate() {
   // Get initial values from routing state if redirecting from main page
   const {
     paperId: initialPaperId,
+    itemIndex: initialItemIndex,
+    itemType: initialItemType,
     departmentId: initialDeptId,
     positionId: initialPositionId,
   } = (location.state as any) || {};
@@ -124,7 +126,12 @@ export default function QuestionsBankCreate() {
   const selectedSkillIds = form.watch("skill_ids") || [];
 
   // Single-Question Form state
-  const [contentType, setContentType] = useState<"question" | "mcq" | "project_task">("question");
+  const [contentType, setContentType] = useState<"question" | "mcq" | "project_task">(
+    initialItemType || "question"
+  );
+  const [itemIndex] = useState<number>(
+    initialItemIndex !== undefined ? initialItemIndex : 0
+  );
   const [questionText, setQuestionText] = useState<string>("");
   const [mcqQuestion, setMCQQuestion] = useState<string>("");
   const [mcqOptions, setMCQOptions] = useState<string[]>(["", "", "", ""]);
@@ -148,40 +155,74 @@ export default function QuestionsBankCreate() {
       form.reset({ skill_ids: skillIds });
 
       // Determine content type and pre-populate
-      if (paperToEdit.mcqs && paperToEdit.mcqs.length > 0) {
-        setContentType("mcq");
-        setMCQQuestion(paperToEdit.mcqs[0].question || "");
+      if (initialItemType) {
+        setContentType(initialItemType);
+        if (initialItemType === "mcq" && paperToEdit.mcqs && paperToEdit.mcqs[itemIndex]) {
+          const mcq = paperToEdit.mcqs[itemIndex];
+          setMCQQuestion(mcq.question || "");
 
-        const rawOptions = paperToEdit.mcqs[0].options || [];
-        const optionA = rawOptions[0] || "";
-        const optionB = rawOptions[1] || "";
-        const optionC = rawOptions[2] || "";
-        const optionD = rawOptions[3] || "";
-        setMCQOptions([optionA, optionB, optionC, optionD]);
+          const rawOptions = mcq.options || [];
+          const optionA = rawOptions[0] || "";
+          const optionB = rawOptions[1] || "";
+          const optionC = rawOptions[2] || "";
+          const optionD = rawOptions[3] || "";
+          setMCQOptions([optionA, optionB, optionC, optionD]);
 
-        const answerText = paperToEdit.mcqs[0].answer || "";
-        let answerLetter = "A";
-        if (answerText === optionB) answerLetter = "B";
-        else if (answerText === optionC) answerLetter = "C";
-        else if (answerText === optionD) answerLetter = "D";
+          const answerText = mcq.answer || "";
+          let answerLetter = "A";
+          if (answerText === optionB) answerLetter = "B";
+          else if (answerText === optionC) answerLetter = "C";
+          else if (answerText === optionD) answerLetter = "D";
 
-        setMCQAnswer(answerLetter);
-      } else if (paperToEdit.project_task && paperToEdit.project_task.length > 0) {
-        setContentType("project_task");
-        const task = paperToEdit.project_task[0];
-        if (typeof task === "string") {
-          setTaskDescription(task);
-          setTaskInstructions("");
-        } else {
-          setTaskDescription((task as any)?.task || "");
-          setTaskInstructions((task as any)?.instructions || "");
+          setMCQAnswer(answerLetter);
+        } else if (initialItemType === "project_task" && paperToEdit.project_task && paperToEdit.project_task[itemIndex]) {
+          const task = paperToEdit.project_task[itemIndex];
+          if (typeof task === "string") {
+            setTaskDescription(task);
+            setTaskInstructions("");
+          } else {
+            setTaskDescription((task as any)?.task || "");
+            setTaskInstructions((task as any)?.instructions || "");
+          }
+        } else if (initialItemType === "question" && paperToEdit.questions && paperToEdit.questions[itemIndex]) {
+          setQuestionText(paperToEdit.questions[itemIndex] || "");
         }
       } else {
-        setContentType("question");
-        setQuestionText(paperToEdit.questions?.[0] || "");
+        if (paperToEdit.mcqs && paperToEdit.mcqs.length > 0) {
+          setContentType("mcq");
+          setMCQQuestion(paperToEdit.mcqs[0].question || "");
+
+          const rawOptions = paperToEdit.mcqs[0].options || [];
+          const optionA = rawOptions[0] || "";
+          const optionB = rawOptions[1] || "";
+          const optionC = rawOptions[2] || "";
+          const optionD = rawOptions[3] || "";
+          setMCQOptions([optionA, optionB, optionC, optionD]);
+
+          const answerText = paperToEdit.mcqs[0].answer || "";
+          let answerLetter = "A";
+          if (answerText === optionB) answerLetter = "B";
+          else if (answerText === optionC) answerLetter = "C";
+          else if (answerText === optionD) answerLetter = "D";
+
+          setMCQAnswer(answerLetter);
+        } else if (paperToEdit.project_task && paperToEdit.project_task.length > 0) {
+          setContentType("project_task");
+          const task = paperToEdit.project_task[0];
+          if (typeof task === "string") {
+            setTaskDescription(task);
+            setTaskInstructions("");
+          } else {
+            setTaskDescription((task as any)?.task || "");
+            setTaskInstructions((task as any)?.instructions || "");
+          }
+        } else {
+          setContentType("question");
+          setQuestionText(paperToEdit.questions?.[0] || "");
+        }
       }
     }
-  }, [isEditMode, paperToEdit, form]);
+  }, [isEditMode, paperToEdit, form, initialItemType, itemIndex]);
 
 
 
@@ -339,10 +380,10 @@ export default function QuestionsBankCreate() {
       // Edit Mode
       try {
         if (contentType === "question") {
-          if (paperToEdit.questions && paperToEdit.questions.length > 0) {
+          if (paperToEdit.questions && paperToEdit.questions.length > itemIndex) {
             await updateQuestionMutation.mutateAsync({
               paperId: paperToEdit.id,
-              index: 0,
+              index: itemIndex,
               question: questionTextPayload,
             });
           } else {
@@ -352,10 +393,10 @@ export default function QuestionsBankCreate() {
             });
           }
         } else if (contentType === "mcq") {
-          if (paperToEdit.mcqs && paperToEdit.mcqs.length > 0) {
+          if (paperToEdit.mcqs && paperToEdit.mcqs.length > itemIndex) {
             await updateMCQMutation.mutateAsync({
               paperId: paperToEdit.id,
-              index: 0,
+              index: itemIndex,
               mcq: mcqItemPayload!,
             });
           } else {
@@ -365,10 +406,10 @@ export default function QuestionsBankCreate() {
             });
           }
         } else if (contentType === "project_task") {
-          if (paperToEdit.project_task && paperToEdit.project_task.length > 0) {
+          if (paperToEdit.project_task && paperToEdit.project_task.length > itemIndex) {
             await updateProjectTaskMutation.mutateAsync({
               paperId: paperToEdit.id,
-              index: 0,
+              index: itemIndex,
               projectTask: projectTaskItemPayload!,
             });
           } else {
@@ -495,7 +536,7 @@ export default function QuestionsBankCreate() {
             <div className="flex flex-col gap-0.5 w-full">
               <Label className="text-xs font-semibold">Question Type</Label>
               <Select value={contentType} onValueChange={(val: any) => setContentType(val)} disabled={isEditMode}>
-                <SelectTrigger className="w-full h-11 bg-input/20 hover:bg-input/30 text-sm rounded-xl px-3 justify-between font-normal text-foreground inline-flex items-center cursor-pointer transition-all border border-border/50 outline-none focus:border-border/50">
+                <SelectTrigger className="w-full h-11 data-[size=default]:h-11 bg-input/20 hover:bg-input/30 text-sm rounded-xl px-3 justify-between font-normal text-foreground inline-flex items-center cursor-pointer transition-all border border-border/50 outline-none focus:border-border/50">
                   <SelectValue placeholder="Select type..." className="w-full">
                     {
                       typeOptions.find(

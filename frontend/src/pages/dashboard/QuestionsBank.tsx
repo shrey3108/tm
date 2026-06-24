@@ -170,6 +170,8 @@ export default function QuestionsBank() {
     navigate(`/dashboard/questions-bank/${slug}/edit`, {
       state: {
         paperId: item.paperId,
+        itemIndex: item.itemIndex,
+        itemType: item.type,
         departmentId: selectedDeptId,
         positionId: selectedPositionId,
       },
