@@ -22,6 +22,7 @@ class QuestionSetPaperCreate(BaseModel):
     position_id: uuid.UUID = Field(..., description="The associated job position level ID")
     skill_ids: list[uuid.UUID] = Field(..., description="The associated skill IDs", min_length=1)
     paper_type: Literal["normal", "mcq", "task", "mixed"] = Field("mixed", description="The type of the paper")
+    source_mix: Optional[list[SourceMixItem]] = Field(default_factory=list, description="List of items to mix from existing papers")
     questions: list[str] = Field(default_factory=list, description="Questions for this paper")
     mcqs: list[MCQItem] = Field(default_factory=list, description="Multiple choice questions for this paper")
     project_task: list[TaskItem] = Field(default_factory=list, description="The structured project task definitions")
@@ -39,6 +40,13 @@ class QuestionSetPaperCreate(BaseModel):
                 new_tasks.append(item)
         return new_tasks
 
+
+
+class SourceMixItem(BaseModel):
+    paper_id: uuid.UUID = Field(..., description="The ID of the source QuestionSetPaper")
+    question_indices: list[int] = Field(default_factory=list, description="Indices of questions to include")
+    mcq_indices: list[int] = Field(default_factory=list, description="Indices of MCQs to include")
+    task_indices: list[int] = Field(default_factory=list, description="Indices of project tasks to include")
 
 class QuestionAction(BaseModel):
     question: str = Field(..., description="The content of the question")
@@ -191,7 +199,7 @@ class CandidateTestPaperHistoryRead(BaseModel):
 class CandidateTestPaperAssign(BaseModel):
     candidate_id: Optional[uuid.UUID] = Field(None, description="The candidate's ID (optional if assigning job-level default)")
     job_id: Optional[uuid.UUID] = Field(None, description="The job ID (required if candidate_id is not provided)")
-    mode: Literal["predefined", "random", "custom"] = Field(
+    mode: Literal["predefined", "random", "custom", "hybrid"] = Field(
         ..., description="The assignment mode: 'predefined', 'random', or 'custom'"
     )
     paper_id: Optional[uuid.UUID] = Field(
@@ -200,6 +208,7 @@ class CandidateTestPaperAssign(BaseModel):
     source_paper_ids: Optional[list[uuid.UUID]] = Field(
         None, description="List of paper IDs to randomly pick questions from (used in 'random' mode)"
     )
+    source_mix: Optional[list[SourceMixItem]] = Field(default_factory=list, description="Mix items for hybrid mode")
     base_paper_id: Optional[uuid.UUID] = Field(
         None, description="The ID of a base paper to inherit task file and skills from (used in 'custom' mode)"
     )

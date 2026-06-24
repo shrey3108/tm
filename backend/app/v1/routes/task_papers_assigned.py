@@ -263,8 +263,48 @@ async def assign_test_paper_to_candidate(
                 assigned_file_path = base_paper.task_file_path
                 # assigned_skills will be extracted dynamically
 
+    elif assign_data.mode == "hybrid":
+        assigned_name = "Hybrid Custom Test Paper"
+        final_questions = list(assign_data.questions) if assign_data.questions else []
+        final_mcqs = [m.model_dump() if hasattr(m, "model_dump") else m for m in assign_data.mcqs] if assign_data.mcqs else []
+        final_tasks = [t if isinstance(t, dict) else t.model_dump() if hasattr(t, "model_dump") else {"task": str(t), "instructions": ""} for t in assign_data.project_task] if assign_data.project_task else []
+        
+        assigned_file_path = None
+        assigned_skills = None
+
+        if getattr(assign_data, "source_mix", None):
+            for mix_item in assign_data.source_mix:
+                source_paper = await db.get(QuestionSetPaper, mix_item.paper_id)
+                if not source_paper:
+                    continue
+                
+                if not assigned_file_path and source_paper.task_file_path:
+                    assigned_file_path = source_paper.task_file_path
+                
+                # Extract questions
+                if source_paper.questions and mix_item.question_indices:
+                    for idx in mix_item.question_indices:
+                        if 0 <= idx < len(source_paper.questions):
+                            final_questions.append(source_paper.questions[idx])
+                
+                # Extract mcqs
+                if source_paper.mcqs and mix_item.mcq_indices:
+                    for idx in mix_item.mcq_indices:
+                        if 0 <= idx < len(source_paper.mcqs):
+                            final_mcqs.append(source_paper.mcqs[idx])
+                
+                # Extract tasks
+                if source_paper.project_task and mix_item.task_indices:
+                    for idx in mix_item.task_indices:
+                        if 0 <= idx < len(source_paper.project_task):
+                            final_tasks.append(source_paper.project_task[idx])
+
+        assigned_questions = final_questions
+        assigned_mcqs = final_mcqs
+        assigned_task = final_tasks
+
     # Dynamic skill extraction for Random and Custom modes to ensure exact skill matching
-    if assign_data.mode in ["random", "custom"]:
+    if assign_data.mode in ["random", "custom", "hybrid"]:
         raw_text_parts = []
         if assigned_questions:
             raw_text_parts.extend(assigned_questions)

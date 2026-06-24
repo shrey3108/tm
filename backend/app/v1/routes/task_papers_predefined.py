@@ -153,15 +153,44 @@ async def create_manual_question_set_paper(
             detail="At least one valid skill ID must be provided.",
         )
 
+    # Process source_mix for hybrid mode
+    final_questions = list(payload.questions) if payload.questions else []
+    final_mcqs = [m.model_dump() for m in payload.mcqs] if payload.mcqs else []
+    final_tasks = [t.model_dump() for t in payload.project_task] if payload.project_task else []
+
+    if getattr(payload, "source_mix", None):
+        for mix_item in payload.source_mix:
+            source_paper = await db.get(QuestionSetPaper, mix_item.paper_id)
+            if not source_paper:
+                continue
+            
+            # Extract questions
+            if source_paper.questions and mix_item.question_indices:
+                for idx in mix_item.question_indices:
+                    if 0 <= idx < len(source_paper.questions):
+                        final_questions.append(source_paper.questions[idx])
+            
+            # Extract mcqs
+            if source_paper.mcqs and mix_item.mcq_indices:
+                for idx in mix_item.mcq_indices:
+                    if 0 <= idx < len(source_paper.mcqs):
+                        final_mcqs.append(source_paper.mcqs[idx])
+            
+            # Extract tasks
+            if source_paper.project_task and mix_item.task_indices:
+                for idx in mix_item.task_indices:
+                    if 0 <= idx < len(source_paper.project_task):
+                        final_tasks.append(source_paper.project_task[idx])
+
     db_paper = QuestionSetPaper(
         id=paper_id,
         name=paper_name,
         department_id=payload.department_id,
         position_id=payload.position_id,
         paper_type=payload.paper_type,
-        questions=payload.questions,
-        mcqs=[m.model_dump() for m in payload.mcqs] if payload.mcqs else [],
-        project_task=[t.model_dump() for t in payload.project_task] if payload.project_task else [],
+        questions=final_questions,
+        mcqs=final_mcqs,
+        project_task=final_tasks,
         task_file_path=None,
         task_skills=None,
     )
