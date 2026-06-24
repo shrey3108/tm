@@ -53,6 +53,17 @@ async def get_candidate_active_job_id(db: AsyncSession, candidate: Candidate) ->
     return candidate.applied_job_id
 
 
+def parse_frontend_custom_task(text: str) -> tuple[str, str] | None:
+    if not text:
+        return None
+    import re
+    pattern = r"^Task:\s*\n(.*?)\n+Instructions:\s*\n(.*)$"
+    match = re.match(pattern, text.strip(), re.DOTALL | re.IGNORECASE)
+    if match:
+        return match.group(1).strip(), match.group(2).strip()
+    return None
+
+
 @router.post("/assign", response_model=CandidateTestPaperRead, status_code=status.HTTP_200_OK)
 async def assign_test_paper_to_candidate(
     assign_data: CandidateTestPaperAssign,
@@ -378,15 +389,25 @@ async def assign_test_paper_to_candidate(
         for item in assigned_task_list:
             if isinstance(item, str):
                 task_str = item.strip()
-                lookup_key = " ".join(task_str.split())
-                instructions = task_instruction_map.get(lookup_key, "")
-                normalized_task_list.append({"task": task_str, "instructions": instructions})
+                parsed = parse_frontend_custom_task(task_str)
+                if parsed:
+                    task_name, instructions = parsed
+                    normalized_task_list.append({"task": task_name, "instructions": instructions})
+                else:
+                    lookup_key = " ".join(task_str.split())
+                    instructions = task_instruction_map.get(lookup_key, "")
+                    normalized_task_list.append({"task": task_str, "instructions": instructions})
             elif isinstance(item, dict):
                 task_name = item.get("task") or item.get("title") or item.get("content") or item.get("task_title") or "Untitled Task"
                 task_str = task_name.strip()
-                lookup_key = " ".join(task_str.split())
-                instructions = item.get("instructions") or task_instruction_map.get(lookup_key, "")
-                normalized_task_list.append({"task": task_str, "instructions": instructions})
+                parsed = parse_frontend_custom_task(task_str)
+                if parsed:
+                    task_name_clean, instructions = parsed
+                    normalized_task_list.append({"task": task_name_clean, "instructions": instructions})
+                else:
+                    lookup_key = " ".join(task_str.split())
+                    instructions = item.get("instructions") or task_instruction_map.get(lookup_key, "")
+                    normalized_task_list.append({"task": task_str, "instructions": instructions})
             else:
                 normalized_task_list.append(item)
         assigned_task_list = normalized_task_list

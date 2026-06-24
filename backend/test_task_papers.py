@@ -407,7 +407,7 @@ async def test_task_papers_flow():
                 "candidate_id": str(candidate_id),
                 "mode": "custom",
                 "questions": ["Custom Q1", "Custom Q2", "Custom Q3", "Custom Q4", "Custom Q5"],
-                "project_task": "Build a REST API with FastAPI.  \n\n---\n\n  Implement a task runner in Python.",
+                "project_task": "Build a REST API with FastAPI.  \n\n---\n\n  Implement a task runner in Python.\n\n---\n\nTask:\nwhat is catgpt\n\nInstructions:\nuse chatgpt",
             }
             response = client.post(
                 "/api/v1/task-papers/assign", json=assign_custom_payload
@@ -424,7 +424,8 @@ async def test_task_papers_flow():
             ]
             assert custom_assigned["project_task"] == [
                 {"task": "Build a REST API with FastAPI.", "instructions": ""},
-                {"task": "Implement a task runner in Python.", "instructions": ""}
+                {"task": "Implement a task runner in Python.", "instructions": ""},
+                {"task": "what is catgpt", "instructions": "use chatgpt"}
             ]
 
             # 8. Unassign/Delete candidate test paper
