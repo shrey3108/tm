@@ -37,7 +37,7 @@ async def inspect_system_cache(
     tags=["admin"]
 )
 async def clear_system_cache(
-    pattern: str | None = Query(None, description="Optional key pattern to clear (e.g. 'jobs', 'analytics')"),
+    pattern: list[str] | None = Query(None, description="Optional key patterns to clear (e.g. ['jobs', 'analytics'])"),
     admin: UserRead = Depends(check_permission("system:manage")),
 ) -> Any:
     """

@@ -13,17 +13,30 @@ _log = logging.getLogger(__name__)
 class SystemService:
     """Service for system-wide administrative operations."""
 
-    async def clear_cache(self, pattern: str | None = None) -> bool:
+    async def clear_cache(self, pattern: list[str] | str | None = None) -> bool:
         """
         Clear application-specific cache keys (selective delete).
-        If pattern is provided, clear only that specific pattern.
+        If pattern is provided, clear only those specific patterns.
         """
+        patterns_to_clear = []
         if pattern:
-            _log.info("Targeted cache clear for pattern: %s", pattern)
-            # Ensure the pattern has a wildcard if it doesn't already
-            if "*" not in pattern:
-                pattern = f"{pattern}*"
-            return await cache.clear(pattern=pattern)
+            if isinstance(pattern, str):
+                patterns_to_clear = [pattern]
+            elif isinstance(pattern, list):
+                patterns_to_clear = [p for p in pattern if p]
+
+        if patterns_to_clear:
+            _log.info("Targeted cache clear for patterns: %s", patterns_to_clear)
+            success = True
+            for pat in patterns_to_clear:
+                # Ensure the pattern has a wildcard if it doesn't already
+                if "*" not in pat:
+                    pat = f"{pat}*"
+                res = await cache.clear(pattern=pat)
+                if not res:
+                    success = False
+                    _log.warning("Failed to clear pattern: %s", pat)
+            return success
 
         _log.info("Comprehensive selective cache clear started")
         
