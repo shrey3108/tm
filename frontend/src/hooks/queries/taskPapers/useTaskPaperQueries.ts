@@ -97,7 +97,7 @@ export const useAllQuestionsAndTasks = ({
   });
 
   return {
-    data: res.data ?? [[], [], []],
+    data: res.data ?? { questions: [], project_task: [], mcqs: [] },
     loading: res.isLoading,
     error: res.error,
     refetch: res.refetch,
@@ -251,4 +251,23 @@ export const useDownloadCandidateAssignedTaskFile = (
   };
 };
 
+/**
+ * Hook to retrieve the assignment and email log history for a specific candidate's test paper.
+ * Only fetches when candidateId is provided.
+ */
+export const useCandidateTestPaperHistory = (candidateId: string | null | undefined) => {
+  const res = useQuery({
+    queryKey: [QUERY_KEYS.TASK_PAPERS.HISTORY, candidateId],
+    queryFn: () => taskService.getCandidateTestPaperHistory(candidateId!),
+    enabled: !!candidateId,
+    staleTime: QUERY_CONFIG.TASK_PAPER.staleTime,
+  });
+
+  return {
+    data: res.data ?? [],
+    loading: res.isLoading,
+    error: res.error,
+    refetch: res.refetch,
+  };
+};
 

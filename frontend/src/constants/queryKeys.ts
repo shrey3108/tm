@@ -51,5 +51,6 @@ export const QUERY_KEYS = {
     ASSIGNED: "candidateTaskPaperAssigned",
     TASK_METADATA: "candidateTaskMetadata",
     SKILLS: "jobAndCandidateSkills",
+    HISTORY: "candidateTaskPaperHistory",
   },
 } as const;

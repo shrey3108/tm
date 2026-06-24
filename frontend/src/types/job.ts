@@ -95,6 +95,7 @@ export interface Job {
   position_id: string;
   position?: JobPositionRead | null;
   processing_version?: number | null;
+  message?: string | null;
 }
 
 /**

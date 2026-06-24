@@ -54,7 +54,7 @@ export const getQuestionsBankColumns = ({
       header: () => <div className="font-semibold">Type</div>,
       cell: ({ row }) => {
         const typeLabels: Record<FlatItem["type"], string> = {
-          question: "Question",
+          question: "Default",
           project_task: "Project Task",
           mcq: "MCQ",
         };

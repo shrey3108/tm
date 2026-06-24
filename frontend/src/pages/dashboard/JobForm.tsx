@@ -162,10 +162,20 @@ export default function CreateJob() {
               await uploadJobTaskMutation.mutateAsync({ jobId: newJob.id, file: project_document });
             }
             toast.success("Job created successfully!");
+            if (newJob?.message) {
+              toast.warning(newJob.message, {
+                duration: 8000,
+              });
+            }
             navigate("/dashboard/jobs");
           } catch (error) {
             console.error("Failed to upload task document:", error);
             toast.error("Job created, but failed to upload task document.");
+            if (newJob?.message) {
+              toast.warning(newJob.message, {
+                duration: 8000,
+              });
+            }
           }
         },
         onError: (error) => {

@@ -65,10 +65,17 @@ export interface CandidateTestPaperRead {
   job_default_paper_id: string | null;
 }
 
+export interface SourceMixItem {
+  paper_id: string;
+  question_indices: number[];
+  mcq_indices: number[];
+  task_indices: number[];
+}
+
 export interface CandidateTestPaperAssign {
   candidate_id?: string;
   job_id?: string;
-  mode: "predefined" | "random" | "custom";
+  mode: "predefined" | "random" | "custom" | "hybrid";
   paper_id?: string;
   source_paper_ids?: string[];
   base_paper_id?: string;
@@ -76,6 +83,7 @@ export interface CandidateTestPaperAssign {
   mcqs?: MCQItem[];
   project_task?: string;
   question_count?: number;
+  source_mix?: SourceMixItem[];
 }
 
 export interface CandidateTestPaperEmailSend {

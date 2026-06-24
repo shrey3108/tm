@@ -54,7 +54,7 @@ export function QuestionsBankFilters({
 }: QuestionsBankFiltersProps) {
   const contentTypeOptions = [
     { id: "all", label: "All Types" },
-    { id: "question", label: "Questions" },
+    { id: "question", label: "Default" },
     { id: "project_task", label: "Project Tasks" },
     { id: "mcq", label: "MCQs" },
   ];

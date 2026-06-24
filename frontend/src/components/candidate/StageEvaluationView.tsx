@@ -58,12 +58,12 @@ export function StageEvaluationView({
 }: StageEvaluationViewProps) {
   const { data: assignedPaper } = useCandidateTestPaper(candidateId);
   const { refetch: downloadFile, loading: isDownloading } = useDownloadCandidateAssignedTaskFile(
-    assignedPaper?.task_file_path ? candidateId : null,
+    assignedPaper ? candidateId : null,
     { enabled: false }
   );
 
   const handleViewTaskPaper = async () => {
-    if (!assignedPaper?.task_file_path) return;
+    if (!assignedPaper) return;
     try {
       toast.info("Downloading task file...");
       const { data: blob } = await downloadFile();
@@ -117,7 +117,7 @@ export function StageEvaluationView({
                 </HoverCardContent>
               </HoverCard>
             )}
-            {assignedPaper?.task_file_path && (
+            {assignedPaper && (
               <HoverCard>
                 <HoverCardTrigger delay={10} closeDelay={10}
                   render={(props) => (

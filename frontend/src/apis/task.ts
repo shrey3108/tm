@@ -209,7 +209,7 @@ export const taskService = {
       skip?: number;
       limit?: number;
     }
-  ): Promise<[string[], string[], MCQItem[]]> => {
+  ): Promise<{ questions: string[]; project_task: string[]; mcqs: MCQItem[] }> => {
     const params = filters
       ? {
         department_id: filters.departmentId || undefined,
@@ -222,7 +222,7 @@ export const taskService = {
         limit: filters.limit !== undefined ? filters.limit : undefined,
       }
       : {};
-    const response = await client.get<[string[], string[], MCQItem[]]>(
+    const response = await client.get<{ questions: string[]; project_task: string[]; mcqs: MCQItem[] }>(
       "/task-papers/all-content",
       { params }
     );

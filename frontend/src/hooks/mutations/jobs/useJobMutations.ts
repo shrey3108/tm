@@ -12,8 +12,10 @@ export function useCreateJobMutation() {
   return useMutation({
     mutationFn: (data: Record<string, any>) => jobService.createJob(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.JOBS.LIST] });
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.JOBS.ADMIN_LIST] });
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.JOBS.LIST] });
+        queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.JOBS.ADMIN_LIST] });
+      }, 1000)
     },
   });
 }

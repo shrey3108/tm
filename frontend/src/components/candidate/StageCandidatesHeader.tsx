@@ -5,8 +5,10 @@ import type { Job } from "@/types/job";
 import { TranscriptUpload } from "./TranscriptUpload";
 import { ProjectSubmissionDialog } from "./projectSubmission/ProjectSubmissionDialog";
 import { SendQuestionPaperDialog } from "./projectSubmission/SendQuestionPaperDialog";
-import { useCandidateTestPaper, useDownloadCandidateAssignedTaskFile } from "@/hooks/queries/taskPapers/useTaskPaperQueries";
+import { CandidateTestPaperHistoryDialog } from "./projectSubmission/CandidateTestPaperHistoryDialog";
+import { useCandidateTestPaper, useDownloadCandidateAssignedTaskFile, useCandidateTestPaperHistory } from "@/hooks/queries/taskPapers/useTaskPaperQueries";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
+import { History } from "lucide-react";
 interface StageCandidatesHeaderProps {
   /** Associated job for the candidate stage view */
   job: Job | null;
@@ -52,10 +54,14 @@ export const StageCandidatesHeader = ({
 }: StageCandidatesHeaderProps) => {
   const [isProjectSubmissionDialogOpen, setIsProjectSubmissionDialogOpen] = useState(false);
   const [isSendQuestionPaperDialogOpen, setIsSendQuestionPaperDialogOpen] = useState(false);
+  const [isHistoryDialogOpen, setIsHistoryDialogOpen] = useState(false);
   const { data: assignedPaper } = useCandidateTestPaper(candidateId);
-  // console.log(assignedPaper);
+  const { data: paperHistory } = useCandidateTestPaperHistory(
+    stageName === "Technical Practical Round" ? candidateId : null
+  );
   const { data: candidateAssignedTaskBlob } = useDownloadCandidateAssignedTaskFile(candidateId);
   console.log(candidateAssignedTaskBlob)
+  const hasMultipleAssignments = paperHistory.length > 1;
   const isTranscriptAdded = !!transcriptHistory && transcriptHistory.length > 0;
 
   const isGithubUploaded = !!githubUrl &&
@@ -111,6 +117,19 @@ export const StageCandidatesHeader = ({
                     </>
                     : "Assign Question Paper"}
                 </Button>
+                {hasMultipleAssignments && (
+                  <Button
+                    variant="outline"
+                    className="rounded-xl border border-muted-foreground/10 font-semibold text-center h-9 gap-1.5"
+                    onClick={() => setIsHistoryDialogOpen(true)}
+                  >
+                    <History className="w-3.5 h-3.5" />
+                    Paper History
+                    <span className="inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold rounded-full bg-primary/15 text-primary">
+                      {paperHistory.length}
+                    </span>
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   className="rounded-xl border border-muted-foreground/10 px-5 font-semibold text-center h-9"
@@ -136,6 +155,12 @@ export const StageCandidatesHeader = ({
                   candidateId={candidateId}
                   job={job}
                   onSuccess={onPaperChange || onSuccess}
+                />
+                <CandidateTestPaperHistoryDialog
+                  isOpen={isHistoryDialogOpen}
+                  onOpenChange={setIsHistoryDialogOpen}
+                  history={paperHistory}
+                  candidateName={candidateName}
                 />
               </>
             ) : (

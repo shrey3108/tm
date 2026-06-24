@@ -1,7 +1,5 @@
 import { useState } from "react";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -12,42 +10,31 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { QuestionSetPaperRead, MCQItem } from "@/types/taskPaper";
-import { CheckCircle2, AlertTriangle, HelpCircle, PenLine, Plus, Trash2, Pencil, X, ListChecks } from "lucide-react";
+import type { MCQItem } from "@/types/taskPaper";
+import { PenLine, Plus, Trash2, Pencil, X, ListChecks } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
-import { Link } from "react-router-dom";
+import { Required } from "@/components/job-form/Required";
+
 interface CustomPaperFormProps {
-  predefinedPapers: QuestionSetPaperRead[];
   customQuestions: string[];
-  onCustomQuestionsChange: (questions: string[]) => void;
-  customProjectTask: string;
-  onCustomProjectTaskChange: (value: string) => void;
-  customQuestionText: string;
-  onCustomQuestionTextChange: (value: string) => void;
-  customProjectTaskText: string;
-  onCustomProjectTaskTextChange: (value: string) => void;
+  onCustomQuestionsChange: (value: string[]) => void;
+  customProjectTasks: string[];
+  onCustomProjectTasksChange: (value: string[]) => void;
   customMcqs: MCQItem[];
   onCustomMcqsChange: (mcqs: MCQItem[]) => void;
+  hideManualInput?: boolean;
 }
 
 export function CustomPaperForm({
-  predefinedPapers,
-  customQuestions,
+  customQuestions = [],
   onCustomQuestionsChange,
-  customProjectTask,
-  onCustomProjectTaskChange,
-  customQuestionText,
-  onCustomQuestionTextChange,
-  customProjectTaskText,
-  onCustomProjectTaskTextChange,
-  customMcqs,
+  customProjectTasks = [],
+  onCustomProjectTasksChange,
+  customMcqs = [],
   onCustomMcqsChange,
+  hideManualInput = false,
 }: CustomPaperFormProps) {
-  const totalUniqueQuestionsCount = new Set(
-    predefinedPapers.flatMap((p) => p.questions || [])
-  ).size;
-
   // MCQ inline form state
   const [showMcqForm, setShowMcqForm] = useState(false);
   const [editingMcqIndex, setEditingMcqIndex] = useState<number | null>(null);
@@ -57,6 +44,12 @@ export function CustomPaperForm({
   const [mcqOptionC, setMcqOptionC] = useState("");
   const [mcqOptionD, setMcqOptionD] = useState("");
   const [mcqAnswer, setMcqAnswer] = useState<string>("A");
+
+  // Question inline input state
+  const [questionInput, setQuestionInput] = useState("");
+
+  // Task inline input state
+  const [taskInput, setTaskInput] = useState("");
 
   const resetMcqForm = () => {
     setMcqQuestion("");
@@ -101,7 +94,6 @@ export function CustomPaperForm({
     setMcqOptionB(mcq.options[1] || "");
     setMcqOptionC(mcq.options[2] || "");
     setMcqOptionD(mcq.options[3] || "");
-    // Determine answer letter from answer text
     if (mcq.answer === mcq.options[1]) setMcqAnswer("B");
     else if (mcq.answer === mcq.options[2]) setMcqAnswer("C");
     else if (mcq.answer === mcq.options[3]) setMcqAnswer("D");
@@ -114,207 +106,169 @@ export function CustomPaperForm({
     onCustomMcqsChange(customMcqs.filter((_, i) => i !== index));
   };
 
-  const handleToggleQuestion = (question: string) => {
-    if (customQuestions.includes(question)) {
-      onCustomQuestionsChange(customQuestions.filter((q) => q !== question));
-    } else {
-      onCustomQuestionsChange([...customQuestions, question]);
-    }
+  const handleAddQuestion = () => {
+    if (!questionInput.trim()) return;
+    onCustomQuestionsChange([...customQuestions, questionInput.trim()]);
+    setQuestionInput("");
   };
 
-  // @ts-ignore No more predefined question papers 
-  const handleToggleSet = (paperQuestions: string[]) => {
-    const allSelected = paperQuestions.every((q) => customQuestions.includes(q));
-    if (allSelected) {
-      onCustomQuestionsChange(customQuestions.filter((q) => !paperQuestions.includes(q)));
-    } else {
-      const missing = paperQuestions.filter((q) => !customQuestions.includes(q));
-      onCustomQuestionsChange([...customQuestions, ...missing]);
-    }
+  const handleDeleteQuestion = (index: number) => {
+    onCustomQuestionsChange(customQuestions.filter((_, i) => i !== index));
   };
 
-  // @ts-ignore No more predefined question papers 
-  const getSetCheckboxState = (paperQuestions: string[]): { checked: boolean; indeterminate: boolean } => {
-    const selectedCountInSet = paperQuestions.filter((q) => customQuestions.includes(q)).length;
-    return {
-      checked: selectedCountInSet === paperQuestions.length,
-      indeterminate: selectedCountInSet > 0 && selectedCountInSet < paperQuestions.length,
-    };
+  const handleAddTask = () => {
+    if (!taskInput.trim()) return;
+    onCustomProjectTasksChange([...customProjectTasks, taskInput.trim()]);
+    setTaskInput("");
   };
+
+  const handleDeleteTask = (index: number) => {
+    onCustomProjectTasksChange(customProjectTasks.filter((_, i) => i !== index));
+  };
+
+  if (hideManualInput) return null;
 
   return (
     <div className="space-y-4 animate-in fade-in duration-300">
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
+      {/* Custom Questions Section */}
+      <div>
+        <div className="flex items-center justify-between mb-2">
           <Label className="flex items-center gap-1.5 font-semibold text-sm">
-            <HelpCircle className="h-4 w-4 text-primary" />
-            Select Interview Questions
+            <PenLine className="h-4 w-4 text-primary" />
+            Extra Questions <Required />
           </Label>
           <Badge
             variant="outline"
             className={cn(
-              "px-2.5 py-0.5 rounded-full font-semibold border text-xs flex items-center gap-1 transition-all",
-              customQuestions.length >= 1
+              "px-2.5 py-0.5 rounded-full font-semibold border text-xs flex items-center gap-1",
+              customQuestions.length > 0
                 ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
-                : "bg-amber-500/10 text-amber-500 border-amber-500/20"
+                : "bg-muted/10 text-muted-foreground border-muted-foreground/20"
             )}
           >
-            {customQuestions.length >= 1 ? (
-              <CheckCircle2 className="h-3.5 w-3.5" />
-            ) : (
-              <AlertTriangle className="h-3.5 w-3.5" />
-            )}
-            {customQuestions.length} {customQuestions.length === 1 ? "Question" : "Questions"} Selected
+            {customQuestions.length} {customQuestions.length === 1 ? "Question" : "Questions"} Added
           </Badge>
         </div>
 
-        {predefinedPapers.length === 0 ? (
-          <div className="p-3 rounded-xl border border-dashed border-muted-foreground/25 bg-muted/5 text-center">
-            <p className="text-sm text-muted-foreground">
-              No existing question sets available to select from.
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-1.5  overflow-y-auto pr-1 border border-muted-foreground/10 rounded-xl p-1.5 bg-muted/5 scrollbar-thin">
-            {predefinedPapers.map((paper) => {
-              // const { checked, indeterminate } = getSetCheckboxState(paper.questions);
-              return (
-                <div key={paper.id} className="border border-border/40 rounded-xl overflow-hidden bg-card/50">
-                  {/* Set Header */}
-                  {/* <div className="flex items-center gap-1.5 px-1.5 py-1.5 bg-muted/40 border-b border-border/30 hover:bg-muted/60 transition-colors">
-                    <Checkbox
-                      id={`set-${paper.id}`}
-                      checked={checked}
-                      indeterminate={indeterminate}
-                      onCheckedChange={() => handleToggleSet(paper.questions)}
-                    />
-                    <Label htmlFor={`set-${paper.id}`}>
-                      {paper.name}
-                    </Label>
-                    <span className="text-xs text-muted-foreground font-medium">
-                      ({paper.questions.length} questions)
-                    </span>
-                  </div> */}
-
-                  {/* Set Questions */}
-                  <div className="divide-y divide-border/20">
-                    {paper.questions.map((q, qIdx) => {
-                      const isChecked = customQuestions.includes(q);
-                      return (
-                        <div
-                          key={qIdx}
-                          className={cn(
-                            "flex items-start gap-3 px-2 py-1.5 transition-colors",
-                            isChecked ? "bg-primary/5" : "hover:bg-muted/20"
-                          )}
-                        >
-                          <Checkbox
-                            id={`q-${paper.id}-${qIdx}`}
-                            checked={isChecked}
-                            onCheckedChange={() => handleToggleQuestion(q)}
-                            className="mt-0.5"
-                          />
-                          <Label
-                            htmlFor={`q-${paper.id}-${qIdx}`}
-                            className={cn(
-                              "text-xs leading-relaxed cursor-pointer flex-1 select-none text-foreground/80",
-                              isChecked && "text-foreground font-medium"
-                            )}
-                          >
-                            {q}
-                          </Label>
-                        </div>
-                      );
-                    })}
-                  </div>
+        {/* Added Questions list */}
+        {customQuestions.length > 0 && (
+          <div className="space-y-1.5 mb-2">
+            {customQuestions.map((q, idx) => (
+              <div
+                key={idx}
+                className="flex items-start gap-2 p-2 rounded-xl border border-border/40 bg-card/50"
+              >
+                <div className="flex-1 min-w-0">
+                  <span className="text-[10px] font-bold text-foreground block mb-0.5">
+                    Extra Question #{idx + 1}
+                  </span>
+                  <p className="text-xs text-foreground/80 whitespace-pre-wrap leading-relaxed">
+                    {q}
+                  </p>
                 </div>
-              );
-            })}
-          </div>
-        )}
-        {totalUniqueQuestionsCount < 1 && <p className="text-red-500 italic text-center">No questions available. <Link to="/dashboard/questions-bank" className="hover:underline cursor-pointer">Add questions here</Link></p>}
-      </div>
-
-      {/* Custom Questions Textarea */}
-      <div className="pt-2 border-t border-border/20">
-        <Label className="flex items-center gap-1.5 font-semibold text-sm mb-2">
-          <PenLine className="h-4 w-4 text-primary" />
-          Write Custom Questions
-        </Label>
-        <Textarea
-          value={customQuestionText}
-          onChange={(e) => onCustomQuestionTextChange(e.target.value)}
-          placeholder="Type your custom questions here (one question per line)..."
-          className="min-h-[100px] resize-y text-sm rounded-xl border-muted-foreground/20 bg-muted/5 focus:border-primary/50"
-        />
-
-      </div>
-      <div className="pt-2 border-t border-border/20">
-        <label className="text-base font-bold text-muted-foreground block mb-2">
-          Select Project Task Description
-        </label>
-        {predefinedPapers.filter((p) => p.project_task && p.project_task.length > 0).length === 0 ? (
-          <div className="p-4 rounded-xl border border-dashed border-muted-foreground/25 bg-muted/5 text-center">
-            <p className="text-sm text-muted-foreground">
-              No existing project tasks available to select from.
-            </p>
-          </div>
-        ) : (
-          <div className=" overflow-y-auto pr-1 border border-muted-foreground/10 rounded-xl p-1.5 bg-muted/5 scrollbar-thin">
-            <RadioGroup value={customProjectTask} onValueChange={onCustomProjectTaskChange} >
-              {predefinedPapers.map((paper) => {
-                if (!paper.project_task || paper.project_task.length === 0) return null;
-                return paper.project_task.map((task, taskIdx) => {
-                  const taskText = typeof task === "string" ? task : task?.task || "";
-                  const isSelected = customProjectTask === taskText;
-                  const optionId = `task-${paper.id}-${taskIdx}`;
-                  return (
-                    <div
-                      key={optionId}
-                      className={cn(
-                        "flex items-start gap-1.5 p-1.5 rounded-xl border transition-all duration-200 cursor-pointer",
-                        isSelected
-                          ? "bg-primary/5 border-primary shadow-sm"
-                          : "bg-card border-border/40 hover:border-muted-foreground/20"
-                      )}
-                      onClick={() => onCustomProjectTaskChange(taskText)}
-                    >
-                      <RadioGroupItem
-                        value={taskText}
-                        id={optionId}
-                        className="mt-0.5"
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                      <label
-                        htmlFor={optionId}
-                        className="flex-1 cursor-pointer select-none space-y-1"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <span className="text-sm font-bold text-foreground block"> Task #{taskIdx + 1}</span>
-                        <span className="text-xs text-foreground/80 leading-relaxed whitespace-pre-wrap">
-                          {taskText}
-                        </span>
-                      </label>
-                    </div>
-                  );
-                });
-              })}
-            </RadioGroup>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 text-muted-foreground hover:text-destructive shrink-0"
+                  onClick={() => handleDeleteQuestion(idx)}
+                >
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </div>
+            ))}
           </div>
         )}
 
-        {/* Custom Project Task Textarea */}
-        <div className="mt-3">
-          <Label className="flex items-center gap-1.5 font-semibold text-sm mb-2">
-            <PenLine className="h-4 w-4 text-primary" />
-            Write Custom Project Task
-          </Label>
+        <div className="space-y-2">
           <Textarea
-            value={customProjectTaskText}
-            onChange={(e) => onCustomProjectTaskTextChange(e.target.value)}
-            placeholder="Type your custom project task description here..."
-            className="min-h-[100px] resize-y text-sm rounded-xl border-muted-foreground/20 bg-muted/5 focus:border-primary/50"
+            value={questionInput}
+            onChange={(e) => setQuestionInput(e.target.value)}
+            placeholder="Type your extra question description here..."
+            className="min-h-[80px] resize-y text-sm rounded-xl border-muted-foreground/20 bg-muted/5 focus:border-primary/50"
           />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="w-full rounded-xl border-dashed border-muted-foreground/30 text-muted-foreground hover:text-primary hover:border-primary/40 transition-all font-semibold"
+            onClick={handleAddQuestion}
+            disabled={!questionInput.trim()}
+          >
+            <Plus className="h-3.5 w-3.5 mr-1.5" />
+            Add Question
+          </Button>
+        </div>
+      </div>
+
+      {/* Custom Project Tasks Section */}
+      <div className="pt-2 border-t border-border/20">
+        <div className="flex items-center justify-between mb-2">
+          <Label className="flex items-center gap-1.5 font-semibold text-sm">
+            <PenLine className="h-4 w-4 text-primary" />
+            Extra Project Tasks <Required />
+          </Label>
+          <Badge
+            variant="outline"
+            className={cn(
+              "px-2.5 py-0.5 rounded-full font-semibold border text-xs flex items-center gap-1",
+              customProjectTasks.length > 0
+                ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
+                : "bg-muted/10 text-muted-foreground border-muted-foreground/20"
+            )}
+          >
+            {customProjectTasks.length} {customProjectTasks.length === 1 ? "Task" : "Tasks"} Added
+          </Badge>
+        </div>
+
+        {/* Added Tasks list */}
+        {customProjectTasks.length > 0 && (
+          <div className="space-y-1.5 mb-2">
+            {customProjectTasks.map((task, idx) => (
+              <div
+                key={idx}
+                className="flex items-start gap-2 p-2 rounded-xl border border-border/40 bg-card/50"
+              >
+                <div className="flex-1 min-w-0">
+                  <span className="text-[10px] font-bold text-foreground block mb-0.5">
+                    Extra Task #{idx + 1}
+                  </span>
+                  <p className="text-xs text-foreground/80 whitespace-pre-wrap leading-relaxed">
+                    {task}
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 text-muted-foreground hover:text-destructive shrink-0"
+                  onClick={() => handleDeleteTask(idx)}
+                >
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="space-y-2">
+          <Textarea
+            value={taskInput}
+            onChange={(e) => setTaskInput(e.target.value)}
+            placeholder="Type your extra project task description here..."
+            className="min-h-[80px] resize-y text-sm rounded-xl border-muted-foreground/20 bg-muted/5 focus:border-primary/50"
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="w-full rounded-xl border-dashed border-muted-foreground/30 text-muted-foreground hover:text-primary hover:border-primary/40 transition-all font-semibold"
+            onClick={handleAddTask}
+            disabled={!taskInput.trim()}
+          >
+            <Plus className="h-3.5 w-3.5 mr-1.5" />
+            Add Project Task
+          </Button>
         </div>
       </div>
 
@@ -323,7 +277,7 @@ export function CustomPaperForm({
         <div className="flex items-center justify-between mb-2">
           <Label className="flex items-center gap-1.5 font-semibold text-sm">
             <ListChecks className="h-4 w-4 text-primary" />
-            Custom MCQs
+            Extra MCQs <Required />
           </Label>
           <Badge
             variant="outline"
@@ -483,7 +437,7 @@ export function CustomPaperForm({
             type="button"
             variant="outline"
             size="sm"
-            className="w-full rounded-xl border-dashed border-muted-foreground/30 text-muted-foreground hover:text-primary hover:border-primary/40 transition-all"
+            className="w-full rounded-xl border-dashed border-muted-foreground/30 text-muted-foreground hover:text-primary hover:border-primary/40 transition-all font-semibold"
             onClick={() => setShowMcqForm(true)}
           >
             <Plus className="h-3.5 w-3.5 mr-1.5" />
