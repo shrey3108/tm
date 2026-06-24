@@ -12,9 +12,10 @@ export const adminSystemService = {
      * Clear the entire system cache (Redis).
      * Requires: `system:manage` permission.
      */
-    clearCache: async (pattern?: string): Promise<AdminCacheDeleteResponse> => {
+    clearCache: async (pattern?: string | string[]): Promise<AdminCacheDeleteResponse> => {
         const params = pattern ? { pattern } : undefined;
-        return await apiClient.delete(`${ADMIN_PATH}/cache`, { params });
+        const res = await apiClient.delete<AdminCacheDeleteResponse>(`${ADMIN_PATH}/cache`, { params });
+        return res.data;
     },
 
     /**
