@@ -72,21 +72,12 @@ export function ClearCacheDialog({ open, onOpenChange }: ClearCacheDialogProps) 
     const keysToClear = Array.from(selectedKeys)
 
     try {
-      const results = await clearCacheMutation.mutateAsync(keysToClear)
+      const result = await clearCacheMutation.mutateAsync(keysToClear)
 
-      if (keysToClear.length === 0) {
-        // Clear everything if nothing selected
-        toast.success("System cache cleared successfully")
-      } else if (Array.isArray(results)) {
-        // Clear selected keys one by one as requested
-        const successCount = results.filter((r) => r.status === "fulfilled").length
-        const failCount = results.filter((r) => r.status === "rejected").length
-
-        if (failCount === 0) {
-          toast.success(`Successfully cleared ${successCount} cache keys`)
-        } else {
-          toast.error(`Cleared ${successCount} keys, failed to clear ${failCount} keys`)
-        }
+      if (result.success) {
+        toast.success(result.message || "Cache cleared successfully")
+      } else {
+        toast.error(result.message || "Failed to clear cache")
       }
       onOpenChange(false)
     } catch (error: unknown) {

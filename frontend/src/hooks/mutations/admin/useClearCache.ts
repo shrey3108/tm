@@ -8,16 +8,8 @@ export function useClearCacheMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (keys?: string[]) => {
-      if (!keys || keys.length === 0) {
-        // Clear everything if nothing selected
-        const res = await adminSystemService.clearCache();
-        return res;
-      } else {
-        // Clear selected keys in parallel
-        return await Promise.allSettled(
-          keys.map((key) => adminSystemService.clearCache(key))
-        );
-      }
+      // Pass the pattern list directly to clearCache (or undefined if empty/none selected)
+      return await adminSystemService.clearCache(keys && keys.length > 0 ? keys : undefined);
     },
     onSuccess: () => {
       queryClient.invalidateQueries(); // invalidate all cached data
