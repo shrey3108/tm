@@ -36,8 +36,8 @@ async def upload_question_set_papers(
     user: UserRead = Depends(check_permission("questions:upload")),
 ):
     """Upload a test paper file directly for a specific department, experience position level, and skills."""
-    # Force paper_type to mixed to extract everything (questions, tasks, mcqs) simultaneously
-    paper_type = "mixed"
+    # Preserve paper_type for DB classification, but extract everything simultaneously
+    extraction_paper_type = "mixed"
 
     # Verify department exists
     dept = await db.get(Department, department_id)
@@ -122,7 +122,7 @@ async def upload_question_set_papers(
 
     # Trigger celery task to extract skills, questions, and task details in background
     from app.v1.services.admin.job_tasks import extract_paper_task_skills_task
-    extract_paper_task_skills_task.delay(str(db_paper.id), db_paper.task_file_path, paper_type)
+    extract_paper_task_skills_task.delay(str(db_paper.id), db_paper.task_file_path, extraction_paper_type)
 
     return [db_paper]
 

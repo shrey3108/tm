@@ -249,14 +249,13 @@ async def test_task_papers_flow():
             # GET /api/v1/task-papers
             response = client.get("/api/v1/task-papers")
             assert response.status_code == 200
-            # Ensure our created papers are in the returned list
-            matching_papers = [p for p in response.json() if p["department_id"] == str(department_id)]
+            matching_papers = [p for p in response.json()["data"] if p["department_id"] == str(department_id)]
             assert len(matching_papers) == 2
 
             # GET /api/v1/task-papers?department_id=...
             response = client.get(f"/api/v1/task-papers?department_id={department_id}")
             assert response.status_code == 200
-            assert len(response.json()) == 2
+            assert len(response.json()["data"]) == 2
 
             # GET /api/v1/task-papers/{paper_id}
             response = client.get(f"/api/v1/task-papers/{paper_a_id}")
@@ -295,7 +294,7 @@ async def test_task_papers_flow():
             assigned_paper = response.json()
             assert assigned_paper["name"] == "test_task_a.pdf"
             assert len(assigned_paper["questions"]) == 5
-            assert assigned_paper["project_task"] == ["Build a REST API with FastAPI."]
+            assert assigned_paper["project_task"] == [{"task": "Build a REST API with FastAPI.", "instructions": ""}]
             assert assigned_paper["task_file_path"] is not None
 
             # Test sending email after assigning predefined paper returns 200
@@ -364,7 +363,7 @@ async def test_task_papers_flow():
             override_assigned = response.json()
             assert override_assigned["name"] == "test_task_a.pdf"
             assert override_assigned["questions"] == ["Override Q1", "Override Q2", "Override Q3", "Override Q4", "Override Q5"]
-            assert override_assigned["project_task"] == ["Override Project Task Description"]
+            assert override_assigned["project_task"] == [{"task": "Override Project Task Description", "instructions": ""}]
             assert override_assigned["task_file_path"] == paper_a["task_file_path"]
             assert override_assigned["task_skills"] == ["FastAPI", "Python"]
 
@@ -379,7 +378,7 @@ async def test_task_papers_flow():
             assert response.status_code == 200
             random_assigned = response.json()
             assert random_assigned["name"] == f"Randomized Test Paper ({job_title})"
-            assert len(random_assigned["questions"]) == 5
+            assert len(random_assigned["questions"]) == 10
             # Questions should be subset of the 10 pooled questions
             pooled_questions = [
                 "Explain python generators.",
@@ -397,7 +396,7 @@ async def test_task_papers_flow():
             for q in random_assigned["questions"]:
                 assert re.sub(r"^\[.*?\]\s*", "", q) in pooled_questions
             # Project task should be either from paper A or paper B
-            clean_project_task = [re.sub(r"^\[.*?\]\s*", "", t) for t in random_assigned["project_task"]]
+            clean_project_task = [re.sub(r"^\[.*?\]\s*", "", t["task"]) for t in random_assigned["project_task"]]
             assert clean_project_task in [
                 ["Build a REST API with FastAPI."],
                 ["Implement a task runner in Python."],
@@ -408,7 +407,7 @@ async def test_task_papers_flow():
                 "candidate_id": str(candidate_id),
                 "mode": "custom",
                 "questions": ["Custom Q1", "Custom Q2", "Custom Q3", "Custom Q4", "Custom Q5"],
-                "project_task": "Custom Project Task",
+                "project_task": "Build a REST API with FastAPI.  \n\n---\n\n  Implement a task runner in Python.",
             }
             response = client.post(
                 "/api/v1/task-papers/assign", json=assign_custom_payload
@@ -423,7 +422,10 @@ async def test_task_papers_flow():
                 "Custom Q4",
                 "Custom Q5",
             ]
-            assert custom_assigned["project_task"] == ["Custom Project Task"]
+            assert custom_assigned["project_task"] == [
+                {"task": "Build a REST API with FastAPI.", "instructions": ""},
+                {"task": "Implement a task runner in Python.", "instructions": ""}
+            ]
 
             # 8. Unassign/Delete candidate test paper
             # DELETE /api/v1/task-papers/assigned/{candidate_id}
@@ -756,17 +758,17 @@ async def test_task_papers_mcq_flow():
             # 5. List with filtering by paper_type
             response = client.get(f"/api/v1/task-papers?paper_type=mcq")
             assert response.status_code == 200
-            assert len(response.json()) >= 1
-            assert response.json()[0]["paper_type"] == "mcq"
+            assert len(response.json()["data"]) >= 1
+            assert response.json()["data"][0]["paper_type"] == "mcq"
 
             # 5b. Verify all-content endpoint aggregates MCQs
             response = client.get(f"/api/v1/task-papers/all-content")
             assert response.status_code == 200
             all_content = response.json()
             assert len(all_content) == 3
-            mcq_questions = [m["question"] for m in all_content[2]]
+            mcq_questions = [m["question"] for m in all_content["mcqs"]]
             assert "What is Python?" in mcq_questions
-            assert "answer" not in all_content[2][0]
+            assert "answer" not in all_content["mcqs"][0]
 
             # 6. Assign predefined MCQ paper to candidate
             assign_payload = {

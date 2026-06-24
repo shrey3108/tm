@@ -105,6 +105,7 @@ async def send_test_paper_email(
                 )
             existing_paper.name = paper.name
             existing_paper.questions = paper.questions
+            existing_paper.mcqs = paper.mcqs
             existing_paper.project_task = paper.project_task
             existing_paper.task_file_path = paper.task_file_path
             existing_paper.task_skills = paper.task_skills
@@ -116,6 +117,7 @@ async def send_test_paper_email(
                 position_id=paper.position_id,
                 name=paper.name,
                 questions=paper.questions,
+                mcqs=paper.mcqs,
                 project_task=paper.project_task,
                 task_file_path=paper.task_file_path,
                 task_skills=paper.task_skills,
@@ -136,6 +138,7 @@ async def send_test_paper_email(
         job_id=paper.job_id,
         name=paper.name,
         questions=paper.questions,
+        mcqs=paper.mcqs,
         project_task=paper.project_task,
         task_file_path=paper.task_file_path,
         task_skills=paper.task_skills,
@@ -256,6 +259,7 @@ async def send_bulk_test_paper_email(
                         )
                     existing_paper.name = paper.name
                     existing_paper.questions = paper.questions
+                    existing_paper.mcqs = paper.mcqs
                     existing_paper.project_task = paper.project_task
                     existing_paper.task_file_path = paper.task_file_path
                     existing_paper.task_skills = paper.task_skills
@@ -268,6 +272,7 @@ async def send_bulk_test_paper_email(
                         position_id=paper.position_id,
                         name=paper.name,
                         questions=paper.questions,
+                        mcqs=paper.mcqs,
                         project_task=paper.project_task,
                         task_file_path=paper.task_file_path,
                         task_skills=paper.task_skills,
@@ -282,6 +287,7 @@ async def send_bulk_test_paper_email(
                 job_id=current_paper.job_id,
                 name=current_paper.name,
                 questions=current_paper.questions,
+                mcqs=current_paper.mcqs,
                 project_task=current_paper.project_task,
                 task_file_path=current_paper.task_file_path,
                 task_skills=current_paper.task_skills,

@@ -335,13 +335,61 @@ async def assign_test_paper_to_candidate(
                 import logging
                 logging.getLogger(__name__).error("Dynamic skill extraction failed during assignment: %s", e)
 
-    # Ensure project_task is list[str]
+    # Ensure project_task is normalized to a list of dicts/strings, and restore instructions from predefined tasks bank.
     assigned_task_list = []
     if assigned_task:
+        import re
         if isinstance(assigned_task, list):
-            assigned_task_list = assigned_task
+            for item in assigned_task:
+                if isinstance(item, str):
+                    if "---" in item:
+                        parts = [p.strip() for p in re.split(r'\s*---\s*', item) if p.strip()]
+                        assigned_task_list.extend(parts)
+                    else:
+                        assigned_task_list.append(item)
+                else:
+                    assigned_task_list.append(item)
         elif isinstance(assigned_task, str):
-            assigned_task_list = [assigned_task] if assigned_task.strip() else []
+            if "---" in assigned_task:
+                parts = [p.strip() for p in re.split(r'\s*---\s*', assigned_task) if p.strip()]
+                assigned_task_list.extend(parts)
+            else:
+                assigned_task_list = [assigned_task] if assigned_task.strip() else []
+
+    # Reconstruct instructions for project tasks if missing
+    if assigned_task_list:
+        stmt_papers = select(QuestionSetPaper.project_task)
+        res_papers = await db.execute(stmt_papers)
+        all_db_tasks = res_papers.scalars().all()
+        
+        task_instruction_map = {}
+        for db_task_list in all_db_tasks:
+            if not db_task_list:
+                continue
+            for t in db_task_list:
+                if isinstance(t, dict):
+                    task_name = t.get("task") or t.get("title") or t.get("content") or t.get("task_title")
+                    instructions = t.get("instructions")
+                    if task_name and instructions:
+                        normalized_key = " ".join(task_name.strip().split())
+                        task_instruction_map[normalized_key] = instructions
+        
+        normalized_task_list = []
+        for item in assigned_task_list:
+            if isinstance(item, str):
+                task_str = item.strip()
+                lookup_key = " ".join(task_str.split())
+                instructions = task_instruction_map.get(lookup_key, "")
+                normalized_task_list.append({"task": task_str, "instructions": instructions})
+            elif isinstance(item, dict):
+                task_name = item.get("task") or item.get("title") or item.get("content") or item.get("task_title") or "Untitled Task"
+                task_str = task_name.strip()
+                lookup_key = " ".join(task_str.split())
+                instructions = item.get("instructions") or task_instruction_map.get(lookup_key, "")
+                normalized_task_list.append({"task": task_str, "instructions": instructions})
+            else:
+                normalized_task_list.append(item)
+        assigned_task_list = normalized_task_list
 
     # Persist the assigned test paper
     new_paper = CandidateTestPaper(
@@ -382,6 +430,25 @@ async def assign_test_paper_to_candidate(
         pass
 
     return new_paper
+
+
+def are_tasks_equal(tasks_a, tasks_b) -> bool:
+    def normalize_task(t):
+        if not t:
+            return {"task": "", "instructions": ""}
+        if isinstance(t, str):
+            return {"task": t.strip(), "instructions": ""}
+        if isinstance(t, dict):
+            task_name = t.get("task") or t.get("title") or t.get("content") or t.get("task_title") or ""
+            return {
+                "task": task_name.strip(),
+                "instructions": (t.get("instructions") or "").strip()
+            }
+        return {"task": "", "instructions": ""}
+
+    list_a = [normalize_task(t) for t in (tasks_a or [])]
+    list_b = [normalize_task(t) for t in (tasks_b or [])]
+    return list_a == list_b
 
 
 @router.get("/assigned/{candidate_id}", response_model=CandidateTestPaperRead)
@@ -454,7 +521,7 @@ async def get_candidate_test_paper(
                 job_paper = res_job.scalar_one_or_none()
                 if job_paper:
                     if (paper.name != job_paper.name or
-                        paper.project_task != job_paper.project_task or
+                        not are_tasks_equal(paper.project_task, job_paper.project_task) or
                         paper.task_file_path != job_paper.task_file_path or
                         paper.questions != job_paper.questions or
                         paper.mcqs != job_paper.mcqs):
@@ -674,7 +741,7 @@ async def download_candidate_task_file(
             if orig_paper:
                 # Compare questions, mcqs and project task
                 if (orig_paper.questions == test_paper.questions and 
-                    orig_paper.project_task == test_paper.project_task and
+                    are_tasks_equal(orig_paper.project_task, test_paper.project_task) and
                     getattr(orig_paper, "mcqs", []) == getattr(test_paper, "mcqs", [])):
                     is_modified = False
 
