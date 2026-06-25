@@ -15,7 +15,7 @@ import { useDebouncedValue } from "@/hooks";
 import { extractErrorMessage } from "@/utils/error";
 import { useDepartment } from "@/hooks/queries/admin/useDepartment";
 import { useJobPosition } from "@/hooks/queries/admin/useJobPosition";
-import { useSkill } from "@/hooks/queries/admin/useSkill";
+// import { useSkill } from "@/hooks/queries/admin/useSkill";
 import { slugify } from "@/utils/slug";
 
 // Sub-components
@@ -40,21 +40,21 @@ export default function QuestionsBank() {
 
   // Transient search inputs (not persisted)
   const [deptSearch, setDeptSearch] = useState<string>("");
-  const [skillSearch, setSkillSearch] = useState<string>("");
+  // const [skillSearch, setSkillSearch] = useState<string>("");
 
   // Debounce search query for backend API calls
   const debouncedDeptSearch = useDebouncedValue(deptSearch);
-  const debouncedSkillSearch = useDebouncedValue(skillSearch);
+  // const debouncedSkillSearch = useDebouncedValue(skillSearch);
 
   // Fetch departments list
   const { data: departments, loading: loadingDepts } = useDepartment(0, 100, debouncedDeptSearch);
   const isDeptSearching = deptSearch !== debouncedDeptSearch;
   const handleDeptSearch = useCallback((query: string) => setDeptSearch(query), []);
 
-  // Fetch skills list
-  const { data: skills, loading: loadingSkills } = useSkill(0, 100, debouncedSkillSearch);
-  const isSkillSearching = skillSearch !== debouncedSkillSearch;
-  const handleSkillSearch = useCallback((query: string) => setSkillSearch(query), []);
+  // Fetch skills list (commented out to build skill filter using table's content displayed skills)
+  // const { data: skills, loading: loadingSkills } = useSkill(0, 100, debouncedSkillSearch);
+  // const isSkillSearching = skillSearch !== debouncedSkillSearch;
+  // const handleSkillSearch = useCallback((query: string) => setSkillSearch(query), []);
 
   const hasActiveFilters = useMemo(() => {
     const defaultDeptId = departments && departments.length > 0 ? departments[0].id : "";
@@ -84,7 +84,7 @@ export default function QuestionsBank() {
   } = useQuestionSetPapers({
     departmentId: selectedDeptId || undefined,
     positionId: selectedPositionId || undefined,
-    skillId: selectedSkillId || undefined,
+    // skillId: selectedSkillId || undefined,
   });
 
   // Fetch positions for filters
@@ -162,13 +162,36 @@ export default function QuestionsBank() {
     return items;
   }, [questionPapers]);
 
-  // Client-side filtering by content type
+  // Extract unique skills from flatItems (table's content displayed skills)
+  const skills = useMemo(() => {
+    const skillMap = new Map<string, { id: string; name: string }>();
+    flatItems.forEach((item) => {
+      item.skills?.forEach((skill) => {
+        if (skill && skill.id && skill.name) {
+          skillMap.set(skill.id, skill);
+        }
+      });
+    });
+    return Array.from(skillMap.values());
+  }, [flatItems]);
+
+  const loadingSkills = false;
+  const isSkillSearching = false;
+  const handleSkillSearch = useCallback(() => {}, []);
+
+  // Client-side filtering by content type and skill
   const filteredFlatItems = useMemo(() => {
-    if (selectedContentType === "all") {
-      return flatItems;
+    let items = flatItems;
+    if (selectedSkillId) {
+      items = items.filter((item) =>
+        item.skills?.some((s) => s.id === selectedSkillId)
+      );
     }
-    return flatItems.filter((item) => item.type === selectedContentType);
-  }, [flatItems, selectedContentType]);
+    if (selectedContentType !== "all") {
+      items = items.filter((item) => item.type === selectedContentType);
+    }
+    return items;
+  }, [flatItems, selectedSkillId, selectedContentType]);
 
   // Modal states and handlers (only delete modal is kept)
   const [activeModal, setActiveModal] = useState<"delete" | null>(null);

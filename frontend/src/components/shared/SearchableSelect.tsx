@@ -3,17 +3,16 @@
  * options from a list. It supports both local filtering and remote (async) searching, and both single/multi-select.
  */
 import { useState, useMemo, useEffect } from "react";
-import { ChevronDown, Search, Loader2 } from "lucide-react";
+import { Search, Loader2 } from "lucide-react";
 import { capitalize, cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuCheckboxItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectSeparator,
+  SelectTrigger,
+} from "@/components/ui/select";
 import {
   HoverCard,
   HoverCardContent,
@@ -204,31 +203,26 @@ export function SearchableSelect({
       return selectedOptions[0] ? selectedOptions[0].label : placeholder;
     }
   }, [multiple, value, selectedOptions, placeholder, pluralLabel, getTriggerLabel, loading, loadingPlaceholder]);
-  const handleSelect = (id: string) => {
-    if (multiple) {
-      const valArr = (value as string[]) || [];
-      const newValue = valArr.includes(id)
-        ? valArr.filter((v) => v !== id)
-        : [...valArr, id];
-      (onValueChange as (val: string[]) => void)(newValue);
-    } else {
-      (onValueChange as (val: string) => void)(id);
-    }
-  };
+  const [open, setOpen] = useState(false);
 
   const hasSelection = multiple
     ? ((value as string[]) || []).length > 0
     : !!value;
 
   return (
-    <DropdownMenu onOpenChange={(open) => {
-      if (!open) {
-        setSearch("");
-      }
-    }}
-      modal={false}
+    <Select
+      value={value}
+      onValueChange={onValueChange as any}
+      multiple={multiple}
+      open={open}
+      onOpenChange={(nextOpen) => {
+        setOpen(nextOpen);
+        if (!nextOpen) {
+          setSearch("");
+        }
+      }}
     >
-      <DropdownMenuTrigger
+      <SelectTrigger
         disabled={disabled || loading}
         className={cn(
           "w-full h-11 bg-input/20 hover:bg-input/30 text-sm rounded-xl px-3 justify-between font-normal text-foreground inline-flex items-center cursor-pointer transition-all border border-border/50 outline-none focus:border-border/50",
@@ -237,12 +231,14 @@ export function SearchableSelect({
       >
         <span className="inline-flex items-center gap-2 truncate max-w-full">
           {icon}
-          {/* <span className="truncate capitalize">{triggerLabelText.replace(/ed$/, "")}</span> */}
           <span className="truncate capitalize">{triggerLabelText}</span>
         </span>
-        <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50 text-muted-foreground" />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className={cn("p-2 w-(--anchor-width)", contentClassName)}>
+      </SelectTrigger>
+      <SelectContent
+        align="start"
+        className={cn("p-2 min-w-(--anchor-width) w-max max-w-[min(calc(100vw-1rem),400px)]", contentClassName)}
+        alignItemWithTrigger={true}
+      >
         {(search || options.length >= displayLimit) && (
           <div className="px-1 pb-2">
             <div className="relative">
@@ -261,7 +257,7 @@ export function SearchableSelect({
             </div>
           </div>
         )}
-        <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
+        <div className="max-h-[300px] overflow-y-auto overflow-x-hidden custom-scrollbar">
           {filteredOptions.length === 0 ? (
             <div className="px-2 py-4 text-xs text-center text-muted-foreground">
               {emptyMessage}{search.trim() ? ` "${search}"` : ""}
@@ -300,34 +296,17 @@ export function SearchableSelect({
                   return itemContent;
                 };
 
-                if (multiple) {
-                  return (
-                    <DropdownMenuCheckboxItem
-                      key={opt.id}
-                      checked={isSelected}
-                      onSelect={(e) => e.preventDefault()}
-                      onClick={() => handleSelect(opt.id)}
-                      className={cn(
-                        "rounded-lg my-0.5 cursor-pointer text-sm pl-2 pr-6 py-1.5 focus:bg-accent focus:text-accent-foreground",
-                        isSelected && "bg-accent/50 font-semibold"
-                      )}
-                    >
-                      {renderOptionContent()}
-                    </DropdownMenuCheckboxItem>
-                  );
-                }
-
                 return (
-                  <DropdownMenuItem
+                  <SelectItem
                     key={opt.id}
-                    onClick={() => handleSelect(opt.id)}
+                    value={opt.id}
                     className={cn(
                       "rounded-lg my-0.5 cursor-pointer text-sm pl-2 pr-6 py-1.5 focus:bg-accent focus:text-accent-foreground",
                       isSelected && "bg-accent/50 font-semibold"
                     )}
                   >
                     {renderOptionContent()}
-                  </DropdownMenuItem>
+                  </SelectItem>
                 );
               })}
               {filteredOptions.length > displayLimit && (
@@ -340,17 +319,21 @@ export function SearchableSelect({
         </div>
         {hasSelection && onClear && (
           <>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              variant="destructive"
-              onClick={onClear}
-              className="rounded-lg cursor-pointer"
+            <SelectSeparator />
+            <div
+              role="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onClear();
+                setOpen(false);
+              }}
+              className="rounded-xl cursor-pointer text-destructive hover:bg-destructive/10 px-3 py-2 text-sm select-none transition-colors"
             >
               {clearLabel}
-            </DropdownMenuItem>
+            </div>
           </>
         )}
-      </DropdownMenuContent>
-    </DropdownMenu>
+      </SelectContent>
+    </Select>
   );
 }
