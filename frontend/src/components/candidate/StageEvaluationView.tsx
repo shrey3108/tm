@@ -112,7 +112,7 @@ export function StageEvaluationView({
                     </Button>
                   )}
                 />
-                <HoverCardContent className="w-full p-0.5 text-xs rounded-lg">
+                <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
                   Github Submmited link
                 </HoverCardContent>
               </HoverCard>
@@ -140,7 +140,7 @@ export function StageEvaluationView({
                     </Button>
                   )}
                 />
-                <HoverCardContent className="w-full p-0.5 text-xs rounded-lg">
+                <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
                   View Task file
                 </HoverCardContent>
               </HoverCard>

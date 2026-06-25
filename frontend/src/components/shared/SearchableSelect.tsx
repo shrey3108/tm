@@ -290,7 +290,7 @@ export function SearchableSelect({
                         <HoverCardTrigger delay={10} closeDelay={10} className="w-full truncate">
                           {itemContent}
                         </HoverCardTrigger>
-                        <HoverCardContent className="w-64 p-2 rounded-lg" side="right" sideOffset={40}>
+                        <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="right" sideOffset={40}>
                           {opt.hoverContent}
                         </HoverCardContent>
                       </HoverCard>

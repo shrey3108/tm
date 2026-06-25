@@ -200,7 +200,7 @@ const AdminJobPositions = () => {
                   </Button>
                 )}
               />
-              <HoverCardContent className="w-fit px-3 py-1.5 text-xs font-medium" side="top">
+              <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
                 <span className="text-primary">Edit Position</span>
               </HoverCardContent>
             </HoverCard>
@@ -223,7 +223,7 @@ const AdminJobPositions = () => {
                   </Button>
                 )}
               />
-              <HoverCardContent className="w-fit px-3 py-1.5 text-xs font-medium" side="top">
+              <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
                 <span className="text-destructive">Delete Position</span>
               </HoverCardContent>
             </HoverCard>

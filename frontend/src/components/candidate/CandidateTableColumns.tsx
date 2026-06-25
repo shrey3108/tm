@@ -95,8 +95,8 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
                   <HoverCardTrigger delay={10} closeDelay={10}>
                     <CandidateEmailBadge email_sent_count={c.email_sent_count} />
                   </HoverCardTrigger>
-                  <HoverCardContent className="w-full p-0.5 text-xs rounded-lg">
-                    <p className="text-sm ">
+                  <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
+                    <p className="">
                       {c.email_sent_count && c.email_sent_count > 0 ? `Total email sent: ${c.email_sent_count}` : "No email sent yet"}
                     </p>
                   </HoverCardContent>
@@ -194,7 +194,7 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
                         style={{ left: `${passing_threshold}%` }} />
                     </div>
                   </HoverCardTrigger>
-                  <HoverCardContent className="w-full p-1 py-2 text-xs rounded-lg">
+                  <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
                     Score: {score.toFixed(2)}%<br />Threshold: {passing_threshold}%
                   </HoverCardContent>
                 </HoverCard>

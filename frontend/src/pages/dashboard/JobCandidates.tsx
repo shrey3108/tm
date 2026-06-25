@@ -72,8 +72,8 @@ function CandidateStagesButton({ candidate, jobSlug, job }: CandidateStagesButto
           </Button>
         )}
       />
-      <HoverCardContent side="top" className="w-auto p-2 min-w-0">
-        <div className="text-sm font-semibold text-blue-600">Stages</div>
+      <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
+        <div className="text-blue-600">Stages</div>
       </HoverCardContent>
     </HoverCard>
   );
@@ -366,8 +366,8 @@ export default function JobCandidates() {
                                   </Button>
                                 )}
                               />
-                              <HoverCardContent side="top" className="w-auto p-2 min-w-0">
-                                <div className="text-sm font-semibold text-amber-700">Reanalyze</div>
+                              <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
+                                <div className=" text-amber-700">Reanalyze</div>
                               </HoverCardContent>
                             </HoverCard>
                           </PermissionGuard>
@@ -390,8 +390,8 @@ export default function JobCandidates() {
                                 </Button>
                               )}
                             />
-                            <HoverCardContent side="top" className="w-auto p-2 min-w-0">
-                              <div className="text-sm font-semibold">More Info</div>
+                                 <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
+                              <div className="">More Info</div>
                             </HoverCardContent>
                           </HoverCard> */}
                           <CandidateStagesButton
@@ -416,8 +416,8 @@ export default function JobCandidates() {
                                 </Button>
                               )} />
 
-                            <HoverCardContent side="top" className="w-auto p-2 min-w-0">
-                              <div className="text-sm font-semibold">Delete</div>
+                                <HoverCardContent className="w-fit px-3 py-1.5 text-xs " side="top">
+                              <div className="">Delete</div>
                             </HoverCardContent>
                           </HoverCard> */}
                         </div>

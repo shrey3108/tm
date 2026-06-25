@@ -257,7 +257,7 @@ const AdminJobPriorities = () => {
                   </Button>
                 )}
               />
-              <HoverCardContent className="w-fit px-3 py-1.5 text-xs font-medium" side="top">
+              <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
                 <span className="text-primary">Edit Priority</span>
               </HoverCardContent>
             </HoverCard>
@@ -279,7 +279,7 @@ const AdminJobPriorities = () => {
                   </Button>
                 )}
               />
-              <HoverCardContent className="w-fit px-3 py-1.5 text-xs font-medium" side="top">
+              <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
                 <span className="text-destructive">Delete Priority</span>
               </HoverCardContent>
             </HoverCard>

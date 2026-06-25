@@ -211,7 +211,7 @@ export const getJobColumns = ({
     //                       </Badge>
     //                     )}
     //                   />
-    //                   <HoverCardContent side="top" className="w-auto p-2 min-w-0">
+    //  <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
     //                     <div className="text-[14px] font-semibold text-primary">
     //                       Candidates for this session
     //                     </div>
@@ -322,7 +322,7 @@ export const getJobColumns = ({
                 )}
               />
               <HoverCardContent side="top" className="w-auto p-2 min-w-0">
-                <div className="text-sm font-semibold text-primary">
+                <div className="text-primary">
 
                   Edit Job
                 </div>
@@ -345,8 +345,8 @@ export const getJobColumns = ({
                   </Button>
                 )}
               />
-              <HoverCardContent side="top" className="w-auto p-2 min-w-0">
-                <div className="text-sm font-semibold text-destructive">
+              <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
+                <div className=" text-destructive">
                   Delete Job
                 </div>
               </HoverCardContent>
@@ -370,8 +370,8 @@ export const getJobColumns = ({
                   </Button>
                 )}
               />
-              <HoverCardContent side="top" className="w-auto p-2 min-w-0">
-                <div className="text-sm font-semibold text-blue-500">
+              <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
+                <div className="text-blue-500">
                   View Candidates
                 </div>
               </HoverCardContent>

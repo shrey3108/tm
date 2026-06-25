@@ -181,8 +181,8 @@ const AdminDashboardFilters = ({
               </Button>
             }
           />
-          <HoverCardContent className="flex items-center justify-center w-auto h-auto p-3 rounded-2xl border bg-popover shadow-2xl overflow-hidden">
-            <div className="font-medium text-sm">Clear all filters</div>
+          <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
+            <div className="text-xs">Clear all filters</div>
           </HoverCardContent>
         </HoverCard>
       )}

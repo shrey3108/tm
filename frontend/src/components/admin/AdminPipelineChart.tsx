@@ -192,8 +192,8 @@ export function StageCentricChart({ data }: StageCentricChartProps) {
                           {payload.value.length > 15 ? payload.value.substring(0, 12) + "..." : payload.value}
                         </text>
                       </HoverCardTrigger>
-                      <HoverCardContent className="w-auto p-2 bg-popover/90 backdrop-blur-sm border-primary/20 shadow-xl" side="top">
-                        <p className="text-xs font-bold uppercase text-foreground">{payload.value}</p>
+                      <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
+                        <p className="text-xs font-bold uppercase">{payload.value}</p>
                       </HoverCardContent>
                     </HoverCard>
                   </g>

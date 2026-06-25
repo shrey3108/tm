@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useMemo } from "react";
+import { usePageFilters } from "@/hooks/usePageFilters";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import AppPageShell from "@/components/shared/AppPageShell";
@@ -22,15 +23,24 @@ import { QuestionsBankFilters } from "@/components/questions-bank/QuestionsBankF
 import { QuestionsBankModals } from "@/components/questions-bank/QuestionsBankModals";
 import { getQuestionsBankColumns, type FlatItem } from "@/components/questions-bank/QuestionsBankColumns";
 
+/** Default filter values for the QuestionsBank page. */
+const questionsBankDefaults = {
+  selectedDeptId: "",
+  selectedPositionId: "",
+  selectedSkillId: "",
+  selectedContentType: "all",
+};
+
 export default function QuestionsBank() {
   const navigate = useNavigate();
-  const [selectedDeptId, setSelectedDeptId] = useState<string>("");
-  const [deptSearch, setDeptSearch] = useState<string>("");
 
-  const [selectedPositionId, setSelectedPositionId] = useState<string>("");
-  const [selectedSkillId, setSelectedSkillId] = useState<string>("");
+  // Persisted filters via Redux + sessionStorage
+  const { filters, setFilter } = usePageFilters("questionsBank", questionsBankDefaults);
+  const { selectedDeptId, selectedPositionId, selectedSkillId, selectedContentType } = filters;
+
+  // Transient search inputs (not persisted)
+  const [deptSearch, setDeptSearch] = useState<string>("");
   const [skillSearch, setSkillSearch] = useState<string>("");
-  const [selectedContentType, setSelectedContentType] = useState<string>("all");
 
   // Debounce search query for backend API calls
   const debouncedDeptSearch = useDebouncedValue(deptSearch);
@@ -48,9 +58,9 @@ export default function QuestionsBank() {
 
   useEffect(() => {
     if (departments.length > 0 && !selectedDeptId) {
-      setSelectedDeptId(departments[0].id);
+      setFilter("selectedDeptId", departments[0].id);
     }
-  }, [departments, selectedDeptId]);
+  }, [departments, selectedDeptId, setFilter]);
 
   // Fetch predefined Question Set Papers
   const {
@@ -157,13 +167,8 @@ export default function QuestionsBank() {
   const deleteMCQMutation = useDeleteMCQFromPaperMutation();
 
   const handleCreateNew = useCallback(() => {
-    navigate("/dashboard/questions-bank/new", {
-      state: {
-        departmentId: selectedDeptId,
-        positionId: selectedPositionId,
-      },
-    });
-  }, [navigate, selectedDeptId, selectedPositionId]);
+    navigate("/dashboard/questions-bank/new");
+  }, [navigate]);
 
   const handleEditClick = useCallback((item: FlatItem) => {
     const slug = slugify(item.paperName || "new-paper");
@@ -172,11 +177,9 @@ export default function QuestionsBank() {
         paperId: item.paperId,
         itemIndex: item.itemIndex,
         itemType: item.type,
-        departmentId: selectedDeptId,
-        positionId: selectedPositionId,
       },
     });
-  }, [navigate, selectedDeptId, selectedPositionId]);
+  }, [navigate]);
 
   const handleDeleteClick = useCallback((item: FlatItem) => {
     setSelectedItem(item);
@@ -227,23 +230,23 @@ export default function QuestionsBank() {
         {/* Top Control Bar */}
         <QuestionsBankFilters
           selectedDeptId={selectedDeptId}
-          setSelectedDeptId={setSelectedDeptId}
+          setSelectedDeptId={(id) => setFilter("selectedDeptId", id)}
           departments={departments}
           loadingDepts={loadingDepts}
           isDeptSearching={isDeptSearching}
           handleDeptSearch={handleDeptSearch}
           selectedPositionId={selectedPositionId}
-          setSelectedPositionId={setSelectedPositionId}
+          setSelectedPositionId={(id) => setFilter("selectedPositionId", id)}
           positions={positions}
           loadingPositions={loadingPositions}
           selectedSkillId={selectedSkillId}
-          setSelectedSkillId={setSelectedSkillId}
+          setSelectedSkillId={(id) => setFilter("selectedSkillId", id)}
           skills={skills}
           loadingSkills={loadingSkills}
           isSkillSearching={isSkillSearching}
           handleSkillSearch={handleSkillSearch}
           selectedContentType={selectedContentType}
-          setSelectedContentType={setSelectedContentType}
+          setSelectedContentType={(type) => setFilter("selectedContentType", type)}
           onCreateNew={handleCreateNew}
         />
 

@@ -211,7 +211,7 @@ const AdminSkills = () => {
                     </Button>
                   )}
                 />
-                <HoverCardContent className="w-fit px-3 py-1.5 text-xs font-medium" side="top">
+                <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
                   <span className="text-primary">Edit Skill</span>
                 </HoverCardContent>
               </HoverCard>
@@ -231,7 +231,7 @@ const AdminSkills = () => {
                     </Button>
                   )}
                 />
-                <HoverCardContent className="w-fit px-3 py-1.5 text-xs font-medium" side="top">
+                <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
                   <span className="text-destructive">Delete Skill</span>
                 </HoverCardContent>
               </HoverCard>

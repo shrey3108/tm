@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
+import { usePageFilters } from "@/hooks/usePageFilters";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { X, Save } from "lucide-react";
@@ -55,17 +56,23 @@ export default function QuestionsBankCreate() {
 
   const isEditMode = !!slug && slug !== "new";
 
-  // Get initial values from routing state if redirecting from main page
+  // Get initial values from routing state (item-specific, not filter state)
   const {
     paperId: initialPaperId,
     itemIndex: initialItemIndex,
     itemType: initialItemType,
-    departmentId: initialDeptId,
-    positionId: initialPositionId,
   } = (location.state as any) || {};
 
-  const [departmentId, setDepartmentId] = useState<string>(initialDeptId || "");
-  const [positionId, setPositionId] = useState<string>(initialPositionId || "");
+  // Read department/position from Redux (shared with QuestionsBank listing page)
+  const { filters: questionsBankFilters } = usePageFilters("questionsBank", {
+    selectedDeptId: "",
+    selectedPositionId: "",
+    selectedSkillId: "",
+    selectedContentType: "all",
+  });
+
+  const [departmentId, setDepartmentId] = useState<string>(questionsBankFilters.selectedDeptId || "");
+  const [positionId, setPositionId] = useState<string>(questionsBankFilters.selectedPositionId || "");
   const [deptSearch, setDeptSearch] = useState<string>("");
 
   const debouncedDeptSearch = useDebouncedValue(deptSearch);

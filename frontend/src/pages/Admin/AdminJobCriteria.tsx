@@ -211,7 +211,7 @@ const AdminJobCriteria = () => {
                                 </Button>
                             )}
                         />
-                        <HoverCardContent className="w-fit px-3 py-1.5 text-xs font-medium" side="top">
+                        <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
                             <span className="text-blue-600">View Info</span>
                         </HoverCardContent>
                     </HoverCard>
@@ -232,7 +232,7 @@ const AdminJobCriteria = () => {
                                     </Button>
                                 )}
                             />
-                            <HoverCardContent className="w-fit px-3 py-1.5 text-xs font-medium" side="top">
+                            <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
                                 <span className="text-primary">Edit Criteria</span>
                             </HoverCardContent>
                         </HoverCard>
@@ -254,7 +254,7 @@ const AdminJobCriteria = () => {
                                     </Button>
                                 )}
                             />
-                            <HoverCardContent className="w-fit px-3 py-1.5 text-xs font-medium" side="top">
+                            <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
                                 <span className="text-destructive">Delete Criteria</span>
                             </HoverCardContent>
                         </HoverCard>

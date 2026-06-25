@@ -73,7 +73,7 @@ export const TimelineCard = React.memo(function TimelineCard({
                       : "text-foreground/90")}
               >{event.title}</h4>
             </HoverCardTrigger>
-            <HoverCardContent className="w-auto p-2 bg-popover/90 backdrop-blur-sm border-primary/20 shadow-xl" side="top">
+            <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
               {event.title}
             </HoverCardContent>
           </HoverCard>

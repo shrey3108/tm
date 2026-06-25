@@ -71,8 +71,8 @@ const CandidateSearchTable = ({
                 </Button>
               )}
             />
-            <HoverCardContent side="top" className="w-auto p-2 min-w-0">
-              <div className="text-sm font-semibold">Candidate Info</div>
+            <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
+              <div className="text-xs">Candidate Info</div>
             </HoverCardContent>
           </HoverCard>
           {/* <HoverCard>
@@ -89,8 +89,8 @@ const CandidateSearchTable = ({
                 </Button>
               )}
             />
-            <HoverCardContent side="top" className="w-auto p-2 min-w-0">
-              <div className="text-sm font-semibold">Delete</div>
+            <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
+              <div className="text-xs">Delete</div>
             </HoverCardContent>
           </HoverCard> */}
         </div>

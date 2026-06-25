@@ -156,7 +156,7 @@ const AdminPrompts = () => {
                                 </Button>
                             )}
                         />
-                        <HoverCardContent side="top" className="w-auto p-2 min-w-0">
+                        <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
                             <div className="text-xs">View Prompt</div>
                         </HoverCardContent>
                     </HoverCard>
