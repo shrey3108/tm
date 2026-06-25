@@ -10,6 +10,7 @@ import type {
   CandidateTestPaperBulkEmailSend,
   JobCandidateSkillsRead,
   MCQItem,
+  QuestionItem,
   CandidateTestPaperHistoryRead,
   TaskPaperPreviewResponse,
   TaskItem,
@@ -209,7 +210,7 @@ export const taskService = {
       skip?: number;
       limit?: number;
     }
-  ): Promise<{ questions: string[]; project_task: string[]; mcqs: MCQItem[] }> => {
+  ): Promise<{ questions: (QuestionItem | string)[]; project_task: (TaskItem | string)[]; mcqs: MCQItem[] }> => {
     const params = filters
       ? {
         department_id: filters.departmentId || undefined,
@@ -222,7 +223,7 @@ export const taskService = {
         limit: filters.limit !== undefined ? filters.limit : undefined,
       }
       : {};
-    const response = await client.get<{ questions: string[]; project_task: string[]; mcqs: MCQItem[] }>(
+    const response = await client.get<{ questions: (QuestionItem | string)[]; project_task: (TaskItem | string)[]; mcqs: MCQItem[] }>(
       "/task-papers/all-content",
       { params }
     );
@@ -379,7 +380,7 @@ export const taskService = {
    */
   addQuestionToPaper: async (
     paperId: string,
-    question: string
+    question: QuestionItem | string
   ): Promise<QuestionSetPaperRead> => {
     const response = await client.post<QuestionSetPaperRead>(
       `/task-papers/${paperId}/questions`,
@@ -394,7 +395,7 @@ export const taskService = {
   updateQuestionInPaper: async (
     paperId: string,
     index: number,
-    question: string
+    question: QuestionItem | string
   ): Promise<QuestionSetPaperRead> => {
     const response = await client.put<QuestionSetPaperRead>(
       `/task-papers/${paperId}/questions/${index}`,

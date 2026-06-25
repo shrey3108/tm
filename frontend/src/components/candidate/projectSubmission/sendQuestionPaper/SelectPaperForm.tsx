@@ -67,7 +67,7 @@ export function SelectPaperForm({
                 <ul className="list-decimal pl-4.5 space-y-1">
                   {selectedPaper.questions.map((q, idx) => (
                     <li key={idx} className="text-xs text-foreground/80 leading-relaxed">
-                      {q}
+                      {typeof q === "string" ? q : q.question || ""}
                     </li>
                   ))}
                 </ul>

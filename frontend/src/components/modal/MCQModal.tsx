@@ -28,8 +28,8 @@ import {
 } from "@/components/ui/dialog";
 import { Plus, Trash2 } from "lucide-react";
 import type { MCQItem } from "@/types/taskPaper";
-import { mcqSchema, type MCQFormValues } from "@/schemas/taskPaper";
-import { Required } from "@/components/job-form/Required"
+import { mcqFormSchema, type MCQFormValues } from "@/schemas/taskPaper";
+import { Required } from "@/components/job-form/Required";
 
 interface MCQModalProps {
   show: boolean;
@@ -49,11 +49,14 @@ export default function MCQModal({
   const isEditMode = !!initialValue;
 
   const form = useForm<MCQFormValues>({
-    resolver: zodResolver(mcqSchema),
+    resolver: zodResolver(mcqFormSchema) as any,
     defaultValues: {
       question: "",
       options: ["", ""],
       answer: "A",
+      marks: "",
+      hours: 0,
+      minutes: 5,
     },
   });
 
@@ -64,7 +67,7 @@ export default function MCQModal({
     if (show) {
       if (initialValue) {
         // Find which option letter matches the answer text
-        const { question, options: rawOptions, answer } = initialValue;
+        const { question, options: rawOptions, answer, marks, duration } = initialValue;
         const answerIndex = rawOptions.indexOf(answer);
         const answerLetter = answerIndex !== -1 ? String.fromCharCode(65 + answerIndex) : "A";
 
@@ -72,12 +75,18 @@ export default function MCQModal({
           question,
           options: rawOptions.length >= 2 ? rawOptions : [...rawOptions, ...Array(2 - rawOptions.length).fill("")],
           answer: answerLetter,
+          marks: marks || "",
+          hours: duration ? Math.floor(duration / 60) : 0,
+          minutes: duration ? duration % 60 : 5,
         });
       } else {
         reset({
           question: "",
           options: ["", ""],
           answer: "A",
+          marks: "",
+          hours: 0,
+          minutes: 5,
         });
       }
     }
@@ -87,10 +96,16 @@ export default function MCQModal({
     const answerIndex = data.answer.charCodeAt(0) - 65;
     const answerText = data.options[answerIndex] || "";
 
+    const hours = typeof data.hours === "number" ? data.hours : 0;
+    const minutes = typeof data.minutes === "number" ? data.minutes : 0;
+    const duration = hours * 60 + minutes;
+
     const mcqItem: MCQItem = {
       question: data.question.trim(),
       options: data.options.map((opt) => opt.trim()),
       answer: answerText.trim(),
+      marks: typeof data.marks === "number" ? data.marks : 0,
+      duration,
     };
 
     await onSave(mcqItem);
@@ -99,7 +114,7 @@ export default function MCQModal({
 
   return (
     <Dialog open={show} onOpenChange={(open) => !open && !isSaving && handleClose()}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto p-4">
+      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto p-4">
         <DialogHeader>
           <DialogTitle>
             {isEditMode ? "Edit MCQ" : "Add New MCQ"}
@@ -108,12 +123,13 @@ export default function MCQModal({
 
         <Form {...form}>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            {/* MCQ Question Text */}
             <FormField
-              control={control}
+              control={control as any}
               name="question"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>MCQ Question Text</FormLabel>
+                  <FormLabel className="text-sm font-semibold">MCQ Question Text</FormLabel>
                   <FormControl>
                     <Textarea
                       placeholder="Enter the MCQ question text ..."
@@ -127,6 +143,7 @@ export default function MCQModal({
               )}
             />
 
+            {/* MCQ Options */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <FormLabel className="text-sm font-semibold">MCQ Options</FormLabel>
@@ -143,7 +160,6 @@ export default function MCQModal({
                 >
                   <Plus className="h-4 w-4" /> Add Option
                 </Button>
-
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -152,7 +168,7 @@ export default function MCQModal({
                   return (
                     <FormField
                       key={index}
-                      control={control}
+                      control={control as any}
                       name={`options.${index}`}
                       render={({ field }) => (
                         <FormItem className="space-y-1">
@@ -200,6 +216,7 @@ export default function MCQModal({
               </div>
             </div>
 
+            {/* Correct Answer selector */}
             <FormField
               control={control}
               name="answer"
@@ -232,6 +249,73 @@ export default function MCQModal({
                 </FormItem>
               )}
             />
+
+            {/* Marks & Duration Section */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-4 rounded-xl border border-border bg-muted/20">
+              {/* Marks */}
+              <FormField
+                control={control as any}
+                name="marks"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs font-semibold">Marks</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="10"
+                        disabled={isSaving}
+                        min={1}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage className="text-xs font-semibold text-destructive animate-in fade-in slide-in-from-top-1 duration-200" />
+                  </FormItem>
+                )}
+              />
+
+              {/* Hours */}
+              <FormField
+                control={control as any}
+                name="hours"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs font-semibold">Hours</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="0"
+                        disabled={isSaving}
+                        min={0}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage className="text-xs font-semibold text-destructive animate-in fade-in slide-in-from-top-1 duration-200" />
+                  </FormItem>
+                )}
+              />
+
+              {/* Minutes */}
+              <FormField
+                control={control as any}
+                name="minutes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs font-semibold">Minutes</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="30"
+                        disabled={isSaving}
+                        min={0}
+                        max={59}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage className="text-xs font-semibold text-destructive animate-in fade-in slide-in-from-top-1 duration-200" />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <DialogFooter className="mt-4 pt-2">
               <Button

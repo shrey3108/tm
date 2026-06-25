@@ -1,9 +1,10 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import { Edit2, Trash2Icon } from "lucide-react";
+import { Edit2, Trash2Icon, Award, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import PermissionGuard from "@/components/auth/PermissionGuard";
 import { PERMISSIONS } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
+import { formatDuration } from "@/utils/taskFormatter";
 import {
   HoverCard,
   HoverCardTrigger,
@@ -43,11 +44,62 @@ export const getQuestionsBankColumns = ({
           <span className="text-base">Content</span>
         </div>
       ),
-      cell: ({ row }) => (
-        <div className="min-w-[400px] whitespace-pre-wrap wrap-break-word">
-          {row.original.content}
-        </div>
-      ),
+      cell: ({ row }) => {
+        const item = row.original;
+        if (item.type === "project_task" && item.rawData && typeof item.rawData !== "string") {
+          const tasks = item.rawData.tasks || [];
+          const totalMarks = item.rawData.total_marks ?? tasks.reduce((sum: number, t: any) => sum + (t.marks || 0), 0);
+          const totalDuration = item.rawData.total_duration ?? tasks.reduce((sum: number, t: any) => sum + (t.duration || 0), 0);
+          
+          return (
+            <div className="min-w-[400px] whitespace-pre-wrap wrap-break-word space-y-1">
+              <div className="font-semibold text-foreground">{item.content}</div>
+              {tasks.length > 0 && (
+                <div className="flex items-center gap-1.5 text-[10px] font-bold">
+                  <span className="inline-flex items-center gap-1 bg-primary/5 text-primary border border-primary/10 px-2 py-0.5 rounded-full">
+                    <Award className="h-3 w-3" /> {totalMarks} Marks
+                  </span>
+                  <span className="inline-flex items-center gap-1 bg-primary/5 text-primary border border-primary/10 px-2 py-0.5 rounded-full">
+                    <Clock className="h-3 w-3" /> {formatDuration(totalDuration)}
+                  </span>
+                  <span className="text-muted-foreground/80">({tasks.length} sub-task{tasks.length > 1 ? "s" : ""})</span>
+                </div>
+              )}
+            </div>
+          );
+        }
+
+        if ((item.type === "question" || item.type === "mcq") && item.rawData && typeof item.rawData !== "string") {
+          const marks = item.rawData.marks;
+          const duration = item.rawData.duration;
+
+          return (
+            <div className="min-w-[400px] whitespace-pre-wrap wrap-break-word space-y-1">
+              <div className="font-medium text-foreground">{item.content}</div>
+              {(marks !== undefined || (duration !== undefined && duration > 0)) && (
+                <div className="flex items-center gap-1.5 text-[10px] font-bold">
+                  {marks !== undefined && (
+                    <span className="inline-flex items-center gap-1 bg-primary/5 text-primary border border-primary/10 px-2 py-0.5 rounded-full">
+                      <Award className="h-3 w-3" /> {marks} Marks
+                    </span>
+                  )}
+                  {duration !== undefined && duration > 0 && (
+                    <span className="inline-flex items-center gap-1 bg-primary/5 text-primary border border-primary/10 px-2 py-0.5 rounded-full">
+                      <Clock className="h-3 w-3" /> {formatDuration(duration)}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        }
+
+        return (
+          <div className="min-w-[400px] whitespace-pre-wrap wrap-break-word">
+            {row.original.content}
+          </div>
+        );
+      },
     },
     {
       accessorKey: "type",
