@@ -170,52 +170,15 @@ async def test_task_papers_flow():
     client = TestClient(app)
 
     try:
-        # Patch Celery task trigger and Document parsing & LLM extraction helpers to test logic synchronously
-        with patch("app.v1.services.admin.job_tasks.extract_paper_task_skills_task.delay") as mock_delay, \
-             patch("app.v1.core.extractor.DocumentParser.extract_text") as mock_extract_text, \
-             patch("app.v1.core.extractor.DocumentParser.extract_text_docling") as mock_extract_text_docling, \
-             patch("app.v1.services.admin.candidate_task_service.candidate_task_service.extract_paper_details_from_text") as mock_llm_extract, \
-             patch("app.v1.routes.task_papers_email.send_candidate_task_email_via_smtp") as mock_send_email:
+        with patch("app.v1.routes.task_papers_email.send_candidate_task_email_via_smtp") as mock_send_email:
 
-            # 3. Create question set papers via Form Upload
-            # Upload Paper A
-            files_a = {"task_file": ("test_task_a.pdf", b"test pdf content a", "application/pdf")}
-            data = {
+            # 3. Create question set papers via POST /manual
+            # Manual Paper A
+            data_a = {
                 "department_id": str(department_id),
                 "position_id": str(position_id),
-                "skill_ids": ",".join(str(sid) for sid in job_skill_ids),
-            }
-            response = client.post("/api/v1/task-papers/upload", data=data, files=files_a)
-            assert response.status_code == 201
-            created_papers_a = response.json()
-            assert len(created_papers_a) == 1
-            paper_a = created_papers_a[0]
-            paper_a_id = paper_a["id"]
-            assert paper_a["name"] == "test_task_a.pdf"
-            assert paper_a["questions"] == []
-            assert paper_a["project_task"] == []
-
-            # Upload Paper B
-            files_b = {"task_file": ("test_task_b.docx", b"test docx content b", "application/vnd.openxmlformats-officedocument.wordprocessingml.document")}
-            response = client.post("/api/v1/task-papers/upload", data=data, files=files_b)
-            assert response.status_code == 201
-            created_papers_b = response.json()
-            assert len(created_papers_b) == 1
-            paper_b = created_papers_b[0]
-            paper_b_id = paper_b["id"]
-            assert paper_b["name"] == "test_task_b.docx"
-            assert paper_b["questions"] == []
-            assert paper_b["project_task"] == []
-
-            # Verify that background task was queued twice
-            assert mock_delay.call_count == 2
-
-            # Simulate Celery background execution synchronously
-            from app.v1.services.admin.job_tasks import extract_paper_task_skills_logic
-            
-            mock_extract_text.return_value = "dummy text content for paper A"
-            mock_extract_text_docling.return_value = "dummy text content for paper A"
-            mock_llm_extract.return_value = {
+                "skill_ids": [str(sid) for sid in job_skill_ids],
+                "paper_type": "mixed",
                 "questions": [
                     "Explain python generators.",
                     "What is GIL?",
@@ -224,14 +187,22 @@ async def test_task_papers_flow():
                     "Explain python type hints.",
                 ],
                 "mcqs": [],
-                "project_task": ["Build a REST API with FastAPI."],
-                "skills": ["FastAPI", "Python"],
+                "project_task": [{"task": "Build a REST API with FastAPI.", "instructions": ""}]
             }
-            await extract_paper_task_skills_logic(str(paper_a_id), paper_a["task_file_path"])
+            response = client.post("/api/v1/task-papers/manual", json=data_a)
+            assert response.status_code == 201
+            paper_a = response.json()
+            paper_a_id = paper_a["id"]
+            assert paper_a["name"].startswith("Custom Paper - ")
+            assert paper_a["questions"] == data_a["questions"]
+            assert len(paper_a["project_task"]) == 1
 
-            mock_extract_text.return_value = "dummy text content for paper B"
-            mock_extract_text_docling.return_value = "dummy text content for paper B"
-            mock_llm_extract.return_value = {
+            # Manual Paper B
+            data_b = {
+                "department_id": str(department_id),
+                "position_id": str(position_id),
+                "skill_ids": [str(sid) for sid in job_skill_ids],
+                "paper_type": "mixed",
                 "questions": [
                     "What is asyncio?",
                     "How does multithreading differ from multiprocessing in Python?",
@@ -240,10 +211,15 @@ async def test_task_papers_flow():
                     "Explain __slots__.",
                 ],
                 "mcqs": [],
-                "project_task": ["Implement a task runner in Python."],
-                "skills": ["Asyncio", "Python"],
+                "project_task": [{"task": "Implement a task runner in Python.", "instructions": ""}]
             }
-            await extract_paper_task_skills_logic(str(paper_b_id), paper_b["task_file_path"])
+            response = client.post("/api/v1/task-papers/manual", json=data_b)
+            assert response.status_code == 201
+            paper_b = response.json()
+            paper_b_id = paper_b["id"]
+            assert paper_b["name"].startswith("Custom Paper - ")
+            assert paper_b["questions"] == data_b["questions"]
+            assert len(paper_b["project_task"]) == 1
 
             # 4. List question set papers
             # GET /api/v1/task-papers
@@ -260,12 +236,7 @@ async def test_task_papers_flow():
             # GET /api/v1/task-papers/{paper_id}
             response = client.get(f"/api/v1/task-papers/{paper_a_id}")
             assert response.status_code == 200
-            assert response.json()["name"] == "test_task_a.pdf"
-
-            # Verify Paper Task File download
-            response = client.get(f"/api/v1/task-papers/{paper_a_id}/task-file")
-            assert response.status_code == 200
-            assert response.content == b"test pdf content a"
+            assert response.json()["name"].startswith("Custom Paper - ")
 
             # Test sending email before any paper is assigned returns 404
             email_payload = {
@@ -292,10 +263,10 @@ async def test_task_papers_flow():
             )
             assert response.status_code == 200
             assigned_paper = response.json()
-            assert assigned_paper["name"] == "test_task_a.pdf"
+            assert assigned_paper["name"].startswith("Custom Paper - ")
             assert len(assigned_paper["questions"]) == 5
             assert assigned_paper["project_task"] == [{"task": "Build a REST API with FastAPI.", "instructions": ""}]
-            assert assigned_paper["task_file_path"] is not None
+            assert assigned_paper["task_file_path"] is None
 
             # Test sending email after assigning predefined paper returns 200
             email_payload["paper_id"] = assigned_paper["id"]
@@ -332,20 +303,20 @@ async def test_task_papers_flow():
             # GET /api/v1/task-papers/assigned/{candidate_id}
             response = client.get(f"/api/v1/task-papers/assigned/{candidate_id}")
             assert response.status_code == 200
-            assert response.json()["name"] == "test_task_a.pdf"
-            assert response.json()["task_file_path"] is not None
+            assert response.json()["name"].startswith("Custom Paper - ")
+            assert response.json()["task_file_path"] is None
 
             # 5b. Verify candidate task fallback download and get endpoints
             # GET /api/v1/task-papers/assigned/{candidate_id}/task/file
             response = client.get(f"/api/v1/task-papers/assigned/{candidate_id}/task/file")
             assert response.status_code == 200
-            assert response.content == b"test pdf content a"
+            assert response.headers["content-type"] == "application/pdf"
 
             # GET /api/v1/task-papers/assigned/{candidate_id}/task
             response = client.get(f"/api/v1/task-papers/assigned/{candidate_id}/task")
             assert response.status_code == 200
-            assert response.json()["task_file_path"] is not None
-            assert response.json()["is_custom_task"] is True
+            assert response.json()["task_file_path"] is None
+            assert response.json()["is_custom_task"] is False
 
             # 5c. Verify candidate test paper assignment with custom overrides
             assign_override_payload = {
@@ -361,11 +332,11 @@ async def test_task_papers_flow():
             )
             assert response.status_code == 200
             override_assigned = response.json()
-            assert override_assigned["name"] == "test_task_a.pdf"
+            assert override_assigned["name"].startswith("Custom Paper - ")
             assert override_assigned["questions"] == ["Override Q1", "Override Q2", "Override Q3", "Override Q4", "Override Q5"]
             assert override_assigned["project_task"] == [{"task": "Override Project Task Description", "instructions": ""}]
-            assert override_assigned["task_file_path"] == paper_a["task_file_path"]
-            assert override_assigned["task_skills"] == ["FastAPI", "Python"]
+            assert override_assigned["task_file_path"] is None
+            assert override_assigned["task_skills"] is None
 
             # 6. Assign random paper (generates 5 random questions and 1 random task)
             assign_random_payload = {
@@ -455,13 +426,13 @@ async def test_task_papers_flow():
             # GET candidate's assigned paper should now fall back to the job-level default!
             response = client.get(f"/api/v1/task-papers/assigned/{candidate_id}")
             assert response.status_code == 200
-            assert response.json()["name"] == "test_task_b.docx"
+            assert response.json()["name"].startswith("Custom Paper - ")
             assert response.json()["candidate_id"] is None
 
             # GET task download should also fall back to job-level paper
             response = client.get(f"/api/v1/task-papers/assigned/{candidate_id}/task/file")
             assert response.status_code == 200
-            assert response.content == b"test docx content b"
+            assert response.headers["content-type"] == "application/pdf"
 
             # Test sending email using job-level default paper returns 200
             email_payload = {
@@ -506,7 +477,7 @@ async def test_task_papers_flow():
             # Test GET /assigned/job/{job_id}
             response = client.get(f"/api/v1/task-papers/assigned/job/{job_id}")
             assert response.status_code == 200
-            assert response.json()["name"] == "test_task_b.docx"
+            assert response.json()["name"].startswith("Custom Paper - ")
 
             # Test DELETE /assigned/job/{job_id}
             response = client.delete(f"/api/v1/task-papers/assigned/job/{job_id}")
@@ -712,30 +683,13 @@ async def test_task_papers_mcq_flow():
     client = TestClient(app)
 
     try:
-        with patch("app.v1.services.admin.job_tasks.extract_paper_task_skills_task.delay") as mock_delay, \
-             patch("app.v1.core.extractor.DocumentParser.extract_text") as mock_extract_text, \
-             patch("app.v1.core.extractor.DocumentParser.extract_text_docling") as mock_extract_text_docling, \
-             patch("app.v1.services.admin.candidate_task_service.candidate_task_service.extract_paper_details_from_text") as mock_llm_extract:
-
-            # 3. Create predefined MCQ paper via Form Upload
-            files = {"task_file": ("test_mcq.pdf", b"test pdf content mcq", "application/pdf")}
+        with patch("app.v1.routes.task_papers_email.send_candidate_task_email_via_smtp") as _:
+            # 3. Create predefined MCQ paper via POST /manual
             data = {
                 "department_id": str(department_id),
                 "position_id": str(position_id),
-                "skill_ids": str(skill_id),
-                "paper_type": "mcq"
-            }
-            response = client.post("/api/v1/task-papers/upload", data=data, files=files)
-            assert response.status_code == 201
-            paper = response.json()[0]
-            paper_id = paper["id"]
-            assert paper["paper_type"] == "mcq"
-
-            # 4. Extract MCQs via Celery task simulator
-            from app.v1.services.admin.job_tasks import extract_paper_task_skills_logic
-            mock_extract_text.return_value = "dummy text content for mcqs"
-            mock_extract_text_docling.return_value = "dummy text content for mcqs"
-            mock_llm_extract.return_value = {
+                "skill_ids": [str(skill_id)],
+                "paper_type": "mcq",
                 "questions": [],
                 "mcqs": [
                     {
@@ -744,10 +698,13 @@ async def test_task_papers_mcq_flow():
                         "answer": "A programming language"
                     }
                 ],
-                "project_task": [],
-                "skills": ["Python"]
+                "project_task": []
             }
-            await extract_paper_task_skills_logic(str(paper_id), paper["task_file_path"], "mcq")
+            response = client.post("/api/v1/task-papers/manual", json=data)
+            assert response.status_code == 201
+            paper = response.json()
+            paper_id = paper["id"]
+            assert paper["paper_type"] == "mcq"
 
             # Check that paper is updated in DB
             response = client.get(f"/api/v1/task-papers/{paper_id}")
@@ -834,6 +791,237 @@ async def test_task_papers_mcq_flow():
                 f_path.unlink()
         except Exception:
             pass
+
+
+@pytest.mark.anyio
+async def test_task_papers_duplicate_checks():
+    # 1. Setup mock records
+    test_id_suffix = str(UUIDHelper.generate_uuid7())[:8]
+    position_name = f"Test Duplicate Level {test_id_suffix}"
+    user_email = f"test_dup_user_{test_id_suffix}@example.com"
+    pos_senior_id = None
+
+    async with engine.begin() as conn:
+        # Create role
+        role_id = UUIDHelper.generate_uuid7()
+        await conn.execute(
+            text(
+                "INSERT INTO roles (id, name, created_at, updated_at) "
+                "VALUES (:id, :name, NOW(), NOW())"
+            ),
+            {"id": role_id, "name": f"Test Role {test_id_suffix}"},
+        )
+
+        # Create user
+        user_id = UUIDHelper.generate_uuid7()
+        await conn.execute(
+            text(
+                "INSERT INTO users (id, email, password_hash, role_id, is_active, created_at, updated_at) "
+                "VALUES (:id, :email, 'hash', :role_id, true, NOW(), NOW())"
+            ),
+            {"id": user_id, "email": user_email, "role_id": role_id},
+        )
+
+        # Create department
+        department_id = UUIDHelper.generate_uuid7()
+        await conn.execute(
+            text(
+                "INSERT INTO departments (id, name, description) "
+                "VALUES (:id, :name, 'Test Department')"
+            ),
+            {"id": department_id, "name": f"Test Department {test_id_suffix}"},
+        )
+
+        # Ensure Python and FastAPI skills exist
+        skills_to_check = ["Python", "FastAPI"]
+        job_skill_ids = []
+        created_skill_ids = []
+        for s_name in skills_to_check:
+            res_skill = await conn.execute(
+                text("SELECT id FROM skills WHERE name = :name"),
+                {"name": s_name}
+            )
+            row = res_skill.fetchone()
+            if row:
+                s_id = row[0]
+            else:
+                s_id = UUIDHelper.generate_uuid7()
+                await conn.execute(
+                    text("INSERT INTO skills (id, name, description) VALUES (:id, :name, 'Test Skill')"),
+                    {"id": s_id, "name": s_name}
+                )
+                created_skill_ids.append(s_id)
+            job_skill_ids.append(s_id)
+
+        python_skill_id, fastapi_skill_id = job_skill_ids[0], job_skill_ids[1]
+
+        # Create position level
+        position_id = UUIDHelper.generate_uuid7()
+        await conn.execute(
+            text(
+                "INSERT INTO job_positions (id, name, created_at, updated_at) "
+                "VALUES (:id, :name, NOW(), NOW())"
+            ),
+            {"id": position_id, "name": position_name},
+        )
+
+    # 2. Mock authentication
+    mock_user = UserRead(
+        id=user_id,
+        email=user_email,
+        is_active=True,
+        is_superuser=True,
+        first_name="Test",
+        last_name="Dup",
+        role_id=role_id,
+        role_name=f"Test Role {test_id_suffix}",
+        permissions=["candidates:decide", "candidates:access", "questions:manage", "admin:all"],
+    )
+    app.dependency_overrides[get_current_user] = lambda: mock_user
+    client = TestClient(app)
+
+    paper_1_id = None
+    paper_2_id = None
+    try:
+        # A. Create Paper 1: Python skill, with question "what is python"
+        data_1 = {
+            "department_id": str(department_id),
+            "position_id": str(position_id),
+            "skill_ids": [str(python_skill_id)],
+            "paper_type": "mixed",
+            "questions": ["what is python"],
+            "mcqs": [
+                {
+                    "question": "What is Python MCQ?",
+                    "options": ["A", "B", "C"],
+                    "answer": "A"
+                }
+            ],
+            "project_task": [{"task": "Implement Python task", "instructions": ""}]
+        }
+        res = client.post("/api/v1/task-papers/manual", json=data_1)
+        assert res.status_code == 201
+        paper_1 = res.json()
+        paper_1_id = paper_1["id"]
+        assert len(paper_1["skills"]) == 1
+        assert paper_1["skills"][0]["name"] == "Python"
+
+        # B. Test local duplicate check inside payload
+        data_local_dup = {
+            "department_id": str(department_id),
+            "position_id": str(position_id),
+            "skill_ids": [str(fastapi_skill_id)],
+            "paper_type": "mixed",
+            "questions": ["q1", "q1"],
+            "mcqs": [],
+            "project_task": []
+        }
+        res = client.post("/api/v1/task-papers/manual", json=data_local_dup)
+        assert res.status_code == 400
+        assert "Duplicate questions" in res.json()["detail"]
+
+        # C. Test system duplicate question check (different skill, same dept + position)
+        data_2 = {
+            "department_id": str(department_id),
+            "position_id": str(position_id),
+            "skill_ids": [str(fastapi_skill_id)],
+            "paper_type": "mixed",
+            "questions": ["what is python"],
+            "mcqs": [],
+            "project_task": []
+        }
+        res = client.post("/api/v1/task-papers/manual", json=data_2)
+        assert res.status_code == 400
+        assert "already exists in the system. The existing question bank has been updated with the new skill." in res.json()["detail"]
+
+        # Verify that Paper 1's skills now include both Python AND FastAPI!
+        res_p1 = client.get(f"/api/v1/task-papers/{paper_1_id}")
+        assert res_p1.status_code == 200
+        p1_skills = [s["name"] for s in res_p1.json()["skills"]]
+        assert "Python" in p1_skills
+        assert "FastAPI" in p1_skills
+
+        # D. Test system duplicate MCQ check
+        data_mcq_dup = {
+            "department_id": str(department_id),
+            "position_id": str(position_id),
+            "skill_ids": [str(fastapi_skill_id)],
+            "paper_type": "mixed",
+            "questions": [],
+            "mcqs": [
+                {
+                    "question": "What is Python MCQ?",
+                    "options": ["A", "B", "C"],
+                    "answer": "A"
+                }
+            ],
+            "project_task": []
+        }
+        res = client.post("/api/v1/task-papers/manual", json=data_mcq_dup)
+        assert res.status_code == 400
+        assert "already exists in the system. The existing question bank has been updated with the new skill." in res.json()["detail"]
+
+        # E. Test system duplicate Task check
+        data_task_dup = {
+            "department_id": str(department_id),
+            "position_id": str(position_id),
+            "skill_ids": [str(fastapi_skill_id)],
+            "paper_type": "mixed",
+            "questions": [],
+            "mcqs": [],
+            "project_task": [{"task": "Implement Python task", "instructions": ""}]
+        }
+        res = client.post("/api/v1/task-papers/manual", json=data_task_dup)
+        assert res.status_code == 400
+        assert "already exists in the system. The existing question bank has been updated with the new skill." in res.json()["detail"]
+
+        # F. Create a new independent paper with different position (should allow same question)
+        # Create a new position
+        async with engine.begin() as conn:
+            pos_senior_id = UUIDHelper.generate_uuid7()
+            await conn.execute(
+                text(
+                    "INSERT INTO job_positions (id, name, created_at, updated_at) "
+                    "VALUES (:id, 'Senior Dev', NOW(), NOW())"
+                ),
+                {"id": pos_senior_id},
+            )
+
+        data_senior = {
+            "department_id": str(department_id),
+            "position_id": str(pos_senior_id),
+            "skill_ids": [str(python_skill_id)],
+            "paper_type": "mixed",
+            "questions": ["what is python"],
+            "mcqs": [],
+            "project_task": []
+        }
+        res = client.post("/api/v1/task-papers/manual", json=data_senior)
+        assert res.status_code == 201
+        paper_2_id = res.json()["id"]
+
+    finally:
+        app.dependency_overrides.clear()
+        async with engine.begin() as conn:
+            await conn.execute(
+                text("DELETE FROM question_set_papers WHERE department_id = :id"), {"id": department_id}
+            )
+            for cid in created_skill_ids:
+                await conn.execute(
+                    text("DELETE FROM skills WHERE id = :id"), {"id": cid}
+                )
+            await conn.execute(
+                text("DELETE FROM departments WHERE id = :id"), {"id": department_id}
+            )
+            await conn.execute(
+                text("DELETE FROM job_positions WHERE name = :name OR id = :pos_id"),
+                {
+                    "name": position_name,
+                    "pos_id": pos_senior_id if pos_senior_id else UUIDHelper.generate_uuid7()
+                }
+            )
+            await conn.execute(text("DELETE FROM users WHERE id = :id"), {"id": user_id})
+            await conn.execute(text("DELETE FROM roles WHERE id = :id"), {"id": role_id})
 
 
 if __name__ == "__main__":

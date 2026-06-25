@@ -25,106 +25,121 @@ from app.v1.core.cache import cache
 router = APIRouter()
 
 
-@router.post("/upload", response_model=list[QuestionSetPaperRead], status_code=status.HTTP_201_CREATED)
-async def upload_question_set_papers(
-    department_id: uuid.UUID = Form(..., description="The associated department ID"),
-    position_id: uuid.UUID = Form(..., description="The associated job position level ID"),
-    skill_ids: str = Form(..., description="Comma-separated or JSON list of associated skill IDs"),
-    paper_type: str = Form("mixed", description="The type of paper content to extract: 'normal', 'mcq', 'task', or 'mixed'"),
-    task_file: UploadFile = FastAPIFile(..., description="A test paper PDF/Word file"),
-    db: AsyncSession = Depends(get_db),
-    user: UserRead = Depends(check_permission("questions:upload")),
-):
-    """Upload a test paper file directly for a specific department, experience position level, and skills."""
-    # Preserve paper_type for DB classification, but extract everything simultaneously
-    extraction_paper_type = "mixed"
-
-    # Verify department exists
-    dept = await db.get(Department, department_id)
-    if not dept:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Department with ID {department_id} does not exist.",
+async def handle_duplicate_question(
+    question_text: str,
+    department_id: uuid.UUID,
+    position_id: uuid.UUID,
+    current_skills: list[Skill],
+    db: AsyncSession,
+) -> bool:
+    """
+    Checks if a question already exists in any predefined paper under the same department and position.
+    If it exists, adds any missing skills to that paper and commits.
+    Returns True if a duplicate was found.
+    """
+    stmt = (
+        select(QuestionSetPaper)
+        .where(
+            QuestionSetPaper.department_id == department_id,
+            QuestionSetPaper.position_id == position_id,
+            QuestionSetPaper.questions.contains([question_text])
         )
-
-    # Verify position level exists
-    position = await db.get(JobPosition, position_id)
-    if not position:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Job position level with ID {position_id} does not exist.",
-        )
-
-    # Parse skill_ids if provided
-    parsed_skill_ids = []
-    if skill_ids:
-        import json
-        try:
-            parsed_skill_ids = [uuid.UUID(x) for x in json.loads(skill_ids)]
-        except Exception:
-            parsed_skill_ids = [uuid.UUID(x.strip()) for x in skill_ids.split(",") if x.strip()]
-
-    # Fetch skills
-    skills = []
-    if parsed_skill_ids:
-        stmt_skills = select(Skill).where(Skill.id.in_(parsed_skill_ids))
-        skills = (await db.execute(stmt_skills)).scalars().all()
-        
-    if not skills:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="At least one valid skill ID must be provided.",
-        )
-
-    # Validate file extension
-    file_extension = Path(task_file.filename).suffix.lower()
-    if file_extension not in [".pdf", ".docx", ".doc"]:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Unsupported file format: {file_extension}. Only PDF, DOC, and DOCX are allowed.",
-        )
-
-    # Setup upload directory
-    tasks_dir = resolve_storage_path(settings.TASK_UPLOAD_DIR)
-    tasks_dir.mkdir(parents=True, exist_ok=True)
-
-    paper_id = UUIDHelper.generate_uuid7()
-    file_name = f"paper_{paper_id}{file_extension}"
-    target_path = tasks_dir / file_name
-    stored_file_path = to_storage_relative_path(target_path)
-
-    try:
-        content = await task_file.read()
-        target_path.write_bytes(content)
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to save uploaded file: {task_file.filename}.",
-        )
-
-    db_paper = QuestionSetPaper(
-        id=paper_id,
-        name=task_file.filename,
-        department_id=department_id,
-        position_id=position_id,
-        paper_type=paper_type,
-        questions=[],
-        mcqs=[],
-        project_task=[],
-        task_file_path=stored_file_path,
-        task_skills=None,
     )
-    db_paper.skills = list(skills)
-    db.add(db_paper)
-    await db.commit()
-    await cache.clear("cache:GET:/api/v1/task-papers*")
-    await db.refresh(db_paper)
+    res = await db.execute(stmt)
+    existing_papers = res.scalars().all()
+    if existing_papers:
+        for ep in existing_papers:
+            existing_skill_ids = {s.id for s in ep.skills}
+            for s in current_skills:
+                if s.id not in existing_skill_ids:
+                    ep.skills.append(s)
+        await db.commit()
+        return True
+    return False
 
-    # Trigger celery task to extract skills, questions, and task details in background
-    from app.v1.services.admin.job_tasks import extract_paper_task_skills_task
-    extract_paper_task_skills_task.delay(str(db_paper.id), db_paper.task_file_path, extraction_paper_type)
 
-    return [db_paper]
+async def handle_duplicate_mcq(
+    mcq_question_text: str,
+    department_id: uuid.UUID,
+    position_id: uuid.UUID,
+    current_skills: list[Skill],
+    db: AsyncSession,
+) -> bool:
+    """
+    Checks if an MCQ (by its question text) already exists in any predefined paper under the same department and position.
+    If it exists, adds any missing skills to that paper and commits.
+    Returns True if a duplicate was found.
+    """
+    stmt = (
+        select(QuestionSetPaper)
+        .where(
+            QuestionSetPaper.department_id == department_id,
+            QuestionSetPaper.position_id == position_id
+        )
+    )
+    res = await db.execute(stmt)
+    papers = res.scalars().all()
+    found = False
+    for paper in papers:
+        if paper.mcqs:
+            for m in paper.mcqs:
+                if m.get("question") == mcq_question_text:
+                    existing_skill_ids = {s.id for s in paper.skills}
+                    for s in current_skills:
+                        if s.id not in existing_skill_ids:
+                            paper.skills.append(s)
+                    found = True
+                    break
+    if found:
+        await db.commit()
+        return True
+    return False
+
+
+async def handle_duplicate_task(
+    task_text: str,
+    department_id: uuid.UUID,
+    position_id: uuid.UUID,
+    current_skills: list[Skill],
+    db: AsyncSession,
+) -> bool:
+    """
+    Checks if a task (by its task description text) already exists in any predefined paper under the same department and position.
+    If it exists, adds any missing skills to that paper and commits.
+    Returns True if a duplicate was found.
+    """
+    stmt = (
+        select(QuestionSetPaper)
+        .where(
+            QuestionSetPaper.department_id == department_id,
+            QuestionSetPaper.position_id == position_id
+        )
+    )
+    res = await db.execute(stmt)
+    papers = res.scalars().all()
+    found = False
+    for paper in papers:
+        if paper.project_task:
+            for t in paper.project_task:
+                if isinstance(t, dict) and t.get("task") == task_text:
+                    existing_skill_ids = {s.id for s in paper.skills}
+                    for s in current_skills:
+                        if s.id not in existing_skill_ids:
+                            paper.skills.append(s)
+                    found = True
+                    break
+                elif isinstance(t, str) and t == task_text:
+                    existing_skill_ids = {s.id for s in paper.skills}
+                    for s in current_skills:
+                        if s.id not in existing_skill_ids:
+                            paper.skills.append(s)
+                    found = True
+                    break
+    if found:
+        await db.commit()
+        return True
+    return False
+
 
 from app.v1.schemas.task_papers import QuestionSetPaperCreate
 
@@ -152,6 +167,52 @@ async def create_manual_question_set_paper(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="At least one valid skill ID must be provided.",
         )
+
+    # Local duplicate validation inside the payload
+    if payload.questions and len(payload.questions) != len(set(payload.questions)):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Duplicate questions are not allowed in the same paper.",
+        )
+    if payload.mcqs:
+        mcq_qs = [m.question for m in payload.mcqs]
+        if len(mcq_qs) != len(set(mcq_qs)):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Duplicate MCQs are not allowed in the same paper.",
+            )
+    if payload.project_task:
+        task_descs = [t.task for t in payload.project_task]
+        if len(task_descs) != len(set(task_descs)):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Duplicate tasks are not allowed in the same paper.",
+            )
+
+    # Global/system duplicate validation
+    if payload.questions:
+        for q in payload.questions:
+            if await handle_duplicate_question(q, payload.department_id, payload.position_id, skills, db):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="This question already exists in the system. The existing question bank has been updated with the new skill.",
+                )
+
+    if payload.mcqs:
+        for m in payload.mcqs:
+            if await handle_duplicate_mcq(m.question, payload.department_id, payload.position_id, skills, db):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="This MCQ already exists in the system. The existing question bank has been updated with the new skill.",
+                )
+
+    if payload.project_task:
+        for t in payload.project_task:
+            if await handle_duplicate_task(t.task, payload.department_id, payload.position_id, skills, db):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="This task already exists in the system. The existing question bank has been updated with the new skill.",
+                )
 
     # Process source_mix for hybrid mode
     final_questions = list(payload.questions) if payload.questions else []
@@ -200,10 +261,7 @@ async def create_manual_question_set_paper(
     await cache.clear("cache:GET:/api/v1/task-papers*")
     await db.refresh(db_paper)
     
-    # Trigger celery task to extract skills from manually provided text
-    if db_paper.questions or db_paper.mcqs or db_paper.project_task:
-        from app.v1.services.admin.job_tasks import extract_paper_skills_from_text_task
-        extract_paper_skills_from_text_task.delay(str(db_paper.id))
+
 
     return db_paper
 
@@ -482,6 +540,14 @@ async def add_question_to_paper(
     if not question_text:
         raise HTTPException(status_code=400, detail="Question text is required.")
 
+    # 1. Local duplicate check
+    if paper.questions and question_text in paper.questions:
+        raise HTTPException(status_code=400, detail="This question already exists in this paper.")
+
+    # 2. System duplicate check
+    if await handle_duplicate_question(question_text, paper.department_id, paper.position_id, paper.skills, db):
+        raise HTTPException(status_code=400, detail="This question already exists in the system. The existing question bank has been updated with the new skill.")
+
     # Create a new list to ensure SQLAlchemy detects the change to JSONB
     new_questions = list(paper.questions)
     new_questions.append(question_text)
@@ -490,9 +556,6 @@ async def add_question_to_paper(
     await db.commit()
     await db.refresh(paper)
     await cache.clear("cache:GET:/api/v1/task-papers*")
-    
-    from app.v1.services.admin.job_tasks import extract_paper_skills_from_text_task
-    extract_paper_skills_from_text_task.delay(str(paper.id))
     
     return QuestionSetPaperRead.model_validate(paper)
 
@@ -521,15 +584,18 @@ async def update_question_in_paper(
         raise HTTPException(status_code=400, detail="Invalid question index.")
 
     new_questions = list(paper.questions)
+    if new_questions[index] != question_text:
+        if question_text in new_questions:
+            raise HTTPException(status_code=400, detail="This question already exists in this paper.")
+        if await handle_duplicate_question(question_text, paper.department_id, paper.position_id, paper.skills, db):
+            raise HTTPException(status_code=400, detail="This question already exists in the system. The existing question bank has been updated with the new skill.")
+
     new_questions[index] = question_text
     paper.questions = new_questions
     
     await db.commit()
     await db.refresh(paper)
     await cache.clear("cache:GET:/api/v1/task-papers*")
-    
-    from app.v1.services.admin.job_tasks import extract_paper_skills_from_text_task
-    extract_paper_skills_from_text_task.delay(str(paper.id))
     
     return QuestionSetPaperRead.model_validate(paper)
 
@@ -560,8 +626,7 @@ async def delete_question_from_paper(
     await db.refresh(paper)
     await cache.clear("cache:GET:/api/v1/task-papers*")
     
-    from app.v1.services.admin.job_tasks import extract_paper_skills_from_text_task
-    extract_paper_skills_from_text_task.delay(str(paper.id))
+
     
     return QuestionSetPaperRead.model_validate(paper)
 
@@ -584,6 +649,19 @@ async def add_mcq_to_paper(
     if not mcq_data:
         raise HTTPException(status_code=400, detail="MCQ data is required.")
 
+    # 1. Local duplicate check
+    current_mcqs = paper.mcqs or []
+    mcq_question = mcq_data.get("question") if isinstance(mcq_data, dict) else getattr(mcq_data, "question", None)
+    if not mcq_question:
+        raise HTTPException(status_code=400, detail="MCQ question text is required.")
+
+    if any(m.get("question") == mcq_question for m in current_mcqs):
+        raise HTTPException(status_code=400, detail="This MCQ already exists in this paper.")
+
+    # 2. System duplicate check
+    if await handle_duplicate_mcq(mcq_question, paper.department_id, paper.position_id, paper.skills, db):
+        raise HTTPException(status_code=400, detail="This MCQ already exists in the system. The existing question bank has been updated with the new skill.")
+
     # Create a new list to ensure SQLAlchemy detects the change to JSONB
     new_mcqs = list(paper.mcqs or [])
     new_mcqs.append(mcq_data)
@@ -592,9 +670,6 @@ async def add_mcq_to_paper(
     await db.commit()
     await db.refresh(paper)
     await cache.clear("cache:GET:/api/v1/task-papers*")
-    
-    from app.v1.services.admin.job_tasks import extract_paper_skills_from_text_task
-    extract_paper_skills_from_text_task.delay(str(paper.id))
     
     return QuestionSetPaperRead.model_validate(paper)
 
@@ -622,16 +697,23 @@ async def update_mcq_in_paper(
     if index < 0 or index >= len(current_mcqs):
         raise HTTPException(status_code=400, detail="Invalid MCQ index.")
 
+    mcq_question = mcq_data.get("question") if isinstance(mcq_data, dict) else getattr(mcq_data, "question", None)
+    if not mcq_question:
+        raise HTTPException(status_code=400, detail="MCQ question text is required.")
+
     new_mcqs = list(current_mcqs)
+    if new_mcqs[index].get("question") != mcq_question:
+        if any(m.get("question") == mcq_question for m in new_mcqs):
+            raise HTTPException(status_code=400, detail="This MCQ already exists in this paper.")
+        if await handle_duplicate_mcq(mcq_question, paper.department_id, paper.position_id, paper.skills, db):
+            raise HTTPException(status_code=400, detail="This MCQ already exists in the system. The existing question bank has been updated with the new skill.")
+
     new_mcqs[index] = mcq_data
     paper.mcqs = new_mcqs
     
     await db.commit()
     await db.refresh(paper)
     await cache.clear("cache:GET:/api/v1/task-papers*")
-    
-    from app.v1.services.admin.job_tasks import extract_paper_skills_from_text_task
-    extract_paper_skills_from_text_task.delay(str(paper.id))
     
     return QuestionSetPaperRead.model_validate(paper)
 
@@ -662,8 +744,7 @@ async def delete_mcq_from_paper(
     await db.refresh(paper)
     await cache.clear("cache:GET:/api/v1/task-papers*")
     
-    from app.v1.services.admin.job_tasks import extract_paper_skills_from_text_task
-    extract_paper_skills_from_text_task.delay(str(paper.id))
+
     
     return QuestionSetPaperRead.model_validate(paper)
 
@@ -686,6 +767,17 @@ async def add_task_to_paper(
     if not task_obj:
         raise HTTPException(status_code=400, detail="Task object is required.")
 
+    # 1. Local duplicate check
+    current_tasks = paper.project_task or []
+    for t in current_tasks:
+        t_text = t.get("task") if isinstance(t, dict) else t
+        if t_text == task_obj.task:
+            raise HTTPException(status_code=400, detail="This task already exists in this paper.")
+
+    # 2. System duplicate check
+    if await handle_duplicate_task(task_obj.task, paper.department_id, paper.position_id, paper.skills, db):
+        raise HTTPException(status_code=400, detail="This task already exists in the system. The existing question bank has been updated with the new skill.")
+
     new_tasks = list(paper.project_task) if paper.project_task else []
     new_tasks.append(task_obj.model_dump())
     paper.project_task = new_tasks
@@ -693,9 +785,6 @@ async def add_task_to_paper(
     await db.commit()
     await db.refresh(paper)
     await cache.clear("cache:GET:/api/v1/task-papers*")
-    
-    from app.v1.services.admin.job_tasks import extract_paper_skills_from_text_task
-    extract_paper_skills_from_text_task.delay(str(paper.id))
     
     return QuestionSetPaperRead.model_validate(paper)
 
@@ -723,15 +812,23 @@ async def update_task_in_paper(
         raise HTTPException(status_code=400, detail="Invalid task index.")
 
     new_tasks = list(paper.project_task)
+    current_t = new_tasks[index]
+    current_text = current_t.get("task") if isinstance(current_t, dict) else current_t
+
+    if current_text != task_obj.task:
+        for t in new_tasks:
+            t_text = t.get("task") if isinstance(t, dict) else t
+            if t_text == task_obj.task:
+                raise HTTPException(status_code=400, detail="This task already exists in this paper.")
+        if await handle_duplicate_task(task_obj.task, paper.department_id, paper.position_id, paper.skills, db):
+            raise HTTPException(status_code=400, detail="This task already exists in the system. The existing question bank has been updated with the new skill.")
+
     new_tasks[index] = task_obj.model_dump()
     paper.project_task = new_tasks
     
     await db.commit()
     await db.refresh(paper)
     await cache.clear("cache:GET:/api/v1/task-papers*")
-    
-    from app.v1.services.admin.job_tasks import extract_paper_skills_from_text_task
-    extract_paper_skills_from_text_task.delay(str(paper.id))
     
     return QuestionSetPaperRead.model_validate(paper)
 
@@ -761,8 +858,7 @@ async def delete_task_from_paper(
     await db.refresh(paper)
     await cache.clear("cache:GET:/api/v1/task-papers*")
     
-    from app.v1.services.admin.job_tasks import extract_paper_skills_from_text_task
-    extract_paper_skills_from_text_task.delay(str(paper.id))
+
     
     return QuestionSetPaperRead.model_validate(paper)
 
