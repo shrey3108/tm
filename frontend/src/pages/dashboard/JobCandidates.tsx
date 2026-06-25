@@ -6,6 +6,7 @@ import { CandidateDetailsModal, JobInfoModal, DeleteModal } from "@/components/m
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import CandidateTable from "@/components/candidate/CandidateTable";
 import { useJobCandidates } from "@/hooks/useJobCandidates";
+import { usePageFilters } from "@/hooks/usePageFilters";
 import { JobCandidatesSkeleton } from "@/components/candidate/JobCandidatesSkeleton";
 import { JobCandidatesHeader } from "@/components/candidate/JobCandidatesHeader";
 import { JobCandidatesCharts } from "@/components/candidate/JobCandidatesCharts";
@@ -91,30 +92,43 @@ export default function JobCandidates() {
 
   const [viewMode, setViewMode] = useState<"candidates" | "analytics">("candidates");
 
-  const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
-    pageIndex: 0,
-    pageSize: 10,
-  });
-
-
-  const [activeFilters, setActiveFilters] = useState<CandidateActiveFilters>(() => {
+  const urlFilters = useMemo(() => {
     const params = new URLSearchParams(window.location.search);
     const startDate = params.get("start_date");
     const endDate = params.get("end_date");
     return {
-      status: [],
-      city: [],
-      job: [],
-      hr_decision: [],
-      hr_score: [],
+      pageIndex: 0,
+      pageSize: 10,
+      status: [] as string[],
+      city: [] as string[],
+      job: [] as string[],
+      hr_decision: [] as string[],
+      hr_score: [] as number[],
       dateRange: (startDate || endDate)
         ? {
           from: startDate ? new Date(startDate) : undefined,
           to: endDate ? new Date(endDate) : undefined,
-        }
-        : undefined,
+        } as DateRange
+        : undefined as DateRange | null | undefined,
+      q: "",
+      activity_session: [] as string[],
+      stage_id: [] as string[],
+      result: [] as string[],
+      test_email_sent: undefined as boolean | undefined,
     };
-  });
+  }, []);
+
+  const { filters, setFilters } = usePageFilters(`jobCandidates_${jobSlug}`, urlFilters);
+  const { pageIndex, pageSize } = filters;
+
+  const setPagination = (val: PaginationState | ((prev: PaginationState) => PaginationState)) => {
+    const currentPagination = { pageIndex: filters.pageIndex, pageSize: filters.pageSize };
+    const nextPagination = typeof val === "function" ? val(currentPagination) : val;
+    setFilters({
+      pageIndex: nextPagination.pageIndex,
+      pageSize: nextPagination.pageSize,
+    });
+  };
 
   const {
     candidates,
@@ -143,16 +157,16 @@ export default function JobCandidates() {
     jobStats,
     activitySession
   } = useJobCandidates(jobSlug, pageIndex, pageSize, {
-    query: activeFilters.q,
-    hr_decision: activeFilters.hr_decision,
-    start_date: activeFilters.dateRange?.from,
-    end_date: activeFilters.dateRange?.to,
-    activity_session: activeFilters.activity_session,
-    stage_id: activeFilters.stage_id,
-    city: activeFilters.city,
-    result: activeFilters.result,
-    hr_score: activeFilters.hr_score,
-    test_email_sent: activeFilters.test_email_sent,
+    query: filters.q,
+    hr_decision: filters.hr_decision,
+    start_date: filters.dateRange?.from,
+    end_date: filters.dateRange?.to,
+    activity_session: filters.activity_session,
+    stage_id: filters.stage_id,
+    city: filters.city,
+    result: filters.result,
+    hr_score: filters.hr_score,
+    test_email_sent: filters.test_email_sent,
   });
 
   const [selectedCandidate, _setSelectedCandidate] = useState<CandidateAnalysis | null>(null);
@@ -165,17 +179,17 @@ export default function JobCandidates() {
   // Reset rowSelection when filters or pagination changes
   useEffect(() => {
     setRowSelection({});
-  }, [pageIndex, pageSize, activeFilters]);
+  }, [pageIndex, pageSize, filters]);
 
   // Compute showCheckboxes: Only display after round is Technical Practical Round and decision is pending
   const showCheckboxes = useMemo(() => {
-    const selectedStageConfigs = job?.stages?.filter((s) => activeFilters.stage_id?.includes(s.id)) || [];
+    const selectedStageConfigs = job?.stages?.filter((s) => filters.stage_id?.includes(s.id)) || [];
     const hasTechnicalPracticalRoundSelected = selectedStageConfigs.some(
       (s) => s.template?.name === "Technical Practical Round"
     );
-    const isHrDecisionPendingSelected = activeFilters.hr_decision?.includes("pending");
+    const isHrDecisionPendingSelected = filters.hr_decision?.includes("pending");
     return !!(hasTechnicalPracticalRoundSelected && isHrDecisionPendingSelected);
-  }, [job?.stages, activeFilters.stage_id, activeFilters.hr_decision]);
+  }, [job?.stages, filters.stage_id, filters.hr_decision]);
 
   // Compute selected candidates
   const selectedCandidates = useMemo(() => {
@@ -185,12 +199,12 @@ export default function JobCandidates() {
       .filter(Boolean);
   }, [rowSelection, candidates]);
 
-  // Compute emailFilterState from activeFilters.test_email_sent
+  // Compute emailFilterState from filters.test_email_sent
   const emailFilterState = useMemo(() => {
-    if (activeFilters.test_email_sent === true) return "sent" as const;
-    if (activeFilters.test_email_sent === false) return "not_sent" as const;
+    if (filters.test_email_sent === true) return "sent" as const;
+    if (filters.test_email_sent === false) return "not_sent" as const;
     return undefined;
-  }, [activeFilters.test_email_sent]);
+  }, [filters.test_email_sent]);
 
   const selectedCandidateIds = useMemo(() => {
     return selectedCandidates.map((c) => c.id);
@@ -223,9 +237,11 @@ export default function JobCandidates() {
   }, [emailFilterState, selectedCandidates, selectedCandidatesTestPapers, loadingTestPapers]);
 
   const [modalInitialTab, _setModalInitialTab] = useState<"analysis" | "jd" | "cross-job-match">("analysis");
-  const handleFiltersChange = (filters: CandidateActiveFilters) => {
-    setActiveFilters(filters);
-    setPagination((prev) => (prev.pageIndex === 0 ? prev : { ...prev, pageIndex: 0 }));
+  const handleFiltersChange = (newFilters: CandidateActiveFilters) => {
+    setFilters({
+      ...newFilters,
+      pageIndex: 0,
+    });
   };
 
   const handleUploadClick = () => {
@@ -312,7 +328,7 @@ export default function JobCandidates() {
                       total={totalCandidates}
                       activitySessions={activitySession}
                       onFiltersChange={handleFiltersChange}
-                      initialDateRange={activeFilters.dateRange as DateRange | undefined}
+                      initialDateRange={filters.dateRange as DateRange | undefined}
                       rowSelection={rowSelection}
                       onRowSelectionChange={setRowSelection}
                       showCheckboxes={showCheckboxes}

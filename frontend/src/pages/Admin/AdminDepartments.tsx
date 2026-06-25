@@ -23,6 +23,7 @@ import { useAppSelector } from "@/store/hooks";
 import { selectCurrentUser } from "@/store/slices/authSlice";
 import { useDepartment } from "@/hooks/queries/admin/useDepartment";
 import { useDeleteDepartmentMutation } from "@/hooks/mutations/admin/useDepartment";
+import { usePageFilters } from "@/hooks/usePageFilters";
 
 const AdminDepartments = () => {
   const toast = useToast();
@@ -31,11 +32,23 @@ const AdminDepartments = () => {
   const deleteDepartmentMutation = useDeleteDepartmentMutation();
   const [showModal, setShowModal] = useState(false);
   const [selectedDepartment, setSelectedDepartment] = useState<DepartmentRead | null>(null);
-  const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
+
+  const { filters, setFilters } = usePageFilters("adminDepartments", {
     pageIndex: 0,
     pageSize: 10,
+    search: "",
   });
-  const [search, setSearch] = useState("");
+  const { pageIndex, pageSize, search } = filters;
+
+  const setPagination = (val: PaginationState | ((prev: PaginationState) => PaginationState)) => {
+    const currentPagination = { pageIndex: filters.pageIndex, pageSize: filters.pageSize };
+    const nextPagination = typeof val === "function" ? val(currentPagination) : val;
+    setFilters({
+      pageIndex: nextPagination.pageIndex,
+      pageSize: nextPagination.pageSize,
+    });
+  };
+
   const [_deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -48,8 +61,10 @@ const AdminDepartments = () => {
   const { data: departments, total, loading, error, refetch } = useDepartment(pageIndex * pageSize, pageSize, debouncedSearch)
 
   const handleSearchChange = (value: string) => {
-    setSearch(value);
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+    setFilters({
+      search: value,
+      pageIndex: 0,
+    });
   };
 
   useEffect(() => {

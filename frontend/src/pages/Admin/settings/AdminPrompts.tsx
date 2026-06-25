@@ -33,19 +33,31 @@ import {
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useDebouncedValue } from "@/hooks";
-import { ErrorDisplay } from "@/components/shared";
 import { usePrompts } from "@/hooks/queries/admin/usePrompts";
+import { usePageFilters } from "@/hooks/usePageFilters";
+import ErrorDisplay from "@/components/shared/ErrorDisplay";
 
 
 const AdminPrompts = () => {
-    const [search, setSearch] = useState("");
-    const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
+    const { filters, setFilters } = usePageFilters("adminPrompts", {
         pageIndex: 0,
         pageSize: 10,
+        search: "",
+        selectedStages: [] as string[],
     });
+    const { pageIndex, pageSize, search, selectedStages } = filters;
+
+    const setPagination = (val: PaginationState | ((prev: PaginationState) => PaginationState)) => {
+        const currentPagination = { pageIndex: filters.pageIndex, pageSize: filters.pageSize };
+        const nextPagination = typeof val === "function" ? val(currentPagination) : val;
+        setFilters({
+            pageIndex: nextPagination.pageIndex,
+            pageSize: nextPagination.pageSize,
+        });
+    };
+
     const [selectedPrompt, setSelectedPrompt] = useState<PromptRead | null>(null);
     const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-    const [selectedStages, setSelectedStages] = useState<string[]>([]);
     const [allStages, setAllStages] = useState<string[]>([]);
     const [isCopied, setIsCopied] = useState(false);
     const [overallTotal, setOverallTotal] = useState(0);
@@ -167,14 +179,18 @@ const AdminPrompts = () => {
 
     // Handle search with pagination reset
     const handleSearchChange = (value: string) => {
-        setSearch(value);
-        setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+        setFilters({
+            search: value,
+            pageIndex: 0,
+        });
     };
 
     // Handle stage filter change with pagination reset
     const handleStageChange = (stages: string[]) => {
-        setSelectedStages(stages);
-        setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+        setFilters({
+            selectedStages: stages,
+            pageIndex: 0,
+        });
     };
     const handleCopy = async () => {
         if (!selectedPrompt?.content) return;

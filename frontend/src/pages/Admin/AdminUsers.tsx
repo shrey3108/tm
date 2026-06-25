@@ -23,7 +23,7 @@ import { PERMISSIONS } from "@/lib/permissions";
 import { UserTableFilters } from "./components/UserTableFilters";
 import { useUserTableFilters } from "@/hooks/useUserTableFilters";
 
-import type { ColumnDef, PaginationState } from "@tanstack/react-table";
+import type { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown } from "lucide-react";
 import { Button } from "@/components";
 import { useAuth } from "@/store/hooks";
@@ -35,11 +35,6 @@ const AdminUsers = () => {
   const { user: currentUser } = useAuth();
   const [showModal, setShowModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserAdminRead | null>(null);
-
-  const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
-    pageIndex: 0,
-    pageSize: 10,
-  });
 
   const [users, setUsers] = useState<UserAdminRead[]>([]);
 
@@ -57,7 +52,11 @@ const AdminUsers = () => {
     hasActiveFilters,
     clearFilters,
     minDate,
-  } = useUserTableFilters(users);
+    pagination,
+    setPagination,
+  } = useUserTableFilters(users, "adminUsers");
+
+  const { pageIndex, pageSize } = pagination;
 
   const debouncedSearch = useDebouncedValue(searchFilter);
 

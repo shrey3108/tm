@@ -2,7 +2,7 @@
  * Admin page for searching candidates globally or for a specific job.
  * Provides advanced search and filtering for HR.
  */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import type { JobRead } from "@/types/admin";
 import type { CandidateResponse } from "@/types/resume";
@@ -21,9 +21,11 @@ import { useDeleteConfirmation } from "@/hooks";
 import type { PaginationState } from "@tanstack/react-table";
 import { Button } from "@/components";
 import type { CandidateActiveFilters } from "@/hooks/useCandidateTableFilters";
+import { usePageFilters } from "@/hooks/usePageFilters";
 import { useToast } from "@/components/shared";
 import { useAdminCandidates, useJob } from "@/hooks/queries/jobs";
 import { useDeleteResumeMutation } from "@/hooks/mutations/jobs/useResumeMutation";
+import type { DateRange } from "react-day-picker";
 
 
 const AdminCandidateSearch = () => {
@@ -33,10 +35,33 @@ const AdminCandidateSearch = () => {
   const isAdminPath = location.pathname.startsWith("/dashboard/admin");
   const toast = useToast();
 
-  const [pagination, setPagination] = useState<PaginationState>({
+  const { filters, setFilters } = usePageFilters(`adminCandidateSearch_${jobId || "global"}`, {
     pageIndex: 0,
     pageSize: 10,
+    job: [] as string[],
+    status: [] as string[],
+    city: [] as string[],
+    hr_decision: [] as string[],
+    hr_score: [] as number[],
+    dateRange: undefined as DateRange | null | undefined,
+    result: [] as string[],
+    stage_id: [] as string[],
+    activity_session: [] as string[],
+    q: "",
+    test_email_sent: undefined as boolean | undefined,
   });
+  const { pageIndex, pageSize } = filters;
+
+  const pagination = useMemo(() => ({ pageIndex, pageSize }), [pageIndex, pageSize]);
+
+  const setPagination = (val: PaginationState | ((prev: PaginationState) => PaginationState)) => {
+    const currentPagination = { pageIndex: filters.pageIndex, pageSize: filters.pageSize };
+    const nextPagination = typeof val === "function" ? val(currentPagination) : val;
+    setFilters({
+      pageIndex: nextPagination.pageIndex,
+      pageSize: nextPagination.pageSize,
+    });
+  };
 
   const [job, setJob] = useState<JobRead | null>(null);
 
@@ -47,18 +72,13 @@ const AdminCandidateSearch = () => {
   const [selectedCandidate, setSelectedCandidate] =
     useState<CandidateResponse | null>(null);
 
-  const [filters, setFilters] = useState<CandidateActiveFilters>({
-    job: [],
-    status: [],
-    city: [],
-    hr_decision: [],
-    hr_score: [],
-  });
-
   const handleFiltersChange = useCallback((newFilters: React.SetStateAction<CandidateActiveFilters>) => {
-    setFilters(newFilters);
-    setPagination((prev) => (prev.pageIndex === 0 ? prev : { ...prev, pageIndex: 0 }));
-  }, []);
+    const updatedFilters = typeof newFilters === "function" ? newFilters(filters) : newFilters;
+    setFilters({
+      ...updatedFilters,
+      pageIndex: 0,
+    });
+  }, [filters, setFilters]);
 
   const {
     data: candidates,
@@ -68,8 +88,8 @@ const AdminCandidateSearch = () => {
     refetch: fetchCandidates,
   } = useAdminCandidates(
     jobId,
-    pagination.pageIndex * pagination.pageSize,
-    pagination.pageSize,
+    pageIndex * pageSize,
+    pageSize,
     filters
   );
 

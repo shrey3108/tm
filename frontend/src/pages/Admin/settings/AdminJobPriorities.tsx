@@ -22,27 +22,43 @@ import { PERMISSIONS } from "@/lib/permissions";
 import { DateDisplay } from "@/components/shared";
 import { useJobPriorities } from "@/hooks/queries/admin/useJobPriority";
 import { useDeletePriorityMutation } from "@/hooks/mutations/admin/useJobPriority";
+import { usePageFilters } from "@/hooks/usePageFilters";
 
 const AdminJobPriorities = () => {
   const toast = useToast();
   const deletePriorityMutation = useDeletePriorityMutation();
   const [showModal, setShowModal] = useState(false);
   const [selectedPriority, setSelectedPriority] = useState<JobPriorityRead | null>(null);
-  const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
+
+  const { filters, setFilters } = usePageFilters("adminJobPriorities", {
     pageIndex: 0,
     pageSize: 10,
+    search: "",
   });
+  const { pageIndex, pageSize, search } = filters;
+
+  const setPagination = (val: PaginationState | ((prev: PaginationState) => PaginationState)) => {
+    const currentPagination = { pageIndex: filters.pageIndex, pageSize: filters.pageSize };
+    const nextPagination = typeof val === "function" ? val(currentPagination) : val;
+    setFilters({
+      pageIndex: nextPagination.pageIndex,
+      pageSize: nextPagination.pageSize,
+    });
+  };
+
   const [, setDeletingId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<JobPriorityRead | null>(null);
   const [overallTotal, setOverallTotal] = useState(0);
-  const [search, setSearch] = useState("");
+
   const debouncedSearch = useDebouncedValue(search, 500);
 
   const handleSearchChange = (value: string) => {
-    setSearch(value);
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+    setFilters({
+      search: value,
+      pageIndex: 0,
+    });
   };
 
   const { data: priorities, loading, error, refetch, total } = useJobPriorities(pageIndex * pageSize, pageSize, debouncedSearch);

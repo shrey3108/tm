@@ -237,7 +237,8 @@ export function SearchableSelect({
       >
         <span className="inline-flex items-center gap-2 truncate max-w-full">
           {icon}
-          <span className="truncate capitalize">{triggerLabelText.replace(/ed$/, "")}</span>
+          {/* <span className="truncate capitalize">{triggerLabelText.replace(/ed$/, "")}</span> */}
+          <span className="truncate capitalize">{triggerLabelText}</span>
         </span>
         <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50 text-muted-foreground" />
       </DropdownMenuTrigger>

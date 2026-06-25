@@ -25,6 +25,7 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { extractErrorMessage } from "@/utils/error";
 import { useJobStage } from "@/hooks/queries/admin/useJobStage";
+import { usePageFilters } from "@/hooks/usePageFilters";
 
 /**
  * Admin page for managing job stage templates.
@@ -33,12 +34,23 @@ import { useJobStage } from "@/hooks/queries/admin/useJobStage";
 const AdminJobStages = () => {
   const toast = useToast();
   const navigate = useNavigate();
-  const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
+
+  const { filters, setFilters } = usePageFilters("adminJobStages", {
     pageIndex: 0,
     pageSize: 10,
+    search: "",
   });
+  const { pageIndex, pageSize, search } = filters;
 
-  const [search, setSearch] = useState("");
+  const setPagination = (val: PaginationState | ((prev: PaginationState) => PaginationState)) => {
+    const currentPagination = { pageIndex: filters.pageIndex, pageSize: filters.pageSize };
+    const nextPagination = typeof val === "function" ? val(currentPagination) : val;
+    setFilters({
+      pageIndex: nextPagination.pageIndex,
+      pageSize: nextPagination.pageSize,
+    });
+  };
+
   const [selectedTemplate, setSelectedTemplate] = useState<StageTemplate | null>(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
@@ -51,8 +63,10 @@ const AdminJobStages = () => {
 
   const { data, total, loading, refetch, error } = useJobStage(pageIndex * pageSize, pageSize, debouncedSearch)
   const handleSearchChange = (value: string) => {
-    setSearch(value);
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+    setFilters({
+      search: value,
+      pageIndex: 0,
+    });
   };
 
 

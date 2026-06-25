@@ -35,7 +35,7 @@ export default function QuestionsBank() {
   const navigate = useNavigate();
 
   // Persisted filters via Redux + sessionStorage
-  const { filters, setFilter } = usePageFilters("questionsBank", questionsBankDefaults);
+  const { filters, setFilter, resetFilters } = usePageFilters("questionsBank", questionsBankDefaults);
   const { selectedDeptId, selectedPositionId, selectedSkillId, selectedContentType } = filters;
 
   // Transient search inputs (not persisted)
@@ -55,6 +55,20 @@ export default function QuestionsBank() {
   const { data: skills, loading: loadingSkills } = useSkill(0, 100, debouncedSkillSearch);
   const isSkillSearching = skillSearch !== debouncedSkillSearch;
   const handleSkillSearch = useCallback((query: string) => setSkillSearch(query), []);
+
+  const hasActiveFilters = useMemo(() => {
+    const defaultDeptId = departments && departments.length > 0 ? departments[0].id : "";
+    return (
+      selectedPositionId !== "" ||
+      selectedSkillId !== "" ||
+      selectedContentType !== "all" ||
+      (selectedDeptId !== "" && selectedDeptId !== defaultDeptId)
+    );
+  }, [selectedPositionId, selectedSkillId, selectedContentType, selectedDeptId, departments]);
+
+  const clearFilters = useCallback(() => {
+    resetFilters();
+  }, [resetFilters]);
 
   useEffect(() => {
     if (departments.length > 0 && !selectedDeptId) {
@@ -247,6 +261,8 @@ export default function QuestionsBank() {
           handleSkillSearch={handleSkillSearch}
           selectedContentType={selectedContentType}
           setSelectedContentType={(type) => setFilter("selectedContentType", type)}
+          hasActiveFilters={hasActiveFilters}
+          clearFilters={clearFilters}
           onCreateNew={handleCreateNew}
         />
 

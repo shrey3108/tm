@@ -1,5 +1,4 @@
-import type { FileSizeUnit } from "@/pages/Admin/AdminRecentUploads";
-
+export type FileSizeUnit = "Auto" | "B" | "KB" | "MB";
 /**
    * Formats the file size based on the selected unit.
    * @param bytes The size in bytes.

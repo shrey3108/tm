@@ -15,13 +15,25 @@ import type { ColumnDef, PaginationState } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { toTitleCase } from "@/lib/utils";
 import { useAuditLogs } from "@/hooks/queries/admin/useAuditLogs";
+import { usePageFilters } from "@/hooks/usePageFilters";
 
 const AdminAuditLogs = () => {
-  const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
+  const { filters, setFilters } = usePageFilters("adminAuditLogs", {
     pageIndex: 0,
     pageSize: 10,
+    searchValue: "",
   });
-  const [searchValue, setSearchValue] = useState("");
+  const { pageIndex, pageSize, searchValue } = filters;
+
+  const setPagination = (val: PaginationState | ((prev: PaginationState) => PaginationState)) => {
+    const currentPagination = { pageIndex: filters.pageIndex, pageSize: filters.pageSize };
+    const nextPagination = typeof val === "function" ? val(currentPagination) : val;
+    setFilters({
+      pageIndex: nextPagination.pageIndex,
+      pageSize: nextPagination.pageSize,
+    });
+  };
+
   const [overallTotal, setOverallTotal] = useState(0);
 
 
@@ -41,8 +53,10 @@ const AdminAuditLogs = () => {
 
   // Handle search with pagination reset
   const handleSearchChange = (value: string) => {
-    setSearchValue(value);
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+    setFilters({
+      searchValue: value,
+      pageIndex: 0,
+    });
   };
 
   const columns: ColumnDef<AuditLogRead>[] = [

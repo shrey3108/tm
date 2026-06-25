@@ -14,27 +14,40 @@ import { useDebouncedValue } from "@/hooks";
 import { ArrowUpDown } from "lucide-react";
 import type { ColumnDef, PaginationState } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { formatFileSize } from "@/utils/converters";
+// import {
+//   Select,
+//   SelectContent,
+//   SelectItem,
+//   SelectTrigger,
+//   SelectValue,
+// } from "@/components/ui/select";
+import { formatFileSize, type FileSizeUnit } from "@/utils/converters";
 import { useRecentUploads } from "@/hooks/queries/admin/useRecentUpload";
-import { capitalize } from "@/lib/utils";
+import { capitalize, cn } from "@/lib/utils";
+import { usePageFilters } from "@/hooks/usePageFilters";
+import { SearchableSelect } from "@/components/shared";
 
-
-export type FileSizeUnit = "Auto" | "B" | "KB" | "MB";
 
 const AdminRecentUploads = () => {
-  const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
+  const { filters, setFilters, setFilter } = usePageFilters("adminRecentUploads", {
     pageIndex: 0,
     pageSize: 10,
+    searchValue: "",
+    fileSizeUnit: "Auto" as FileSizeUnit,
   });
-  const [searchValue, setSearchValue] = useState("");
-  const [fileSizeUnit, setFileSizeUnit] = useState<FileSizeUnit>("Auto");
+  const { pageIndex, pageSize, searchValue, fileSizeUnit } = filters;
+
+  const setPagination = (val: PaginationState | ((prev: PaginationState) => PaginationState)) => {
+    const currentPagination = { pageIndex: filters.pageIndex, pageSize: filters.pageSize };
+    const nextPagination = typeof val === "function" ? val(currentPagination) : val;
+    setFilters({
+      pageIndex: nextPagination.pageIndex,
+      pageSize: nextPagination.pageSize,
+    });
+  };
+
+  const setFileSizeUnit = (unit: FileSizeUnit) => setFilter("fileSizeUnit", unit);
+
   const [overallTotal, setOverallTotal] = useState(0);
 
   const debouncedSearch = useDebouncedValue(searchValue)
@@ -51,8 +64,10 @@ const AdminRecentUploads = () => {
 
   // Handle search with pagination reset
   const handleSearchChange = (value: string) => {
-    setSearchValue(value);
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+    setFilters({
+      searchValue: value,
+      pageIndex: 0,
+    });
   };
 
 
@@ -176,20 +191,32 @@ const AdminRecentUploads = () => {
           tableActions={
 
             <div className="flex items-center gap-2">
-              <span className="font-medium text-muted-foreground whitespace-nowrap">Unit:</span>
-              <Select
+              <span className="font-medium">Unit:</span>
+              {/* <Select
                 value={fileSizeUnit}
                 onValueChange={(value) => setFileSizeUnit(value as FileSizeUnit)}
               >
-                <SelectTrigger className="w-[150px] h-9 rounded-xl border-border/70 bg-background/90 transition-all focus:ring-2 focus:ring-primary/20">
+                <SelectTrigger className="w-[150px] h-9 rounded-xl border-border/70 bg-background/90">
                   <SelectValue placeholder="Unit" className={"text-base"} />
                 </SelectTrigger>
-                <SelectContent side="bottom">
+                <SelectContent side="inline-start" className={"text-sm"}>
                   <SelectItem value="Auto">Auto</SelectItem>
                   <SelectItem value="KB">KB</SelectItem>
                   <SelectItem value="MB">MB</SelectItem>
                 </SelectContent>
-              </Select>
+              </Select> */}
+              <SearchableSelect
+                value={fileSizeUnit}
+                onValueChange={(value) => setFileSizeUnit(value as FileSizeUnit)}
+                options={[{ id: "Auto", label: "Auto" }, { id: "KB", label: "KB" }, { id: "MB", label: "MB" }]}
+                placeholder="Departments"
+                pluralLabel="Departments"
+                clearLabel="Clear Selection"
+                triggerClassName={cn(
+                  "w-fit inline-flex items-center gap-2 h-9 px-3 rounded-xl border text-sm font-medium cursor-pointer select-none transition-colors",
+                )}
+                contentClassName="min-w-[200px]"
+              />
             </div>
           }
         />

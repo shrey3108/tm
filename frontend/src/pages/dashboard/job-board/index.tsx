@@ -21,7 +21,6 @@ import {
   useFilteredStatusOptions,
 } from "@/hooks/useJobTableFilters";
 import { JobActivityModal } from "@/components/job-board/JobActivityModal";
-import type { PaginationState } from "@tanstack/react-table";
 import { useDebouncedValue } from "@/hooks";
 import { useJobs } from "@/hooks/queries/jobs";
 
@@ -45,10 +44,6 @@ export default function JobBoard() {
   const [jobToDelete, setJobToDelete] = useState<Job | null>(null);
   const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
   const [selectedJobForActivity, setSelectedJobForActivity] = useState<Job | null>(null);
-  const [pagination, setPagination] = useState<PaginationState>({
-    pageIndex: 0,
-    pageSize: 10,
-  });
 
   const {
     titleFilter,
@@ -64,7 +59,9 @@ export default function JobBoard() {
     setDepartmentSearch,
     hasActiveFilters,
     clearFilters,
-  } = useJobTableFilters();
+    pagination,
+    setPagination,
+  } = useJobTableFilters("jobBoard");
 
   const debouncedTitle = useDebouncedValue(titleFilter, 500);
 

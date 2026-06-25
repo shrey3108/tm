@@ -20,17 +20,30 @@ import { PERMISSIONS } from "@/lib/permissions";
 import { useAuth } from "@/store/hooks";
 import { Plus } from "lucide-react";
 import { useAdminRoles } from "@/hooks/queries/admin/useAdminRoles";
+import { usePageFilters } from "@/hooks/usePageFilters";
 
 const AdminRoles = () => {
   const { user: currentUser } = useAuth();
   const [showPermissionModal, setShowPermissionModal] = useState(false);
   const [showRoleModal, setShowRoleModal] = useState(false);
   const [editingRoleId, setEditingRoleId] = useState<string | null>(null);
-  const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
+
+  const { filters, setFilters } = usePageFilters("adminRoles", {
     pageIndex: 0,
     pageSize: 10,
+    search: "",
   });
-  const [search, setSearch] = useState("");
+  const { pageIndex, pageSize, search } = filters;
+
+  const setPagination = (val: PaginationState | ((prev: PaginationState) => PaginationState)) => {
+    const currentPagination = { pageIndex: filters.pageIndex, pageSize: filters.pageSize };
+    const nextPagination = typeof val === "function" ? val(currentPagination) : val;
+    setFilters({
+      pageIndex: nextPagination.pageIndex,
+      pageSize: nextPagination.pageSize,
+    });
+  };
+
   const [overallTotal, setOverallTotal] = useState(0);
 
   const debouncedSearch = useDebouncedValue(search);
@@ -44,8 +57,10 @@ const AdminRoles = () => {
   );
 
   const handleSearchChange = (value: string) => {
-    setSearch(value);
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+    setFilters({
+      search: value,
+      pageIndex: 0,
+    });
   };
   useEffect(() => {
     if (!debouncedSearch && overallTotal !== total) {

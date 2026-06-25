@@ -22,6 +22,7 @@ import PermissionGuard from "@/components/auth/PermissionGuard";
 import { PERMISSIONS } from "@/lib/permissions";
 import { useJobCriteria } from "@/hooks/queries/admin/useJobCriteria";
 import { useDeleteCriterionMutation } from "@/hooks/mutations/admin/useJobCriteria";
+import { usePageFilters } from "@/hooks/usePageFilters";
 
 /**
  * Admin page for managing job evaluation criteria.
@@ -33,11 +34,22 @@ const AdminJobCriteria = () => {
     const toast = useToast();
     const navigate = useNavigate();
 
-    const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
+    const { filters, setFilters } = usePageFilters("adminJobCriteria", {
         pageIndex: 0,
         pageSize: 10,
+        search: "",
     });
-    const [search, setSearch] = useState("");
+    const { pageIndex, pageSize, search } = filters;
+
+    const setPagination = (val: PaginationState | ((prev: PaginationState) => PaginationState)) => {
+        const currentPagination = { pageIndex: filters.pageIndex, pageSize: filters.pageSize };
+        const nextPagination = typeof val === "function" ? val(currentPagination) : val;
+        setFilters({
+            pageIndex: nextPagination.pageIndex,
+            pageSize: nextPagination.pageSize,
+        });
+    };
+
     const [_deletingId, setDeletingId] = useState<string | null>(null);
     const [deleteError, setDeleteError] = useState<string | null>(null);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -59,8 +71,10 @@ const AdminJobCriteria = () => {
         }
     }, [total, debouncedSearch, overallTotal]);
     const handleSearchChange = (value: string) => {
-        setSearch(value);
-        setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+        setFilters({
+            search: value,
+            pageIndex: 0,
+        });
     };
 
 

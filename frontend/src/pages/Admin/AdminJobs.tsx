@@ -8,7 +8,6 @@ import { DataTable } from "@/components/shared/DataTable";
 import type { Job } from "@/types/job";
 import { extractErrorMessage } from "@/utils/error";
 import { slugify } from "@/utils/slug";
-import type { PaginationState } from "@tanstack/react-table";
 import { useAdminJobs } from "@/hooks/queries/jobs";
 
 // Sub-components
@@ -40,11 +39,6 @@ const AdminJobs = () => {
   const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
   const [selectedJobForActivity, setSelectedJobForActivity] = useState<Job | null>(null);
 
-  const [pagination, setPagination] = useState<PaginationState>({
-    pageIndex: 0,
-    pageSize: 10,
-  });
-
   const {
     titleFilter,
     setTitleFilter,
@@ -59,7 +53,9 @@ const AdminJobs = () => {
     setDepartmentSearch,
     hasActiveFilters,
     clearFilters,
-  } = useJobTableFilters();
+    pagination,
+    setPagination,
+  } = useJobTableFilters("adminJobs");
 
   const debouncedTitle = useDebouncedValue(titleFilter, 500);
 
