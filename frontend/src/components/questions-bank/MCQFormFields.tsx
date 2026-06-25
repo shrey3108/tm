@@ -1,8 +1,13 @@
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/shared";
+import { Button } from "@/components/ui/button";
+import { Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Required } from "@/components/job-form/Required"
+import { useEffect } from "react";
+import { toast } from "sonner";
 
 interface MCQFormFieldsProps {
   mcqQuestion: string;
@@ -25,8 +30,13 @@ export function MCQFormFields({
   errors,
   onClearError,
 }: MCQFormFieldsProps) {
+  useEffect(() => {
+    if (mcqOptions.length >= 26) {
+      toast.warning("Maximum 26 options are allowed")
+    }
+  }, [mcqOptions.length])
   return (
-    <div className="space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
+    <div className="space-y-4 animate-in fade-in slide-in-from-top-1 duration-200">
       <div className="flex flex-col gap-1.5">
         <Label className="text-sm font-semibold">MCQ Question Text</Label>
         <Textarea
@@ -48,43 +58,84 @@ export function MCQFormFields({
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-        {mcqOptions.map((opt, idx) => {
-          const optionKey = `option${String.fromCharCode(65 + idx)}`; // e.g. optionA, optionB...
-          const isOptional = idx >= 2;
-          return (
-            <div key={idx} className="flex flex-col gap-1.5">
-              <Label className="text-xs font-semibold text-muted-foreground">
-                Option {String.fromCharCode(65 + idx)} {isOptional && "(Optional)"}
-              </Label>
-              <Input
-                type="text"
-                value={opt}
-                onChange={(e) => {
-                  const nextOptions = [...mcqOptions];
-                  nextOptions[idx] = e.target.value;
-                  onMCQOptionsChange(nextOptions);
-                  if (errors[optionKey]) {
-                    onClearError(optionKey);
-                  }
-                }}
-                placeholder={`Enter option ${String.fromCharCode(65 + idx)}...`}
-                className={cn(
-                  "text-sm bg-background font-medium",
-                  errors[optionKey] && "border-destructive focus-visible:ring-destructive"
+      <div className="space-y-1">
+        <Label className="text-sm font-semibold">MCQ Options</Label>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          {mcqOptions.map((opt, idx) => {
+            const optionKey = `options.${idx}`;
+            const isRequired = idx < 2;
+            return (
+              <div key={idx} className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-semibold">
+                    Option {String.fromCharCode(65 + idx)} {isRequired ? <Required /> : "(Optional)"}
+                  </Label>
+                  {!isRequired && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const nextOptions = [...mcqOptions];
+                        nextOptions.splice(idx, 1);
+                        onMCQOptionsChange(nextOptions);
+
+                        // Adjust answer if the deleted option was selected or affects the index
+                        const answerIndex = mcqAnswer.charCodeAt(0) - 65;
+                        if (answerIndex === idx) {
+                          onMCQAnswerChange("A");
+                        } else if (answerIndex > idx) {
+                          onMCQAnswerChange(String.fromCharCode(65 + answerIndex - 1));
+                        }
+                      }}
+                      className="text-xs font-semibold text-destructive inline-flex items-center gap-0.5 cursor-pointer"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  )}
+                </div>
+                <Input
+                  type="text"
+                  value={opt}
+                  onChange={(e) => {
+                    const nextOptions = [...mcqOptions];
+                    nextOptions[idx] = e.target.value;
+                    onMCQOptionsChange(nextOptions);
+                    if (errors[optionKey]) {
+                      onClearError(optionKey);
+                    }
+                  }}
+                  placeholder={`Enter option ${String.fromCharCode(65 + idx)}`}
+                  className={cn(
+                    "text-sm",
+                    errors[optionKey] && "border-destructive"
+                  )}
+                />
+                {errors[optionKey] && (
+                  <p className="text-xs font-medium text-destructive">{errors[optionKey]}</p>
                 )}
-              />
-              {errors[optionKey] && (
-                <p className="text-xs font-medium text-destructive">{errors[optionKey]}</p>
-              )}
-            </div>
-          );
-        })}
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="flex justify-start pt-1">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              onMCQOptionsChange([...mcqOptions, ""]);
+            }}
+            className="text-xs font-semibold flex items-center gap-1.5 bg-background hover:bg-muted"
+            disabled={mcqOptions.length >= 26 || mcqOptions.some((opt) => !opt.trim())} // remove second condition if required to add more when options even if previous once are empty
+          >
+            <Plus className="h-4 w-4" /> Add Option
+          </Button>
+        </div>
       </div>
 
-      <div className="flex flex-col gap-1.5 max-w-xs">
+      <div className="flex flex-col gap-1.5 max-w-sm">
         <Label className="text-sm font-semibold">Correct Answer Option</Label>
-        <Select
+        <SearchableSelect
           value={mcqAnswer}
           onValueChange={(val) => {
             onMCQAnswerChange(val || "");
@@ -92,26 +143,24 @@ export function MCQFormFields({
               onClearError("answer");
             }
           }}
-        >
-          <SelectTrigger
-            className={cn(
-              "w-full text-sm font-semibold h-10",
-              errors.answer && "border-destructive focus-visible:ring-destructive"
-            )}
-          >
-            <SelectValue placeholder="Select correct option" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="A">Option A</SelectItem>
-            <SelectItem value="B">Option B</SelectItem>
-            <SelectItem value="C" disabled={!mcqOptions[2]?.trim()}>
-              Option C {!mcqOptions[2]?.trim() && "(Disabled - Fill Option C)"}
-            </SelectItem>
-            <SelectItem value="D" disabled={!mcqOptions[3]?.trim()}>
-              Option D {!mcqOptions[3]?.trim() && "(Disabled - Fill Option D)"}
-            </SelectItem>
-          </SelectContent>
-        </Select>
+          options={mcqOptions
+            .map((opt, idx) => {
+              const letter = String.fromCharCode(65 + idx);
+              return {
+                id: letter,
+                label: `Option ${letter}${opt.trim() ? `: ${opt}` : ""}`,
+                text: opt,
+              };
+            })
+            .filter((item) => item.text.trim().length > 0)
+          }
+          placeholder="Select correct option"
+          searchPlaceholder="Search option..."
+          triggerClassName={cn(
+            "h-10 text-sm font-semibold rounded-lg",
+            errors.answer && "border-destructive focus-visible:ring-destructive"
+          )}
+        />
         {errors.answer && (
           <p className="text-xs font-medium text-destructive">{errors.answer}</p>
         )}

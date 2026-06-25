@@ -26,8 +26,10 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { Plus, Trash2 } from "lucide-react";
 import type { MCQItem } from "@/types/taskPaper";
 import { mcqSchema, type MCQFormValues } from "@/schemas/taskPaper";
+import { Required } from "@/components/job-form/Required"
 
 interface MCQModalProps {
   show: boolean;
@@ -36,8 +38,6 @@ interface MCQModalProps {
   initialValue?: MCQItem | null;
   isSaving?: boolean;
 }
-
-
 
 export default function MCQModal({
   show,
@@ -52,48 +52,31 @@ export default function MCQModal({
     resolver: zodResolver(mcqSchema),
     defaultValues: {
       question: "",
-      optionA: "",
-      optionB: "",
-      optionC: "",
-      optionD: "",
+      options: ["", ""],
       answer: "A",
     },
   });
 
   const { handleSubmit, control, reset } = form;
-  const optionCValue = form.watch("optionC");
-  const optionDValue = form.watch("optionD");
+  const options = form.watch("options") || ["", ""];
 
   useEffect(() => {
     if (show) {
       if (initialValue) {
         // Find which option letter matches the answer text
-        const { question, options, answer } = initialValue;
-        const optionA = options[0] || "";
-        const optionB = options[1] || "";
-        const optionC = options[2] || "";
-        const optionD = options[3] || "";
-
-        let answerLetter: "A" | "B" | "C" | "D" = "A";
-        if (answer === optionB) answerLetter = "B";
-        else if (answer === optionC) answerLetter = "C";
-        else if (answer === optionD) answerLetter = "D";
+        const { question, options: rawOptions, answer } = initialValue;
+        const answerIndex = rawOptions.indexOf(answer);
+        const answerLetter = answerIndex !== -1 ? String.fromCharCode(65 + answerIndex) : "A";
 
         reset({
           question,
-          optionA,
-          optionB,
-          optionC,
-          optionD,
+          options: rawOptions.length >= 2 ? rawOptions : [...rawOptions, ...Array(2 - rawOptions.length).fill("")],
           answer: answerLetter,
         });
       } else {
         reset({
           question: "",
-          optionA: "",
-          optionB: "",
-          optionC: "",
-          optionD: "",
+          options: ["", ""],
           answer: "A",
         });
       }
@@ -101,21 +84,12 @@ export default function MCQModal({
   }, [show, initialValue, reset]);
 
   const onSubmit = async (data: MCQFormValues) => {
-    let answerText = data.optionA;
-    if (data.answer === "B") answerText = data.optionB;
-    else if (data.answer === "C") answerText = data.optionC;
-    else if (data.answer === "D") answerText = data.optionD;
-
-    const optionsList = [
-      data.optionA.trim(),
-      data.optionB.trim(),
-      data.optionC.trim(),
-      data.optionD.trim(),
-    ].filter(Boolean);
+    const answerIndex = data.answer.charCodeAt(0) - 65;
+    const answerText = data.options[answerIndex] || "";
 
     const mcqItem: MCQItem = {
       question: data.question.trim(),
-      options: optionsList,
+      options: data.options.map((opt) => opt.trim()),
       answer: answerText.trim(),
     };
 
@@ -153,62 +127,77 @@ export default function MCQModal({
               )}
             />
 
-            <div className="grid grid-cols-2 gap-2">
-              <FormField
-                control={control}
-                name="optionA"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Option A</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Option A text" disabled={isSaving} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <FormLabel className="text-sm font-semibold">MCQ Options</FormLabel>
 
-              <FormField
-                control={control}
-                name="optionB"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Option B</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Option B text" disabled={isSaving} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    form.setValue("options", [...options, ""]);
+                  }}
+                  disabled={isSaving || options.length >= 26 || options.some((opt) => !opt.trim())}
+                  className="h-8 text-xs font-semibold flex items-center gap-1.5"
+                >
+                  <Plus className="h-4 w-4" /> Add Option
+                </Button>
 
-              <FormField
-                control={control}
-                name="optionC"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Option C (Optional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Option C text" disabled={isSaving} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              </div>
 
-              <FormField
-                control={control}
-                name="optionD"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Option D (Optional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Option D text" disabled={isSaving} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {options.map((_, index) => {
+                  const isRequired = index < 2;
+                  return (
+                    <FormField
+                      key={index}
+                      control={control}
+                      name={`options.${index}`}
+                      render={({ field }) => (
+                        <FormItem className="space-y-1">
+                          <div className="flex items-center justify-between">
+                            <FormLabel className="text-xs font-semibold text-muted-foreground">
+                              Option {String.fromCharCode(65 + index)} {isRequired ? <Required /> : "(Optional)"}
+                            </FormLabel>
+                            {!isRequired && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const newOptions = [...options];
+                                  newOptions.splice(index, 1);
+                                  form.setValue("options", newOptions, { shouldValidate: true });
+
+                                  // Adjust selected answer
+                                  const answerVal = form.getValues("answer");
+                                  const answerIndex = answerVal.charCodeAt(0) - 65;
+                                  if (answerIndex === index) {
+                                    form.setValue("answer", "A", { shouldValidate: true });
+                                  } else if (answerIndex > index) {
+                                    form.setValue("answer", String.fromCharCode(65 + answerIndex - 1), { shouldValidate: true });
+                                  }
+                                }}
+                                disabled={isSaving}
+                                className="text-xs font-semibold text-destructive hover:underline flex items-center gap-0.5 cursor-pointer"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </button>
+                            )}
+                          </div>
+                          <FormControl>
+                            <Input
+                              placeholder={`Option ${String.fromCharCode(65 + index)} text`}
+                              disabled={isSaving}
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  );
+                })}
+              </div>
             </div>
 
             <FormField
@@ -216,7 +205,7 @@ export default function MCQModal({
               name="answer"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Correct Answer Option</FormLabel>
+                  <FormLabel className="text-sm font-semibold">Correct Answer Option</FormLabel>
                   <Select
                     disabled={isSaving}
                     onValueChange={field.onChange}
@@ -228,14 +217,15 @@ export default function MCQModal({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="A">Option A</SelectItem>
-                      <SelectItem value="B">Option B</SelectItem>
-                      <SelectItem value="C" disabled={!optionCValue?.trim()}>
-                        Option C {!optionCValue?.trim() && "(Disabled - Fill Option C)"}
-                      </SelectItem>
-                      <SelectItem value="D" disabled={!optionDValue?.trim()}>
-                        Option D {!optionDValue?.trim() && "(Disabled - Fill Option D)"}
-                      </SelectItem>
+                      {options.map((opt, idx) => {
+                        const letter = String.fromCharCode(65 + idx);
+                        const isEmpty = !opt?.trim();
+                        return (
+                          <SelectItem key={idx} value={letter} disabled={isEmpty}>
+                            Option {letter} {isEmpty && `(Disabled - Fill Option ${letter})`}
+                          </SelectItem>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
                   <FormMessage />

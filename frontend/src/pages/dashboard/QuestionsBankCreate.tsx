@@ -139,16 +139,16 @@ export default function QuestionsBankCreate() {
   );
   const [questionText, setQuestionText] = useState<string>("");
   const [mcqQuestion, setMCQQuestion] = useState<string>("");
-  const [mcqOptions, setMCQOptions] = useState<string[]>(["", "", "", ""]);
+  const [mcqOptions, setMCQOptions] = useState<string[]>(["", ""]);
   const [mcqAnswer, setMCQAnswer] = useState<string>("");
   const [taskDescription, setTaskDescription] = useState<string>("");
   const [taskInstructions, setTaskInstructions] = useState<string>("");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Clear validation errors when changing content type
+  // Clear validation errors when changing content type or options length
   useEffect(() => {
     setErrors({});
-  }, [contentType]);
+  }, [contentType, mcqOptions.length]);
 
   // Sync backend paper state to local Form in Edit Mode
   useEffect(() => {
@@ -167,18 +167,11 @@ export default function QuestionsBankCreate() {
           setMCQQuestion(mcq.question || "");
 
           const rawOptions = mcq.options || [];
-          const optionA = rawOptions[0] || "";
-          const optionB = rawOptions[1] || "";
-          const optionC = rawOptions[2] || "";
-          const optionD = rawOptions[3] || "";
-          setMCQOptions([optionA, optionB, optionC, optionD]);
+          setMCQOptions(rawOptions);
 
           const answerText = mcq.answer || "";
-          let answerLetter = "A";
-          if (answerText === optionB) answerLetter = "B";
-          else if (answerText === optionC) answerLetter = "C";
-          else if (answerText === optionD) answerLetter = "D";
-
+          const answerIndex = rawOptions.indexOf(answerText);
+          const answerLetter = answerIndex !== -1 ? String.fromCharCode(65 + answerIndex) : "A";
           setMCQAnswer(answerLetter);
         } else if (initialItemType === "project_task" && paperToEdit.project_task && paperToEdit.project_task[itemIndex]) {
           const task = paperToEdit.project_task[itemIndex];
@@ -198,18 +191,11 @@ export default function QuestionsBankCreate() {
           setMCQQuestion(paperToEdit.mcqs[0].question || "");
 
           const rawOptions = paperToEdit.mcqs[0].options || [];
-          const optionA = rawOptions[0] || "";
-          const optionB = rawOptions[1] || "";
-          const optionC = rawOptions[2] || "";
-          const optionD = rawOptions[3] || "";
-          setMCQOptions([optionA, optionB, optionC, optionD]);
+          setMCQOptions(rawOptions);
 
           const answerText = paperToEdit.mcqs[0].answer || "";
-          let answerLetter = "A";
-          if (answerText === optionB) answerLetter = "B";
-          else if (answerText === optionC) answerLetter = "C";
-          else if (answerText === optionD) answerLetter = "D";
-
+          const answerIndex = rawOptions.indexOf(answerText);
+          const answerLetter = answerIndex !== -1 ? String.fromCharCode(65 + answerIndex) : "A";
           setMCQAnswer(answerLetter);
         } else if (paperToEdit.project_task && paperToEdit.project_task.length > 0) {
           setContentType("project_task");
@@ -322,38 +308,31 @@ export default function QuestionsBankCreate() {
     if (contentType === "mcq") {
       const result = mcqSchema.safeParse({
         question: mcqQuestion,
-        optionA: mcqOptions[0] || "",
-        optionB: mcqOptions[1] || "",
-        optionC: mcqOptions[2] || "",
-        optionD: mcqOptions[3] || "",
+        options: mcqOptions,
         answer: mcqAnswer,
       });
 
       if (!result.success) {
         const newErrors: Record<string, string> = {};
         result.error.issues.forEach((issue) => {
-          const path = issue.path[0] as string;
-          newErrors[path] = issue.message;
+          if (issue.path[0] === "options" && typeof issue.path[1] === "number") {
+            const idx = issue.path[1];
+            newErrors[`options.${idx}`] = issue.message;
+          } else {
+            const path = issue.path.join(".");
+            newErrors[path] = issue.message;
+          }
         });
         setErrors(newErrors);
         return;
       }
 
-      let answerText = mcqOptions[0];
-      if (mcqAnswer === "B") answerText = mcqOptions[1];
-      else if (mcqAnswer === "C") answerText = mcqOptions[2];
-      else if (mcqAnswer === "D") answerText = mcqOptions[3];
-
-      const optionsList = [
-        mcqOptions[0].trim(),
-        mcqOptions[1].trim(),
-        mcqOptions[2].trim(),
-        mcqOptions[3].trim(),
-      ].filter(Boolean);
+      const answerIndex = mcqAnswer.charCodeAt(0) - 65;
+      const answerText = mcqOptions[answerIndex] || "";
 
       mcqItemPayload = {
         question: mcqQuestion.trim(),
-        options: optionsList,
+        options: mcqOptions.map((opt) => opt.trim()),
         answer: answerText.trim(),
       };
     }
