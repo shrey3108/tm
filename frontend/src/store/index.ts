@@ -6,6 +6,7 @@
 import { configureStore } from "@reduxjs/toolkit";
 import authReducer from "@/store/slices/authSlice";
 import filtersReducer from "@/store/slices/filtersSlice";
+import pollingReducer from "@/store/slices/pollingSlice";
 
 /**
  * The main Redux store for the application.
@@ -15,6 +16,7 @@ export const store = configureStore({
   reducer: {
     auth: authReducer,
     filters: filtersReducer,
+    polling: pollingReducer,
   },
 });
 
