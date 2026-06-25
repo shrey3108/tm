@@ -1,10 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Save, ArrowLeft, Search, Check, X } from "lucide-react";
+import { Save, ArrowLeft, Search, Check } from "lucide-react";
 import {
-    Button,
     Form,
     FormControl,
     FormDescription,
@@ -12,11 +11,11 @@ import {
     FormItem,
     FormLabel,
     FormMessage,
-    Input,
-    Textarea,
-    Switch,
-    Badge,
-} from "@/components";
+} from "@/components/ui/form";
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Switch } from "@/components/ui/switch"
 import { useWatch } from "react-hook-form";
 import {
     useCreateStageTemplateMutation,
@@ -129,13 +128,21 @@ export default function AdminJobStageForm() {
         });
     };
 
-    const filteredCriteria = criteria.filter((c) =>
-        c.name.toLowerCase().includes(criteriaSearch.toLowerCase())
-    );
+    const filteredCriteria = useMemo(() => {
+        const query = criteriaSearch.toLowerCase();
+        const matched = criteria.filter((c) =>
+            c.name.toLowerCase().includes(query)
+        );
+        const selected = matched.filter((c) => selectedCriteriaIds.includes(c.id));
+        const nonSelected = matched.filter((c) => !selectedCriteriaIds.includes(c.id));
+        return [...selected, ...nonSelected];
+    }, [criteria, criteriaSearch, selectedCriteriaIds]);
 
-    const selectedCriteriaData = criteria.filter((c) =>
-        selectedCriteriaIds.includes(c.id)
-    );
+    const selectedCriteriaData = useMemo(() => {
+        return criteria.filter((c) =>
+            selectedCriteriaIds.includes(c.id)
+        );
+    }, [criteria, selectedCriteriaIds]);
 
     const onSubmit = async (values: StageTemplateCreateFormValues) => {
         try {
@@ -296,6 +303,9 @@ export default function AdminJobStageForm() {
                                     <FormLabel className="text-lg font-bold">Associated Criteria</FormLabel>
                                     <FormDescription>
                                         Select the evaluation criteria to use for this stage.
+                                        {selectedCriteriaData.length > 0 ? <>
+                                            Selected Criteria ({selectedCriteriaData.length})
+                                        </> : null}
                                     </FormDescription>
                                     <div className="relative">
                                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -348,7 +358,7 @@ export default function AdminJobStageForm() {
                                     )}
                                 </div>
 
-                                {selectedCriteriaData.length > 0 && (
+                                {/* {selectedCriteriaData.length > 0 && (
                                     <div className="pt-4">
                                         <p className="text-sm font-bold text-muted-foreground mb-3 uppercase tracking-wider">
                                             Selected Criteria ({selectedCriteriaData.length})
@@ -372,7 +382,7 @@ export default function AdminJobStageForm() {
                                             ))}
                                         </div>
                                     </div>
-                                )}
+                                )} */}
                             </div>
 
                             <div className="flex items-center justify-end gap-4 pt-4">

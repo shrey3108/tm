@@ -1,14 +1,9 @@
 import { useState, useMemo } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
-import { X, Plus, Check, Search, Loader2 } from "lucide-react";
-import {
-  FormField,
-  FormItem,
-  FormMessage,
-  Input,
-  Badge,
-  Button,
-} from "@/components";
+import { Plus, Check, Search, Loader2 } from "lucide-react";
+import { FormField, FormItem, FormMessage } from "@/components/ui/form";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input"
 import type { SkillRead } from "@/types/admin";
 import { cn } from "@/lib/utils";
 import { Required } from "@/components/job-form/Required";
@@ -23,7 +18,7 @@ interface SkillSelectorSectionProps {
 
 export const SkillSelectorSection = ({
   initialSelectedSkills = [],
-  placeholderMessage = "Select the skills that should be linked to this job. Click a skill to toggle selection."
+  placeholderMessage = "Select the skills that should be linked to this job."
 }: SkillSelectorSectionProps) => {
   const { control, setValue } = useFormContext();
   const [allSkills, setAllSkills] = useState<SkillRead[]>(initialSelectedSkills);
@@ -86,14 +81,19 @@ export const SkillSelectorSection = ({
 
 
   const filteredSkills = useMemo(() => {
+    const selectedMap = new Map(selectedSkills.map((s) => [s.id, s]));
     if (!skillSearch.trim()) {
-      return skills;
+      const nonSelected = skills.filter((s) => !selectedMap.has(s.id));
+      return [...selectedSkills, ...nonSelected];
     }
     const query = skillSearch.toLowerCase();
-    return allSkills.filter((skill) =>
+    const matched = allSkills.filter((skill) =>
       skill.name.toLowerCase().includes(query) || (skill.description && skill.description.toLowerCase().includes(query))
     );
-  }, [skills, allSkills, skillSearch]);
+    const matchedSelected = matched.filter((s) => selectedMap.has(s.id));
+    const matchedNonSelected = matched.filter((s) => !selectedMap.has(s.id));
+    return [...matchedSelected, ...matchedNonSelected];
+  }, [skills, allSkills, skillSearch, selectedSkills]);
 
   const handleCloseModal = () => {
     setShowModal(false);
@@ -107,7 +107,7 @@ export const SkillSelectorSection = ({
 
             <h2 className="text-lg font-bold tracking-tight">Required Skills <Required /></h2>
             <p className="text-muted-foreground text-base font-medium">
-              {placeholderMessage}
+              {placeholderMessage} {selectedSkillIds.length > 0 ? <>Selected ({selectedSkillIds.length})</> : null}
             </p>
           </div>
 
@@ -196,7 +196,7 @@ export const SkillSelectorSection = ({
         )}
       </div>
 
-      {selectedSkillIds.length > 0 && (
+      {/* {selectedSkillIds.length > 0 && (
         <div className="pt-6 border-t border-muted-foreground/10">
           <p className="text-sm font-bold text-muted-foreground mb-4 uppercase tracking-wider">
             Selected ({selectedSkillIds.length})
@@ -220,7 +220,7 @@ export const SkillSelectorSection = ({
             ))}
           </div>
         </div>
-      )}
+      )} */}
       <CreateSkillModal show={showModal} handleClose={handleCloseModal}
         onSkillSaved={refetchSkills}
         skill={selectedSkill} />

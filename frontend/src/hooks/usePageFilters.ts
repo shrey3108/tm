@@ -58,7 +58,8 @@ export function usePageFilters<T extends Record<string, any>>(
   }, [dispatch, pageKey]);
 
   // Select the stored filter values for this page.
-  const storedFilters = useAppSelector(selectPageFilters(pageKey));
+  const selectFilters = useMemo(() => selectPageFilters(pageKey), [pageKey]);
+  const storedFilters = useAppSelector(selectFilters);
 
   // Merge defaults with stored values so callers always see a complete T.
   const filters = useMemo(

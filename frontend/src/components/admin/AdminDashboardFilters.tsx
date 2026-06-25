@@ -2,9 +2,9 @@ import { useMemo } from "react";
 import type { JobTitle } from "@/types/job";
 import { cn } from "@/lib/utils";
 import { Briefcase, Layers, Building2, X } from "lucide-react";
-import { HoverCard, HoverCardTrigger, HoverCardContent } from "../ui/hover-card";
+import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card";
 import type { FilterState } from "@/hooks";
-import { Button } from "../ui/button";
+import { Button } from "@/components/ui/button";
 import { SearchableSelect } from "@/components/shared";
 
 interface AdminDashboardFiltersProps {

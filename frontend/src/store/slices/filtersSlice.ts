@@ -6,7 +6,7 @@
  * Automatically clears persisted filters on logout via the authSlice logout action.
  */
 
-import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
+import { createSlice, createSelector, type PayloadAction } from "@reduxjs/toolkit";
 import { logout } from "@/store/slices/authSlice";
 
 
@@ -179,6 +179,9 @@ export const {
 
 export default filtersSlice.reducer;
 
+const EMPTY_OBJECT = {};
+const selectFiltersState = (state: { filters: FiltersState }) => state.filters;
+
 /**
  * Selector factory that returns the filter values for a specific page.
  * Returns an empty object when the page has no stored filters.
@@ -186,7 +189,8 @@ export default filtersSlice.reducer;
  * @param pageKey - Unique identifier for the page.
  * @returns A selector function compatible with `useAppSelector`.
  */
-export const selectPageFilters =
-  (pageKey: string) =>
-    (state: { filters: FiltersState }) =>
-      state.filters.pages[pageKey] || {};
+export const selectPageFilters = (pageKey: string) =>
+  createSelector(
+    [selectFiltersState],
+    (filters) => filters.pages[pageKey] || EMPTY_OBJECT
+  );
