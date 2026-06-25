@@ -389,18 +389,18 @@ async def evaluate_candidate_github_repo(
         task_skills = list(set(task_skills))
     else:
         # Fallback to active CandidateTestPaper (if assigned but not emailed yet)
-        stmt_paper = select(CandidateTestPaper).where(CandidateTestPaper.candidate_id == candidate.id)
+        stmt_paper = select(CandidateTestPaper).where(CandidateTestPaper.candidate_id == candidate.id).order_by(CandidateTestPaper.created_at.desc())
         res_paper = await db.execute(stmt_paper)
-        test_paper = res_paper.scalar_one_or_none()
+        test_paper = res_paper.scalars().first()
 
         # Fallback to job-level default test paper
         if not test_paper and candidate.applied_job_id:
             stmt_job = select(CandidateTestPaper).where(
                 CandidateTestPaper.job_id == candidate.applied_job_id,
                 CandidateTestPaper.candidate_id.is_(None)
-            )
+            ).order_by(CandidateTestPaper.created_at.desc())
             res_job = await db.execute(stmt_job)
-            test_paper = res_job.scalar_one_or_none()
+            test_paper = res_job.scalars().first()
 
         if test_paper:
             has_assigned_paper = True

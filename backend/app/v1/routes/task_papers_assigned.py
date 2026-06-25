@@ -177,9 +177,9 @@ async def assign_test_paper_to_candidate(
 
         assigned_name = paper.name
         # Allow overriding template questions/tasks manually
-        assigned_questions = assign_data.questions if assign_data.questions is not None else paper.questions
+        assigned_questions = [q.model_dump() if hasattr(q, "model_dump") else q for q in assign_data.questions] if assign_data.questions is not None else paper.questions
         assigned_mcqs = [m.model_dump() if hasattr(m, "model_dump") else m for m in assign_data.mcqs] if assign_data.mcqs is not None else paper.mcqs
-        assigned_task = assign_data.project_task if assign_data.project_task is not None else paper.project_task
+        assigned_task = [t.model_dump() if hasattr(t, "model_dump") else t for t in assign_data.project_task] if assign_data.project_task is not None else paper.project_task
         assigned_file_path = paper.task_file_path
         assigned_skills = paper.task_skills
 
@@ -261,9 +261,9 @@ async def assign_test_paper_to_candidate(
             )
 
         assigned_name = "Custom Test Paper"
-        assigned_questions = assign_data.questions or []
+        assigned_questions = [q.model_dump() if hasattr(q, "model_dump") else q for q in assign_data.questions] if assign_data.questions else []
         assigned_mcqs = [m.model_dump() if hasattr(m, "model_dump") else m for m in assign_data.mcqs] if assign_data.mcqs else []
-        assigned_task = assign_data.project_task or []
+        assigned_task = [t.model_dump() if hasattr(t, "model_dump") else t for t in assign_data.project_task] if assign_data.project_task else []
         assigned_file_path = None
         assigned_skills = None
 
@@ -276,7 +276,7 @@ async def assign_test_paper_to_candidate(
 
     elif assign_data.mode == "hybrid":
         assigned_name = "Hybrid Custom Test Paper"
-        final_questions = list(assign_data.questions) if assign_data.questions else []
+        final_questions = [q.model_dump() if hasattr(q, "model_dump") else q for q in assign_data.questions] if assign_data.questions else []
         final_mcqs = [m.model_dump() if hasattr(m, "model_dump") else m for m in assign_data.mcqs] if assign_data.mcqs else []
         final_tasks = [t if isinstance(t, dict) else t.model_dump() if hasattr(t, "model_dump") else {"task": str(t), "instructions": ""} for t in assign_data.project_task] if assign_data.project_task else []
         
@@ -318,7 +318,10 @@ async def assign_test_paper_to_candidate(
     if assign_data.mode in ["random", "custom", "hybrid"]:
         raw_text_parts = []
         if assigned_questions:
-            raw_text_parts.extend(assigned_questions)
+            for q in assigned_questions:
+                q_text = q.get("question") if isinstance(q, dict) else getattr(q, "question", str(q))
+                if q_text:
+                    raw_text_parts.append(q_text)
         if assigned_mcqs:
             for m in assigned_mcqs:
                 q_text = m.get("question") if isinstance(m, dict) else getattr(m, "question", "")
@@ -401,13 +404,18 @@ async def assign_test_paper_to_candidate(
                 task_name = item.get("task") or item.get("title") or item.get("content") or item.get("task_title") or "Untitled Task"
                 task_str = task_name.strip()
                 parsed = parse_frontend_custom_task(task_str)
+                new_item = dict(item)
                 if parsed:
                     task_name_clean, instructions = parsed
-                    normalized_task_list.append({"task": task_name_clean, "instructions": instructions})
+                    new_item["task"] = task_name_clean
+                    new_item["instructions"] = instructions
+                    normalized_task_list.append(new_item)
                 else:
                     lookup_key = " ".join(task_str.split())
                     instructions = item.get("instructions") or task_instruction_map.get(lookup_key, "")
-                    normalized_task_list.append({"task": task_str, "instructions": instructions})
+                    new_item["task"] = task_str
+                    new_item["instructions"] = instructions
+                    normalized_task_list.append(new_item)
             else:
                 normalized_task_list.append(item)
         assigned_task_list = normalized_task_list
@@ -513,9 +521,9 @@ async def get_candidate_test_paper(
                 stmt_job = select(CandidateTestPaper).where(
                     CandidateTestPaper.job_id == job_id,
                     CandidateTestPaper.candidate_id.is_(None)
-                )
+                ).order_by(CandidateTestPaper.created_at.desc())
                 res_job = await db.execute(stmt_job)
-                paper = res_job.scalar_one_or_none()
+                paper = res_job.scalars().first()
 
     if not paper:
         raise HTTPException(
@@ -537,9 +545,9 @@ async def get_candidate_test_paper(
                 stmt_job = select(CandidateTestPaper).where(
                     CandidateTestPaper.job_id == job_id,
                     CandidateTestPaper.candidate_id.is_(None)
-                )
+                ).order_by(CandidateTestPaper.created_at.desc())
                 res_job = await db.execute(stmt_job)
-                job_paper = res_job.scalar_one_or_none()
+                job_paper = res_job.scalars().first()
                 if job_paper:
                     if (paper.name != job_paper.name or
                         not are_tasks_equal(paper.project_task, job_paper.project_task) or
@@ -611,9 +619,9 @@ async def get_job_default_test_paper(
     stmt = select(CandidateTestPaper).where(
         CandidateTestPaper.job_id == job_id,
         CandidateTestPaper.candidate_id.is_(None)
-    )
+    ).order_by(CandidateTestPaper.created_at.desc())
     res = await db.execute(stmt)
-    paper = res.scalar_one_or_none()
+    paper = res.scalars().first()
 
     if not paper:
         raise HTTPException(
@@ -635,13 +643,14 @@ async def delete_job_default_test_paper(
         CandidateTestPaper.candidate_id.is_(None)
     )
     res = await db.execute(stmt)
-    paper = res.scalar_one_or_none()
-    if not paper:
+    papers = res.scalars().all()
+    if not papers:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="No default test paper assigned to this job.",
         )
-    await db.delete(paper)
+    for paper in papers:
+        await db.delete(paper)
     await db.commit()
 
     # Invalidate job cache immediately after deleting job default test paper
@@ -743,9 +752,9 @@ async def download_candidate_task_file(
                 stmt_job = select(CandidateTestPaper).where(
                     CandidateTestPaper.job_id == job_id,
                     CandidateTestPaper.candidate_id.is_(None)
-                )
+                ).order_by(CandidateTestPaper.created_at.desc())
                 res_job = await db.execute(stmt_job)
-                test_paper = res_job.scalar_one_or_none()
+                test_paper = res_job.scalars().first()
 
     task_file_path = candidate.task_file_path or (test_paper.task_file_path if test_paper else None)
 
@@ -758,7 +767,7 @@ async def download_candidate_task_file(
             # Find the original QuestionSetPaper by task_file_path
             stmt_orig = select(QuestionSetPaper).where(QuestionSetPaper.task_file_path == test_paper.task_file_path)
             res_orig = await db.execute(stmt_orig)
-            orig_paper = res_orig.scalar_one_or_none()
+            orig_paper = res_orig.scalars().first()
             if orig_paper:
                 # Compare questions, mcqs and project task
                 if (orig_paper.questions == test_paper.questions and 

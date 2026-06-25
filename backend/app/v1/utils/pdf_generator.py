@@ -144,6 +144,12 @@ def generate_candidate_task_pdf_file(
     Story.append(Paragraph(f"Test Paper: {display_title}", title_style))
     Story.append(Spacer(1, 20))
     
+    def format_meta(item: dict) -> str:
+        parts = []
+        if item.get("marks"): parts.append(f"{item['marks']} Marks")
+        if item.get("duration"): parts.append(f"{item['duration']} Mins")
+        return f" ({' | '.join(parts)})" if parts else ""
+    
     def add_question(q_text, prefix):
         match = re.match(r'^\[(.*?)\] (.*)', q_text)
         if match:
@@ -172,7 +178,7 @@ def generate_candidate_task_pdf_file(
         has_top_content = False
         for t in tasks:
             if isinstance(t, dict):
-                if t.get("instructions") or False:
+                if t.get("instructions"):
                     has_top_content = True
                     break
                     
@@ -189,25 +195,58 @@ def generate_candidate_task_pdf_file(
         Story.append(Paragraph("<b>Questions:</b>", styles['Heading2']))
         questions = test_paper.questions if isinstance(test_paper.questions, list) else [test_paper.questions]
         for i, q in enumerate(questions):
-            add_question(q, f"{i+1}.")
+            if isinstance(q, dict):
+                q_text = q.get("question", "")
+                q_text += format_meta(q)
+                add_question(q_text, f"{i+1}.")
+            else:
+                add_question(q, f"{i+1}.")
             
     if getattr(test_paper, "mcqs", None):
         Story.append(Paragraph("<b>Multiple Choice Questions:</b>", styles['Heading2']))
         for i, mcq in enumerate(test_paper.mcqs):
-            q_text = mcq.get("question") if isinstance(mcq, dict) else getattr(mcq, "question", "")
+            if isinstance(mcq, dict):
+                q_text = mcq.get("question", "")
+                q_text += format_meta(mcq)
+            else:
+                q_text = getattr(mcq, "question", "")
+                if hasattr(mcq, "model_dump"):
+                    q_text += format_meta(mcq.model_dump())
             add_question(q_text, f"{i+1}.")
             options = mcq.get("options") if isinstance(mcq, dict) else getattr(mcq, "options", [])
             for opt in options:
                 Story.append(Paragraph(f"   - {sanitize_for_pdf(opt)}", normal_style))
             Story.append(Spacer(1, 10))
-            
+
     if test_paper.project_task:
-        Story.append(Paragraph("<b>Project Task:</b>", styles['Heading2']))
+        Story.append(Paragraph("<b>Project Tasks:</b>", styles['Heading2']))
         tasks = test_paper.project_task if isinstance(test_paper.project_task, list) else [test_paper.project_task]
+        
         for t in tasks:
             if isinstance(t, dict):
-                task_name = t.get("task", t.get("title", t.get("content", "Untitled Task")))
-                add_question(str(task_name), "-")
+                # New nested format handling
+                title = t.get("title") or t.get("task") or t.get("content", "Untitled Project")
+                title = str(title) + format_meta(t)
+                Story.append(Paragraph(f"<b>{sanitize_for_pdf(title)}</b>", styles['Heading3']))
+                
+                desc = t.get("description")
+                if desc:
+                    Story.append(Paragraph(f"<b>Description:</b> {sanitize_for_pdf(desc)}", normal_style))
+                    
+                subtasks = t.get("tasks")
+                if subtasks and isinstance(subtasks, list):
+                    Story.append(Spacer(1, 5))
+                    for sub in subtasks:
+                        if isinstance(sub, dict):
+                            sub_name = sub.get("name", "Untitled Task")
+                            sub_name = str(sub_name) + format_meta(sub)
+                            add_question(sub_name, "-")
+                            sub_desc = sub.get("description")
+                            if sub_desc:
+                                Story.append(Paragraph(f"   {sanitize_for_pdf(sub_desc)}", normal_style))
+                        else:
+                            add_question(str(sub), "-")
+                Story.append(Spacer(1, 10))
             else:
                 add_question(str(t), "-")
             

@@ -94,9 +94,9 @@ async def send_test_paper_email(
         stmt_existing = select(CandidateTestPaper).where(
             CandidateTestPaper.candidate_id == candidate.id,
             CandidateTestPaper.job_id == paper.job_id
-        )
+        ).order_by(CandidateTestPaper.created_at.desc())
         res_existing = await db.execute(stmt_existing)
-        existing_paper = res_existing.scalar_one_or_none()
+        existing_paper = res_existing.scalars().first()
         if existing_paper:
             if existing_paper.email_sent_count > 0 and not email_data.force:
                 raise HTTPException(
@@ -248,9 +248,9 @@ async def send_bulk_test_paper_email(
                 stmt_existing = select(CandidateTestPaper).where(
                     CandidateTestPaper.candidate_id == candidate.id,
                     CandidateTestPaper.job_id == paper.job_id
-                )
+                ).order_by(CandidateTestPaper.created_at.desc())
                 res_existing = await db.execute(stmt_existing)
-                existing_paper = res_existing.scalar_one_or_none()
+                existing_paper = res_existing.scalars().first()
                 if existing_paper:
                     if existing_paper.email_sent_count > 0 and not email_data.force:
                         raise HTTPException(

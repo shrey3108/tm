@@ -444,6 +444,18 @@ Output Format Example (JSON ONLY):
         # Re-fetch the job with all stages and templates fully loaded
         job = await self.get_job_by_id(db, job_id)
 
+        # Auto-generate test paper if a question bank exists
+        if has_question_bank:
+            try:
+                from app.v1.services.admin.candidate_task_service import candidate_task_service
+                random_paper = await candidate_task_service.generate_random_paper_for_job(db, job)
+                if random_paper:
+                    db.add(random_paper)
+                    await db.flush()
+                    logger.info(f"Automatically generated random test paper for job: {job.id}")
+            except Exception as e:
+                logger.warning(f"Failed to auto-generate test paper for job {job.id}: {e}")
+
         # Invalidate job board and search caches
         from app.v1.core.cache import cache
         await cache.clear(pattern="jobs:list:*")

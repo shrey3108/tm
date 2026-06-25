@@ -400,17 +400,17 @@ Output Format Example (JSON ONLY):
 
         if not task_file_path:
             from app.v1.db.models.candidate_test_paper import CandidateTestPaper
-            stmt_paper = select(CandidateTestPaper).where(CandidateTestPaper.candidate_id == candidate_id)
+            stmt_paper = select(CandidateTestPaper).where(CandidateTestPaper.candidate_id == candidate_id).order_by(CandidateTestPaper.created_at.desc())
             res_paper = await db.execute(stmt_paper)
-            test_paper = res_paper.scalar_one_or_none()
+            test_paper = res_paper.scalars().first()
             
             if not test_paper and candidate.applied_job_id:
                 stmt_job = select(CandidateTestPaper).where(
                     CandidateTestPaper.job_id == candidate.applied_job_id,
                     CandidateTestPaper.candidate_id.is_(None)
-                )
+                ).order_by(CandidateTestPaper.created_at.desc())
                 res_job = await db.execute(stmt_job)
-                test_paper = res_job.scalar_one_or_none()
+                test_paper = res_job.scalars().first()
             
             if test_paper and test_paper.task_file_path:
                 task_file_path = test_paper.task_file_path
@@ -460,17 +460,17 @@ Output Format Example (JSON ONLY):
         task_skills = candidate.task_skills
         if not candidate.task_file_path:
             from app.v1.db.models.candidate_test_paper import CandidateTestPaper
-            stmt_paper = select(CandidateTestPaper).where(CandidateTestPaper.candidate_id == candidate_id)
+            stmt_paper = select(CandidateTestPaper).where(CandidateTestPaper.candidate_id == candidate_id).order_by(CandidateTestPaper.created_at.desc())
             res_paper = await db.execute(stmt_paper)
-            test_paper = res_paper.scalar_one_or_none()
+            test_paper = res_paper.scalars().first()
             
             if not test_paper and candidate.applied_job_id:
                 stmt_job = select(CandidateTestPaper).where(
                     CandidateTestPaper.job_id == candidate.applied_job_id,
                     CandidateTestPaper.candidate_id.is_(None)
-                )
+                ).order_by(CandidateTestPaper.created_at.desc())
                 res_job = await db.execute(stmt_job)
-                test_paper = res_job.scalar_one_or_none()
+                test_paper = res_job.scalars().first()
                 
             if test_paper and test_paper.task_file_path:
                 task_skills = test_paper.task_skills or []
@@ -569,8 +569,17 @@ Output Format Example (JSON ONLY):
                     new_m = m.copy() if isinstance(m, dict) else getattr(m, "model_dump", lambda: m)()
                     all_mcqs.append(new_m)
 
-        # Ensure we have at least 5 unique questions or fallback to total pool
-        unique_questions = list(set(all_questions))
+        # Ensure we have unique questions
+        seen_questions = set()
+        unique_questions = []
+        for q in all_questions:
+            q_text = q.get("question") if isinstance(q, dict) else getattr(q, "question", str(q))
+            if q_text and q_text not in seen_questions:
+                seen_questions.add(q_text)
+                if isinstance(q, str):
+                    unique_questions.append({"question": q, "marks": 5, "weightage": 5, "duration": 3})
+                else:
+                    unique_questions.append(q)
         
         # De-duplicate MCQs by question text
         seen_mcq_questions = set()
@@ -581,11 +590,14 @@ Output Format Example (JSON ONLY):
                 seen_mcq_questions.add(q_text)
                 unique_mcqs.append(m)
 
-        # Select one task randomly
-        chosen_paper = random.choice(papers)
-            
-        assigned_task = chosen_paper.project_task if chosen_paper.project_task else []
-        assigned_file_path = chosen_paper.task_file_path
+        papers_with_tasks = [p for p in papers if p.project_task and len(p.project_task) > 0]
+        if papers_with_tasks:
+            chosen_task_paper = random.choice(papers_with_tasks)
+            assigned_task = chosen_task_paper.project_task
+            assigned_file_path = chosen_task_paper.task_file_path
+        else:
+            assigned_task = []
+            assigned_file_path = None
         
         assigned_name = f"Randomized Test Paper ({job.title})"
 
