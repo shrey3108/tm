@@ -90,10 +90,10 @@ const DateDisplayContent = ({
 
   return (
     <span
-      className={cn("inline-flex items-center gap-1.5 text-sm text-foreground", className)}
+      className={cn("inline-flex items-center gap-1.5 text-sm", className)}
       {...showTitle ? { title: dateObj.toString() } : {}}
     >
-      {showIcon && <Calendar className="h-3.5 w-3.5 text-muted-foreground" />}
+      {showIcon && <Calendar className="h-3.5 w-3.5" />}
       {formattedDate}
     </span>
   );

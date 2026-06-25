@@ -72,7 +72,7 @@ export function AssignedPaperView({
                     <span
                       key={optIdx}
                       className={cn(
-                        "text-[10px] px-1.5 py-0.5 rounded border scale-95 origin-left",
+                        "text-sm px-1.5 py-0.5 rounded border scale-95 origin-left",
                         opt === mcq.answer
                           ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/30 font-semibold"
                           : "bg-muted/30 text-muted-foreground border-border/30"

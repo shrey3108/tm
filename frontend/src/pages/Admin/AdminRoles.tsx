@@ -84,14 +84,14 @@ const AdminRoles = () => {
     {
       accessorKey: "name",
       header: () => (
-        <div className="text-left font-semibold">Role Name</div>
+        <div className="text-left text-base">Role Name</div>
       ),
       cell: ({ row }) => <div className="text-left">{row.original.name}</div>,
     },
     {
       accessorKey: "created_at",
       header: () => (
-        <div className="text-center font-semibold">Created At</div>
+        <div className="text-center text-base">Created At</div>
       ),
       cell: ({ row }) =>
         <div className="text-center">
@@ -101,7 +101,7 @@ const AdminRoles = () => {
     {
       accessorKey: "user_count",
       header: () => (
-        <div className="text-center font-semibold">Users Count</div>
+        <div className="text-center text-base">Users Count</div>
       ),
       cell: ({ row }) => <div className="text-center">
         {row.original.user_count}
@@ -110,7 +110,7 @@ const AdminRoles = () => {
     {
       id: "actions",
       header: () => (
-        <div className="text-center font-semibold">Actions</div>
+        <div className="text-center text-base">Actions</div>
       ),
       cell: ({ row }) => {
         const role = row.original;
@@ -153,7 +153,7 @@ const AdminRoles = () => {
   //   {
   //     accessorKey: "name",
   //     header: () => (
-  //       <div className="text-center font-semibold">Name</div>
+  //       <div className="text-center text-base">Name</div>
   //     ),
   //     cell: ({ row }) => {
   //       const perm = row.original;
@@ -168,7 +168,7 @@ const AdminRoles = () => {
   //   {
   //     id: "actions",
   //     header: () => (
-  //       <div className="text-center font-semibold">Actions</div>
+  //       <div className="text-center text-base">Actions</div>
   //     ),
   //     cell: ({ row }) => (
   //       <PermissionGuard permissions={PERMISSIONS.PERMISSIONS_MANAGE} hideWhenDenied>

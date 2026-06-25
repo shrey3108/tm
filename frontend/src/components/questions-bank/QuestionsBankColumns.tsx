@@ -33,25 +33,25 @@ export const getQuestionsBankColumns = ({
 }: ColumnHandlers): ColumnDef<FlatItem>[] => [
     {
       id: "index",
-      header: () => <div className="flex items-center justify-center w-12 font-semibold">Number</div>,
-      cell: ({ row }) => <div className="flex items-center justify-center font-medium">{row.index + 1}</div>,
+      header: () => <div className="flex items-center justify-center">No.</div>,
+      cell: ({ row }) => <div className="flex items-center justify-center text-base">{row.index + 1}</div>,
     },
     {
       accessorKey: "content",
       header: () => (
-        <div className="min-w-[400px]">
-          <span className="font-semibold">Content</span>
+        <div className="min-w-[400px] ">
+          <span className="text-base">Content</span>
         </div>
       ),
       cell: ({ row }) => (
-        <div className="min-w-[400px] py-2 font-medium text-sm whitespace-pre-wrap wrap-break-word">
+        <div className="min-w-[400px] whitespace-pre-wrap wrap-break-word">
           {row.original.content}
         </div>
       ),
     },
     {
       accessorKey: "type",
-      header: () => <div className="font-semibold">Type</div>,
+      header: () => <div className=" flex items-center justify-center">Type</div>,
       cell: ({ row }) => {
         const typeLabels: Record<FlatItem["type"], string> = {
           question: "Default",
@@ -59,7 +59,7 @@ export const getQuestionsBankColumns = ({
           mcq: "MCQ",
         };
         return (
-          <span className={cn("px-2.5 py-0.5 rounded-full text-sm font-medium")}>
+          <span className={cn("flex items-center justify-center text-sm")}>
             {typeLabels[row.original.type]}
           </span>
         );
@@ -69,7 +69,7 @@ export const getQuestionsBankColumns = ({
       accessorKey: "skills",
       header: () => (
         <div className="flex items-center gap-2 min-w-[160px]">
-          <span className="font-semibold">Skills</span>
+          <span className="">Skills</span>
         </div>
       ),
       cell: ({ row }) => {
@@ -77,7 +77,7 @@ export const getQuestionsBankColumns = ({
         if (!skills || skills.length === 0) {
           return (
             <div className="min-w-[160px] max-w-[220px]">
-              <span className="text-muted-foreground text-xs italic">N/A</span>
+              <span className="italic">N/A</span>
             </div>
           );
         }
@@ -92,7 +92,7 @@ export const getQuestionsBankColumns = ({
       id: "actions",
       header: () => (
         <div className="flex items-center justify-center gap-2">
-          <span className="font-semibold">Actions</span>
+          <span className="">Actions</span>
         </div>
       ),
       cell: ({ row }) => (

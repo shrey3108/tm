@@ -31,7 +31,7 @@ export function ProjectTaskFormFields({
               onClearError("project_task");
             }
           }}
-          placeholder="Enter the project task description (minimum 10 characters) ..."
+          placeholder="Enter the project task description"
           className={cn(
             "min-h-[100px] text-sm bg-background font-medium w-full",
             errors.project_task && "border-destructive focus-visible:ring-destructive"

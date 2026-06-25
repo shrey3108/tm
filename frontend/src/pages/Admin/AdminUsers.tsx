@@ -119,10 +119,10 @@ const AdminUsers = () => {
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="hover:bg-transparent p-0 font-semibold"
+          className="hover:bg-transparent p-0 font-semibold text-base"
         >
           Full Name
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <ArrowUpDown className="h-4 w-4" />
         </Button>
       ),
       cell: ({ row }) => <span>{row.original.full_name || "N/A"}</span>,
@@ -133,10 +133,10 @@ const AdminUsers = () => {
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="hover:bg-transparent p-0 font-semibold"
+          className="hover:bg-transparent p-0 font-semibold text-base"
         >
           Email
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <ArrowUpDown className="h-4 w-4" />
         </Button>
       ),
     },
@@ -146,24 +146,25 @@ const AdminUsers = () => {
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="hover:bg-transparent p-0 font-semibold"
+          className="hover:bg-transparent p-0 font-semibold text-base"
         >
           Status
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <ArrowUpDown className="h-4 w-4" />
         </Button>
       ),
       cell: ({ row }) => <StatusBadge status={row.original.is_active} />,
     },
     {
       accessorKey: "role_name",
-      header: "Role Name",
+      header: () => (
+        <div className="">
+          <span className="font-semibold text-base">Role Name</span>
+        </div>
+      ),
       cell: ({ row }) => (
-        <small
-          className="font-semibold"
-          title={row.original.role_name || "N/A"}
-        >
+        <span>
           {row.original.role_name || "N/A"}
-        </small>
+        </span>
       ),
     },
     {
@@ -172,10 +173,10 @@ const AdminUsers = () => {
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="hover:bg-transparent p-0 font-semibold"
+          className="hover:bg-transparent p-0 font-semibold text-base"
         >
           Created At
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <ArrowUpDown className="h-4 w-4" />
         </Button>
       ),
       cell: ({ row }) => <DateDisplay date={row.original.created_at} showTime={false} />,

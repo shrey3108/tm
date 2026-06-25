@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { X, Save, Upload } from "lucide-react";
+import { X, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import AppPageShell from "@/components/shared/AppPageShell";
@@ -14,7 +14,6 @@ import { useJobPosition } from "@/hooks/queries/admin/useJobPosition";
 import { QuestionsBankSkillSelector } from "@/components/questions-bank/QuestionsBankSkillSelector";
 import { Form } from "@/components/ui/form";
 import { Required } from "@/components/job-form/Required";
-import PermissionGuard from "@/components/auth/PermissionGuard";
 import { PERMISSIONS, hasPermissions } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 import { useAppSelector } from "@/store/hooks";
@@ -44,8 +43,7 @@ import { SingleQuestionFormFields } from "@/components/questions-bank/SingleQues
 import { MCQFormFields } from "@/components/questions-bank/MCQFormFields";
 import { ProjectTaskFormFields } from "@/components/questions-bank/ProjectTaskFormFields";
 
-// Shadcn UI components
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 
 export default function QuestionsBankCreate() {
   const navigate = useNavigate();
@@ -227,6 +225,7 @@ export default function QuestionsBankCreate() {
 
 
   // File Upload handlers
+  // @ts-ignore
   const handleUploadClick = () => {
     if (!departmentId) {
       toast.error("Please select a department first.");
@@ -238,7 +237,7 @@ export default function QuestionsBankCreate() {
     }
     fileInputRef.current?.click();
   };
-
+  // @ts-ignore
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -536,28 +535,20 @@ export default function QuestionsBankCreate() {
             {/* Question Type Selector */}
             <div className="flex flex-col gap-0.5 w-full">
               <Label className="text-xs font-semibold">Question Type</Label>
-              <Select value={contentType} onValueChange={(val: any) => setContentType(val)} disabled={isEditMode}>
-                <SelectTrigger className="w-full h-11 data-[size=default]:h-11 bg-input/20 hover:bg-input/30 text-sm rounded-xl px-3 justify-between font-normal text-foreground inline-flex items-center cursor-pointer transition-all border border-border/50 outline-none focus:border-border/50">
-                  <SelectValue placeholder="Select type..." className="w-full">
-                    {
-                      typeOptions.find(
-                        (opt) => opt.id === contentType,
-                      )?.label
-                    }
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {typeOptions.map((opt) => (
-                    <SelectItem key={opt.id} value={opt.id} className="text-xs font-semibold">
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <SearchableSelect
+                value={contentType}
+                onValueChange={(val: any) => setContentType(val)}
+                options={typeOptions.map((opt) => ({ id: opt.id, label: opt.label }))}
+                placeholder="Select type..."
+                searchPlaceholder="Search question types..."
+                disabled={isEditMode}
+                emptyMessage="No question types found"
+                moreText="question types"
+              />
             </div>
 
             {/* Action Upload Widget */}
-            <PermissionGuard permissions={PERMISSIONS.QUESTIONS_MANAGE} hideWhenDenied>
+            {/* <PermissionGuard permissions={PERMISSIONS.QUESTIONS_MANAGE} hideWhenDenied>
               <div className="flex flex-col gap-0.5 w-full">
                 <input
                   type="file"
@@ -577,7 +568,7 @@ export default function QuestionsBankCreate() {
                   {isUploading ? "Uploading..." : "Upload Document"}
                 </button>
               </div>
-            </PermissionGuard>
+            </PermissionGuard> */}
           </div>
         </div>
 
@@ -621,11 +612,11 @@ export default function QuestionsBankCreate() {
 
         {/* Skills Selector Card */}
         <div className="app-surface-card space-y-2 p-2">
-          <div className="space-y-2">
+          <div className="space-y-1">
             <Label className="text-sm font-semibold">Associated Tech Stack Skills {!isEditMode && <Required />}</Label>
-            <div className="pt-1 w-full">
+            <div className="w-full">
               {isEditMode ? (
-                <div className="flex flex-wrap gap-1.5 pt-1">
+                <div className="flex flex-wrap gap-1.5">
                   {paperToEdit?.skills && paperToEdit.skills.length > 0 ? (
                     paperToEdit.skills.map((skill) => (
                       <span
@@ -664,7 +655,7 @@ export default function QuestionsBankCreate() {
             className="rounded-xl font-bold bg-primary hover:bg-primary/95 text-primary-foreground shadow-md hover:shadow-lg transition-all"
           >
             <Save className="h-4 w-4 mr-2" />
-            {isEditMode ? "Save Changes" : createPaperMutation.isPending ? "Creating..." : "Create Question Bank"}
+            {isEditMode ? "Save Changes" : createPaperMutation.isPending ? "Creating..." : "Create New Question"}
           </Button>
           <Button
             type="button"

@@ -64,10 +64,10 @@ const AdminRecentUploads = () => {
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="hover:bg-transparent p-0 font-semibold"
+          className="hover:bg-transparent p-0 font-semibold text-base"
         >
           Date
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <ArrowUpDown className="h-4 w-4" />
         </Button>
       ),
       cell: ({ row }) => <DateDisplay date={row.original.created_at} />,
@@ -78,14 +78,14 @@ const AdminRecentUploads = () => {
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="hover:bg-transparent p-0 font-semibold"
+          className="hover:bg-transparent p-0 font-semibold text-base"
         >
           File Name
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <ArrowUpDown className="h-4 w-4" />
         </Button>
       ),
       cell: ({ row }) => (
-        <span className="font-medium text-foreground text-wrap">{row.original.file_name || "N/A"}</span>
+        <span className="text-wrap">{row.original.file_name || "N/A"}</span>
       ),
     },
     // {
@@ -99,11 +99,11 @@ const AdminRecentUploads = () => {
     // },
     {
       accessorKey: "size",
-      // header: "Size",
+
       header: () => {
         return (
           <div className="flex items-center gap-2">
-            <span className="font-semibold">Size</span>
+            <span className="text-base">Size</span>
           </div>
         )
       },
@@ -112,17 +112,17 @@ const AdminRecentUploads = () => {
     },
     {
       accessorKey: "uploader_name",
-      // header: "Uploaded By",
+
       header: () => {
         return (
           <div className="flex items-center gap-2">
-            <span className="font-semibold">Uploaded By</span>
+            <span className="text-base">Uploaded By</span>
           </div>
         )
       },
       cell: ({ row }) => (
         <span
-          className="font-medium text-foreground "
+          className=""
         >
           {capitalize(row.original.uploader_name || "N/A")}
         </span>
@@ -130,17 +130,17 @@ const AdminRecentUploads = () => {
     },
     {
       accessorKey: "candidate_name",
-      // header: "Candidate",
+
       header: () => {
         return (
           <div className="flex items-center gap-2">
-            <span className="font-semibold">Candidate Name</span>
+            <span className="text-base">Candidate Name</span>
           </div>
         )
       },
       cell: ({ row }) => (
         <span
-          className="font-medium text-foreground"
+          className=""
         >
           {capitalize((row.original.candidate_name)?.toLowerCase() || "N/A")}
         </span>

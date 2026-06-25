@@ -83,11 +83,11 @@ export function CrossMatchView({ resumeId, onClose }: CrossMatchViewProps) {
       header: "Job",
       accessorKey: "job_title",
       cell: ({ row }) => (
-        <div className="flex  gap-1">
-          <span className="font-bold text-foreground">
+        <div className="flex gap-1">
+          <span className="font-medium text-foreground">
             {row.original.matched_job?.title || "Unknown Job"}
           </span>
-          <Badge variant="outline" className="bg-muted text-[10px] font-bold px-1.5 py-0">
+          <Badge variant="outline" className="bg-muted text-[10px] font-medium px-1.5 py-0">
             {row.original.matched_job?.department_name || "N/A"}
           </Badge>
         </div>
@@ -101,7 +101,7 @@ export function CrossMatchView({ resumeId, onClose }: CrossMatchViewProps) {
           className="hover:bg-transparent p-0 font-semibold"
         >
           Match Score
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <ArrowUpDown className="h-4 w-4" />
         </Button></>,
       accessorKey: "match_score",
       cell: ({ row }) => (
@@ -127,7 +127,7 @@ export function CrossMatchView({ resumeId, onClose }: CrossMatchViewProps) {
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
           Status
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <ArrowUpDown className="h-4 w-4" />
         </Button>
       </>,
       cell: ({ row }) => {
@@ -157,7 +157,7 @@ export function CrossMatchView({ resumeId, onClose }: CrossMatchViewProps) {
           size="sm"
           onClick={() => handleGoToJob(row.original.matched_job?.title || "", row.original.matched_job_id)}
         >
-          <ExternalLink className="ml-2 h-3.5 w-3.5" />
+          <ExternalLink className="h-3.5 w-3.5" />
         </Button>
       )
     }

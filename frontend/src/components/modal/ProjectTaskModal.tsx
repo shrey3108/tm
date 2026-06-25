@@ -99,7 +99,7 @@ export default function ProjectTaskModal({
                   <FormLabel>Project Task Description</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Enter the project task description (minimum 25 characters) ..."
+                      placeholder="Enter the project task description"
                       disabled={isSaving}
                       rows={4}
                       autoFocus

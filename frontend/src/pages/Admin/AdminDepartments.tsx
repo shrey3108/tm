@@ -154,21 +154,21 @@ const AdminDepartments = () => {
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="hover:bg-transparent p-0 font-semibold"
+          className="hover:bg-transparent p-0 font-semibold text-base"
         >
           Name
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <ArrowUpDown className="h-4 w-4" />
         </Button>
       ),
       cell: ({ row }) => <span className="capitalize"> {row.original.name} </span>
     },
     {
       accessorKey: "description",
-      // header: "Description",
+
       header: () => {
         return (
           <div className="flex items-center gap-2">
-            <span className="font-semibold">Description</span>
+            <span className="text-base">Description</span>
           </div>
         )
       },
@@ -180,7 +180,7 @@ const AdminDepartments = () => {
           id: "actions",
           header: () => (
             <div className="flex items-center justify-center gap-2">
-              <span className="font-semibold">Actions</span>
+              <span className="text-base">Actions</span>
             </div>
           ),
           cell: ({ row }) => (

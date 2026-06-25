@@ -94,15 +94,15 @@ const AdminPrompts = () => {
                 <Button
                     variant="ghost"
                     onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                    className="hover:bg-transparent p-0 font-semibold"
+                    className="hover:bg-transparent p-0 font-semibold text-base"
                 >
                     Prompt Name
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                    <ArrowUpDown className="h-4 w-4" />
                 </Button>
             ),
             cell: ({ row }) => (
-                <div className="font-medium text-primary flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-muted-foreground" />
+                <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
                     {row.original.name}
                 </div>
             ),
@@ -112,12 +112,12 @@ const AdminPrompts = () => {
             header: () => {
                 return (
                     <div className="flex items-center gap-2">
-                        <span className="font-semibold">Content Preview</span>
+                        <span className="text-base">Content Preview</span>
                     </div>
                 )
             },
             cell: ({ row }) => (
-                <div className="max-w-[500px] truncate text-muted-foreground">
+                <div className="max-w-[350px] truncate">
                     {row.original.content}
                 </div>
             ),
@@ -126,12 +126,12 @@ const AdminPrompts = () => {
             header: () => {
                 return (
                     <div className="flex items-center gap-2">
-                        <span className="font-semibold">Stages</span>
+                        <span className="text-base">Stages</span>
                     </div>
                 )
             },
             cell: ({ row }) => (
-                <div className="max-w-[500px] truncate text-muted-foreground">
+                <div className="max-w-[500px] truncate">
                     <Badge variant="outline" className="capitalize">
                         {row.original.stage}
                     </Badge>
@@ -150,14 +150,14 @@ const AdminPrompts = () => {
                                     variant="ghost"
                                     size="icon"
                                     onClick={() => handleViewClick(row.original)}
-                                    className="h-9 w-9 p-0 rounded-xl hover:bg-primary/10 hover:text-primary transition-colors flex items-center justify-center shrink-0"
+                                    className="h-9 w-9 p-0 rounded-xl hover:bg-gray-200/50 transition-colors flex items-center justify-center shrink-0"
                                 >
                                     <Info className="h-4 w-4 shrink-0" />
                                 </Button>
                             )}
                         />
                         <HoverCardContent side="top" className="w-auto p-2 min-w-0">
-                            <div className="text-sm font-semibold">View Prompt</div>
+                            <div className="text-xs">View Prompt</div>
                         </HoverCardContent>
                     </HoverCard>
                 </div>

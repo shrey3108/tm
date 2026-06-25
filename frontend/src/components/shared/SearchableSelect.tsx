@@ -225,7 +225,9 @@ export function SearchableSelect({
       if (!open) {
         setSearch("");
       }
-    }}>
+    }}
+      modal={false}
+    >
       <DropdownMenuTrigger
         disabled={disabled || loading}
         className={cn(

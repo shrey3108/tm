@@ -52,44 +52,41 @@ const AdminAuditLogs = () => {
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="hover:bg-transparent p-0 font-semibold"
+          className="hover:bg-transparent p-0 font-semibold text-base"
         >
           Date
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <ArrowUpDown className="h-4 w-4" />
         </Button>
       ),
       cell: ({ row }) => <DateDisplay date={row.original.created_at} />,
     },
     {
       accessorKey: "action",
-      // header: "Action",
+
       header: () => {
         return (
           <div className="flex items-center gap-2">
-            <span className="font-semibold">Action</span>
+            <span className="text-base">Action</span>
           </div>
         )
       },
       cell: ({ row }) => {
         const action = toTitleCase(row.original.action);
-        return <span className="font-bold text-primary">{action}</span>
+        return <span>{action}</span>
       },
     },
     {
       accessorKey: "user_name",
-      // header: "User Name",
+
       header: () => {
         return (
           <div className="flex items-center gap-2">
-            <span className="font-semibold">User Name</span>
+            <span className="text-base">User Name</span>
           </div>
         )
       },
       cell: ({ row }) => (
-        <span
-          className="font-medium text-foreground"
-          title={row.original.user_name}
-        >
+        <span title={row.original.user_name}>
           {row.original.user_name}
         </span>
       ),

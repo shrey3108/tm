@@ -138,10 +138,10 @@ const AdminJobPositions = () => {
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="hover:bg-transparent p-0 font-semibold"
+          className="hover:bg-transparent p-0 font-semibold text-base"
         >
           Name
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <ArrowUpDown className="h-4 w-4" />
         </Button>
       ),
     },
@@ -150,9 +150,9 @@ const AdminJobPositions = () => {
       header: ({ column }) => (
         <Button variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="hover:bg-transparent p-0 font-semibold">
+          className="hover:bg-transparent p-0 font-semibold text-base">
           Created Date
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <ArrowUpDown className="h-4 w-4" />
         </Button>
       ),
       cell: ({ row }) => (
@@ -164,9 +164,9 @@ const AdminJobPositions = () => {
       header: ({ column }) => (
         <Button variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="hover:bg-transparent p-0 font-semibold">
+          className="hover:bg-transparent p-0 font-semibold text-base">
           Updated Date
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <ArrowUpDown className="h-4 w-4" />
         </Button>
       ),
       cell: ({ row }) => (
@@ -177,7 +177,7 @@ const AdminJobPositions = () => {
       id: "actions",
       header: () => (
         <div className="flex items-center justify-end pr-4">
-          <span className="font-semibold">
+          <span className="text-base">
             Actions
           </span>
         </div>

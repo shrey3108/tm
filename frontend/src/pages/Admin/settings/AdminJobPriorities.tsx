@@ -159,10 +159,10 @@ const AdminJobPriorities = () => {
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="hover:bg-transparent p-0 font-semibold"
+          className="hover:bg-transparent p-0 font-semibold text-base"
         >
           Name
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <ArrowUpDown className="h-4 w-4" />
         </Button>
       ),
       cell: ({ row }) => (
@@ -173,35 +173,35 @@ const AdminJobPriorities = () => {
     },
     {
       accessorKey: "duration_days",
-      // header: "Duration (Days)",
+
       header: ({ column }) => (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="hover:bg-transparent p-0 font-semibold"
+          className="hover:bg-transparent p-0 font-semibold text-base"
         >
           Duration (Days)
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <ArrowUpDown className="h-4 w-4" />
         </Button>
       ),
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
-          <Clock className="h-4 w-4 text-muted-foreground" />
+          <Clock className="h-4 w-4" />
           <span>{row.original.duration_days} days</span>
         </div>
       ),
     },
     {
       accessorKey: "created_at",
-      // header: "Created At",
+
       header: ({ column }) => (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="hover:bg-transparent p-0 font-semibold"
+          className="hover:bg-transparent p-0 font-semibold text-base"
         >
           Created At
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <ArrowUpDown className="h-4 w-4" />
         </Button>
       ),
 
@@ -216,10 +216,10 @@ const AdminJobPriorities = () => {
           <Button
             variant="ghost"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="hover:bg-transparent p-0 font-semibold"
+            className="hover:bg-transparent p-0 font-semibold text-base"
           >
             Assigned Jobs Count
-            <ArrowUpDown className="ml-2 h-4 w-4" />
+            <ArrowUpDown className="h-4 w-4" />
           </Button>
         </div>
       ),

@@ -156,10 +156,10 @@ const AdminSkills = () => {
           <Button
             variant="ghost"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="hover:bg-transparent p-0 font-semibold"
+            className="hover:bg-transparent p-0 font-semibold text-base"
           >
             Name
-            <ArrowUpDown className="ml-2 h-4 w-4" />
+            <ArrowUpDown className="h-4 w-4" />
           </Button>
         </div>
       ),
@@ -171,11 +171,11 @@ const AdminSkills = () => {
     },
     {
       accessorKey: "description",
-      // header: "Description",
+
       header: () => {
         return (
           <div className="flex items-center gap-2  max-w-[800px]">
-            <span className="font-semibold">Description</span>
+            <span>Description</span>
           </div>
         )
       },
@@ -191,7 +191,7 @@ const AdminSkills = () => {
           id: "actions",
           header: () => (
             <div className="flex items-center justify-center gap-2">
-              <span className="font-semibold">Actions</span>
+              <span>Actions</span>
             </div>
           ),
           cell: ({ row }) => (
