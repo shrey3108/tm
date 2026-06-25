@@ -177,7 +177,7 @@ export default function QuestionsBank() {
 
   const loadingSkills = false;
   const isSkillSearching = false;
-  const handleSkillSearch = useCallback(() => {}, []);
+  const handleSkillSearch = useCallback(() => { }, []);
 
   // Client-side filtering by content type and skill
   const filteredFlatItems = useMemo(() => {
@@ -312,8 +312,10 @@ export default function QuestionsBank() {
               searchKey="content"
               searchPlaceholder="Filter by content..."
               emptyMessage="No questions, tasks, or MCQs found."
+              totalCount={flatItems.length}
+              resultCount={filteredFlatItems.length}
               totalRecords={filteredFlatItems.length}
-              entityName="Items"
+              entityName="Question"
             />
           </div>
         )}
