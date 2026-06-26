@@ -78,6 +78,7 @@ export default function CandidatesStages() {
         candidateName={candidateName}
         onBack={() => navigate(-1)}
         onInfoClick={() => setIsJobModalOpen(true)}
+        onResumeClick={() => setIsDetailsModalOpen(true)}
         isUploaded={isTranscriptDisabled}
         onSuccess={() => {
           setIsPolling(true);

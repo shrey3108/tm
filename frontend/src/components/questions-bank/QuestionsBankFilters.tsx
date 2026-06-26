@@ -84,6 +84,8 @@ export function QuestionsBankFilters({
             moreText="departments"
             onSearch={handleDeptSearch}
             asyncLoading={isDeptSearching}
+            onClear={() => setSelectedDeptId("")}
+            clearLabel="Clear department filter"
           />
         </div>
 

@@ -458,7 +458,8 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
   const isTechnicalPracticalRoundSelected = useMemo(() => {
     return stageFilter.some((id) => {
       const stage = stageOptions.find((s) => s.id === id);
-      return stage?.name.toLowerCase() === "technical practical round";
+      const name = stage?.name.toLowerCase();
+      return name === "technical practical round" || name === "coding test round";
     });
   }, [stageFilter, stageOptions]);
 

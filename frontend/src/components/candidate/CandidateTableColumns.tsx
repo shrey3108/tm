@@ -91,13 +91,18 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
                 <span className="text-muted-foreground text-wrap">
                   {c.phone || "N/A"}
                 </span>
-                {c.current_stage?.template_name == "Technical Practical Round" && <HoverCard>
+                {c.current_stage?.template_name && (
+                  c.current_stage.template_name.toLowerCase().includes("technical") ||
+                  c.current_stage.template_name.toLowerCase().includes("practical") ||
+                  c.current_stage.template_name.toLowerCase().includes("coding") ||
+                  c.current_stage.template_name.toLowerCase().includes("test")
+                ) && <HoverCard>
                   <HoverCardTrigger delay={10} closeDelay={10}>
                     <CandidateEmailBadge email_sent_count={c.email_sent_count} />
                   </HoverCardTrigger>
                   <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
                     <p className="">
-                      {c.email_sent_count && c.email_sent_count > 0 ? `Total email sent: ${c.email_sent_count}` : "No email sent yet"}
+                       {c.email_sent_count && c.email_sent_count > 0 ? `Total email sent: ${c.email_sent_count}` : "No email sent yet"}
                     </p>
                   </HoverCardContent>
                 </HoverCard>}

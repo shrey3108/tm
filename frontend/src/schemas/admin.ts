@@ -464,9 +464,12 @@ export type QuestionFormValues = z.infer<typeof questionFormSchema>;
  * Schema for validating an individual project sub-task.
  */
 export const subTaskSchema = z.object({
-  title: z.string().trim().min(3, "Task title must be at least 3 characters long."),
-  marks: z.coerce.number({ error: "" }).int().positive({ error: "Marks must be at least 1." }),
-  duration: z.coerce.number({ error: "" }).int().min(1, "Duration must be at least 1 minute."),
+  name: z.string().trim().min(3, "Task must be at least 3 characters long."),
+  description: z.string().trim().optional().or(z.literal("")),
+  marks: z.preprocess(
+    (val) => (val === "" || val === undefined || val === null ? undefined : Number(val)),
+    z.union([z.number().int().positive({ message: "Marks must be at least 1." }), z.undefined()])
+  ).optional(),
 });
 
 /**
@@ -475,7 +478,22 @@ export const subTaskSchema = z.object({
 export const projectTaskSchema = z.object({
   project_task: z.string().trim().min(10, "Project task must be at least 10 characters long."),
   instructions: z.string().trim().min(10, "Instructions must be at least 10 characters long."),
+  hours: z.preprocess(
+    (val) => (val === "" || val === undefined || val === null ? 0 : Number(val)),
+    z.number().int().min(0)
+  ).optional().default(0),
+  minutes: z.preprocess(
+    (val) => (val === "" || val === undefined || val === null ? 0 : Number(val)),
+    z.number().int().min(0).max(59)
+  ).optional().default(0),
   tasks: z.array(subTaskSchema).min(1, "At least one task is required."),
+}).refine(data => {
+  const h = data.hours || 0;
+  const m = data.minutes || 0;
+  return h * 60 + m >= 1;
+}, {
+  message: "Overall duration must be at least 1 minute.",
+  path: ["minutes"],
 });
 
 /** Type inferred from projectTaskSchema. */

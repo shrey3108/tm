@@ -41,7 +41,7 @@ export function formatProjectTask(task: string | TaskItem): string {
     return task;
   }
 
-  const description = task.task || "";
+  const description = task.task || task.description || "";
   const subTasks = task.tasks || [];
 
   if (subTasks.length === 0) {
@@ -49,13 +49,16 @@ export function formatProjectTask(task: string | TaskItem): string {
   }
 
   const totalMarks = task.total_marks ?? subTasks.reduce((sum, t) => sum + (t.marks || 0), 0);
-  const totalDuration = task.total_duration ?? subTasks.reduce((sum, t) => sum + (t.duration || 0), 0);
+  const totalDuration = task.duration ?? task.total_duration ?? 0;
   const formattedDuration = formatDuration(totalDuration);
 
   let result = `Project Task Description : ${description}  total marks ${totalMarks} | ${formattedDuration} (marks and time calculate on based on task)`;
 
   subTasks.forEach((sub, index) => {
-    result += `\n${index + 1}. ${sub.title} ${sub.marks} marks ${formatSubTaskDuration(sub.duration)}`;
+    const subName = sub.name || (sub as any).title || "";
+    const subMarks = sub.marks !== undefined ? `${sub.marks} marks` : "";
+    const subDesc = sub.description ? ` (${sub.description})` : "";
+    result += `\n${index + 1}. ${subName} ${subMarks}${subDesc}`.trim();
   });
 
   return result;

@@ -85,7 +85,7 @@ class CandidateTimelineService:
 
         # Helper for order
         def get_order(s):
-            return s.job_stage.stage_order if s.job_stage else 0
+            return s.job_stage.stage_order if s.job_stage else 1
 
         # 3. Map stages and their evaluations
         for stage in stages:
@@ -94,7 +94,7 @@ class CandidateTimelineService:
             eval_obj = (await db.execute(eval_stmt)).scalar_one_or_none()
 
             title = stage.job_stage.template.name if stage.job_stage and stage.job_stage.template else "Unknown Stage"
-            is_resume_screening = title == "Resume Screening" or (stage.job_stage and stage.job_stage.stage_order == 0)
+            is_resume_screening = title == "Resume Screening" or (stage.job_stage and stage.job_stage.stage_order == 1)
             
             # Base status and results
             result = {
@@ -171,7 +171,7 @@ class CandidateTimelineService:
             # Robust check: does this job already have a Resume Screening event?
             has_rs = any(
                 str(ev.get("job_id")) == str(j_id) and 
-                (ev.get("stage_order") == 0 or ev.get("title") == "Resume Screening")
+                (ev.get("stage_order") == 1 or ev.get("title") == "Resume Screening")
                 for ev in events_map.values()
             )
             if not has_rs:
@@ -190,7 +190,7 @@ class CandidateTimelineService:
                     "stage_id": None,
                     "stage_name": "Resume Screening",
                     "job_id": r_res.job_id,
-                    "stage_order": 0,
+                    "stage_order": 1,
                     "metadata": {
                         "screening_id": str(r_res.id),
                         "match_percentage": r_res.resume_score,
@@ -212,7 +212,7 @@ class CandidateTimelineService:
             # Match decision to the best possible event
             target_ev = None
             dec_job_id_str = str(dec.job_id)
-            dec_order = dec.stage_config.stage_order if dec.stage_config else 0
+            dec_order = dec.stage_config.stage_order if dec.stage_config else 1
             
             # Prioritize matching by stage_id if we have it in the decision
             # (Though legacy decisions might not have it)
@@ -255,7 +255,7 @@ class CandidateTimelineService:
             events = [e for e in events if q in e["title"].lower() or q in (e["description"] or "").lower()]
 
         def sort_key(x):
-            order = x.get("stage_order", 0)
+            order = x.get("stage_order", 1)
             dt = x.get("event_date")
             if dt is None:
                 dt = datetime.max.replace(tzinfo=timezone.utc)

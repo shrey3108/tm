@@ -52,5 +52,6 @@ export const QUERY_KEYS = {
     TASK_METADATA: "candidateTaskMetadata",
     SKILLS: "jobAndCandidateSkills",
     HISTORY: "candidateTaskPaperHistory",
+    ALL_CONTENT: "all-content",
   },
 } as const;

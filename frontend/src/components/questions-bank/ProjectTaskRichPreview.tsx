@@ -1,6 +1,6 @@
 import { Award, Clock } from "lucide-react";
 import type { TaskItem } from "@/types/taskPaper";
-import { formatDuration, formatSubTaskDuration } from "@/utils/taskFormatter";
+import { formatDuration } from "@/utils/taskFormatter";
 
 interface ProjectTaskRichPreviewProps {
   task: TaskItem | string;
@@ -19,7 +19,7 @@ export function ProjectTaskRichPreview({
   
   const subTasks = (!isString && task?.tasks) ? task.tasks : [];
   const totalMarks = subTasks.length > 0 ? ((task as TaskItem).total_marks ?? subTasks.reduce((sum, sub) => sum + (sub.marks || 0), 0)) : 0;
-  const totalDuration = subTasks.length > 0 ? ((task as TaskItem).total_duration ?? subTasks.reduce((sum, sub) => sum + (sub.duration || 0), 0)) : 0;
+  const totalDuration = isString ? 0 : ((task as TaskItem).duration ?? (task as TaskItem).total_duration ?? 0);
 
   return (
     <div className="space-y-2 flex-1 min-w-0">
@@ -37,22 +37,26 @@ export function ProjectTaskRichPreview({
         </div>
       )}
 
-          {subTasks.length > 0 && (
+      {subTasks.length > 0 && (
         <div className="mt-3 pl-4 border-l-2 border-primary/20 space-y-2">
           <div className="flex flex-wrap gap-2 text-xs font-semibold mb-2">
             <span className="bg-primary/5 text-primary border border-primary/10 px-2.5 py-0.5 rounded-full flex items-center gap-1 font-bold">
               <Award className="h-3 w-3" /> Total Marks: {totalMarks}
             </span>
-            <span className="bg-primary/5 text-primary border border-primary/10 px-2.5 py-0.5 rounded-full flex items-center gap-1 font-bold">
-              <Clock className="h-3 w-3" /> Total Duration: {formatDuration(totalDuration)}
-            </span>
+            {totalDuration > 0 && (
+              <span className="bg-primary/5 text-primary border border-primary/10 px-2.5 py-0.5 rounded-full flex items-center gap-1 font-bold">
+                <Clock className="h-3 w-3" /> Total Duration: {formatDuration(totalDuration)}
+              </span>
+            )}
           </div>
           <ul className="space-y-1.5 pl-1.5">
             {subTasks.map((sub, sIdx) => (
               <li key={sIdx} className="text-xs font-semibold text-muted-foreground flex items-start gap-1.5">
                 <span className="h-1.5 w-1.5 rounded-full bg-primary/40 shrink-0 mt-1.5" />
                 <span>
-                  {sub.title} — {sub.marks} marks ({formatSubTaskDuration(sub.duration)})
+                  {sub.name || (sub as any).title}
+                  {sub.marks !== undefined && ` — ${sub.marks} marks`}
+                  {sub.description && ` (${sub.description})`}
                 </span>
               </li>
             ))}

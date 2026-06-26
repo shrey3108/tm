@@ -219,9 +219,9 @@ export function useCandidateTimelineQuery(
         };
       }
 
-      // 3. Find the index of the "Technical Practical Round"
+      // 3. Find the index of the "Technical Practical Round" or "Coding Test Round"
       const techIndex = data.events.findIndex(
-        (event) => event.title === "Technical Practical Round"
+        (event) => event.title === "Technical Practical Round" || event.title === "Coding Test Round"
       );
 
       if (techIndex === -1) {

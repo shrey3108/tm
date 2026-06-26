@@ -19,15 +19,23 @@ export interface QuestionItem {
 }
 
 export interface SubTaskItem {
-  title: string;
-  marks: number;
-  duration: number; // in minutes
+  name: string;
+  description?: string;
+  marks?: number;
 }
 
 export interface TaskItem {
-  task: string;
-  instructions: string;
+  // Old fields for backward compatibility
+  task?: string;
+  instructions?: string;
+
+  // New nested fields
+  title?: string;
+  description?: string;
+  duration?: number; // in minutes
   tasks?: SubTaskItem[];
+
+  // Legacy / UI computed values
   total_marks?: number;
   total_duration?: number;
 }
@@ -68,6 +76,7 @@ export interface CandidateTestPaperRead {
   candidate_id: string | null;
   job_id: string;
   position_id: string;
+  job_stage_config_id?: string | null;
   name: string;
   questions: (QuestionItem | string)[];
   mcqs: MCQItem[];
@@ -91,13 +100,14 @@ export interface SourceMixItem {
 export interface CandidateTestPaperAssign {
   candidate_id?: string;
   job_id?: string;
+  job_stage_id?: string;
   mode: "predefined" | "random" | "custom" | "hybrid";
   paper_id?: string;
   source_paper_ids?: string[];
   base_paper_id?: string;
   questions?: (QuestionItem | string)[];
   mcqs?: MCQItem[];
-  project_task?: string;
+  project_task?: (TaskItem | string)[];
   question_count?: number;
   source_mix?: SourceMixItem[];
 }
@@ -124,6 +134,7 @@ export interface CandidateTestPaperHistoryRead {
   id: string;
   candidate_id: string;
   job_id: string;
+  job_stage_config_id?: string | null;
   name: string;
   questions: (QuestionItem | string)[];
   mcqs: MCQItem[];
@@ -137,5 +148,5 @@ export interface CandidateTestPaperHistoryRead {
 export interface TaskPaperPreviewResponse {
   questions: (QuestionItem | string)[];
   mcqs: MCQItem[];
-  project_task: string[];
+  project_task: (TaskItem | string)[];
 }

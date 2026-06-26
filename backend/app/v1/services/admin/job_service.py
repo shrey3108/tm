@@ -449,7 +449,6 @@ Output Format Example (JSON ONLY):
         # first question round, which is the correct behaviour. Keeping both
         # caused duplicate papers and let other rounds silently reuse the
         # NULL-stage fallback paper.
-
         # Invalidate job board and search caches
         from app.v1.core.cache import cache
         await cache.clear(pattern="jobs:list:*")

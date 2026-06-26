@@ -230,9 +230,9 @@ def map_candidate_to_response(
                 decisions_by_stage[d.stage_config_id] = d
         else:
             # If no stage_config_id, it's a "Resume Screening" decision.
-            # Map it to the stage with order 0 if it exists.
+            # Map it to the stage with order 1 if it exists.
             for cs in candidate_stages:
-                if cs.job_stage and cs.job_stage.stage_order == 0:
+                if cs.job_stage and cs.job_stage.stage_order == 1:
                     if cs.job_stage_id not in decisions_by_stage or (
                         d.decided_at > decisions_by_stage[cs.job_stage_id].decided_at
                     ):
@@ -284,7 +284,7 @@ def map_candidate_to_response(
             job_stage_id=cs.job_stage_id,
             template_name=cs.job_stage.template.name if cs.job_stage and cs.job_stage.template else "Unknown",
             status=response_status,
-            order=cs.job_stage.stage_order if cs.job_stage else 0,
+            order=cs.job_stage.stage_order if cs.job_stage else 1,
             job_id=cs.job_stage.job_id if cs.job_stage else None,
             job_name=cs.job_stage.job.title if cs.job_stage and cs.job_stage.job else None,
             completed_at=cs.completed_at,
@@ -295,7 +295,7 @@ def map_candidate_to_response(
             evaluation_data=cs.evaluation_data
         )
 
-    sorted_stages = sorted(candidate_stages, key=lambda x: x.job_stage.stage_order if x.job_stage else 0)
+    sorted_stages = sorted(candidate_stages, key=lambda x: x.job_stage.stage_order if x.job_stage else 1)
     pipeline = [_map_stage(cs) for cs in sorted_stages]
     
     current_stage = None
@@ -383,7 +383,7 @@ def map_candidate_to_response(
     # Note: We calculate min_order from ALL candidate stages, not just the filtered pipeline.
     is_interview_focus = False
     if focus_stage_id and current_stage and candidate_stages:
-        global_min_order = min((cs.job_stage.stage_order if cs.job_stage else 0) for cs in candidate_stages)
+        global_min_order = min((cs.job_stage.stage_order if cs.job_stage else 1) for cs in candidate_stages)
         if current_stage.order > global_min_order:
             is_interview_focus = True
     

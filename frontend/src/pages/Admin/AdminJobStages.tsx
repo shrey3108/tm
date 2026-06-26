@@ -61,7 +61,8 @@ const AdminJobStages = () => {
   const updateStageMutation = useUpdateStageTemplateMutation();
   const deleteStageMutation = useDeleteStageTemplateMutation();
 
-  const { data, total, loading, refetch, error } = useJobStage(pageIndex * pageSize, pageSize, debouncedSearch)
+  const { data, total, loading, refetch, error } = useJobStage(pageIndex * pageSize, pageSize, debouncedSearch);
+
   const handleSearchChange = (value: string) => {
     setFilters({
       search: value,
@@ -138,6 +139,11 @@ const AdminJobStages = () => {
           {row.original.default_order ?? "N|A"}
         </div>
       ),
+      sortingFn: (rowA, rowB) => {
+        const orderA = rowA.original.default_order ?? 0;
+        const orderB = rowB.original.default_order ?? 0;
+        return orderA - orderB;
+      },
     },
     {
       accessorKey: "name",
@@ -190,6 +196,22 @@ const AdminJobStages = () => {
           />
         </div>
       ),
+    },
+    {
+      accessorKey: "required_inputs",
+      header: () => (
+        <div className="flex items-center justify-center gap-2">
+          <span>Criteria</span>
+        </div>
+      ),
+      cell: ({ row }) => {
+        const requiredInputs = row.original.config?.required_inputs || [];
+        return (
+          <span className="truncate line-clamp-1 max-w-sm capitalize">
+            {requiredInputs.length > 0 ? requiredInputs.join(", ") : "No criteria"}
+          </span>
+        );
+      },
     },
     {
       id: "actions",
@@ -291,6 +313,7 @@ const AdminJobStages = () => {
           onSearchChange={handleSearchChange}
           searchPlaceholder="Search templates..."
           isServerSide={true}
+          initialSorting={[{ id: "default_order", desc: false }]}
           pageIndex={pageIndex}
           pageSize={pageSize}
           pageCount={Math.ceil(total / pageSize)}

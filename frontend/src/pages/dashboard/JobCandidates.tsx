@@ -181,11 +181,11 @@ export default function JobCandidates() {
     setRowSelection({});
   }, [pageIndex, pageSize, filters]);
 
-  // Compute showCheckboxes: Only display after round is Technical Practical Round and decision is pending
+  // Compute showCheckboxes: Only display after round is Coding Test / Technical Practical Round and decision is pending
   const showCheckboxes = useMemo(() => {
     const selectedStageConfigs = job?.stages?.filter((s) => filters.stage_id?.includes(s.id)) || [];
     const hasTechnicalPracticalRoundSelected = selectedStageConfigs.some(
-      (s) => s.template?.name === "Technical Practical Round"
+      (s) => s.template?.name === "Technical Practical Round" || s.template?.name === "Coding Test Round"
     );
     const isHrDecisionPendingSelected = filters.hr_decision?.includes("pending");
     return !!(hasTechnicalPracticalRoundSelected && isHrDecisionPendingSelected);

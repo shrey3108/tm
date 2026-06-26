@@ -464,7 +464,7 @@ export const CandidateTableFilters = ({
                   </div>
                   {!isTestPaperFilterEnabled && (
                     <p className="text-xs text-muted-foreground mt-2 text-center">
-                      Enable by selecting "Technical Practical Round" stage and "Pending"
+                      Enable by selecting a Technical / Coding Test stage and "Pending"
                       decision.
                     </p>
                   )}

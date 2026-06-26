@@ -509,7 +509,7 @@ class JobStatsService:
 
         for config in stage_configs:
             stage_name = config.template.name
-            is_resume_screening = (config.stage_order == 0 or stage_name == "Resume Screening")
+            is_resume_screening = (config.stage_order == 1 or stage_name == "Resume Screening")
             
             # HR Decisions for this stage
             hr_stmt = (

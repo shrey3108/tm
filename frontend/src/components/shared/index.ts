@@ -33,5 +33,8 @@ export { default as InfoLabel } from "@/components/shared/InfoLabel";
 export { SearchableSelect } from "@/components/shared/SearchableSelect";
 export { StarRating } from "@/components/shared/StarRating";
 export { BackgroundPollingManager } from "@/components/shared/BackgroundPollingManager";
-
+export { PaperContentDisplay } from "@/components/shared/PaperContentDisplay";
+export { SingleQuestionDisplay } from "@/components/shared/SingleQuestionDisplay";
+export { MCQQuestionDisplay } from "@/components/shared/MCQQuestionDisplay";
+export { ProjectTaskDisplay } from "@/components/shared/ProjectTaskDisplay";
 

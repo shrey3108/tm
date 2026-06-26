@@ -14,6 +14,7 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card"
 import { History } from "lucide-react";
+import { isQuestionStage } from "@/utils/stage";
 interface StageCandidatesHeaderProps {
   /** Associated job for the candidate stage view */
   job: Job | null;
@@ -23,6 +24,7 @@ interface StageCandidatesHeaderProps {
   onBack: () => void;
   /** Callback for info button click */
   onInfoClick: () => void;
+  onResumeClick?: () => void;
   /** Whether the transcript upload is disabled */
   isUploaded: boolean;
   /** Callback for successful transcript upload */
@@ -48,6 +50,7 @@ export const StageCandidatesHeader = ({
   candidateName,
   onBack,
   onInfoClick,
+  onResumeClick,
   onSuccess,
   onPaperChange,
   stageId,
@@ -60,9 +63,36 @@ export const StageCandidatesHeader = ({
   const [isProjectSubmissionDialogOpen, setIsProjectSubmissionDialogOpen] = useState(false);
   const [isSendQuestionPaperDialogOpen, setIsSendQuestionPaperDialogOpen] = useState(false);
   const [isHistoryDialogOpen, setIsHistoryDialogOpen] = useState(false);
-  const { data: assignedPaper } = useCandidateTestPaper(candidateId);
+  const activeJobStage = job?.stages?.find((s) => s.id === stageId || s.template?.name === stageName);
+  
+  // Extract requirements
+  const requiredInputs: ("transcript" | "resume" | "question" | "github")[] =
+    activeJobStage?.config?.required_inputs ||
+    activeJobStage?.template?.config?.required_inputs ||
+    [];
+
+  const hasConfiguredRequirements = requiredInputs.length > 0;
+
+  const showQuestion = hasConfiguredRequirements
+    ? requiredInputs.includes("question")
+    : isQuestionStage(activeJobStage);
+
+  const showGithub = hasConfiguredRequirements
+    ? requiredInputs.includes("github")
+    : isQuestionStage(activeJobStage);
+
+  const showTranscript = hasConfiguredRequirements
+    ? requiredInputs.includes("transcript")
+    : (stageName !== "Resume Screening" && !isQuestionStage(activeJobStage));
+
+  const showResume = hasConfiguredRequirements
+    ? requiredInputs.includes("resume")
+    : false;
+
+  const { data: assignedPaper } = useCandidateTestPaper(candidateId, stageId);
   const { data: paperHistory } = useCandidateTestPaperHistory(
-    stageName === "Technical Practical Round" ? candidateId : null
+    (showQuestion || showGithub) ? candidateId : null,
+    stageId
   );
   const { data: candidateAssignedTaskBlob } = useDownloadCandidateAssignedTaskFile(candidateId);
   console.log(candidateAssignedTaskBlob)
@@ -98,94 +128,107 @@ export const StageCandidatesHeader = ({
             JD
           </Button>
 
-          {stageName !== "Resume Screening" && (
-            stageName === "Technical Practical Round" ? (
-              <>
+          {showResume && onResumeClick && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 rounded-xl border border-muted-foreground/10 px-4 shrink-0 font-semibold"
+              onClick={onResumeClick}
+            >
+              Resume Analysis
+            </Button>
+          )}
+
+          {showQuestion && (
+            <>
+              <Button
+                variant="outline"
+                className="rounded-xl border border-muted-foreground/10 font-semibold text-center h-9"
+                onClick={() => setIsSendQuestionPaperDialogOpen(true)}
+                disabled={isUploaded || !job?.is_active || isGithubUploaded}
+              >
+                {assignedPaper ?
+                  <>
+                    Send Email
+                    <HoverCard>
+                      <HoverCardTrigger delay={100} closeDelay={200}>
+                        ({assignedPaper?.email_sent_count ?? 0})
+                      </HoverCardTrigger>
+                      <HoverCardContent className="w-full p-1 py-2 text-xs rounded-lg">
+                        <p>{assignedPaper?.email_sent_count ?? 0} times email send to candidate</p>
+                      </HoverCardContent>
+                    </HoverCard>
+                  </>
+                  : "Assign Question Paper"}
+              </Button>
+              {hasMultipleAssignments && (
                 <Button
                   variant="outline"
-                  className="rounded-xl border border-muted-foreground/10 font-semibold text-center h-9"
-                  onClick={() => setIsSendQuestionPaperDialogOpen(true)}
-                  disabled={isUploaded || !job?.is_active || isGithubUploaded}
+                  className="rounded-xl border border-muted-foreground/10 font-semibold text-center h-9 gap-1.5"
+                  onClick={() => setIsHistoryDialogOpen(true)}
                 >
-                  {assignedPaper ?
-                    <>
-
-                      Send Email
-                      <HoverCard>
-                        <HoverCardTrigger delay={100} closeDelay={200}>
-                          ({assignedPaper?.email_sent_count ?? 0})
-                        </HoverCardTrigger>
-                        <HoverCardContent className="w-full p-1 py-2 text-xs rounded-lg">
-                          <p>{assignedPaper?.email_sent_count ?? 0} times email send to candidate</p>
-                        </HoverCardContent>
-                      </HoverCard>
-                    </>
-                    : "Assign Question Paper"}
+                  <History className="w-3.5 h-3.5" />
+                  Paper History
+                  <span className="inline-flex items-center justify-center w-4 h-4 text-xs">
+                    <HoverCard>
+                      <HoverCardTrigger delay={100} closeDelay={200}>
+                        ({paperHistory.length})
+                      </HoverCardTrigger>
+                      <HoverCardContent className="w-full p-1 py-2 text-xs rounded-lg">
+                        <p>{paperHistory.length} times paper assign to candidate</p>
+                      </HoverCardContent>
+                    </HoverCard>
+                  </span>
                 </Button>
-                {hasMultipleAssignments && (
-                  <Button
-                    variant="outline"
-                    className="rounded-xl border border-muted-foreground/10 font-semibold text-center h-9 gap-1.5"
-                    onClick={() => setIsHistoryDialogOpen(true)}
-                  >
-                    <History className="w-3.5 h-3.5" />
-                    Paper History
-                    <span className="inline-flex items-center justify-center w-4 h-4 text-xs">
-                      <HoverCard>
-                        <HoverCardTrigger delay={100} closeDelay={200}>
-                          ({paperHistory.length})
-                        </HoverCardTrigger>
-                        <HoverCardContent className="w-full p-1 py-2 text-xs rounded-lg">
-                          <p>{paperHistory.length} times paper assign to candidate</p>
-                        </HoverCardContent>
-                      </HoverCard>
-
-                    </span>
-                  </Button>
-                )}
-                <Button
-                  variant="outline"
-                  className="rounded-xl border border-muted-foreground/10 px-5 font-semibold text-center h-9"
-                  onClick={() => setIsProjectSubmissionDialogOpen(true)}
-                  disabled={isUploaded || !job?.is_active || assignedPaper?.email_sent_count === 0 || isGithubUploaded}
-                // disabled={isUploaded || !job?.is_active || assignedPaper?.email_sent_count === 0 || isGithubUploaded || hasError}
-                >
-                  Project Submission
-                </Button>
-                <ProjectSubmissionDialog
-                  isOpen={isProjectSubmissionDialogOpen}
-                  onOpenChange={setIsProjectSubmissionDialogOpen}
-                  candidateName={candidateName || "Candidate"}
-                  candidateId={candidateId}
-                  stageId={stageId}
-                  onSuccess={onSuccess}
-                  job={job!}
-                />
-                <SendQuestionPaperDialog
-                  isOpen={isSendQuestionPaperDialogOpen}
-                  onOpenChange={setIsSendQuestionPaperDialogOpen}
-                  candidateName={candidateName || "Candidate"}
-                  candidateId={candidateId}
-                  job={job}
-                  onSuccess={onPaperChange || onSuccess}
-                />
-                <CandidateTestPaperHistoryDialog
-                  isOpen={isHistoryDialogOpen}
-                  onOpenChange={setIsHistoryDialogOpen}
-                  history={paperHistory}
-                  candidateName={candidateName}
-                />
-              </>
-            ) : (
-              <TranscriptUpload
-                stageId={stageId}
-                className="w-auto m-0 shrink-0"
-                job={job!}
-                // disabled={isUploaded || !job?.is_active || isTranscriptAdded || hasError}
-                disabled={isUploaded || !job?.is_active || isTranscriptAdded}
-                onSuccess={onSuccess}
+              )}
+              <SendQuestionPaperDialog
+                isOpen={isSendQuestionPaperDialogOpen}
+                onOpenChange={setIsSendQuestionPaperDialogOpen}
+                candidateName={candidateName || "Candidate"}
+                candidateId={candidateId}
+                job={job}
+                jobStageId={stageId}
+                onSuccess={onPaperChange || onSuccess}
               />
-            )
+              <CandidateTestPaperHistoryDialog
+                isOpen={isHistoryDialogOpen}
+                onOpenChange={setIsHistoryDialogOpen}
+                history={paperHistory}
+                candidateName={candidateName}
+              />
+            </>
+          )}
+
+          {showGithub && (
+            <>
+              <Button
+                variant="outline"
+                className="rounded-xl border border-muted-foreground/10 px-5 font-semibold text-center h-9"
+                onClick={() => setIsProjectSubmissionDialogOpen(true)}
+                disabled={isUploaded || !job?.is_active || (showQuestion && assignedPaper?.email_sent_count === 0) || isGithubUploaded}
+              >
+                Project Submission
+              </Button>
+              <ProjectSubmissionDialog
+                isOpen={isProjectSubmissionDialogOpen}
+                onOpenChange={setIsProjectSubmissionDialogOpen}
+                candidateName={candidateName || "Candidate"}
+                candidateId={candidateId}
+                stageId={stageId}
+                onSuccess={onSuccess}
+                job={job!}
+              />
+            </>
+          )}
+
+          {showTranscript && (
+            <TranscriptUpload
+              stageId={stageId}
+              className="w-auto m-0 shrink-0"
+              job={job!}
+              disabled={isUploaded || !job?.is_active || isTranscriptAdded}
+              onSuccess={onSuccess}
+            />
           )}
         </>
       }

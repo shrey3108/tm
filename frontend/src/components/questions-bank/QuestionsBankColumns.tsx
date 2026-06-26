@@ -49,8 +49,8 @@ export const getQuestionsBankColumns = ({
         if (item.type === "project_task" && item.rawData && typeof item.rawData !== "string") {
           const tasks = item.rawData.tasks || [];
           const totalMarks = item.rawData.total_marks ?? tasks.reduce((sum: number, t: any) => sum + (t.marks || 0), 0);
-          const totalDuration = item.rawData.total_duration ?? tasks.reduce((sum: number, t: any) => sum + (t.duration || 0), 0);
-          
+          const totalDuration = item.rawData.duration;
+
           return (
             <div className="min-w-[400px] whitespace-pre-wrap wrap-break-word space-y-1">
               <div className="font-semibold text-foreground">{item.content}</div>

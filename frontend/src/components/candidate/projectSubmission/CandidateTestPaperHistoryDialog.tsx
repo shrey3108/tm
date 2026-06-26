@@ -23,7 +23,7 @@ function formatDate(dateString: string): string {
 
 function getTaskText(task: TaskItem | string): string {
   if (typeof task === "string") return task;
-  return task.task;
+  return task.task || "";
 }
 
 function ItemList({ items, label }: { items: string[]; label: string }) {

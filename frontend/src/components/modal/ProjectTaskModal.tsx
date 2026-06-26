@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -32,6 +33,8 @@ interface ProjectTaskModalProps {
 const DEFAULT_VALUES: ProjectTaskFormValues = {
   project_task: "",
   instructions: "",
+  hours: 0,
+  minutes: 0,
   tasks: [],
 };
 
@@ -53,25 +56,42 @@ export default function ProjectTaskModal({
         return {
           project_task: val,
           instructions: "",
+          hours: 0,
+          minutes: 0,
           tasks: [],
         };
       }
+      const dur = val.duration ?? val.total_duration ?? 0;
       return {
         project_task: val.task || "",
         instructions: val.instructions || "",
-        tasks: val.tasks || [],
+        hours: Math.floor(dur / 60) || 0,
+        minutes: dur % 60 || 0,
+        tasks: (val.tasks || []).map((t) => ({
+          name: t.name || (t as any).title || "",
+          description: t.description || "",
+          marks: t.marks,
+        })),
       };
     },
     []
   );
 
   const onSubmit = async (data: ProjectTaskFormValues) => {
+    const overallDuration = (data.hours || 0) * 60 + (data.minutes || 0);
     await onSave({
       task: data.project_task.trim(),
       instructions: data.instructions.trim(),
-      tasks: data.tasks,
+      title: data.project_task.trim(),
+      description: data.project_task.trim(),
+      duration: overallDuration,
+      tasks: data.tasks.map((t) => ({
+        name: t.name.trim(),
+        description: t.description?.trim() || undefined,
+        marks: t.marks,
+      })),
       total_marks: data.tasks.reduce((sum, t) => sum + (t.marks || 0), 0),
-      total_duration: data.tasks.reduce((sum, t) => sum + (t.duration || 0), 0),
+      total_duration: overallDuration,
     });
     handleClose();
   };
@@ -145,6 +165,61 @@ export default function ProjectTaskModal({
                 </FormItem>
               )}
             />
+
+            {/* Overall Project Duration */}
+            <div className="flex gap-3 items-end">
+              <FormField
+                control={control}
+                name="hours"
+                render={({ field }) => (
+                  <FormItem className="w-24">
+                    <FormLabel className="text-sm font-semibold">Duration Hours</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min={0}
+                        placeholder="0"
+                        disabled={isSaving}
+                        {...field}
+                        value={field.value ?? ""}
+                        onChange={(e) => {
+                          const val = e.target.value === "" ? "" : Number(e.target.value);
+                          field.onChange(val);
+                        }}
+                        className="text-xs h-9 bg-background font-medium"
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={control}
+                name="minutes"
+                render={({ field }) => (
+                  <FormItem className="w-24">
+                    <FormLabel className="text-sm font-semibold">Minutes</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={59}
+                        placeholder="30"
+                        disabled={isSaving}
+                        {...field}
+                        value={field.value ?? ""}
+                        onChange={(e) => {
+                          const val = e.target.value === "" ? "" : Number(e.target.value);
+                          field.onChange(val);
+                        }}
+                        className="text-xs h-9 bg-background font-medium"
+                      />
+                    </FormControl>
+                    <FormMessage className="text-xs font-semibold text-destructive animate-in fade-in slide-in-from-top-1 duration-200" />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             {/* Reusable Sub-tasks Section */}
             <SubTasksFormSection

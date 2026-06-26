@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
+import { Checkbox } from "@/components/ui/checkbox"
 import { useWatch } from "react-hook-form";
 import {
     useCreateStageTemplateMutation,
@@ -59,7 +60,8 @@ export default function AdminJobStageForm() {
             description: "",
             default_config: {
                 criteria_ids: [],
-                is_active: true
+                is_active: true,
+                required_inputs: [],
             },
             is_default: false,
             default_order: 0,
@@ -69,10 +71,16 @@ export default function AdminJobStageForm() {
     const defaultConfig = useWatch({
         control: form.control,
         name: "default_config",
-        defaultValue: { criteria_ids: [], is_active: true },
+        defaultValue: { criteria_ids: [], is_active: true, required_inputs: [] },
     });
 
     const selectedCriteriaIds = (defaultConfig?.criteria_ids as string[]) || [];
+
+    const requiredInputs = useWatch({
+        control: form.control,
+        name: "default_config.required_inputs",
+        defaultValue: [],
+    }) || [];
 
     const { data: criteria, loading: isLoadingCriteria } = useJobCriteria(0, 100);
     const { data: stages, loading: isLoadingStages } = useJobStage(0, 100);
@@ -87,7 +95,13 @@ export default function AdminJobStageForm() {
                 name,
                 description: description || "",
                 default_config: {
-                    criteria_ids: config?.evaluation_criteria?.map(({ id }) => id) || [],
+                    criteria_ids: config?.evaluation_criteria?.map((item) =>
+                        typeof item === "string"
+                            ? item
+                            : (item && typeof item === "object" && "id" in item ? (item as { id?: string | null }).id : "")
+                    ).filter(Boolean) || [],
+                    is_active: config?.is_active ?? true,
+                    required_inputs: config?.required_inputs || [],
                 },
                 is_default: is_default || false,
                 default_order: default_order ?? 0,
@@ -122,6 +136,26 @@ export default function AdminJobStageForm() {
             ...defaultConfig,
             criteria_ids: current
         }, {
+            shouldValidate: true,
+            shouldDirty: true,
+            shouldTouch: true,
+        });
+    };
+
+    const handleRequirementToggle = (value: "resume" | "transcript" | "question" | "github", checked: boolean) => {
+        const current = [...requiredInputs];
+        if (checked) {
+            if (!current.includes(value)) {
+                current.push(value);
+            }
+        } else {
+            const index = current.indexOf(value);
+            if (index > -1) {
+                current.splice(index, 1);
+            }
+        }
+
+        form.setValue("default_config.required_inputs", current, {
             shouldValidate: true,
             shouldDirty: true,
             shouldTouch: true,
@@ -293,19 +327,81 @@ export default function AdminJobStageForm() {
                                         <FormDescription>
                                             The default position of this stage in a new pipeline.
                                         </FormDescription>
-                                        <FormMessage />
                                     </FormItem>
                                 )}
                             />
 
                             <div className="space-y-4 pt-4 border-t">
+                                <div className="space-y-0.5">
+                                    <FormLabel className="text-lg font-bold">Stage Requirements</FormLabel>
+                                    <FormDescription>
+                                        Select the required inputs/actions candidate must complete during this stage.
+                                    </FormDescription>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    {[
+                                        {
+                                            id: "resume",
+                                            label: "Resume",
+                                            description: "Requires candidate's resume analysis",
+                                        },
+                                        {
+                                            id: "transcript",
+                                            label: "Transcript",
+                                            description: "Requires uploading interview transcript",
+                                        },
+                                        {
+                                            id: "question",
+                                            label: "Technical Questions",
+                                            description: "Requires assigning technical questions/papers",
+                                        },
+                                        {
+                                            id: "github",
+                                            label: "GitHub Repository",
+                                            description: "Requires candidate's GitHub URL submission",
+                                        },
+                                    ].map((item) => {
+                                        const isChecked = requiredInputs.includes(item.id as any);
+                                        return (
+                                            <div
+                                                key={item.id}
+                                                className={cn(
+                                                    "flex items-center space-x-3 space-y-0 rounded-xl border p-4 shadow-sm transition-all hover:bg-muted/5",
+                                                    isChecked ? "border-primary bg-primary/5" : "border-border"
+                                                )}
+                                            >
+                                                <Checkbox
+                                                    id={`req-${item.id}`}
+                                                    checked={isChecked}
+                                                    onCheckedChange={(checked) =>
+                                                        handleRequirementToggle(item.id as any, !!checked)
+                                                    }
+                                                />
+                                                <div className="grid gap-1.5 leading-none">
+                                                    <label
+                                                        htmlFor={`req-${item.id}`}
+                                                        className="text-sm font-bold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                                                    >
+                                                        {item.label}
+                                                    </label>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {item.description}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            <div className="space-y-4 pt-4 border-t">
                                 <div className="space-y-2">
                                     <FormLabel className="text-lg font-bold">Associated Criteria</FormLabel>
-                                    <FormDescription>
-                                        Select the evaluation criteria to use for this stage.
-                                        {selectedCriteriaData.length > 0 ? <>
+                                    <FormDescription className="flex items-center justify-between">
+                                        <span>Select the evaluation criteria to use for this stage.</span>
+                                        {selectedCriteriaData.length > 0 ? <span className="text-primary text-sm font-bold">
                                             Selected Criteria ({selectedCriteriaData.length})
-                                        </> : null}
+                                        </span> : null}
                                     </FormDescription>
                                     <div className="relative">
                                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

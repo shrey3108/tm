@@ -34,6 +34,9 @@ export function useUploadQuestionSetPaperMutation() {
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.TASK_PAPERS.LIST],
       });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.TASK_PAPERS.ALL_CONTENT],
+      });
     },
   });
 }
@@ -50,6 +53,9 @@ export function useCreateQuestionSetPaperMutation() {
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.TASK_PAPERS.LIST],
       });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.TASK_PAPERS.ALL_CONTENT],
+      });
     },
   });
 }
@@ -61,9 +67,15 @@ export function useDeleteQuestionSetPaperMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (paperId: string) => taskService.deleteQuestionSetPaper(paperId),
-    onSuccess: () => {
+    onSuccess: (_data, paperId) => {
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.TASK_PAPERS.LIST],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.TASK_PAPERS.DETAIL, paperId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.TASK_PAPERS.ALL_CONTENT],
       });
     },
   });
@@ -80,12 +92,12 @@ export function useAssignTestPaperMutation() {
     onSuccess: (data) => {
       // Set query data immediately to update UI without delay
       queryClient.setQueryData(
-        [QUERY_KEYS.TASK_PAPERS.ASSIGNED, data.candidate_id],
+        [QUERY_KEYS.TASK_PAPERS.ASSIGNED, data.candidate_id, data.job_stage_config_id],
         data
       );
       // Invalidate queries for the specific candidate using the returned ID
       queryClient.invalidateQueries({
-        queryKey: [QUERY_KEYS.TASK_PAPERS.ASSIGNED, data.candidate_id],
+        queryKey: [QUERY_KEYS.TASK_PAPERS.ASSIGNED, data.candidate_id, data.job_stage_config_id],
       });
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.TASK_PAPERS.TASK_METADATA, data.candidate_id],
@@ -106,16 +118,21 @@ export function useAssignTestPaperMutation() {
 export function useDeleteCandidateTestPaperMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (candidateId: string) =>
-      taskService.deleteCandidateTestPaper(candidateId),
-    onSuccess: (_data, candidateId) => {
+    mutationFn: (param: string | { candidateId: string; jobStageId?: string }) => {
+      const candidateId = typeof param === "string" ? param : param.candidateId;
+      const jobStageId = typeof param === "string" ? undefined : param.jobStageId;
+      return taskService.deleteCandidateTestPaper(candidateId, jobStageId);
+    },
+    onSuccess: (_data, param) => {
+      const candidateId = typeof param === "string" ? param : param.candidateId;
+      const jobStageId = typeof param === "string" ? undefined : param.jobStageId;
       // Set query data to null immediately
       queryClient.setQueryData(
-        [QUERY_KEYS.TASK_PAPERS.ASSIGNED, candidateId],
+        [QUERY_KEYS.TASK_PAPERS.ASSIGNED, candidateId, jobStageId],
         null
       );
       queryClient.invalidateQueries({
-        queryKey: [QUERY_KEYS.TASK_PAPERS.ASSIGNED, candidateId],
+        queryKey: [QUERY_KEYS.TASK_PAPERS.ASSIGNED, candidateId, jobStageId],
       });
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.TASK_PAPERS.TASK_METADATA, candidateId],
@@ -133,11 +150,16 @@ export function useDeleteCandidateTestPaperMutation() {
 export function useDeleteJobDefaultTestPaperMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (jobId: string) =>
-      taskService.deleteJobDefaultTestPaper(jobId),
-    onSuccess: () => {
+    mutationFn: (param: string | { jobId: string; jobStageId?: string }) => {
+      const jobId = typeof param === "string" ? param : param.jobId;
+      const jobStageId = typeof param === "string" ? undefined : param.jobStageId;
+      return taskService.deleteJobDefaultTestPaper(jobId, jobStageId);
+    },
+    onSuccess: (_data, param) => {
+      const jobId = typeof param === "string" ? param : param.jobId;
+      const jobStageId = typeof param === "string" ? undefined : param.jobStageId;
       queryClient.invalidateQueries({
-        queryKey: [QUERY_KEYS.TASK_PAPERS.ASSIGNED],
+        queryKey: [QUERY_KEYS.TASK_PAPERS.ASSIGNED, jobId, jobStageId],
       });
     },
   });
@@ -190,9 +212,15 @@ export function useAddQuestionToPaperMutation() {
       paperId: string;
       question: QuestionItem | string;
     }) => taskService.addQuestionToPaper(paperId, question),
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.TASK_PAPERS.LIST],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.TASK_PAPERS.DETAIL, variables.paperId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.TASK_PAPERS.ALL_CONTENT],
       });
     },
   });
@@ -213,9 +241,15 @@ export function useUpdateQuestionInPaperMutation() {
       index: number;
       question: QuestionItem | string;
     }) => taskService.updateQuestionInPaper(paperId, index, question),
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.TASK_PAPERS.LIST],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.TASK_PAPERS.DETAIL, variables.paperId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.TASK_PAPERS.ALL_CONTENT],
       });
     },
   });
@@ -234,9 +268,15 @@ export function useDeleteQuestionFromPaperMutation() {
       paperId: string;
       index: number;
     }) => taskService.deleteQuestionFromPaper(paperId, index),
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.TASK_PAPERS.LIST],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.TASK_PAPERS.DETAIL, variables.paperId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.TASK_PAPERS.ALL_CONTENT],
       });
     },
   });
@@ -255,9 +295,15 @@ export function useAddProjectTaskToPaperMutation() {
       paperId: string;
       projectTask: TaskItem | string;
     }) => taskService.addProjectTaskToPaper(paperId, projectTask),
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.TASK_PAPERS.LIST],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.TASK_PAPERS.DETAIL, variables.paperId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.TASK_PAPERS.ALL_CONTENT],
       });
     },
   });
@@ -278,9 +324,15 @@ export function useUpdateProjectTaskInPaperMutation() {
       index: number;
       projectTask: TaskItem | string;
     }) => taskService.updateProjectTaskInPaper(paperId, index, projectTask),
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.TASK_PAPERS.LIST],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.TASK_PAPERS.DETAIL, variables.paperId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.TASK_PAPERS.ALL_CONTENT],
       });
     },
   });
@@ -299,9 +351,15 @@ export function useDeleteProjectTaskFromPaperMutation() {
       paperId: string;
       index: number;
     }) => taskService.deleteProjectTaskFromPaper(paperId, index),
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.TASK_PAPERS.LIST],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.TASK_PAPERS.DETAIL, variables.paperId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.TASK_PAPERS.ALL_CONTENT],
       });
     },
   });
@@ -322,9 +380,15 @@ export function useAddMCQToPaperMutation() {
       paperId: string;
       mcq: MCQItem;
     }) => taskService.addMCQToPaper(paperId, mcq),
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.TASK_PAPERS.LIST],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.TASK_PAPERS.DETAIL, variables.paperId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.TASK_PAPERS.ALL_CONTENT],
       });
     },
   });
@@ -345,9 +409,15 @@ export function useUpdateMCQInPaperMutation() {
       index: number;
       mcq: MCQItem;
     }) => taskService.updateMCQInPaper(paperId, index, mcq),
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.TASK_PAPERS.LIST],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.TASK_PAPERS.DETAIL, variables.paperId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.TASK_PAPERS.ALL_CONTENT],
       });
     },
   });
@@ -366,9 +436,15 @@ export function useDeleteMCQFromPaperMutation() {
       paperId: string;
       index: number;
     }) => taskService.deleteMCQFromPaper(paperId, index),
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.TASK_PAPERS.LIST],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.TASK_PAPERS.DETAIL, variables.paperId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.TASK_PAPERS.ALL_CONTENT],
       });
     },
   });

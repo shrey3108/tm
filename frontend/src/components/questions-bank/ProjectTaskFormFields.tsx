@@ -1,5 +1,6 @@
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import type { SubTaskItem } from "@/types/taskPaper";
 import { SubTasksFormSection } from "./SubTasksFormSection";
 import { Required } from "@/components/shared/Required";
@@ -9,6 +10,10 @@ interface ProjectTaskFormFieldsProps {
   onDescriptionChange: (value: string) => void;
   taskInstructions: string;
   onInstructionsChange: (value: string) => void;
+  hours: number | "";
+  onHoursChange: (value: number | "") => void;
+  minutes: number | "";
+  onMinutesChange: (value: number | "") => void;
   tasks: SubTaskItem[];
   onTasksChange: (tasks: SubTaskItem[]) => void;
   errors: Record<string, string>;
@@ -20,6 +25,10 @@ export function ProjectTaskFormFields({
   onDescriptionChange,
   taskInstructions,
   onInstructionsChange,
+  hours,
+  onHoursChange,
+  minutes,
+  onMinutesChange,
   tasks = [],
   onTasksChange,
   errors,
@@ -64,6 +73,51 @@ export function ProjectTaskFormFields({
         />
         {errors.instructions && (
           <p className="text-xs font-medium text-destructive">{errors.instructions}</p>
+        )}
+      </div>
+
+      {/* Overall Duration Field */}
+      <div className="flex flex-col gap-1.5">
+        <Label className="text-sm font-semibold">Overall Project Duration<Required /></Label>
+        <div className="flex gap-3">
+          <div className="flex flex-col gap-1 w-20">
+            <Label className="text-xs font-semibold">Hours</Label>
+            <Input
+              type="number"
+              placeholder="0"
+              min={0}
+              value={hours}
+              onChange={(e) => {
+                const val = e.target.value === "" ? "" : Number(e.target.value);
+                onHoursChange(val);
+                if (errors.minutes) {
+                  onClearError("minutes");
+                }
+              }}
+              className="text-xs h-9 bg-background font-medium"
+            />
+          </div>
+          <div className="flex flex-col gap-1 w-20">
+            <Label className="text-xs font-semibold">Minutes</Label>
+            <Input
+              type="number"
+              placeholder="30"
+              min={0}
+              max={59}
+              value={minutes}
+              onChange={(e) => {
+                const val = e.target.value === "" ? "" : Number(e.target.value);
+                onMinutesChange(val);
+                if (errors.minutes) {
+                  onClearError("minutes");
+                }
+              }}
+              className="text-xs h-9 bg-background font-medium"
+            />
+          </div>
+        </div>
+        {errors.minutes && (
+          <p className="text-xs font-semibold text-destructive mt-1">{errors.minutes}</p>
         )}
       </div>
 
