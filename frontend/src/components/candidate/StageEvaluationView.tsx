@@ -92,7 +92,12 @@ export function StageEvaluationView({
   return (
     <>
       <div className="flex items-center justify-end px-4 mb-2 gap-3">
-        {stageName === "Technical Practical Round" && (
+        {stageName && (
+          stageName.toLowerCase().includes("technical") ||
+          stageName.toLowerCase().includes("practical") ||
+          stageName.toLowerCase().includes("coding") ||
+          stageName.toLowerCase().includes("test")
+        ) && (
           <>
             {isGithubUploaded && githubUrl && (
               <HoverCard>

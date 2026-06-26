@@ -14,6 +14,7 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card"
 import { History } from "lucide-react";
+import { isQuestionStage } from "@/utils/stage";
 interface StageCandidatesHeaderProps {
   /** Associated job for the candidate stage view */
   job: Job | null;
@@ -60,9 +61,12 @@ export const StageCandidatesHeader = ({
   const [isProjectSubmissionDialogOpen, setIsProjectSubmissionDialogOpen] = useState(false);
   const [isSendQuestionPaperDialogOpen, setIsSendQuestionPaperDialogOpen] = useState(false);
   const [isHistoryDialogOpen, setIsHistoryDialogOpen] = useState(false);
-  const { data: assignedPaper } = useCandidateTestPaper(candidateId);
+  const activeJobStage = job?.stages?.find((s) => s.id === stageId || s.template?.name === stageName);
+  const isTaskPaperRound = isQuestionStage(activeJobStage);
+  const { data: assignedPaper } = useCandidateTestPaper(candidateId, stageId);
   const { data: paperHistory } = useCandidateTestPaperHistory(
-    stageName === "Technical Practical Round" ? candidateId : null
+    isTaskPaperRound ? candidateId : null,
+    stageId
   );
   const { data: candidateAssignedTaskBlob } = useDownloadCandidateAssignedTaskFile(candidateId);
   console.log(candidateAssignedTaskBlob)
@@ -99,7 +103,7 @@ export const StageCandidatesHeader = ({
           </Button>
 
           {stageName !== "Resume Screening" && (
-            stageName === "Technical Practical Round" ? (
+            isTaskPaperRound ? (
               <>
                 <Button
                   variant="outline"
@@ -167,6 +171,7 @@ export const StageCandidatesHeader = ({
                   candidateName={candidateName || "Candidate"}
                   candidateId={candidateId}
                   job={job}
+                  jobStageId={stageId}
                   onSuccess={onPaperChange || onSuccess}
                 />
                 <CandidateTestPaperHistoryDialog

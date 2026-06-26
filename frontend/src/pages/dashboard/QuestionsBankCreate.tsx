@@ -134,9 +134,9 @@ export default function QuestionsBankCreate() {
   const [contentType, setContentType] = useState<"question" | "mcq" | "project_task">(
     initialItemType || "question"
   );
-  const [itemIndex] = useState<number>(
-    initialItemIndex !== undefined ? initialItemIndex : 0
-  );
+  const itemIndex = useMemo(() => {
+    return initialItemIndex !== undefined ? Number(initialItemIndex) : 0;
+  }, [initialItemIndex]);
   const [questionText, setQuestionText] = useState<string>("");
   const [questionMarks, setQuestionMarks] = useState<number | "">("");
   const [questionHours, setQuestionHours] = useState<number | "">("");

@@ -80,7 +80,7 @@ export const useAllQuestionsAndTasks = ({
   options?: Record<string, any>;
 } = {}) => {
   const res = useQuery({
-    queryKey: ["all-content", jobId, positionId, departmentId, skillId, paperType, q, skip, limit],
+    queryKey: [QUERY_KEYS.TASK_PAPERS.ALL_CONTENT, jobId, positionId, departmentId, skillId, paperType, q, skip, limit],
     queryFn: () =>
       taskService.getAllQuestionsAndTasks({
         jobId,
@@ -126,10 +126,13 @@ export const useQuestionSetPaper = (paperId: string | null | undefined) => {
 /**
  * Hook to retrieve the test paper currently assigned to a candidate.
  */
-export const useCandidateTestPaper = (candidateId: string | null | undefined) => {
+export const useCandidateTestPaper = (
+  candidateId: string | null | undefined,
+  jobStageId?: string
+) => {
   const res = useQuery({
-    queryKey: [QUERY_KEYS.TASK_PAPERS.ASSIGNED, candidateId],
-    queryFn: () => taskService.getCandidateTestPaper(candidateId!),
+    queryKey: [QUERY_KEYS.TASK_PAPERS.ASSIGNED, candidateId, jobStageId],
+    queryFn: () => taskService.getCandidateTestPaper(candidateId!, jobStageId),
     enabled: !!candidateId,
     staleTime: QUERY_CONFIG.TASK_PAPER.staleTime,
   });
@@ -255,10 +258,13 @@ export const useDownloadCandidateAssignedTaskFile = (
  * Hook to retrieve the assignment and email log history for a specific candidate's test paper.
  * Only fetches when candidateId is provided.
  */
-export const useCandidateTestPaperHistory = (candidateId: string | null | undefined) => {
+export const useCandidateTestPaperHistory = (
+  candidateId: string | null | undefined,
+  jobStageId?: string
+) => {
   const res = useQuery({
-    queryKey: [QUERY_KEYS.TASK_PAPERS.HISTORY, candidateId],
-    queryFn: () => taskService.getCandidateTestPaperHistory(candidateId!),
+    queryKey: [QUERY_KEYS.TASK_PAPERS.HISTORY, candidateId, jobStageId],
+    queryFn: () => taskService.getCandidateTestPaperHistory(candidateId!, jobStageId),
     enabled: !!candidateId,
     staleTime: QUERY_CONFIG.TASK_PAPER.staleTime,
   });

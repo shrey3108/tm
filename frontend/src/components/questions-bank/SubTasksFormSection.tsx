@@ -124,7 +124,7 @@ export function SubTasksFormSection({
                   {task.description && (
                     <>
                       {task.marks !== undefined && <span className="h-1 w-1 bg-border rounded-full" />}
-                      <span className="truncate italic">
+                      <span className="truncate">
                         {task.description}
                       </span>
                     </>

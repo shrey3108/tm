@@ -19,6 +19,11 @@ export interface EvaluationCriteria {
 
 
 
+export interface EvaluationCriterionConfig {
+  id?: string | null;
+  name: string;
+}
+
 export interface DefaultConfig {
   /**
    * Type of the evaluation, it can be "audio" or "video" etc but for now it witll be string
@@ -27,7 +32,10 @@ export interface DefaultConfig {
   /**
    * evaluation criteria for the stage
    */
-  evaluation_criteria: EvaluationCriteria[]
+  evaluation_criteria: (EvaluationCriterionConfig | string)[];
+  required_inputs?: ("transcript" | "resume" | "question" | "github")[];
+  is_panel_interview?: boolean | null;
+  [key: string]: any;
 }
 
 /**

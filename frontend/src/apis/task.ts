@@ -35,8 +35,10 @@ export const taskService = {
    * @param jobId - The UUID of the job
    * @returns Promise resolving to the job task configuration
    */
-  getJobAssignedTask: async (jobId: string): Promise<JobTask> => {
-    const response = await client.get<JobTask>(`/task-papers/assigned/job/${jobId}`);
+  getJobAssignedTask: async (jobId: string, jobStageId?: string): Promise<CandidateTestPaperRead> => {
+    const response = await client.get<CandidateTestPaperRead>(`/task-papers/assigned/job/${jobId}`, {
+      params: { job_stage_id: jobStageId },
+    });
     return response.data;
   },
   /**
@@ -276,11 +278,15 @@ export const taskService = {
    * Retrieves the details of a paper currently assigned to a candidate.
    */
   getCandidateTestPaper: async (
-    candidateId: string
+    candidateId: string,
+    jobStageId?: string
   ): Promise<CandidateTestPaperRead | null> => {
     try {
       const response = await client.get<CandidateTestPaperRead>(
-        `/task-papers/assigned/${candidateId}`
+        `/task-papers/assigned/${candidateId}`,
+        {
+          params: { job_stage_id: jobStageId },
+        }
       );
       return response.data;
     } catch (error: any) {
@@ -294,15 +300,19 @@ export const taskService = {
   /**
    * Unassigns/removes the test paper from the candidate's profile.
    */
-  deleteCandidateTestPaper: async (candidateId: string): Promise<void> => {
-    await client.delete(`/task-papers/assigned/${candidateId}`);
+  deleteCandidateTestPaper: async (candidateId: string, jobStageId?: string): Promise<void> => {
+    await client.delete(`/task-papers/assigned/${candidateId}`, {
+      params: { job_stage_id: jobStageId },
+    });
   },
 
   /**
    * Deletes the default common test paper assigned to the job.
    */
-  deleteJobDefaultTestPaper: async (jobId: string): Promise<void> => {
-    await client.delete(`/task-papers/assigned/job/${jobId}`);
+  deleteJobDefaultTestPaper: async (jobId: string, jobStageId?: string): Promise<void> => {
+    await client.delete(`/task-papers/assigned/job/${jobId}`, {
+      params: { job_stage_id: jobStageId },
+    });
   },
 
   /**
@@ -506,10 +516,14 @@ export const taskService = {
    * Retrieves the assignment and email log history for a specific candidate.
    */
   getCandidateTestPaperHistory: async (
-    candidateId: string
+    candidateId: string,
+    jobStageId?: string
   ): Promise<CandidateTestPaperHistoryRead[]> => {
     const response = await client.get<CandidateTestPaperHistoryRead[]>(
-      `/task-papers/assigned/${candidateId}/history`
+      `/task-papers/assigned/${candidateId}/history`,
+      {
+        params: { job_stage_id: jobStageId },
+      }
     );
     return response.data;
   },
@@ -518,10 +532,14 @@ export const taskService = {
    * Retrieves the assignment and email log history for all candidates under a specific job.
    */
   getJobTestPaperHistory: async (
-    jobId: string
+    jobId: string,
+    jobStageId?: string
   ): Promise<CandidateTestPaperHistoryRead[]> => {
     const response = await client.get<CandidateTestPaperHistoryRead[]>(
-      `/task-papers/assigned/job/${jobId}/history`
+      `/task-papers/assigned/job/${jobId}/history`,
+      {
+        params: { job_stage_id: jobStageId },
+      }
     );
     return response.data;
   },

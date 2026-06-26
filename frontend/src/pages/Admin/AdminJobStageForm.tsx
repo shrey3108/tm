@@ -87,7 +87,11 @@ export default function AdminJobStageForm() {
                 name,
                 description: description || "",
                 default_config: {
-                    criteria_ids: config?.evaluation_criteria?.map(({ id }) => id) || [],
+                    criteria_ids: config?.evaluation_criteria?.map((item) =>
+                        typeof item === "string"
+                            ? item
+                            : (item && typeof item === "object" && "id" in item ? (item as { id?: string | null }).id : "")
+                    ).filter(Boolean) || [],
                 },
                 is_default: is_default || false,
                 default_order: default_order ?? 0,

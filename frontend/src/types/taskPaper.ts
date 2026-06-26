@@ -76,6 +76,7 @@ export interface CandidateTestPaperRead {
   candidate_id: string | null;
   job_id: string;
   position_id: string;
+  job_stage_config_id?: string | null;
   name: string;
   questions: (QuestionItem | string)[];
   mcqs: MCQItem[];
@@ -99,6 +100,7 @@ export interface SourceMixItem {
 export interface CandidateTestPaperAssign {
   candidate_id?: string;
   job_id?: string;
+  job_stage_id?: string;
   mode: "predefined" | "random" | "custom" | "hybrid";
   paper_id?: string;
   source_paper_ids?: string[];
@@ -132,6 +134,7 @@ export interface CandidateTestPaperHistoryRead {
   id: string;
   candidate_id: string;
   job_id: string;
+  job_stage_config_id?: string | null;
   name: string;
   questions: (QuestionItem | string)[];
   mcqs: MCQItem[];
