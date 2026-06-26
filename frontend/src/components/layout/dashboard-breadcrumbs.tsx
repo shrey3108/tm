@@ -38,6 +38,7 @@ import {
  * Unmapped segments (dynamic IDs/slugs) are hidden to keep breadcrumbs clean.
  */
 const ROUTE_META: Record<string, { label: string; icon?: LucideIcon }> = {
+  // Core Segments 
   dashboard: { label: "Home", icon: Home },
   jobs: { label: "Jobs", icon: Briefcase },
   candidates: { label: "Candidates", icon: Users },
@@ -61,7 +62,44 @@ const ROUTE_META: Record<string, { label: string; icon?: LucideIcon }> = {
   stages: { label: "Job Stages", icon: Layers },
   positions: { label: "Job Positions", icon: User },
   "questions-bank": { label: "Questions Bank", icon: ListChecks },
+  transcript: { label: "Transcript", icon: ScrollText },
+
+  //  Path-Specific Context Overrides 
+  // Job Criteria Forms
+  "dashboard/admin/criteria-stages/criteria/new": { label: "Create Criteria", icon: PlusCircle },
+  "dashboard/admin/criteria-stages/criteria/*/edit": { label: "Edit Criteria", icon: PencilIcon },
+  // Job Stages Forms
+  "dashboard/admin/criteria-stages/stages/new": { label: "Create Stage", icon: PlusCircle },
+  "dashboard/admin/criteria-stages/stages/*/edit": { label: "Edit Stage", icon: PencilIcon },
+  // Questions Bank Forms
+  "dashboard/questions-bank/new": { label: "Create Question", icon: PlusCircle },
+  "dashboard/questions-bank/*/edit": { label: "Edit Question", icon: PencilIcon },
+  // Jobs Forms
+  "dashboard/jobs/new": { label: "Create Job", icon: PlusCircle },
+  "dashboard/jobs/*/edit": { label: "Edit Job", icon: PencilIcon },
 };
+
+/**
+ * Reconstructs a normalized path pattern from the path segments up to index.
+ * Dynamic segments that are not defined in ROUTE_META are replaced with '*'.
+ */
+function getNormalizedPath(pathnames: string[], index: number): string {
+  const segments = pathnames.slice(0, index + 1).map((seg) => {
+    // If it's a known static segment fallback in ROUTE_META, keep it.
+    // Otherwise, treat it as a dynamic parameter '*'.
+    return ROUTE_META[seg] && !seg.includes("/") ? seg : "*";
+  });
+  return segments.join("/");
+}
+
+/**
+ * Resolves metadata for a path segment, prioritizing path-pattern matching.
+ */
+function resolveMeta(pathnames: string[], index: number) {
+  const segment = pathnames[index];
+  const normalizedPath = getNormalizedPath(pathnames, index);
+  return ROUTE_META[normalizedPath] || ROUTE_META[segment];
+}
 
 /**
  * Determines whether a path segment should be hidden from breadcrumbs.
@@ -80,7 +118,7 @@ function shouldHideSegment(pathnames: string[], index: number) {
 
   // Hide any segment that doesn't have a defined label in ROUTE_META (dynamic slugs/IDs)
   // This satisfies the user's request to remove "Details" segments from the breadcrumb.
-  if (!ROUTE_META[segment]) {
+  if (!resolveMeta(pathnames, index)) {
     return true;
   }
 
@@ -100,9 +138,9 @@ export function DashboardBreadcrumbs() {
     .map((segment, index) => ({ segment, index }))
     .filter(({ index }) => !shouldHideSegment(pathnames, index));
 
-  const crumbs = visibleSegments.map(({ segment, index }, crumbIndex) => {
+  const crumbs = visibleSegments.map(({ index }, crumbIndex) => {
     const routeTo = `/${pathnames.slice(0, index + 1).join("/")}`;
-    const meta = ROUTE_META[segment];
+    const meta = resolveMeta(pathnames, index);
     const label = meta?.label ?? "Details";
     const Icon = meta?.icon ?? FileText;
     const isLast = crumbIndex === visibleSegments.length - 1;
