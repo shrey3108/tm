@@ -291,7 +291,7 @@ export function SearchableSelect({
                         <HoverCardTrigger delay={10} closeDelay={10} className="w-full truncate">
                           {itemContent}
                         </HoverCardTrigger>
-                        <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="right" sideOffset={40}>
+                        <HoverCardContent className="w-fit px-3 py-1 text-xs" side="right" sideOffset={40}>
                           {opt.hoverContent}
                         </HoverCardContent>
                       </HoverCard>
@@ -305,7 +305,7 @@ export function SearchableSelect({
                     key={opt.id}
                     value={opt.id}
                     className={cn(
-                      "rounded-lg my-0.5 cursor-pointer text-sm pl-2 pr-6 py-1.5 focus:bg-accent focus:text-accent-foreground",
+                      "rounded-lg my-0.5 cursor-pointer text-sm pl-2 pr-6 py-1 focus:bg-accent focus:text-accent-foreground",
                       isSelected && "bg-accent/50 font-semibold"
                     )}
                   >

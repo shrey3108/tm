@@ -187,7 +187,7 @@ export const useJobCandidates = (
     setIsUploading(true);
     const uploadPromises = Array.from(files).map(async (file) => {
       try {
-        await uploadResume({ jobId: job.id, file });
+        await uploadResume({ jobId: job.id, file, jobTitle: job.title });
         toast.success(`Uploaded ${file.name} successfully!`);
       } catch (error) {
         const errorMessage = extractErrorMessage(error);
@@ -206,7 +206,16 @@ export const useJobCandidates = (
       if (!job) return;
       setReanalyzingCandidateIds((current) => [...current, candidateId]);
       try {
-        const response = await reanalyzeCandidate({ jobId: job.id, candidateId });
+        const candidate = candidates.find((c) => c.id === candidateId);
+        const candidateName = candidate
+          ? `${candidate.first_name || ""} ${candidate.last_name || ""}`.trim()
+          : "Candidate";
+        const response = await reanalyzeCandidate({
+          jobId: job.id,
+          candidateId,
+          candidateName,
+          jobTitle: job.title,
+        });
         toast.success(response.message || "Re-analysis started successfully.");
       } catch (error) {
         const errorMessage = extractErrorMessage(error);
@@ -216,7 +225,7 @@ export const useJobCandidates = (
         setReanalyzingCandidateIds((current) => current.filter((id) => id !== candidateId));
       }
     },
-    [reanalyzeCandidate, job],
+    [reanalyzeCandidate, job, candidates],
   );
 
   const needsReanalysis = useCallback(
@@ -242,7 +251,13 @@ export const useJobCandidates = (
     if (toReanalyze.length === 0) return;
     toast.info(`Re-analyzing ${toReanalyze.length} candidate(s)...`);
     for (const candidate of toReanalyze) {
-      reanalyzeCandidate({ jobId: job.id, candidateId: candidate.id }).catch((err) => {
+      const candidateName = `${candidate.first_name || ""} ${candidate.last_name || ""}`.trim();
+      reanalyzeCandidate({
+        jobId: job.id,
+        candidateId: candidate.id,
+        candidateName,
+        jobTitle: job.title,
+      }).catch((err) => {
         console.error(`Failed to reanalyze ${candidate.id}:`, err);
       });
       await new Promise((resolve) => setTimeout(resolve, 300));

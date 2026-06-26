@@ -100,7 +100,7 @@ const AdminAuditLogs = () => {
         )
       },
       cell: ({ row }) => (
-        <span title={row.original.user_name}>
+        <span>
           {row.original.user_name}
         </span>
       ),

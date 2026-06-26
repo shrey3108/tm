@@ -13,6 +13,8 @@ const UPLOAD_PERMISSION = "candidate:upload"; // temp fix
 interface QuickResumeUploadProps {
   /** ID of the job to upload the resume for */
   jobId: string;
+  /** Title of the job */
+  jobTitle?: string;
   /** Callback function called after successful upload */
   onSuccess?: () => void;
   /** Visual style variant of the button */
@@ -33,6 +35,7 @@ interface QuickResumeUploadProps {
  */
 const QuickResumeUpload = ({
   jobId,
+  jobTitle,
   onSuccess,
   variant = "outline",
   size,
@@ -67,7 +70,7 @@ const QuickResumeUpload = ({
     }
 
     try {
-      await uploadResume({ jobId, file });
+      await uploadResume({ jobId, file, jobTitle });
       toast.success("Resume uploaded successfully!");
       if (onSuccess) {
         onSuccess();

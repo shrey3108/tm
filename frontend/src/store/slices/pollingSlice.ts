@@ -8,12 +8,14 @@ import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import { logout } from "@/store/slices/authSlice";
 
 export interface PollingEntry {
-  stageId: string;
+  type?: "evaluation" | "resume";
+  stageId: string; // Used as the unique task/polling key in the state
   candidateName: string;
-  stageName: string;
+  stageName?: string; // Optional for resume processing
   candidateId?: string;
   jobId?: string;
   jobTitle?: string;
+  fileName?: string;
 }
 
 interface PollingState {

@@ -3,6 +3,8 @@ import jobService from "@/apis/job";
 import { adminJobService } from "@/apis/admin/job";
 import { jobStageService } from "@/apis/jobStage";
 import { QUERY_KEYS } from "@/constants/queryKeys";
+import { useAppDispatch } from "@/store/hooks";
+import { startPolling } from "@/store/slices/pollingSlice";
 
 /**
  * Hook for creating a new job posting.
@@ -214,10 +216,23 @@ export function useReorderStagesMutation() {
  */
 export function useReanalyzeCandidateMutation() {
   const queryClient = useQueryClient();
+  const dispatch = useAppDispatch();
+
   return useMutation({
-    mutationFn: ({ jobId, candidateId }: { jobId: string; candidateId: string }) =>
+    mutationFn: ({ jobId, candidateId }: { jobId: string; candidateId: string; candidateName?: string; jobTitle?: string }) =>
       jobService.reanalyzeCandidate(jobId, candidateId),
     onSuccess: (_data, variables) => {
+      dispatch(
+        startPolling({
+          type: "resume",
+          stageId: variables.candidateId,
+          candidateId: variables.candidateId,
+          jobId: variables.jobId,
+          candidateName: variables.candidateName || "Candidate",
+          stageName: "Re-analysis",
+          jobTitle: variables.jobTitle || "",
+        })
+      );
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.JOBS.CANDIDATES, variables.jobId],
       });

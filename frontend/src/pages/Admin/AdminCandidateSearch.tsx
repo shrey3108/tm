@@ -152,6 +152,7 @@ const AdminCandidateSearch = () => {
             <>
               <QuickResumeUpload
                 jobId={jobId}
+                jobTitle={job?.title}
                 onSuccess={fetchCandidates}
                 variant="default"
               />

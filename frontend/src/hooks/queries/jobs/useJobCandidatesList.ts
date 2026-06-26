@@ -46,7 +46,7 @@ export const useJobCandidatesList = (
           (c) => c.processing_status === "processing" || !c.is_parsed
         );
         if (isAnyProcessing) {
-          return 15000; // poll every 5s if any candidate is processing
+          return 30000; // poll every 30s if any candidate is processing
         }
       }
       return false;

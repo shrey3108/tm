@@ -12,7 +12,7 @@ interface JobActionButtonsProps {
 const JobActionButtons = ({ job, onViewCandidates, onEdit, onDelete }: JobActionButtonsProps) => {
   return (
     <div className="flex gap-2 justify-end items-center flex-nowrap">
-      <QuickResumeUpload jobId={job.id} size="sm" />
+      <QuickResumeUpload jobId={job.id} jobTitle={job.title} size="sm" />
       <Button
         variant="outline"
         size="sm"

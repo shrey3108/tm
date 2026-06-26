@@ -2,14 +2,18 @@ import jobService from "@/apis/job";
 import { resumeService } from "@/apis/resume";
 import { QUERY_KEYS } from "@/constants/queryKeys";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAppDispatch } from "@/store/hooks";
+import { startPolling } from "@/store/slices/pollingSlice";
 
 /**
  * Hook for uploading a resume for a job.
  */
 export function useUploadResumeMutation() {
     const queryClient = useQueryClient();
+    const dispatch = useAppDispatch();
+    
     return useMutation({
-        mutationFn: ({ jobId, file }: { jobId: string; file: File }) =>
+        mutationFn: ({ jobId, file }: { jobId: string; file: File; jobTitle?: string }) =>
             jobService.uploadResume(jobId, file),
 
         onMutate: async ({ jobId }) => {
@@ -23,6 +27,23 @@ export function useUploadResumeMutation() {
             await queryClient.cancelQueries({
                 queryKey: [QUERY_KEYS.JOBS.DETAIL, jobId],
             });
+        },
+
+        onSuccess: (data, variables) => {
+            const uploadResponse = data as any;
+            const candidateId = uploadResponse?.candidate_id;
+            const jobId = variables.jobId;
+            if (candidateId) {
+                dispatch(startPolling({
+                    type: "resume",
+                    stageId: candidateId,
+                    candidateId: candidateId,
+                    jobId: jobId,
+                    candidateName: "",
+                    fileName: variables.file.name,
+                    jobTitle: variables.jobTitle || "",
+                }));
+            }
         },
 
         onSettled: (_data, _error, variables) => {
