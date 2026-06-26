@@ -40,7 +40,6 @@ export function useResolvedJobAndCandidate(
   const resolvedJob = jobDetailsQuery.data || stateJob || undefined;
 
   // 2. Fetch candidate search matching the unslugified name if candidate is not in state
-  const candidateName = candidateNameSlug ? unSlugify(candidateNameSlug) : "";
   const candidateSearchQuery = useQuery({
     queryKey: [QUERY_KEYS.CANDIDATES.SEARCH, resolvedJob?.id, candidateNameSlug],
     queryFn: async () => {
@@ -51,7 +50,7 @@ export function useResolvedJobAndCandidate(
         100, // Fetch first 100 candidates to find the exact match
         undefined,
         undefined,
-        { query: candidateName }
+        { candidate_id: stateCandidate?.id }
       );
       const found = response.data.find(
         (c) => slugify(`${c.first_name} ${c.last_name}`) === candidateNameSlug

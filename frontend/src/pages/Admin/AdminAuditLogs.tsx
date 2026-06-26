@@ -15,13 +15,25 @@ import type { ColumnDef, PaginationState } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { toTitleCase } from "@/lib/utils";
 import { useAuditLogs } from "@/hooks/queries/admin/useAuditLogs";
+import { usePageFilters } from "@/hooks/usePageFilters";
 
 const AdminAuditLogs = () => {
-  const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
+  const { filters, setFilters } = usePageFilters("adminAuditLogs", {
     pageIndex: 0,
     pageSize: 10,
+    searchValue: "",
   });
-  const [searchValue, setSearchValue] = useState("");
+  const { pageIndex, pageSize, searchValue } = filters;
+
+  const setPagination = (val: PaginationState | ((prev: PaginationState) => PaginationState)) => {
+    const currentPagination = { pageIndex: filters.pageIndex, pageSize: filters.pageSize };
+    const nextPagination = typeof val === "function" ? val(currentPagination) : val;
+    setFilters({
+      pageIndex: nextPagination.pageIndex,
+      pageSize: nextPagination.pageSize,
+    });
+  };
+
   const [overallTotal, setOverallTotal] = useState(0);
 
 
@@ -41,8 +53,10 @@ const AdminAuditLogs = () => {
 
   // Handle search with pagination reset
   const handleSearchChange = (value: string) => {
-    setSearchValue(value);
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+    setFilters({
+      searchValue: value,
+      pageIndex: 0,
+    });
   };
 
   const columns: ColumnDef<AuditLogRead>[] = [
@@ -52,44 +66,41 @@ const AdminAuditLogs = () => {
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="hover:bg-transparent p-0 font-semibold"
+          className="hover:bg-transparent p-0 font-semibold text-base"
         >
           Date
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <ArrowUpDown className="h-4 w-4" />
         </Button>
       ),
       cell: ({ row }) => <DateDisplay date={row.original.created_at} />,
     },
     {
       accessorKey: "action",
-      // header: "Action",
+
       header: () => {
         return (
           <div className="flex items-center gap-2">
-            <span className="font-semibold">Action</span>
+            <span className="text-base">Action</span>
           </div>
         )
       },
       cell: ({ row }) => {
         const action = toTitleCase(row.original.action);
-        return <span className="font-bold text-primary">{action}</span>
+        return <span>{action}</span>
       },
     },
     {
       accessorKey: "user_name",
-      // header: "User Name",
+
       header: () => {
         return (
           <div className="flex items-center gap-2">
-            <span className="font-semibold">User Name</span>
+            <span className="text-base">User Name</span>
           </div>
         )
       },
       cell: ({ row }) => (
-        <span
-          className="font-medium text-foreground"
-          title={row.original.user_name}
-        >
+        <span>
           {row.original.user_name}
         </span>
       ),

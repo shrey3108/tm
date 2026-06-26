@@ -15,7 +15,7 @@ import {
   Textarea,
 } from "@/components";
 import type { DepartmentRead, JobPriorityRead, JobPositionRead } from "@/types/admin";
-import { Required } from "@/components/job-form/Required";
+import { Required } from "@/components/shared/Required";
 import { addDays } from "date-fns";
 import { DateDisplay } from "@/components/shared/DateDisplay";
 interface BasicJobDetailsProps {

@@ -22,13 +22,13 @@ export function SelectPaperForm({
         <Label htmlFor="paper-select" className="text-sm font-bold text-foreground">
           Select Question Set Template
         </Label>
-        <Select value={selectedPaperId} onValueChange={(val) => onSelectPaperId(val ?? "")}>
+        <Select value={selectedPaperId} onValueChange={(val) => onSelectPaperId(val ?? "")} modal={false}>
           <SelectTrigger id="paper-select" className="w-full bg-muted/20 hover:bg-muted/40 transition-all rounded-xl border-border/60">
             <SelectValue placeholder="Select a template" className="w-full capitalize truncate">
               {selectedPaper?.name || "Select a template"}
             </SelectValue>
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent alignItemWithTrigger={false}>
             {predefinedPapers?.map((paper) => (
               <SelectItem key={paper.id} value={paper.id} className="cursor-pointer capitalize">
                 {paper.name}
@@ -67,7 +67,7 @@ export function SelectPaperForm({
                 <ul className="list-decimal pl-4.5 space-y-1">
                   {selectedPaper.questions.map((q, idx) => (
                     <li key={idx} className="text-xs text-foreground/80 leading-relaxed">
-                      {q}
+                      {typeof q === "string" ? q : q.question || ""}
                     </li>
                   ))}
                 </ul>

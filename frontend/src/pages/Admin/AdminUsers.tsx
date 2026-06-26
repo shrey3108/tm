@@ -23,7 +23,7 @@ import { PERMISSIONS } from "@/lib/permissions";
 import { UserTableFilters } from "./components/UserTableFilters";
 import { useUserTableFilters } from "@/hooks/useUserTableFilters";
 
-import type { ColumnDef, PaginationState } from "@tanstack/react-table";
+import type { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown } from "lucide-react";
 import { Button } from "@/components";
 import { useAuth } from "@/store/hooks";
@@ -35,11 +35,6 @@ const AdminUsers = () => {
   const { user: currentUser } = useAuth();
   const [showModal, setShowModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserAdminRead | null>(null);
-
-  const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
-    pageIndex: 0,
-    pageSize: 10,
-  });
 
   const [users, setUsers] = useState<UserAdminRead[]>([]);
 
@@ -57,7 +52,11 @@ const AdminUsers = () => {
     hasActiveFilters,
     clearFilters,
     minDate,
-  } = useUserTableFilters(users);
+    pagination,
+    setPagination,
+  } = useUserTableFilters(users, "adminUsers");
+
+  const { pageIndex, pageSize } = pagination;
 
   const debouncedSearch = useDebouncedValue(searchFilter);
 
@@ -119,10 +118,10 @@ const AdminUsers = () => {
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="hover:bg-transparent p-0 font-semibold"
+          className="hover:bg-transparent p-0 font-semibold text-base"
         >
           Full Name
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <ArrowUpDown className="h-4 w-4" />
         </Button>
       ),
       cell: ({ row }) => <span>{row.original.full_name || "N/A"}</span>,
@@ -133,10 +132,10 @@ const AdminUsers = () => {
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="hover:bg-transparent p-0 font-semibold"
+          className="hover:bg-transparent p-0 font-semibold text-base"
         >
           Email
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <ArrowUpDown className="h-4 w-4" />
         </Button>
       ),
     },
@@ -146,24 +145,25 @@ const AdminUsers = () => {
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="hover:bg-transparent p-0 font-semibold"
+          className="hover:bg-transparent p-0 font-semibold text-base"
         >
           Status
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <ArrowUpDown className="h-4 w-4" />
         </Button>
       ),
       cell: ({ row }) => <StatusBadge status={row.original.is_active} />,
     },
     {
       accessorKey: "role_name",
-      header: "Role Name",
+      header: () => (
+        <div className="">
+          <span className="font-semibold text-base">Role Name</span>
+        </div>
+      ),
       cell: ({ row }) => (
-        <small
-          className="font-semibold"
-          title={row.original.role_name || "N/A"}
-        >
+        <span>
           {row.original.role_name || "N/A"}
-        </small>
+        </span>
       ),
     },
     {
@@ -172,10 +172,10 @@ const AdminUsers = () => {
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="hover:bg-transparent p-0 font-semibold"
+          className="hover:bg-transparent p-0 font-semibold text-base"
         >
           Created At
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <ArrowUpDown className="h-4 w-4" />
         </Button>
       ),
       cell: ({ row }) => <DateDisplay date={row.original.created_at} showTime={false} />,

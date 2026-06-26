@@ -58,10 +58,10 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
           <Button
             variant="ghost"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="hover:bg-transparent p-0 font-semibold text-base"
+            className="hover:bg-transparent p-0 text-base font-semibold "
           >
             Candidate
-            <ArrowUpDown className="ml-2 h-4 w-4" />
+            <ArrowUpDown className="h-4 w-4" />
           </Button>
         ),
         cell: ({ row }) => {
@@ -95,8 +95,8 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
                   <HoverCardTrigger delay={10} closeDelay={10}>
                     <CandidateEmailBadge email_sent_count={c.email_sent_count} />
                   </HoverCardTrigger>
-                  <HoverCardContent className="w-full p-0.5 text-xs rounded-lg">
-                    <p className="text-sm ">
+                  <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
+                    <p className="">
                       {c.email_sent_count && c.email_sent_count > 0 ? `Total email sent: ${c.email_sent_count}` : "No email sent yet"}
                     </p>
                   </HoverCardContent>
@@ -112,10 +112,10 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
           {
             id: "job_context",
             accessorKey: "applied_job_id",
-            // header: "Job",
+
             header: () => {
               return <div className="flex items-center justify-between">
-                <span className="font-semibold">Job</span>
+                <span className="text-base">Job</span>
               </div>
             },
             cell: ({ row }: { row: { original: T } }) => {
@@ -147,10 +147,10 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
           <Button
             variant="ghost"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="hover:bg-transparent p-0 font-semibold text-base"
+            className="hover:bg-transparent p-0 text-base font-semibold "
           >
             AI Result
-            <ArrowUpDown className="ml-2 h-4 w-4" />
+            <ArrowUpDown className="h-4 w-4" />
           </Button>
         ),
         cell: ({ row }) => {
@@ -161,7 +161,7 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
           if (isProcessing) {
             return (
               <div className="flex flex-col gap-1.5">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
                   <div className="h-3.5 w-3.5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                   <span className="text-xs text-muted-foreground italic">
                     Analyzing…
@@ -194,7 +194,7 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
                         style={{ left: `${passing_threshold}%` }} />
                     </div>
                   </HoverCardTrigger>
-                  <HoverCardContent className="w-full p-1 py-2 text-xs rounded-lg">
+                  <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
                     Score: {score.toFixed(2)}%<br />Threshold: {passing_threshold}%
                   </HoverCardContent>
                 </HoverCard>
@@ -222,7 +222,7 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
       //   accessorKey: "hr_decision",
       //   header: () => {
       //     return <div className="flex items-center justify-between">
-      //       <span className="font-semibold text-base">HR Decision</span>
+      //       <span className="text-base">HR Decision</span>
       //     </div>
       //   },
       //   cell: ({ row }) => <CandidateStatusBadge status={row.original.hr_decision} />,
@@ -232,10 +232,10 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
       {
         id: "current_stage",
         accessorKey: "current_stage",
-        // header: "Stage",
+
         header: () => {
           return <div className="flex items-center justify-between">
-            <span className="font-semibold text-base">Stages</span>
+            <span className="text-base">Stages</span>
           </div>
         },
         cell: ({ row }) => {
@@ -264,7 +264,7 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
 
         header: () => {
           return <div className="flex items-center justify-between">
-            <span className="font-semibold text-base">Socials</span>
+            <span className="text-base">Socials</span>
           </div>
         },
         cell: ({ row }) => {
@@ -370,10 +370,10 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
           <Button
             variant="ghost"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="hover:bg-transparent p-0 font-semibold text-base"
+            className="hover:bg-transparent p-0 text-base font-semibold "
           >
             Applied At
-            <ArrowUpDown className="ml-2 h-4 w-4" />
+            <ArrowUpDown className="h-4 w-4" />
           </Button>
         ),
         cell: ({ row }) => {
@@ -392,10 +392,10 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
           <Button
             variant="ghost"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="hover:bg-transparent p-0 font-semibold text-base"
+            className="hover:bg-transparent p-0 text-base font-semibold "
           >
             Location
-            <ArrowUpDown className="ml-2 h-4 w-4" />
+            <ArrowUpDown className="h-4 w-4" />
           </Button>
         ),
         cell: ({ row }) => {

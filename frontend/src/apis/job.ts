@@ -132,6 +132,7 @@ const jobService = {
       result?: string[];
       hr_score?: number[];
       test_email_sent?: boolean;
+      candidate_id?: string;
     },
   ): Promise<CandidateAnalysisResponse> => {
     const response = await client.get<CandidateAnalysisResponse>(`/candidates/jobs/${jobId}`, {
@@ -153,6 +154,7 @@ const jobService = {
         ...(filters?.result !== undefined ? { result: filters.result.map(r => r.replace(/ed$/, "")) } : undefined),
         ...(filters?.hr_score !== undefined ? { hr_score: filters.hr_score } : undefined),
         ...(filters?.test_email_sent !== undefined ? { test_email_sent: filters.test_email_sent } : undefined),
+        ...(filters?.candidate_id !== undefined ? { candidate_id: filters.candidate_id } : undefined),
       },
       paramsSerializer: {
         indexes: null,

@@ -84,7 +84,16 @@ async def preview_random_questions(
                 new_m = m.copy() if isinstance(m, dict) else getattr(m, "model_dump", lambda: m)()
                 all_mcqs.append(new_m)
 
-    unique_questions = list(set(all_questions))
+    seen_questions = set()
+    unique_questions = []
+    for q in all_questions:
+        q_text = q.get("question") if isinstance(q, dict) else getattr(q, "question", str(q))
+        if q_text and q_text not in seen_questions:
+            seen_questions.add(q_text)
+            if isinstance(q, str):
+                unique_questions.append({"question": q, "marks": 5, "duration": 3})
+            else:
+                unique_questions.append(q)
     seen_mcq_questions = set()
     unique_mcqs = []
     for m in all_mcqs:
@@ -102,12 +111,12 @@ async def preview_random_questions(
         selected_mcqs = random.sample(unique_mcqs, min(count, len(unique_mcqs)))
         assigned_mcqs = [m.model_dump() if hasattr(m, "model_dump") else m for m in selected_mcqs]
 
-    # Select one task randomly
-    chosen_paper = random.choice(papers)
-        
-    assigned_task = []
-    if chosen_paper.project_task:
-        assigned_task = chosen_paper.project_task
+    papers_with_tasks = [p for p in papers if p.project_task and len(p.project_task) > 0]
+    if papers_with_tasks:
+        chosen_task_paper = random.choice(papers_with_tasks)
+        assigned_task = chosen_task_paper.project_task
+    else:
+        assigned_task = []
     return TaskPaperPreviewResponse(
         questions=assigned_questions,
         mcqs=assigned_mcqs,

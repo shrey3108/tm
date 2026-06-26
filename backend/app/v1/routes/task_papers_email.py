@@ -126,7 +126,7 @@ async def send_test_paper_email(
         else:
             stmt_existing = stmt_existing.where(CandidateTestPaper.job_stage_config_id.is_(None))
         res_existing = await db.execute(stmt_existing)
-        existing_paper = res_existing.scalar_one_or_none()
+        existing_paper = res_existing.scalars().first()
         if existing_paper:
             if existing_paper.email_sent_count > 0 and not email_data.force:
                 raise HTTPException(
@@ -287,7 +287,7 @@ async def send_bulk_test_paper_email(
                 else:
                     stmt_existing = stmt_existing.where(CandidateTestPaper.job_stage_config_id.is_(None))
                 res_existing = await db.execute(stmt_existing)
-                existing_paper = res_existing.scalar_one_or_none()
+                existing_paper = res_existing.scalars().first()
                 if existing_paper:
                     if existing_paper.email_sent_count > 0 and not email_data.force:
                         raise HTTPException(

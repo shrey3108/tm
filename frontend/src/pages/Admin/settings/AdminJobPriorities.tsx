@@ -22,27 +22,43 @@ import { PERMISSIONS } from "@/lib/permissions";
 import { DateDisplay } from "@/components/shared";
 import { useJobPriorities } from "@/hooks/queries/admin/useJobPriority";
 import { useDeletePriorityMutation } from "@/hooks/mutations/admin/useJobPriority";
+import { usePageFilters } from "@/hooks/usePageFilters";
 
 const AdminJobPriorities = () => {
   const toast = useToast();
   const deletePriorityMutation = useDeletePriorityMutation();
   const [showModal, setShowModal] = useState(false);
   const [selectedPriority, setSelectedPriority] = useState<JobPriorityRead | null>(null);
-  const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
+
+  const { filters, setFilters } = usePageFilters("adminJobPriorities", {
     pageIndex: 0,
     pageSize: 10,
+    search: "",
   });
+  const { pageIndex, pageSize, search } = filters;
+
+  const setPagination = (val: PaginationState | ((prev: PaginationState) => PaginationState)) => {
+    const currentPagination = { pageIndex: filters.pageIndex, pageSize: filters.pageSize };
+    const nextPagination = typeof val === "function" ? val(currentPagination) : val;
+    setFilters({
+      pageIndex: nextPagination.pageIndex,
+      pageSize: nextPagination.pageSize,
+    });
+  };
+
   const [, setDeletingId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<JobPriorityRead | null>(null);
   const [overallTotal, setOverallTotal] = useState(0);
-  const [search, setSearch] = useState("");
+
   const debouncedSearch = useDebouncedValue(search, 500);
 
   const handleSearchChange = (value: string) => {
-    setSearch(value);
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+    setFilters({
+      search: value,
+      pageIndex: 0,
+    });
   };
 
   const { data: priorities, loading, error, refetch, total } = useJobPriorities(pageIndex * pageSize, pageSize, debouncedSearch);
@@ -159,10 +175,10 @@ const AdminJobPriorities = () => {
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="hover:bg-transparent p-0 font-semibold"
+          className="hover:bg-transparent p-0 font-semibold text-base"
         >
           Name
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <ArrowUpDown className="h-4 w-4" />
         </Button>
       ),
       cell: ({ row }) => (
@@ -173,35 +189,35 @@ const AdminJobPriorities = () => {
     },
     {
       accessorKey: "duration_days",
-      // header: "Duration (Days)",
+
       header: ({ column }) => (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="hover:bg-transparent p-0 font-semibold"
+          className="hover:bg-transparent p-0 font-semibold text-base"
         >
           Duration (Days)
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <ArrowUpDown className="h-4 w-4" />
         </Button>
       ),
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
-          <Clock className="h-4 w-4 text-muted-foreground" />
+          <Clock className="h-4 w-4" />
           <span>{row.original.duration_days} days</span>
         </div>
       ),
     },
     {
       accessorKey: "created_at",
-      // header: "Created At",
+
       header: ({ column }) => (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="hover:bg-transparent p-0 font-semibold"
+          className="hover:bg-transparent p-0 font-semibold text-base"
         >
           Created At
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <ArrowUpDown className="h-4 w-4" />
         </Button>
       ),
 
@@ -216,10 +232,10 @@ const AdminJobPriorities = () => {
           <Button
             variant="ghost"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="hover:bg-transparent p-0 font-semibold"
+            className="hover:bg-transparent p-0 font-semibold text-base"
           >
             Assigned Jobs Count
-            <ArrowUpDown className="ml-2 h-4 w-4" />
+            <ArrowUpDown className="h-4 w-4" />
           </Button>
         </div>
       ),
@@ -257,7 +273,7 @@ const AdminJobPriorities = () => {
                   </Button>
                 )}
               />
-              <HoverCardContent className="w-fit px-3 py-1.5 text-xs font-medium" side="top">
+              <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
                 <span className="text-primary">Edit Priority</span>
               </HoverCardContent>
             </HoverCard>
@@ -279,7 +295,7 @@ const AdminJobPriorities = () => {
                   </Button>
                 )}
               />
-              <HoverCardContent className="w-fit px-3 py-1.5 text-xs font-medium" side="top">
+              <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
                 <span className="text-destructive">Delete Priority</span>
               </HoverCardContent>
             </HoverCard>

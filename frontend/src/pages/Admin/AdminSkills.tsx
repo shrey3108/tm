@@ -23,6 +23,7 @@ import { useAppSelector } from "@/store/hooks";
 import { selectCurrentUser } from "@/store/slices/authSlice";
 import { useSkill } from "@/hooks/queries/admin/useSkill";
 import { useDeleteSkillMutation } from "@/hooks/mutations/admin/useSkill";
+import { usePageFilters } from "@/hooks/usePageFilters";
 
 const AdminSkills = () => {
   const toast = useToast();
@@ -32,11 +33,21 @@ const AdminSkills = () => {
   const [showModal, setShowModal] = useState(false);
   const [selectedSkill, setSelectedSkill] = useState<SkillRead | null>(null);
 
-  const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
+  const { filters, setFilters } = usePageFilters("adminSkills", {
     pageIndex: 0,
     pageSize: 10,
+    search: "",
   });
-  const [search, setSearch] = useState("");
+  const { pageIndex, pageSize, search } = filters;
+
+  const setPagination = (val: PaginationState | ((prev: PaginationState) => PaginationState)) => {
+    const currentPagination = { pageIndex: filters.pageIndex, pageSize: filters.pageSize };
+    const nextPagination = typeof val === "function" ? val(currentPagination) : val;
+    setFilters({
+      pageIndex: nextPagination.pageIndex,
+      pageSize: nextPagination.pageSize,
+    });
+  };
 
   const [, setDeletingId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -45,8 +56,10 @@ const AdminSkills = () => {
   const [overallTotal, setOverallTotal] = useState(0);
 
   const handleSearchChange = (value: string) => {
-    setSearch(value);
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+    setFilters({
+      search: value,
+      pageIndex: 0,
+    });
   };
 
 
@@ -156,10 +169,10 @@ const AdminSkills = () => {
           <Button
             variant="ghost"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="hover:bg-transparent p-0 font-semibold"
+            className="hover:bg-transparent p-0 font-semibold text-base"
           >
             Name
-            <ArrowUpDown className="ml-2 h-4 w-4" />
+            <ArrowUpDown className="h-4 w-4" />
           </Button>
         </div>
       ),
@@ -171,11 +184,11 @@ const AdminSkills = () => {
     },
     {
       accessorKey: "description",
-      // header: "Description",
+
       header: () => {
         return (
           <div className="flex items-center gap-2  max-w-[800px]">
-            <span className="font-semibold">Description</span>
+            <span>Description</span>
           </div>
         )
       },
@@ -191,7 +204,7 @@ const AdminSkills = () => {
           id: "actions",
           header: () => (
             <div className="flex items-center justify-center gap-2">
-              <span className="font-semibold">Actions</span>
+              <span>Actions</span>
             </div>
           ),
           cell: ({ row }) => (
@@ -211,7 +224,7 @@ const AdminSkills = () => {
                     </Button>
                   )}
                 />
-                <HoverCardContent className="w-fit px-3 py-1.5 text-xs font-medium" side="top">
+                <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
                   <span className="text-primary">Edit Skill</span>
                 </HoverCardContent>
               </HoverCard>
@@ -231,7 +244,7 @@ const AdminSkills = () => {
                     </Button>
                   )}
                 />
-                <HoverCardContent className="w-fit px-3 py-1.5 text-xs font-medium" side="top">
+                <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
                   <span className="text-destructive">Delete Skill</span>
                 </HoverCardContent>
               </HoverCard>

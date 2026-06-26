@@ -26,8 +26,10 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { Plus, Trash2 } from "lucide-react";
 import type { MCQItem } from "@/types/taskPaper";
-import { mcqSchema, type MCQFormValues } from "@/schemas/taskPaper";
+import { mcqFormSchema, type MCQFormValues } from "@/schemas/taskPaper";
+import { Required } from "@/components/shared/Required";
 
 interface MCQModalProps {
   show: boolean;
@@ -36,8 +38,6 @@ interface MCQModalProps {
   initialValue?: MCQItem | null;
   isSaving?: boolean;
 }
-
-
 
 export default function MCQModal({
   show,
@@ -49,74 +49,63 @@ export default function MCQModal({
   const isEditMode = !!initialValue;
 
   const form = useForm<MCQFormValues>({
-    resolver: zodResolver(mcqSchema),
+    resolver: zodResolver(mcqFormSchema) as any,
     defaultValues: {
       question: "",
-      optionA: "",
-      optionB: "",
-      optionC: "",
-      optionD: "",
+      options: ["", ""],
       answer: "A",
+      marks: "",
+      hours: 0,
+      minutes: 5,
     },
   });
 
   const { handleSubmit, control, reset } = form;
-  const optionCValue = form.watch("optionC");
-  const optionDValue = form.watch("optionD");
+  const options = form.watch("options") || ["", ""];
 
   useEffect(() => {
     if (show) {
       if (initialValue) {
         // Find which option letter matches the answer text
-        const { question, options, answer } = initialValue;
-        const optionA = options[0] || "";
-        const optionB = options[1] || "";
-        const optionC = options[2] || "";
-        const optionD = options[3] || "";
-
-        let answerLetter: "A" | "B" | "C" | "D" = "A";
-        if (answer === optionB) answerLetter = "B";
-        else if (answer === optionC) answerLetter = "C";
-        else if (answer === optionD) answerLetter = "D";
+        const { question, options: rawOptions, answer, marks, duration } = initialValue;
+        const answerIndex = rawOptions.indexOf(answer);
+        const answerLetter = answerIndex !== -1 ? String.fromCharCode(65 + answerIndex) : "A";
 
         reset({
           question,
-          optionA,
-          optionB,
-          optionC,
-          optionD,
+          options: rawOptions.length >= 2 ? rawOptions : [...rawOptions, ...Array(2 - rawOptions.length).fill("")],
           answer: answerLetter,
+          marks: marks || "",
+          hours: duration ? Math.floor(duration / 60) : 0,
+          minutes: duration ? duration % 60 : 5,
         });
       } else {
         reset({
           question: "",
-          optionA: "",
-          optionB: "",
-          optionC: "",
-          optionD: "",
+          options: ["", ""],
           answer: "A",
+          marks: "",
+          hours: 0,
+          minutes: 5,
         });
       }
     }
   }, [show, initialValue, reset]);
 
   const onSubmit = async (data: MCQFormValues) => {
-    let answerText = data.optionA;
-    if (data.answer === "B") answerText = data.optionB;
-    else if (data.answer === "C") answerText = data.optionC;
-    else if (data.answer === "D") answerText = data.optionD;
+    const answerIndex = data.answer.charCodeAt(0) - 65;
+    const answerText = data.options[answerIndex] || "";
 
-    const optionsList = [
-      data.optionA.trim(),
-      data.optionB.trim(),
-      data.optionC.trim(),
-      data.optionD.trim(),
-    ].filter(Boolean);
+    const hours = typeof data.hours === "number" ? data.hours : 0;
+    const minutes = typeof data.minutes === "number" ? data.minutes : 0;
+    const duration = hours * 60 + minutes;
 
     const mcqItem: MCQItem = {
       question: data.question.trim(),
-      options: optionsList,
+      options: data.options.map((opt) => opt.trim()),
       answer: answerText.trim(),
+      marks: typeof data.marks === "number" ? data.marks : 0,
+      duration,
     };
 
     await onSave(mcqItem);
@@ -125,7 +114,7 @@ export default function MCQModal({
 
   return (
     <Dialog open={show} onOpenChange={(open) => !open && !isSaving && handleClose()}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto p-4">
+      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto p-4">
         <DialogHeader>
           <DialogTitle>
             {isEditMode ? "Edit MCQ" : "Add New MCQ"}
@@ -134,12 +123,13 @@ export default function MCQModal({
 
         <Form {...form}>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            {/* MCQ Question Text */}
             <FormField
-              control={control}
+              control={control as any}
               name="question"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>MCQ Question Text</FormLabel>
+                  <FormLabel className="text-sm font-semibold">MCQ Question Text</FormLabel>
                   <FormControl>
                     <Textarea
                       placeholder="Enter the MCQ question text ..."
@@ -153,95 +143,180 @@ export default function MCQModal({
               )}
             />
 
-            <div className="grid grid-cols-2 gap-2">
-              <FormField
-                control={control}
-                name="optionA"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Option A</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Option A text" disabled={isSaving} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            {/* MCQ Options */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <FormLabel className="text-sm font-semibold">MCQ Options</FormLabel>
 
-              <FormField
-                control={control}
-                name="optionB"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Option B</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Option B text" disabled={isSaving} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    form.setValue("options", [...options, ""]);
+                  }}
+                  disabled={isSaving || options.length >= 26 || options.some((opt) => !opt.trim())}
+                  className="h-8 text-xs font-semibold flex items-center gap-1.5"
+                >
+                  <Plus className="h-4 w-4" /> Add Option
+                </Button>
+              </div>
 
-              <FormField
-                control={control}
-                name="optionC"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Option C (Optional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Option C text" disabled={isSaving} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {options.map((_, index) => {
+                  const isRequired = index < 2;
+                  return (
+                    <FormField
+                      key={index}
+                      control={control as any}
+                      name={`options.${index}`}
+                      render={({ field }) => (
+                        <FormItem className="space-y-1">
+                          <div className="flex items-center justify-between">
+                            <FormLabel className="text-xs font-semibold text-muted-foreground">
+                              Option {String.fromCharCode(65 + index)} {isRequired ? <Required /> : "(Optional)"}
+                            </FormLabel>
+                            {!isRequired && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const newOptions = [...options];
+                                  newOptions.splice(index, 1);
+                                  form.setValue("options", newOptions, { shouldValidate: true });
 
-              <FormField
-                control={control}
-                name="optionD"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Option D (Optional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Option D text" disabled={isSaving} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                                  // Adjust selected answer
+                                  const answerVal = form.getValues("answer");
+                                  const answerIndex = answerVal.charCodeAt(0) - 65;
+                                  if (answerIndex === index) {
+                                    form.setValue("answer", "A", { shouldValidate: true });
+                                  } else if (answerIndex > index) {
+                                    form.setValue("answer", String.fromCharCode(65 + answerIndex - 1), { shouldValidate: true });
+                                  }
+                                }}
+                                disabled={isSaving}
+                                className="text-xs font-semibold text-destructive hover:underline flex items-center gap-0.5 cursor-pointer"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </button>
+                            )}
+                          </div>
+                          <FormControl>
+                            <Input
+                              placeholder={`Option ${String.fromCharCode(65 + index)} text`}
+                              disabled={isSaving}
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  );
+                })}
+              </div>
             </div>
 
+            {/* Correct Answer selector */}
             <FormField
               control={control}
               name="answer"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Correct Answer Option</FormLabel>
+                  <FormLabel className="text-sm font-semibold">Correct Answer Option</FormLabel>
                   <Select
                     disabled={isSaving}
                     onValueChange={field.onChange}
                     value={field.value}
+                    modal={false}
                   >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select correct option" />
                       </SelectTrigger>
                     </FormControl>
-                    <SelectContent>
-                      <SelectItem value="A">Option A</SelectItem>
-                      <SelectItem value="B">Option B</SelectItem>
-                      <SelectItem value="C" disabled={!optionCValue?.trim()}>
-                        Option C {!optionCValue?.trim() && "(Disabled - Fill Option C)"}
-                      </SelectItem>
-                      <SelectItem value="D" disabled={!optionDValue?.trim()}>
-                        Option D {!optionDValue?.trim() && "(Disabled - Fill Option D)"}
-                      </SelectItem>
+                    <SelectContent alignItemWithTrigger={false}>
+                      {options.map((opt, idx) => {
+                        const letter = String.fromCharCode(65 + idx);
+                        const isEmpty = !opt?.trim();
+                        return (
+                          <SelectItem key={idx} value={letter} disabled={isEmpty}>
+                            Option {letter} {isEmpty && `(Disabled - Fill Option ${letter})`}
+                          </SelectItem>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
+            {/* Marks & Duration Section */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-4 rounded-xl border border-border bg-muted/20">
+              {/* Marks */}
+              <FormField
+                control={control as any}
+                name="marks"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs font-semibold">Marks</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="10"
+                        disabled={isSaving}
+                        min={1}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage className="text-xs font-semibold text-destructive animate-in fade-in slide-in-from-top-1 duration-200" />
+                  </FormItem>
+                )}
+              />
+
+              {/* Hours */}
+              <FormField
+                control={control as any}
+                name="hours"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs font-semibold">Hours</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="0"
+                        disabled={isSaving}
+                        min={0}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage className="text-xs font-semibold text-destructive animate-in fade-in slide-in-from-top-1 duration-200" />
+                  </FormItem>
+                )}
+              />
+
+              {/* Minutes */}
+              <FormField
+                control={control as any}
+                name="minutes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs font-semibold">Minutes</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="30"
+                        disabled={isSaving}
+                        min={0}
+                        max={59}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage className="text-xs font-semibold text-destructive animate-in fade-in slide-in-from-top-1 duration-200" />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <DialogFooter className="mt-4 pt-2">
               <Button

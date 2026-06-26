@@ -11,18 +11,10 @@ import { DataTable } from "@/components/shared/DataTable";
 import type { ColumnDef, PaginationState } from "@tanstack/react-table";
 import { Badge, Button } from "@/components";
 import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card";
-import {
-    DropdownMenu,
-    DropdownMenuTrigger,
-    DropdownMenuContent,
-    DropdownMenuCheckboxItem,
-    DropdownMenuSeparator,
-    DropdownMenuLabel,
-    DropdownMenuGroup,
-} from "@/components/ui/dropdown-menu";
 import PermissionGuard from "@/components/auth/PermissionGuard";
 import { PERMISSIONS } from "@/lib/permissions";
-import { ArrowUpDown, Check, Clipboard, FileText, Info, ChevronDown } from "lucide-react";
+import { ArrowUpDown, Check, Clipboard, FileText, Info } from "lucide-react";
+import { SearchableSelect } from "@/components/shared/SearchableSelect";
 import { cn } from "@/lib/utils";
 import {
     Dialog,
@@ -33,19 +25,31 @@ import {
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useDebouncedValue } from "@/hooks";
-import { ErrorDisplay } from "@/components/shared";
 import { usePrompts } from "@/hooks/queries/admin/usePrompts";
+import { usePageFilters } from "@/hooks/usePageFilters";
+import ErrorDisplay from "@/components/shared/ErrorDisplay";
 
 
 const AdminPrompts = () => {
-    const [search, setSearch] = useState("");
-    const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
+    const { filters, setFilters } = usePageFilters("adminPrompts", {
         pageIndex: 0,
         pageSize: 10,
+        search: "",
+        selectedStages: [] as string[],
     });
+    const { pageIndex, pageSize, search, selectedStages } = filters;
+
+    const setPagination = (val: PaginationState | ((prev: PaginationState) => PaginationState)) => {
+        const currentPagination = { pageIndex: filters.pageIndex, pageSize: filters.pageSize };
+        const nextPagination = typeof val === "function" ? val(currentPagination) : val;
+        setFilters({
+            pageIndex: nextPagination.pageIndex,
+            pageSize: nextPagination.pageSize,
+        });
+    };
+
     const [selectedPrompt, setSelectedPrompt] = useState<PromptRead | null>(null);
     const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-    const [selectedStages, setSelectedStages] = useState<string[]>([]);
     const [allStages, setAllStages] = useState<string[]>([]);
     const [isCopied, setIsCopied] = useState(false);
     const [overallTotal, setOverallTotal] = useState(0);
@@ -94,15 +98,15 @@ const AdminPrompts = () => {
                 <Button
                     variant="ghost"
                     onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                    className="hover:bg-transparent p-0 font-semibold"
+                    className="hover:bg-transparent p-0 font-semibold text-base"
                 >
                     Prompt Name
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                    <ArrowUpDown className="h-4 w-4" />
                 </Button>
             ),
             cell: ({ row }) => (
-                <div className="font-medium text-primary flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-muted-foreground" />
+                <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
                     {row.original.name}
                 </div>
             ),
@@ -112,12 +116,12 @@ const AdminPrompts = () => {
             header: () => {
                 return (
                     <div className="flex items-center gap-2">
-                        <span className="font-semibold">Content Preview</span>
+                        <span className="text-base">Content Preview</span>
                     </div>
                 )
             },
             cell: ({ row }) => (
-                <div className="max-w-[500px] truncate text-muted-foreground">
+                <div className="max-w-[350px] truncate">
                     {row.original.content}
                 </div>
             ),
@@ -126,12 +130,12 @@ const AdminPrompts = () => {
             header: () => {
                 return (
                     <div className="flex items-center gap-2">
-                        <span className="font-semibold">Stages</span>
+                        <span className="text-base">Stages</span>
                     </div>
                 )
             },
             cell: ({ row }) => (
-                <div className="max-w-[500px] truncate text-muted-foreground">
+                <div className="max-w-[500px] truncate">
                     <Badge variant="outline" className="capitalize">
                         {row.original.stage}
                     </Badge>
@@ -150,14 +154,14 @@ const AdminPrompts = () => {
                                     variant="ghost"
                                     size="icon"
                                     onClick={() => handleViewClick(row.original)}
-                                    className="h-9 w-9 p-0 rounded-xl hover:bg-primary/10 hover:text-primary transition-colors flex items-center justify-center shrink-0"
+                                    className="h-9 w-9 p-0 rounded-xl hover:bg-gray-200/50 transition-colors flex items-center justify-center shrink-0"
                                 >
                                     <Info className="h-4 w-4 shrink-0" />
                                 </Button>
                             )}
                         />
-                        <HoverCardContent side="top" className="w-auto p-2 min-w-0">
-                            <div className="text-sm font-semibold">View Prompt</div>
+                        <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
+                            <div className="text-xs">View Prompt</div>
                         </HoverCardContent>
                     </HoverCard>
                 </div>
@@ -167,14 +171,18 @@ const AdminPrompts = () => {
 
     // Handle search with pagination reset
     const handleSearchChange = (value: string) => {
-        setSearch(value);
-        setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+        setFilters({
+            search: value,
+            pageIndex: 0,
+        });
     };
 
     // Handle stage filter change with pagination reset
     const handleStageChange = (stages: string[]) => {
-        setSelectedStages(stages);
-        setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+        setFilters({
+            selectedStages: stages,
+            pageIndex: 0,
+        });
     };
     const handleCopy = async () => {
         if (!selectedPrompt?.content) return;
@@ -218,68 +226,22 @@ const AdminPrompts = () => {
                         searchKey="name"
                         searchPlaceholder="Filter prompts by name or content..."
                         tableActions={
-                            <DropdownMenu>
-                                <DropdownMenuTrigger
-                                    className={cn(
-                                        "inline-flex items-center justify-between gap-2 h-10 px-3 w-[150px] rounded-xl border text-xs font-medium cursor-pointer select-none transition-all",
-                                        selectedStages.length > 0
-                                            ? "border-primary/30 bg-primary/5 text-primary"
-                                            : "border-input bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-                                    )}
-                                >
-                                    <span className="truncate">
-                                        {selectedStages.length === 0
-                                            ? "Stages"
-                                            : selectedStages.length === 1
-                                                ? selectedStages[0]
-                                                : `${selectedStages.length} Stages`}
-                                    </span>
-                                    <ChevronDown className="h-3.5 w-3.5 opacity-60 shrink-0" />
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="start" className="min-w-[180px] rounded-xl shadow-lg p-1">
-                                    <DropdownMenuGroup>
-                                        <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground px-2 py-1.5">Stages</DropdownMenuLabel>
-                                        {allStages.length === 0 ? (
-                                            <div className="px-2 py-4 text-xs text-center text-muted-foreground">
-                                                No stages found
-                                            </div>
-                                        ) : (
-                                            <div className="max-h-[240px] overflow-y-auto custom-scrollbar">
-                                                {allStages.map((s) => (
-                                                    <DropdownMenuCheckboxItem
-                                                        key={s}
-                                                        checked={selectedStages.includes(s)}
-                                                        onSelect={(e) => e.preventDefault()}
-                                                        onClick={() =>
-                                                            handleStageChange(
-                                                                selectedStages.includes(s)
-                                                                    ? selectedStages.filter((v) => v !== s)
-                                                                    : [...selectedStages, s]
-                                                            )
-                                                        }
-                                                        className="rounded-lg capitalize"
-                                                        closeOnClick={true}
-                                                    >
-                                                        {s}
-                                                    </DropdownMenuCheckboxItem>
-                                                ))}
-                                            </div>
-                                        )}
-                                        {selectedStages.length > 0 && (
-                                            <>
-                                                <DropdownMenuSeparator />
-                                                <DropdownMenuCheckboxItem
-                                                    checked={false}
-                                                    onClick={() => handleStageChange([])}
-                                                    className="text-destructive focus:text-destructive focus:bg-destructive/10 rounded-lg"
-                                                >
-                                                    Clear selection
-                                                </DropdownMenuCheckboxItem>
-                                            </>
-                                        )}
-                                    </DropdownMenuGroup>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+                            <SearchableSelect
+                                multiple
+                                value={selectedStages}
+                                onValueChange={handleStageChange}
+                                options={allStages.map((s) => ({ id: s, label: s }))}
+                                placeholder="Stages"
+                                pluralLabel="Stages"
+                                onClear={() => handleStageChange([])}
+                                clearLabel="Clear selection"
+                                triggerClassName={cn(
+                                    "h-10 w-[150px] border text-xs font-medium select-none bg-background hover:bg-muted/50 hover:text-foreground",
+                                    selectedStages.length > 0
+                                        ? "border-primary/40 bg-primary/10 text-primary hover:bg-primary/10 hover:text-primary"
+                                        : "border-input text-muted-foreground"
+                                )}
+                            />
                         }
                     />}
 

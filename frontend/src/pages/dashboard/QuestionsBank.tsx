@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useMemo } from "react";
+import { usePageFilters } from "@/hooks/usePageFilters";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import AppPageShell from "@/components/shared/AppPageShell";
@@ -14,7 +15,7 @@ import { useDebouncedValue } from "@/hooks";
 import { extractErrorMessage } from "@/utils/error";
 import { useDepartment } from "@/hooks/queries/admin/useDepartment";
 import { useJobPosition } from "@/hooks/queries/admin/useJobPosition";
-import { useSkill } from "@/hooks/queries/admin/useSkill";
+// import { useSkill } from "@/hooks/queries/admin/useSkill";
 import { slugify } from "@/utils/slug";
 
 // Sub-components
@@ -22,35 +23,58 @@ import { QuestionsBankFilters } from "@/components/questions-bank/QuestionsBankF
 import { QuestionsBankModals } from "@/components/questions-bank/QuestionsBankModals";
 import { getQuestionsBankColumns, type FlatItem } from "@/components/questions-bank/QuestionsBankColumns";
 
+/** Default filter values for the QuestionsBank page. */
+const questionsBankDefaults = {
+  selectedDeptId: "",
+  selectedPositionId: "",
+  selectedSkillId: "",
+  selectedContentType: "all",
+};
+
 export default function QuestionsBank() {
   const navigate = useNavigate();
-  const [selectedDeptId, setSelectedDeptId] = useState<string>("");
-  const [deptSearch, setDeptSearch] = useState<string>("");
 
-  const [selectedPositionId, setSelectedPositionId] = useState<string>("");
-  const [selectedSkillId, setSelectedSkillId] = useState<string>("");
-  const [skillSearch, setSkillSearch] = useState<string>("");
-  const [selectedContentType, setSelectedContentType] = useState<string>("all");
+  // Persisted filters via Redux + sessionStorage
+  const { filters, setFilter, resetFilters } = usePageFilters("questionsBank", questionsBankDefaults);
+  const { selectedDeptId, selectedPositionId, selectedSkillId, selectedContentType } = filters;
+
+  // Transient search inputs (not persisted)
+  const [deptSearch, setDeptSearch] = useState<string>("");
+  // const [skillSearch, setSkillSearch] = useState<string>("");
 
   // Debounce search query for backend API calls
   const debouncedDeptSearch = useDebouncedValue(deptSearch);
-  const debouncedSkillSearch = useDebouncedValue(skillSearch);
+  // const debouncedSkillSearch = useDebouncedValue(skillSearch);
 
   // Fetch departments list
   const { data: departments, loading: loadingDepts } = useDepartment(0, 100, debouncedDeptSearch);
   const isDeptSearching = deptSearch !== debouncedDeptSearch;
   const handleDeptSearch = useCallback((query: string) => setDeptSearch(query), []);
 
-  // Fetch skills list
-  const { data: skills, loading: loadingSkills } = useSkill(0, 100, debouncedSkillSearch);
-  const isSkillSearching = skillSearch !== debouncedSkillSearch;
-  const handleSkillSearch = useCallback((query: string) => setSkillSearch(query), []);
+  // Fetch skills list (commented out to build skill filter using table's content displayed skills)
+  // const { data: skills, loading: loadingSkills } = useSkill(0, 100, debouncedSkillSearch);
+  // const isSkillSearching = skillSearch !== debouncedSkillSearch;
+  // const handleSkillSearch = useCallback((query: string) => setSkillSearch(query), []);
+
+  const hasActiveFilters = useMemo(() => {
+    const defaultDeptId = departments && departments.length > 0 ? departments[0].id : "";
+    return (
+      selectedPositionId !== "" ||
+      selectedSkillId !== "" ||
+      selectedContentType !== "all" ||
+      (selectedDeptId !== "" && selectedDeptId !== defaultDeptId)
+    );
+  }, [selectedPositionId, selectedSkillId, selectedContentType, selectedDeptId, departments]);
+
+  const clearFilters = useCallback(() => {
+    resetFilters();
+  }, [resetFilters]);
 
   useEffect(() => {
     if (departments.length > 0 && !selectedDeptId) {
-      setSelectedDeptId(departments[0].id);
+      setFilter("selectedDeptId", departments[0].id);
     }
-  }, [departments, selectedDeptId]);
+  }, [departments, selectedDeptId, setFilter]);
 
   // Fetch predefined Question Set Papers
   const {
@@ -60,7 +84,7 @@ export default function QuestionsBank() {
   } = useQuestionSetPapers({
     departmentId: selectedDeptId || undefined,
     positionId: selectedPositionId || undefined,
-    skillId: selectedSkillId || undefined,
+    // skillId: selectedSkillId || undefined,
   });
 
   // Fetch positions for filters
@@ -76,11 +100,12 @@ export default function QuestionsBank() {
 
       // 1. questions
       if (Array.isArray(paper.questions)) {
-        paper.questions.forEach((q: string, idx: number) => {
-          if (q && typeof q === "string") {
+        paper.questions.forEach((q: any, idx: number) => {
+          if (q) {
+            const content = typeof q === "string" ? q : q.question || "";
             items.push({
               id: `${paperId}-q-${idx}`,
-              content: q,
+              content,
               type: "question",
               paperId,
               itemIndex: idx,
@@ -138,13 +163,36 @@ export default function QuestionsBank() {
     return items;
   }, [questionPapers]);
 
-  // Client-side filtering by content type
+  // Extract unique skills from flatItems (table's content displayed skills)
+  const skills = useMemo(() => {
+    const skillMap = new Map<string, { id: string; name: string }>();
+    flatItems.forEach((item) => {
+      item.skills?.forEach((skill) => {
+        if (skill && skill.id && skill.name) {
+          skillMap.set(skill.id, skill);
+        }
+      });
+    });
+    return Array.from(skillMap.values());
+  }, [flatItems]);
+
+  const loadingSkills = false;
+  const isSkillSearching = false;
+  const handleSkillSearch = useCallback(() => { }, []);
+
+  // Client-side filtering by content type and skill
   const filteredFlatItems = useMemo(() => {
-    if (selectedContentType === "all") {
-      return flatItems;
+    let items = flatItems;
+    if (selectedSkillId) {
+      items = items.filter((item) =>
+        item.skills?.some((s) => s.id === selectedSkillId)
+      );
     }
-    return flatItems.filter((item) => item.type === selectedContentType);
-  }, [flatItems, selectedContentType]);
+    if (selectedContentType !== "all") {
+      items = items.filter((item) => item.type === selectedContentType);
+    }
+    return items;
+  }, [flatItems, selectedSkillId, selectedContentType]);
 
   // Modal states and handlers (only delete modal is kept)
   const [activeModal, setActiveModal] = useState<"delete" | null>(null);
@@ -157,13 +205,8 @@ export default function QuestionsBank() {
   const deleteMCQMutation = useDeleteMCQFromPaperMutation();
 
   const handleCreateNew = useCallback(() => {
-    navigate("/dashboard/questions-bank/new", {
-      state: {
-        departmentId: selectedDeptId,
-        positionId: selectedPositionId,
-      },
-    });
-  }, [navigate, selectedDeptId, selectedPositionId]);
+    navigate("/dashboard/questions-bank/new");
+  }, [navigate]);
 
   const handleEditClick = useCallback((item: FlatItem) => {
     const slug = slugify(item.paperName || "new-paper");
@@ -172,11 +215,9 @@ export default function QuestionsBank() {
         paperId: item.paperId,
         itemIndex: item.itemIndex,
         itemType: item.type,
-        departmentId: selectedDeptId,
-        positionId: selectedPositionId,
       },
     });
-  }, [navigate, selectedDeptId, selectedPositionId]);
+  }, [navigate]);
 
   const handleDeleteClick = useCallback((item: FlatItem) => {
     setSelectedItem(item);
@@ -227,23 +268,25 @@ export default function QuestionsBank() {
         {/* Top Control Bar */}
         <QuestionsBankFilters
           selectedDeptId={selectedDeptId}
-          setSelectedDeptId={setSelectedDeptId}
+          setSelectedDeptId={(id) => setFilter("selectedDeptId", id)}
           departments={departments}
           loadingDepts={loadingDepts}
           isDeptSearching={isDeptSearching}
           handleDeptSearch={handleDeptSearch}
           selectedPositionId={selectedPositionId}
-          setSelectedPositionId={setSelectedPositionId}
+          setSelectedPositionId={(id) => setFilter("selectedPositionId", id)}
           positions={positions}
           loadingPositions={loadingPositions}
           selectedSkillId={selectedSkillId}
-          setSelectedSkillId={setSelectedSkillId}
+          setSelectedSkillId={(id) => setFilter("selectedSkillId", id)}
           skills={skills}
           loadingSkills={loadingSkills}
           isSkillSearching={isSkillSearching}
           handleSkillSearch={handleSkillSearch}
           selectedContentType={selectedContentType}
-          setSelectedContentType={setSelectedContentType}
+          setSelectedContentType={(type) => setFilter("selectedContentType", type)}
+          hasActiveFilters={hasActiveFilters}
+          clearFilters={clearFilters}
           onCreateNew={handleCreateNew}
         />
 
@@ -270,8 +313,10 @@ export default function QuestionsBank() {
               searchKey="content"
               searchPlaceholder="Filter by content..."
               emptyMessage="No questions, tasks, or MCQs found."
+              totalCount={flatItems.length}
+              resultCount={filteredFlatItems.length}
               totalRecords={filteredFlatItems.length}
-              entityName="Items"
+              entityName="Question"
             />
           </div>
         )}

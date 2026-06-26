@@ -22,17 +22,30 @@ import { PERMISSIONS } from "@/lib/permissions";
 import { DateDisplay } from "@/components/shared";
 import { useJobPosition } from "@/hooks/queries/admin/useJobPosition";
 import { useDeletePositionMutation } from "@/hooks/mutations/admin/useJobPosition";
+import { usePageFilters } from "@/hooks/usePageFilters";
 
 const AdminJobPositions = () => {
   const toast = useToast();
   const deletePositionMutation = useDeletePositionMutation();
   const [showModal, setShowModal] = useState(false);
   const [selectedPosition, setSelectedPosition] = useState<JobPositionRead | null>(null);
-  const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
+
+  const { filters, setFilters } = usePageFilters("adminJobPositions", {
     pageIndex: 0,
     pageSize: 10,
+    search: "",
   });
-  const [search, setSearch] = useState("");
+  const { pageIndex, pageSize, search } = filters;
+
+  const setPagination = (val: PaginationState | ((prev: PaginationState) => PaginationState)) => {
+    const currentPagination = { pageIndex: filters.pageIndex, pageSize: filters.pageSize };
+    const nextPagination = typeof val === "function" ? val(currentPagination) : val;
+    setFilters({
+      pageIndex: nextPagination.pageIndex,
+      pageSize: nextPagination.pageSize,
+    });
+  };
+
   const [overallTotal, setOverallTotal] = useState(0);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -44,8 +57,10 @@ const AdminJobPositions = () => {
   const { data: positions, total, loading, error, refetch } = useJobPosition(pageIndex * pageSize, pageSize, debouncedSearch)
 
   const handleSearchChange = (value: string) => {
-    setSearch(value);
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+    setFilters({
+      search: value,
+      pageIndex: 0,
+    });
   };
 
   useEffect(() => {
@@ -138,10 +153,10 @@ const AdminJobPositions = () => {
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="hover:bg-transparent p-0 font-semibold"
+          className="hover:bg-transparent p-0 font-semibold text-base"
         >
           Name
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <ArrowUpDown className="h-4 w-4" />
         </Button>
       ),
     },
@@ -150,9 +165,9 @@ const AdminJobPositions = () => {
       header: ({ column }) => (
         <Button variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="hover:bg-transparent p-0 font-semibold">
+          className="hover:bg-transparent p-0 font-semibold text-base">
           Created Date
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <ArrowUpDown className="h-4 w-4" />
         </Button>
       ),
       cell: ({ row }) => (
@@ -164,9 +179,9 @@ const AdminJobPositions = () => {
       header: ({ column }) => (
         <Button variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="hover:bg-transparent p-0 font-semibold">
+          className="hover:bg-transparent p-0 font-semibold text-base">
           Updated Date
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <ArrowUpDown className="h-4 w-4" />
         </Button>
       ),
       cell: ({ row }) => (
@@ -177,7 +192,7 @@ const AdminJobPositions = () => {
       id: "actions",
       header: () => (
         <div className="flex items-center justify-end pr-4">
-          <span className="font-semibold">
+          <span className="text-base">
             Actions
           </span>
         </div>
@@ -200,7 +215,7 @@ const AdminJobPositions = () => {
                   </Button>
                 )}
               />
-              <HoverCardContent className="w-fit px-3 py-1.5 text-xs font-medium" side="top">
+              <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
                 <span className="text-primary">Edit Position</span>
               </HoverCardContent>
             </HoverCard>
@@ -223,7 +238,7 @@ const AdminJobPositions = () => {
                   </Button>
                 )}
               />
-              <HoverCardContent className="w-fit px-3 py-1.5 text-xs font-medium" side="top">
+              <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
                 <span className="text-destructive">Delete Position</span>
               </HoverCardContent>
             </HoverCard>

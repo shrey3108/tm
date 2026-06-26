@@ -1,9 +1,10 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import { Edit2, Trash2Icon } from "lucide-react";
+import { Edit2, Trash2Icon, Award, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import PermissionGuard from "@/components/auth/PermissionGuard";
 import { PERMISSIONS } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
+import { formatDuration } from "@/utils/taskFormatter";
 import {
   HoverCard,
   HoverCardTrigger,
@@ -33,25 +34,76 @@ export const getQuestionsBankColumns = ({
 }: ColumnHandlers): ColumnDef<FlatItem>[] => [
     {
       id: "index",
-      header: () => <div className="flex items-center justify-center w-12 font-semibold">Number</div>,
-      cell: ({ row }) => <div className="flex items-center justify-center font-medium">{row.index + 1}</div>,
+      header: () => <div className="flex items-center justify-center">No.</div>,
+      cell: ({ row }) => <div className="flex items-center justify-center text-base">{row.index + 1}</div>,
     },
     {
       accessorKey: "content",
       header: () => (
-        <div className="min-w-[400px]">
-          <span className="font-semibold">Content</span>
+        <div className="min-w-[400px] ">
+          <span className="text-base">Content</span>
         </div>
       ),
-      cell: ({ row }) => (
-        <div className="min-w-[400px] py-2 font-medium text-sm whitespace-pre-wrap wrap-break-word">
-          {row.original.content}
-        </div>
-      ),
+      cell: ({ row }) => {
+        const item = row.original;
+        if (item.type === "project_task" && item.rawData && typeof item.rawData !== "string") {
+          const tasks = item.rawData.tasks || [];
+          const totalMarks = item.rawData.total_marks ?? tasks.reduce((sum: number, t: any) => sum + (t.marks || 0), 0);
+          const totalDuration = item.rawData.total_duration ?? tasks.reduce((sum: number, t: any) => sum + (t.duration || 0), 0);
+          
+          return (
+            <div className="min-w-[400px] whitespace-pre-wrap wrap-break-word space-y-1">
+              <div className="font-semibold text-foreground">{item.content}</div>
+              {tasks.length > 0 && (
+                <div className="flex items-center gap-1.5 text-[10px] font-bold">
+                  <span className="inline-flex items-center gap-1 bg-primary/5 text-primary border border-primary/10 px-2 py-0.5 rounded-full">
+                    <Award className="h-3 w-3" /> {totalMarks} Marks
+                  </span>
+                  <span className="inline-flex items-center gap-1 bg-primary/5 text-primary border border-primary/10 px-2 py-0.5 rounded-full">
+                    <Clock className="h-3 w-3" /> {formatDuration(totalDuration)}
+                  </span>
+                  <span className="text-muted-foreground/80">({tasks.length} sub-task{tasks.length > 1 ? "s" : ""})</span>
+                </div>
+              )}
+            </div>
+          );
+        }
+
+        if ((item.type === "question" || item.type === "mcq") && item.rawData && typeof item.rawData !== "string") {
+          const marks = item.rawData.marks;
+          const duration = item.rawData.duration;
+
+          return (
+            <div className="min-w-[400px] whitespace-pre-wrap wrap-break-word space-y-1">
+              <div className="font-medium text-foreground">{item.content}</div>
+              {(marks !== undefined || (duration !== undefined && duration > 0)) && (
+                <div className="flex items-center gap-1.5 text-[10px] font-bold">
+                  {marks !== undefined && (
+                    <span className="inline-flex items-center gap-1 bg-primary/5 text-primary border border-primary/10 px-2 py-0.5 rounded-full">
+                      <Award className="h-3 w-3" /> {marks} Marks
+                    </span>
+                  )}
+                  {duration !== undefined && duration > 0 && (
+                    <span className="inline-flex items-center gap-1 bg-primary/5 text-primary border border-primary/10 px-2 py-0.5 rounded-full">
+                      <Clock className="h-3 w-3" /> {formatDuration(duration)}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        }
+
+        return (
+          <div className="min-w-[400px] whitespace-pre-wrap wrap-break-word">
+            {row.original.content}
+          </div>
+        );
+      },
     },
     {
       accessorKey: "type",
-      header: () => <div className="font-semibold">Type</div>,
+      header: () => <div className=" flex items-center justify-center">Type</div>,
       cell: ({ row }) => {
         const typeLabels: Record<FlatItem["type"], string> = {
           question: "Default",
@@ -59,7 +111,7 @@ export const getQuestionsBankColumns = ({
           mcq: "MCQ",
         };
         return (
-          <span className={cn("px-2.5 py-0.5 rounded-full text-sm font-medium")}>
+          <span className={cn("flex items-center justify-center text-sm")}>
             {typeLabels[row.original.type]}
           </span>
         );
@@ -69,7 +121,7 @@ export const getQuestionsBankColumns = ({
       accessorKey: "skills",
       header: () => (
         <div className="flex items-center gap-2 min-w-[160px]">
-          <span className="font-semibold">Skills</span>
+          <span className="">Skills</span>
         </div>
       ),
       cell: ({ row }) => {
@@ -77,7 +129,7 @@ export const getQuestionsBankColumns = ({
         if (!skills || skills.length === 0) {
           return (
             <div className="min-w-[160px] max-w-[220px]">
-              <span className="text-muted-foreground text-xs italic">N/A</span>
+              <span className="italic">N/A</span>
             </div>
           );
         }
@@ -92,7 +144,7 @@ export const getQuestionsBankColumns = ({
       id: "actions",
       header: () => (
         <div className="flex items-center justify-center gap-2">
-          <span className="font-semibold">Actions</span>
+          <span className="">Actions</span>
         </div>
       ),
       cell: ({ row }) => (
@@ -113,7 +165,7 @@ export const getQuestionsBankColumns = ({
                   </Button>
                 )}
               />
-              <HoverCardContent className="w-fit px-3 py-1.5 text-xs font-medium" side="top">
+              <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
                 <span className="text-primary">Edit Item</span>
               </HoverCardContent>
             </HoverCard>
@@ -133,7 +185,7 @@ export const getQuestionsBankColumns = ({
                   </Button>
                 )}
               />
-              <HoverCardContent className="w-fit px-3 py-1.5 text-xs font-medium" side="top">
+              <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
                 <span className="text-destructive">Delete Item</span>
               </HoverCardContent>
             </HoverCard>

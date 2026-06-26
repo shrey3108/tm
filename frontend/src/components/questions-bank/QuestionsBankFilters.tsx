@@ -1,4 +1,5 @@
-import { Plus } from "lucide-react";
+import { Plus, X } from "lucide-react";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components";
 import { SearchableSelect } from "@/components/shared";
@@ -28,6 +29,9 @@ interface QuestionsBankFiltersProps {
   selectedContentType: string;
   setSelectedContentType: (type: string) => void;
 
+  hasActiveFilters: boolean;
+  clearFilters: () => void;
+
   onCreateNew: () => void;
 }
 
@@ -50,6 +54,8 @@ export function QuestionsBankFilters({
   handleSkillSearch,
   selectedContentType,
   setSelectedContentType,
+  hasActiveFilters,
+  clearFilters,
   onCreateNew,
 }: QuestionsBankFiltersProps) {
   const contentTypeOptions = [
@@ -139,6 +145,25 @@ export function QuestionsBankFilters({
 
       {/* Action Upload Widget */}
       <div className="flex items-end justify-end shrink-0 gap-2 xl:self-end">
+        {hasActiveFilters && (
+          <HoverCard>
+            <HoverCardTrigger delay={10} closeDelay={100}
+              render={
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-11 px-3 rounded-xl text-xs font-semibold text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-all"
+                  onClick={clearFilters}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              }
+            />
+            <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
+              <div className="text-xs">Clear all filters</div>
+            </HoverCardContent>
+          </HoverCard>
+        )}
         <PermissionGuard permissions={PERMISSIONS.QUESTIONS_MANAGE} hideWhenDenied>
           <Button
             onClick={onCreateNew}

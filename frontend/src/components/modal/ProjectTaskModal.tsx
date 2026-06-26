@@ -19,6 +19,7 @@ import {
 import { useFormModal } from "@/hooks";
 import { projectTaskSchema, type ProjectTaskFormValues } from "@/schemas/admin";
 import type { TaskItem } from "@/types/taskPaper";
+import { SubTasksFormSection } from "../questions-bank/SubTasksFormSection";
 
 interface ProjectTaskModalProps {
   show: boolean;
@@ -31,6 +32,7 @@ interface ProjectTaskModalProps {
 const DEFAULT_VALUES: ProjectTaskFormValues = {
   project_task: "",
   instructions: "",
+  tasks: [],
 };
 
 export default function ProjectTaskModal({
@@ -51,11 +53,13 @@ export default function ProjectTaskModal({
         return {
           project_task: val,
           instructions: "",
+          tasks: [],
         };
       }
       return {
         project_task: val.task || "",
         instructions: val.instructions || "",
+        tasks: val.tasks || [],
       };
     },
     []
@@ -65,6 +69,9 @@ export default function ProjectTaskModal({
     await onSave({
       task: data.project_task.trim(),
       instructions: data.instructions.trim(),
+      tasks: data.tasks,
+      total_marks: data.tasks.reduce((sum, t) => sum + (t.marks || 0), 0),
+      total_duration: data.tasks.reduce((sum, t) => sum + (t.duration || 0), 0),
     });
     handleClose();
   };
@@ -78,11 +85,12 @@ export default function ProjectTaskModal({
     onSubmit,
   });
 
-  const { handleFormSubmit, control } = formModal;
+  const { handleFormSubmit, control, watch, setValue, formState: { errors } } = formModal;
+  const tasks = watch("tasks") || [];
 
   return (
     <Dialog open={show} onOpenChange={(open) => !open && !isSaving && handleClose()}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {isEditMode ? "Edit Project Task" : "Add Project Task"}
@@ -91,24 +99,25 @@ export default function ProjectTaskModal({
 
         <Form {...formModal}>
           <form onSubmit={handleFormSubmit} className="space-y-4">
+            {/* Description */}
             <FormField
               control={control}
               name="project_task"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Project Task Description</FormLabel>
+                  <FormLabel className="text-sm font-semibold">Project Task Description</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Enter the project task description (minimum 25 characters) ..."
+                      placeholder="Enter the project task description"
                       disabled={isSaving}
-                      rows={4}
+                      rows={3}
                       autoFocus
                       {...field}
                       onFocus={(e) => {
                         const len = e.target.value.length;
                         e.target.setSelectionRange(len, len, "forward");
                       }}
-                      className="w-full"
+                      className="w-full text-sm"
                     />
                   </FormControl>
                   <FormMessage className="text-xs font-semibold text-destructive animate-in fade-in slide-in-from-top-1 duration-200" />
@@ -116,19 +125,20 @@ export default function ProjectTaskModal({
               )}
             />
 
+            {/* Instructions */}
             <FormField
               control={control}
               name="instructions"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Instructions</FormLabel>
+                  <FormLabel className="text-sm font-semibold">Instructions</FormLabel>
                   <FormControl>
                     <Textarea
                       placeholder="Enter detailed instructions for candidates..."
                       disabled={isSaving}
                       rows={3}
                       {...field}
-                      className="w-full"
+                      className="w-full text-sm"
                     />
                   </FormControl>
                   <FormMessage className="text-xs font-semibold text-destructive animate-in fade-in slide-in-from-top-1 duration-200" />
@@ -136,8 +146,15 @@ export default function ProjectTaskModal({
               )}
             />
 
+            {/* Reusable Sub-tasks Section */}
+            <SubTasksFormSection
+              tasks={tasks}
+              onTasksChange={(updatedTasks) => setValue("tasks", updatedTasks, { shouldValidate: true })}
+              error={errors.tasks?.message}
+              disabled={isSaving}
+            />
 
-            <DialogFooter>
+            <DialogFooter className="pt-2">
               <Button
                 variant="outline"
                 onClick={handleClose}

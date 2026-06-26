@@ -19,40 +19,65 @@ export type ManualQuestionPaperFormValues = z.infer<typeof manualQuestionPaperSc
 export const mcqSchema = z
   .object({
     question: z.string().trim().min(5, "Question must be at least 5 characters long."),
-    optionA: z.string().trim().min(1, "Option A cannot be empty."),
-    optionB: z.string().trim().min(1, "Option B cannot be empty."),
-    optionC: z.string().trim(),
-    optionD: z.string().trim(),
-    answer: z.enum(["A", "B", "C", "D"], {
-      message: "Invalid selection. Choose A, B, C, or D.",
-    }),
+    options: z
+      .array(z.string().trim().min(1, "Option cannot be empty."))
+      .min(2, "At least two options are required."),
+    answer: z.string().min(1, "Correct answer is required."),
+    marks: z.coerce.number({ error: "" }).int().positive({ error: "Marks must be at least 1." }),
+    duration: z.coerce.number({ error: "" }).int().min(1, "Duration must be at least 1 minute."),
   })
   .refine(
     (data) => {
-      if (data.optionD && !data.optionC) {
-        return false;
-      }
-      return true;
+      const index = data.answer.charCodeAt(0) - 65;
+      return index >= 0 && index < data.options.length;
     },
     {
-      message: "Option C must be filled before Option D.",
-      path: ["optionC"],
-    }
-  )
-  .refine(
-    (data) => {
-      if (data.answer === "C" && !data.optionC) {
-        return false;
-      }
-      if (data.answer === "D" && !data.optionD) {
-        return false;
-      }
-      return true;
-    },
-    {
-      message: "The correct answer must be one of the filled options.",
+      message: "The correct answer must be one of the options.",
       path: ["answer"],
     }
   );
 
-export type MCQFormValues = z.infer<typeof mcqSchema>;
+export const mcqFormSchema = z
+  .object({
+    question: z.string().trim().min(5, "Question must be at least 5 characters long."),
+    options: z
+      .array(z.string().trim().min(1, "Option cannot be empty."))
+      .min(2, "At least two options are required."),
+    answer: z.string().min(1, "Correct answer is required."),
+    marks: z.preprocess(
+      (val) => (val === "" || val === undefined || val === null ? "" : Number(val)),
+      z.union([z.number().int().positive({ message: "Marks must be at least 1." }), z.literal("")])
+    ),
+    hours: z.preprocess(
+      (val) => (val === "" || val === undefined || val === null ? 0 : Number(val)),
+      z.number().int().min(0)
+    ).optional().default(0),
+    minutes: z.preprocess(
+      (val) => (val === "" || val === undefined || val === null ? 0 : Number(val)),
+      z.number().int().min(0).max(59)
+    ).optional().default(0),
+  })
+  .refine(
+    (data) => {
+      const index = data.answer.charCodeAt(0) - 65;
+      return index >= 0 && index < data.options.length;
+    },
+    {
+      message: "The correct answer must be one of the options.",
+      path: ["answer"],
+    }
+  )
+  .refine(data => {
+    const h = data.hours || 0;
+    const m = data.minutes || 0;
+    return h * 60 + m >= 1;
+  }, {
+    message: "Duration must be at least 1 minute.",
+    path: ["minutes"],
+  })
+  .refine(data => data.marks !== "", {
+    message: "Marks is required.",
+    path: ["marks"],
+  });
+
+export type MCQFormValues = z.infer<typeof mcqFormSchema>;

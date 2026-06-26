@@ -26,6 +26,8 @@ import {
   useRetryEvaluationMutation,
 } from "./mutations/candidates/useCandidateStages";
 import { QUERY_KEYS } from "@/constants/queryKeys";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { selectActivePollings, startPolling, stopPolling } from "@/store/slices/pollingSlice";
 // import { TEMP_TECHNICAL_ROUND_HR_DECISION, TEMP_TECHNICAL_ROUND_RESPONSE } from "@/constants/temp";
 
 /**
@@ -61,6 +63,14 @@ export function useCandidatesStages() {
 
   const [currentStage, setCurrentStage] = useState(getInitialStage());
 
+  const candidateName = candidate
+    ? `${candidate.first_name} ${candidate.last_name}`
+    : params.candidateName || "Candidate";
+
+  const candidateStage = candidate?.pipeline?.find((s) => s.template_name === currentStage);
+  const instanceId = candidateStage?.stage_id;
+  const configId = candidateStage?.job_stage_id;
+
   // 2. Fetch job-specific stages using query
   const { data: jobStagesRaw } = useJobStagesQuery(job?.id);
   const stages = useMemo(() => {
@@ -89,7 +99,30 @@ export function useCandidatesStages() {
 
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [isJobModalOpen, setIsJobModalOpen] = useState(false);
-  const [isPolling, setIsPolling] = useState(false);
+  
+  const dispatch = useAppDispatch();
+  const activePollings = useAppSelector(selectActivePollings);
+  const isPolling = useMemo(
+    () => activePollings.some((p) => p.stageId === instanceId),
+    [activePollings, instanceId]
+  );
+  const setIsPolling = (val: boolean) => {
+    if (val && instanceId) {
+      dispatch(
+        startPolling({
+          stageId: instanceId,
+          candidateName,
+          stageName: currentStage,
+          candidateId: candidate?.id,
+          jobId: job?.id,
+          jobTitle: job?.title,
+        })
+      );
+    } else if (!val && instanceId) {
+      dispatch(stopPolling(instanceId));
+    }
+  };
+
   const [showAllSkills, setShowAllSkills] = useState(false);
   const [refetchTimeline, setRefetchTimeline] = useState(0);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
@@ -99,24 +132,19 @@ export function useCandidatesStages() {
   // 3. Candidate data query
   const { data: candidateData } = useCandidateDetailsQuery(job?.id, candidate?.id);
 
-  const candidateStage = candidate?.pipeline?.find((s) => s.template_name === currentStage);
-  const instanceId = candidateStage?.stage_id;
-  const configId = candidateStage?.job_stage_id;
-
-  // 4. Candidate evaluation query (with polling supported)
+  // 4. Candidate evaluation query (without redundant page-level polling interval)
   const {
     data: evaluationData,
     isLoading: isLoadingEvaluationQuery,
     error: evaluationError,
-  } = useCandidateEvaluationQuery(instanceId, isPolling);
+  } = useCandidateEvaluationQuery(instanceId, false);
 
   // Selected history version override for evaluation view
   const [selectedEvaluationVersion, setSelectedEvaluationVersion] = useState<EvaluationRead | null>(null);
 
-  // Reset selected history version and polling state when switching stages
+  // Reset selected history version when switching stages
   useEffect(() => {
     setSelectedEvaluationVersion(null);
-    setIsPolling(false);
   }, [instanceId, currentStage]);
 
   // Check if response indicates the evaluation is processing
@@ -135,10 +163,22 @@ export function useCandidatesStages() {
 
   // Start polling if we receive a processing response
   useEffect(() => {
-    if (isResponseProcessing && !isPolling) {
-      setIsPolling(true);
+    if (isResponseProcessing && instanceId) {
+      const isAlreadyPolling = activePollings.some((p) => p.stageId === instanceId);
+      if (!isAlreadyPolling) {
+        dispatch(
+          startPolling({
+            stageId: instanceId,
+            candidateName,
+            stageName: currentStage,
+            candidateId: candidate?.id,
+            jobId: job?.id,
+            jobTitle: job?.title,
+          })
+        );
+      }
     }
-  }, [isResponseProcessing, isPolling]);
+  }, [isResponseProcessing, instanceId, activePollings, candidateName, currentStage, candidate?.id, job?.id, dispatch]);
 
   const hasValidEvaluationData = evaluationData &&
     (evaluationData as any).status !== "processing" &&
@@ -150,24 +190,7 @@ export function useCandidatesStages() {
       ? (evaluationData as any).error_message || "Evaluation processing failed"
       : "";
 
-  // // 5. Invalidate evaluation related queries when AI polling finishes
-  useEffect(() => {
-    if (isPolling && evaluationData && !isResponseProcessing) {
-      setIsPolling(false);
-      const isFailed = (evaluationData as any).status === "failed";
-      if (isFailed) {
-        toast.error((evaluationData as any).error_message || "Evaluation processing failed");
-      } else {
-        toast.success("Evaluation generated successfully!");
-      }
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CANDIDATES.TRANSCRIPTS, candidate?.id] });
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CANDIDATES.EVALUATION_HISTORY, instanceId] });
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CANDIDATES.TIMELINE, candidate?.id] });
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CANDIDATES.DETAILS, job?.id, candidate?.id] });
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.TASK_PAPERS.ASSIGNED, candidate?.id] });
-      setRefetchTimeline((prev) => prev + 1);
-    }
-  }, [isPolling, evaluationData, isResponseProcessing, candidate?.id, instanceId, queryClient, job?.id]);
+  // Polling invalidations and toast notifications are handled globally by BackgroundPollingManager
 
   const isLoadingEvaluation = isLoadingEvaluationQuery && !evaluationData;
 
@@ -312,10 +335,6 @@ export function useCandidatesStages() {
     }
   };
 
-  const candidateName = candidate
-    ? `${candidate.first_name} ${candidate.last_name}`
-    : params.candidateName || "Candidate";
-
   const transformedOverall = useMemo(() => {
     if (!evaluation) return null;
 
@@ -449,6 +468,16 @@ export function useCandidatesStages() {
         queryClient.setQueryData(
           [QUERY_KEYS.CANDIDATES.EVALUATION, instanceId],
           { status: "processing" }
+        );
+        dispatch(
+          startPolling({
+            stageId: instanceId,
+            candidateName,
+            stageName: currentStage,
+            candidateId: candidate?.id,
+            jobId: job?.id,
+            jobTitle: job?.title,
+          })
         );
       }
     },

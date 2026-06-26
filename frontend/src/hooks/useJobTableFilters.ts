@@ -4,31 +4,62 @@
  * and extracting unique filter options (departments, statuses) from job data.
  */
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { startOfDay, endOfDay } from "date-fns";
 import type { DateRange } from "react-day-picker";
 import type { Job } from "@/types/job";
 import type { DepartmentRead } from "@/types/admin";
 import { useDebouncedValue } from "./useDebounced";
 import { useDepartment } from "@/hooks/queries/admin/useDepartment";
+import { usePageFilters } from "@/hooks/usePageFilters";
+import type { PaginationState } from "@tanstack/react-table";
 
 /**
  * Hook for managing the state of job table filters.
- * Handles search text, status chips, department selection, and date ranges.
+ * Handles search text, status chips, department selection, date ranges, and pagination.
  * 
+ * @param pageKey - Session persistence key.
  * @returns An object containing filter states, their setters, and utility functions.
  * @example
  * const { titleFilter, setTitleFilter, clearFilters } = useJobTableFilters();
  */
-export const useJobTableFilters = () => {
-  const [titleFilter, setTitleFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string[]>([]);
-  const [departmentFilter, setDepartmentFilter] = useState<string[]>([]);
-  const [dateRange, setDateRange] = useState<DateRange | undefined>({
-    from: undefined,
-    to: undefined,
+export const useJobTableFilters = (pageKey: string = "jobBoard") => {
+  const { filters, setFilter, resetFilters } = usePageFilters(pageKey, {
+    titleFilter: "",
+    statusFilter: [] as string[],
+    departmentFilter: [] as string[],
+    dateRange: {
+      from: undefined,
+      to: undefined,
+    } as DateRange | undefined,
+    departmentSearch: "",
+    pagination: {
+      pageIndex: 0,
+      pageSize: 10,
+    } as PaginationState,
   });
-  const [departmentSearch, setDepartmentSearch] = useState("");
+
+  const {
+    titleFilter,
+    statusFilter,
+    departmentFilter,
+    dateRange,
+    departmentSearch,
+    pagination,
+  } = filters;
+
+  const setTitleFilter = (val: string) => setFilter("titleFilter", val);
+  const setStatusFilter = (val: string[]) => setFilter("statusFilter", val);
+  const setDepartmentFilter = (val: string[]) => setFilter("departmentFilter", val);
+  const setDateRange = (val: DateRange | undefined) => setFilter("dateRange", val);
+  const setDepartmentSearch = (val: string) => setFilter("departmentSearch", val);
+  const setPagination = (val: PaginationState | ((prev: PaginationState) => PaginationState)) => {
+    if (typeof val === "function") {
+      setFilter("pagination", val(pagination));
+    } else {
+      setFilter("pagination", val);
+    }
+  };
 
   const debouncedDepartmentSearch = useDebouncedValue(departmentSearch);
   const { data: allDepartments } = useDepartment(0, 100, debouncedDepartmentSearch);
@@ -41,10 +72,7 @@ export const useJobTableFilters = () => {
     !!dateRange?.to;
 
   const clearFilters = () => {
-    setTitleFilter("");
-    setStatusFilter([]);
-    setDepartmentFilter([]);
-    setDateRange({ from: undefined, to: undefined });
+    resetFilters();
   };
 
   return {
@@ -61,6 +89,8 @@ export const useJobTableFilters = () => {
     setDepartmentSearch,
     hasActiveFilters,
     clearFilters,
+    pagination,
+    setPagination,
   };
 };
 

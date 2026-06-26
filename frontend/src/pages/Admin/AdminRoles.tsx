@@ -20,17 +20,30 @@ import { PERMISSIONS } from "@/lib/permissions";
 import { useAuth } from "@/store/hooks";
 import { Plus } from "lucide-react";
 import { useAdminRoles } from "@/hooks/queries/admin/useAdminRoles";
+import { usePageFilters } from "@/hooks/usePageFilters";
 
 const AdminRoles = () => {
   const { user: currentUser } = useAuth();
   const [showPermissionModal, setShowPermissionModal] = useState(false);
   const [showRoleModal, setShowRoleModal] = useState(false);
   const [editingRoleId, setEditingRoleId] = useState<string | null>(null);
-  const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
+
+  const { filters, setFilters } = usePageFilters("adminRoles", {
     pageIndex: 0,
     pageSize: 10,
+    search: "",
   });
-  const [search, setSearch] = useState("");
+  const { pageIndex, pageSize, search } = filters;
+
+  const setPagination = (val: PaginationState | ((prev: PaginationState) => PaginationState)) => {
+    const currentPagination = { pageIndex: filters.pageIndex, pageSize: filters.pageSize };
+    const nextPagination = typeof val === "function" ? val(currentPagination) : val;
+    setFilters({
+      pageIndex: nextPagination.pageIndex,
+      pageSize: nextPagination.pageSize,
+    });
+  };
+
   const [overallTotal, setOverallTotal] = useState(0);
 
   const debouncedSearch = useDebouncedValue(search);
@@ -44,8 +57,10 @@ const AdminRoles = () => {
   );
 
   const handleSearchChange = (value: string) => {
-    setSearch(value);
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+    setFilters({
+      search: value,
+      pageIndex: 0,
+    });
   };
   useEffect(() => {
     if (!debouncedSearch && overallTotal !== total) {
@@ -84,14 +99,14 @@ const AdminRoles = () => {
     {
       accessorKey: "name",
       header: () => (
-        <div className="text-left font-semibold">Role Name</div>
+        <div className="text-left text-base">Role Name</div>
       ),
       cell: ({ row }) => <div className="text-left">{row.original.name}</div>,
     },
     {
       accessorKey: "created_at",
       header: () => (
-        <div className="text-center font-semibold">Created At</div>
+        <div className="text-center text-base">Created At</div>
       ),
       cell: ({ row }) =>
         <div className="text-center">
@@ -101,7 +116,7 @@ const AdminRoles = () => {
     {
       accessorKey: "user_count",
       header: () => (
-        <div className="text-center font-semibold">Users Count</div>
+        <div className="text-center text-base">Users Count</div>
       ),
       cell: ({ row }) => <div className="text-center">
         {row.original.user_count}
@@ -110,7 +125,7 @@ const AdminRoles = () => {
     {
       id: "actions",
       header: () => (
-        <div className="text-center font-semibold">Actions</div>
+        <div className="text-center text-base">Actions</div>
       ),
       cell: ({ row }) => {
         const role = row.original;
@@ -153,7 +168,7 @@ const AdminRoles = () => {
   //   {
   //     accessorKey: "name",
   //     header: () => (
-  //       <div className="text-center font-semibold">Name</div>
+  //       <div className="text-center text-base">Name</div>
   //     ),
   //     cell: ({ row }) => {
   //       const perm = row.original;
@@ -168,7 +183,7 @@ const AdminRoles = () => {
   //   {
   //     id: "actions",
   //     header: () => (
-  //       <div className="text-center font-semibold">Actions</div>
+  //       <div className="text-center text-base">Actions</div>
   //     ),
   //     cell: ({ row }) => (
   //       <PermissionGuard permissions={PERMISSIONS.PERMISSIONS_MANAGE} hideWhenDenied>

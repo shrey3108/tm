@@ -113,7 +113,7 @@ export function ModeTabBar({
             return (
               <HoverCard key={tab.id}>
                 <HoverCardTrigger delay={150} closeDelay={150}>{buttonContent}</HoverCardTrigger>
-                <HoverCardContent side="bottom" className="max-w-xs p-2 text-xs">
+                <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
                   {disabledReasons[tab.id]}
                 </HoverCardContent>
               </HoverCard>
@@ -123,7 +123,7 @@ export function ModeTabBar({
           return (
             <HoverCard key={tab.id}  >
               <HoverCardTrigger delay={150} closeDelay={150}>{buttonContent}</HoverCardTrigger>
-              <HoverCardContent side="bottom" className="max-w-xs p-2 text-xs">
+              <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
                 {tab.description}
               </HoverCardContent>
             </HoverCard>

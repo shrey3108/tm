@@ -63,7 +63,7 @@ export function CandidateTestPaperHistoryDialog({
         <ScrollArea className="max-h-[420px] pr-1">
           <Accordion className="space-y-1.5">
             {history.map((record, index) => {
-              const questions = record.questions ?? [];
+              const questions = (record.questions ?? []).map((q) => typeof q === "string" ? q : q.question);
               const mcqs = (record.mcqs ?? []).map((m: MCQItem) => m.question);
               const tasks = (record.project_task ?? []).map((t) => getTaskText(t));
               const totalItems = questions.length + mcqs.length + tasks.length;

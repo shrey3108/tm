@@ -187,7 +187,7 @@ async def test_task_papers_flow():
                     "Explain python type hints.",
                 ],
                 "mcqs": [],
-                "project_task": [{"task": "Build a REST API with FastAPI.", "instructions": ""}]
+                "project_task": [{"task": "Build a REST API with FastAPI.", "instructions": "Build it using clean architecture and proper testing."}]
             }
             response = client.post("/api/v1/task-papers/manual", json=data_a)
             assert response.status_code == 201
@@ -211,7 +211,7 @@ async def test_task_papers_flow():
                     "Explain __slots__.",
                 ],
                 "mcqs": [],
-                "project_task": [{"task": "Implement a task runner in Python.", "instructions": ""}]
+                "project_task": [{"task": "Implement a task runner in Python.", "instructions": "Build it using clean architecture and proper testing."}]
             }
             response = client.post("/api/v1/task-papers/manual", json=data_b)
             assert response.status_code == 201
@@ -265,7 +265,8 @@ async def test_task_papers_flow():
             assigned_paper = response.json()
             assert assigned_paper["name"].startswith("Custom Paper - ")
             assert len(assigned_paper["questions"]) == 5
-            assert assigned_paper["project_task"] == [{"task": "Build a REST API with FastAPI.", "instructions": ""}]
+            assert assigned_paper["project_task"][0]["task"] == "Build a REST API with FastAPI."
+            assert assigned_paper["project_task"][0]["instructions"] == "Build it using clean architecture and proper testing."
             assert assigned_paper["task_file_path"] is None
 
             # Test sending email after assigning predefined paper returns 200
@@ -334,7 +335,7 @@ async def test_task_papers_flow():
             override_assigned = response.json()
             assert override_assigned["name"].startswith("Custom Paper - ")
             assert override_assigned["questions"] == ["Override Q1", "Override Q2", "Override Q3", "Override Q4", "Override Q5"]
-            assert override_assigned["project_task"] == [{"task": "Override Project Task Description", "instructions": ""}]
+            assert override_assigned["project_task"][0]["task"] == "Override Project Task Description"
             assert override_assigned["task_file_path"] is None
             assert override_assigned["task_skills"] is None
 
@@ -393,11 +394,13 @@ async def test_task_papers_flow():
                 "Custom Q4",
                 "Custom Q5",
             ]
-            assert custom_assigned["project_task"] == [
-                {"task": "Build a REST API with FastAPI.", "instructions": ""},
-                {"task": "Implement a task runner in Python.", "instructions": ""},
-                {"task": "what is catgpt", "instructions": "use chatgpt"}
-            ]
+            assert len(custom_assigned["project_task"]) == 3
+            assert custom_assigned["project_task"][0]["task"] == "Build a REST API with FastAPI."
+            assert custom_assigned["project_task"][0]["instructions"] == "Build it using clean architecture and proper testing."
+            assert custom_assigned["project_task"][1]["task"] == "Implement a task runner in Python."
+            assert custom_assigned["project_task"][1]["instructions"] == "Build it using clean architecture and proper testing."
+            assert custom_assigned["project_task"][2]["task"] == "what is catgpt"
+            assert custom_assigned["project_task"][2]["instructions"] == "use chatgpt"
 
             # 8. Unassign/Delete candidate test paper
             # DELETE /api/v1/task-papers/assigned/{candidate_id}

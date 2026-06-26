@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Edit2, Trash2, X, Plus, CircleCheck } from "lucide-react";
+import { Edit2, Trash2, X, Plus, CircleCheck, Award, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,17 +8,19 @@ import {
   ProjectTaskModal,
   MCQModal,
 } from "@/components/modal";
-import type { QuestionSetPaperRead, MCQItem, TaskItem } from "@/types/taskPaper";
+import type { QuestionSetPaperRead, MCQItem, TaskItem, QuestionItem } from "@/types/taskPaper";
 import PermissionGuard from "@/components/auth/PermissionGuard";
 import { PERMISSIONS } from "@/lib/permissions";
 import { CreateSkillModal } from "@/components/modal";
 import { QuestionsBankSkillSelector } from "@/components/questions-bank/QuestionsBankSkillSelector";
 import { Form } from "@/components/ui/form";
+import { ProjectTaskRichPreview } from "@/components/questions-bank/ProjectTaskRichPreview";
+import { formatDuration } from "@/utils/taskFormatter";
 
 interface QuestionsListProps {
   paper: QuestionSetPaperRead;
-  onAddQuestion: (text: string) => void;
-  onUpdateQuestion: (index: number, text: string) => void;
+  onAddQuestion: (q: QuestionItem | string) => void;
+  onUpdateQuestion: (index: number, q: QuestionItem | string) => void;
   onDeleteQuestion: (index: number) => void;
   onAddMCQ: (mcq: MCQItem) => void;
   onUpdateMCQ: (index: number, mcq: MCQItem) => void;
@@ -50,7 +52,7 @@ export function QuestionsList({
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
   // Modal values state
-  const [questionText, setQuestionText] = useState("");
+  const [questionValue, setQuestionValue] = useState<QuestionItem | string>("");
   const [taskText, setTaskText] = useState<TaskItem | string>("");
   const [mcqValue, setMCQValue] = useState<MCQItem | null>(null);
 
@@ -63,23 +65,23 @@ export function QuestionsList({
   // Normal Question handlers
   const handleOpenAddQuestion = () => {
     setModalMode("add");
-    setQuestionText("");
+    setQuestionValue("");
     setSelectedIndex(null);
     setActiveModal("question");
   };
 
-  const handleOpenEditQuestion = (index: number, text: string) => {
+  const handleOpenEditQuestion = (index: number, q: QuestionItem | string) => {
     setModalMode("edit");
-    setQuestionText(text);
+    setQuestionValue(q);
     setSelectedIndex(index);
     setActiveModal("question");
   };
 
-  const handleSaveQuestion = async (text: string) => {
+  const handleSaveQuestion = async (q: QuestionItem) => {
     if (modalMode === "add") {
-      onAddQuestion(text);
+      onAddQuestion(q);
     } else if (modalMode === "edit" && selectedIndex !== null) {
-      onUpdateQuestion(selectedIndex, text);
+      onUpdateQuestion(selectedIndex, q);
     }
     setActiveModal(null);
   };
@@ -172,21 +174,41 @@ export function QuestionsList({
       {/* Questions & Tasks Render */}
       <div className="space-y-1.5">
         {/* Normal Questions */}
+        {/* Normal Questions */}
         {paper.questions?.map((q, index) => {
           globalIndex++;
+          const qText = typeof q === "string" ? q : q.question || "";
+          const qMarks = typeof q === "string" ? undefined : q.marks;
+          const qDuration = typeof q === "string" ? undefined : q.duration;
           return (
             <div
               key={`q-${index}`}
-              className="flex items-start justify-between p-1.5 rounded-xl border border-border/80 bg-card hover:shadow-sm transition-all animate-in fade-in slide-in-from-bottom-1 duration-200"
+              className="flex items-start justify-between p-3 rounded-xl border border-border/80 bg-card hover:shadow-sm transition-all animate-in fade-in slide-in-from-bottom-1 duration-200"
             >
-              <div className="space-y-1">
-                <span className="text-xs font-semibold text-primary/80 uppercase tracking-wider">Normal Question</span>
-                <p className="text-sm font-medium text-foreground leading-relaxed">
-                  {globalIndex}. {q}
-                </p>
+              <div className="space-y-1.5 flex-1 min-w-0">
+                <div>
+                  <span className="text-xs font-semibold text-primary/80 uppercase tracking-wider block">Normal Question</span>
+                  <p className="text-sm font-medium text-foreground leading-relaxed whitespace-pre-wrap mt-0.5">
+                    {globalIndex}. {qText}
+                  </p>
+                </div>
+                {(qMarks !== undefined || (qDuration !== undefined && qDuration > 0)) && (
+                  <div className="flex flex-wrap gap-1.5 text-[10px] font-bold">
+                    {qMarks !== undefined && (
+                      <span className="inline-flex items-center gap-1 bg-primary/5 text-primary border border-primary/10 px-2 py-0.5 rounded-full">
+                        <Award className="h-3 w-3" /> {qMarks} Marks
+                      </span>
+                    )}
+                    {qDuration !== undefined && qDuration > 0 && (
+                      <span className="inline-flex items-center gap-1 bg-primary/5 text-primary border border-primary/10 px-2 py-0.5 rounded-full">
+                        <Clock className="h-3 w-3" /> {formatDuration(qDuration)}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
               <PermissionGuard permissions={PERMISSIONS.QUESTIONS_MANAGE} hideWhenDenied>
-                <div className="flex items-center gap-1 ml-4 shrink-0">
+                <div className="flex items-center gap-1 ml-4 shrink-0 mt-0.5">
                   <Button
                     variant="ghost"
                     size="icon"
@@ -212,19 +234,21 @@ export function QuestionsList({
         {/* MCQ Questions */}
         {paper.mcqs?.map((m, index) => {
           globalIndex++;
+          const mMarks = m.marks;
+          const mDuration = m.duration;
           return (
             <div
               key={`mcq-${index}`}
               className="flex items-start justify-between p-1.5 rounded-xl border border-border/80 bg-card hover:shadow-sm transition-all animate-in fade-in slide-in-from-bottom-1 duration-200"
             >
-              <div className="space-y-2 flex-1">
+              <div className="space-y-2 flex-1 min-w-0">
                 <div>
                   <span className="text-xs font-semibold text-primary/80 uppercase tracking-wider block">MCQ Based Question</span>
-                  <p className="text-sm font-medium text-foreground leading-relaxed">
+                  <p className="text-sm font-medium text-foreground leading-relaxed whitespace-pre-wrap mt-0.5">
                     {globalIndex}. {m.question}
                   </p>
                 </div>
-                <div className="grid grid-cols-4 gap-2 pl-4 max-w-xl">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pl-2 max-w-xl">
                   {m.options.map((opt, oIdx) => {
                     const optionLetter = String.fromCharCode(65 + oIdx); // A, B, C, D
                     const isCorrect = opt === m.answer;
@@ -236,15 +260,29 @@ export function QuestionsList({
                           : "bg-muted/40 border-transparent text-muted-foreground"
                           }`}
                       >
-                        <span>{optionLetter}. {opt}</span>
-                        {isCorrect && <CircleCheck className="h-3.5 w-3.5 text-emerald-600" />}
+                        <span className="truncate">{optionLetter}. {opt}</span>
+                        {isCorrect && <CircleCheck className="h-3.5 w-3.5 text-emerald-600 shrink-0 ml-1" />}
                       </div>
                     );
                   })}
                 </div>
+                {(mMarks !== undefined || (mDuration !== undefined && mDuration > 0)) && (
+                  <div className="flex flex-wrap gap-1.5 text-[10px] font-bold pl-2 pt-1">
+                    {mMarks !== undefined && (
+                      <span className="inline-flex items-center gap-1 bg-primary/5 text-primary border border-primary/10 px-2 py-0.5 rounded-full">
+                        <Award className="h-3 w-3" /> {mMarks} Marks
+                      </span>
+                    )}
+                    {mDuration !== undefined && mDuration > 0 && (
+                      <span className="inline-flex items-center gap-1 bg-primary/5 text-primary border border-primary/10 px-2 py-0.5 rounded-full">
+                        <Clock className="h-3 w-3" /> {formatDuration(mDuration)}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
               <PermissionGuard permissions={PERMISSIONS.QUESTIONS_MANAGE} hideWhenDenied>
-                <div className="flex items-center gap-1 ml-4 shrink-0">
+                <div className="flex items-center gap-1 ml-4 shrink-0 mt-0.5">
                   <Button
                     variant="ghost"
                     size="icon"
@@ -273,20 +311,16 @@ export function QuestionsList({
           return (
             <div
               key={`task-${index}`}
-              className="flex items-start justify-between p-1.5 rounded-xl border border-border/80 bg-card hover:shadow-sm transition-all animate-in fade-in slide-in-from-bottom-1 duration-200"
+              className="flex items-start justify-between p-3 rounded-xl border border-border/80 bg-card hover:shadow-md transition-all animate-in fade-in slide-in-from-bottom-1 duration-200"
             >
-              <div className="space-y-1">
-                <span className="text-xs font-semibold text-primary/80 uppercase tracking-wider">Project Task / Instruction</span>
-                <p className="text-sm font-medium text-foreground leading-relaxed whitespace-pre-wrap">
-                  {globalIndex}. {typeof t === "string" ? t : (t as any)?.task || (t as any)?.instructions || ""}
-                </p>
-              </div>
+              <ProjectTaskRichPreview task={t} globalIndex={globalIndex} />
+
               <PermissionGuard permissions={PERMISSIONS.QUESTIONS_MANAGE} hideWhenDenied>
-                <div className="flex items-center gap-1 ml-4 shrink-0">
+                <div className="flex items-center gap-1 ml-4 shrink-0 mt-1">
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => handleOpenEditTask(index, typeof t === "string" ? t : (t as any)?.task || (t as any)?.instructions || "")}
+                    onClick={() => handleOpenEditTask(index, t)}
                     className="h-8 w-8 text-muted-foreground hover:text-primary rounded-lg hover:bg-primary/5 transition-colors"
                   >
                     <Edit2 className="h-3.5 w-3.5" />
@@ -373,7 +407,7 @@ export function QuestionsList({
         show={activeModal === "question"}
         handleClose={() => setActiveModal(null)}
         onSave={handleSaveQuestion}
-        initialValue={modalMode === "edit" ? questionText : ""}
+        initialValue={modalMode === "edit" ? questionValue : ""}
         isSaving={false}
       />
 

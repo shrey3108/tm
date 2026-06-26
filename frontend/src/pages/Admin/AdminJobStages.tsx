@@ -25,6 +25,7 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { extractErrorMessage } from "@/utils/error";
 import { useJobStage } from "@/hooks/queries/admin/useJobStage";
+import { usePageFilters } from "@/hooks/usePageFilters";
 
 /**
  * Admin page for managing job stage templates.
@@ -33,12 +34,23 @@ import { useJobStage } from "@/hooks/queries/admin/useJobStage";
 const AdminJobStages = () => {
   const toast = useToast();
   const navigate = useNavigate();
-  const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
+
+  const { filters, setFilters } = usePageFilters("adminJobStages", {
     pageIndex: 0,
     pageSize: 10,
+    search: "",
   });
+  const { pageIndex, pageSize, search } = filters;
 
-  const [search, setSearch] = useState("");
+  const setPagination = (val: PaginationState | ((prev: PaginationState) => PaginationState)) => {
+    const currentPagination = { pageIndex: filters.pageIndex, pageSize: filters.pageSize };
+    const nextPagination = typeof val === "function" ? val(currentPagination) : val;
+    setFilters({
+      pageIndex: nextPagination.pageIndex,
+      pageSize: nextPagination.pageSize,
+    });
+  };
+
   const [selectedTemplate, setSelectedTemplate] = useState<StageTemplate | null>(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
@@ -51,8 +63,10 @@ const AdminJobStages = () => {
 
   const { data, total, loading, refetch, error } = useJobStage(pageIndex * pageSize, pageSize, debouncedSearch)
   const handleSearchChange = (value: string) => {
-    setSearch(value);
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+    setFilters({
+      search: value,
+      pageIndex: 0,
+    });
   };
 
 
@@ -108,30 +122,48 @@ const AdminJobStages = () => {
 
   const columns: ColumnDef<StageTemplate>[] = [
     {
+      accessorKey: "default_order",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="hover:bg-transparent p-0 font-semibold text-base"
+        >
+          Order
+          <ArrowUpDown className="h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => (
+        <div className="flex items-center justify-center gap-2">
+          {row.original.default_order ?? "N|A"}
+        </div>
+      ),
+    },
+    {
       accessorKey: "name",
       header: ({ column }) => (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="hover:bg-transparent p-0 font-semibold"
+          className="hover:bg-transparent p-0 font-semibold text-base"
         >
           Name
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <ArrowUpDown className="h-4 w-4" />
         </Button>
       ),
       cell: ({ row }) => (
-        <span className="font-medium text-foreground capitalize">{row.original.name}</span>
+        <span className="capitalize">{row.original.name}</span>
       ),
     },
     {
       accessorKey: "description",
       header: () => {
         return <div className="flex items-center gap-2">
-          <span className="font-semibold">Description</span>
+          <span className="text-base">Description</span>
         </div>
       },
       cell: ({ row }) => (
-        <span className="text-muted-foreground truncate line-clamp-1 max-w-sm capitalize">
+        <span className="truncate line-clamp-1 max-w-sm capitalize">
           {row.original.description || "No description"}
         </span>
       ),
@@ -142,10 +174,10 @@ const AdminJobStages = () => {
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="hover:bg-transparent p-0 font-semibold"
+          className="hover:bg-transparent p-0 font-semibold text-base"
         >
           Default Stage
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <ArrowUpDown className="h-4 w-4" />
         </Button>
       ),
       cell: ({ row }) => (
@@ -163,7 +195,7 @@ const AdminJobStages = () => {
       id: "actions",
       header: () => {
         return <div className="flex items-center justify-center gap-2">
-          <span className="font-semibold">Actions</span>
+          <span className="text-base">Actions</span>
         </div>
       },
       cell: ({ row }) => (
@@ -183,7 +215,7 @@ const AdminJobStages = () => {
                 </Button>
               )}
             />
-            <HoverCardContent className="w-fit px-3 py-1.5 text-xs font-medium" side="top">
+            <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
               <span className="text-blue-600">View Info</span>
             </HoverCardContent>
           </HoverCard>
@@ -204,7 +236,7 @@ const AdminJobStages = () => {
                 </Button>
               )}
             />
-            <HoverCardContent className="w-fit px-3 py-1.5 text-xs font-medium" side="top">
+            <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
               <span className="text-primary">Edit Stage</span>
             </HoverCardContent>
           </HoverCard>
@@ -225,7 +257,7 @@ const AdminJobStages = () => {
                 </Button>
               )}
             />
-            <HoverCardContent className="w-fit px-3 py-1.5 text-xs font-medium" side="top">
+            <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
               <span className="text-destructive">Delete Stage</span>
             </HoverCardContent>
           </HoverCard>

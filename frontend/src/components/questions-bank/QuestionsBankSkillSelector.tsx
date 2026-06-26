@@ -89,7 +89,7 @@ export function QuestionsBankSkillSelector({
   };
 
   return (
-    <div className="space-y-2.5 pt-2">
+    <div className="space-y-0.5 pt-0.5">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
         <p className="text-xs text-muted-foreground font-medium">
           {placeholderMessage}

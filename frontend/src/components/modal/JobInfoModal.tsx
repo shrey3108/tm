@@ -107,7 +107,7 @@ export function JobInfoModal({ isOpen, onClose, job }: JobInfoModalProps) {
         setSelectedVersionId(
           job.processing_version
             ? sortedVersions.filter(({ version_num }) => version_num == job.processing_version)[0]
-                .id
+              .id
             : sortedVersions[0].id,
         );
       } else {
@@ -141,7 +141,7 @@ export function JobInfoModal({ isOpen, onClose, job }: JobInfoModalProps) {
                   <HoverCardTrigger delay={10} closeDelay={10}>
                     <Edit2 />
                   </HoverCardTrigger>
-                  <HoverCardContent side="right" className="w-auto px-2 py-1 rounded-md">
+                  <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="right">
                     Edit Job
                   </HoverCardContent>
                 </HoverCard>
@@ -209,7 +209,7 @@ export function JobInfoModal({ isOpen, onClose, job }: JobInfoModalProps) {
                         return (
                           <HoverCard key={v.id}>
                             <HoverCardTrigger>{button}</HoverCardTrigger>
-                            <HoverCardContent className="w-fit p-3 text-xs font-medium">
+                            <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
                               This version is currently being processed.
                             </HoverCardContent>
                           </HoverCard>

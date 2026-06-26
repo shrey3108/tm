@@ -114,11 +114,13 @@ async def extract_paper_skills_from_text_logic(paper_id_str: str):
         # Combine questions, mcqs and tasks into a single text block
         text_parts = []
         if paper.questions:
-            text_parts.append("Questions:\n" + "\n".join(f"- {q}" for q in paper.questions))
+            q_texts = [q.get("question") if isinstance(q, dict) else getattr(q, "question", str(q)) for q in paper.questions]
+            text_parts.append("Questions:\n" + "\n".join(f"- {q}" for q in q_texts if q))
         if paper.mcqs:
-            text_parts.append("MCQs:\n" + "\n".join(f"- {m.get('question') if isinstance(m, dict) else m}" for m in paper.mcqs))
+            text_parts.append("MCQs:\n" + "\n".join(f"- {m.get('question') if isinstance(m, dict) else getattr(m, 'question', str(m))}" for m in paper.mcqs))
         if paper.project_task:
-            text_parts.append("Tasks:\n" + "\n".join(f"- {t}" for t in paper.project_task))
+            t_texts = [t.get("task", t.get("title", "")) if isinstance(t, dict) else str(t) for t in paper.project_task]
+            text_parts.append("Tasks:\n" + "\n".join(f"- {t}" for t in t_texts if t))
 
         raw_text = "\n\n".join(text_parts)
         if not raw_text.strip():

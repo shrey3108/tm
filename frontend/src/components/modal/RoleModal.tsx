@@ -34,7 +34,7 @@ import {
 import { useFormModal } from "@/hooks";
 import { roleCreateSchema, type RoleCreateFormValues } from "@/schemas/admin";
 import { cn } from "@/lib/utils";
-import { Required } from "@/components/job-form/Required";
+import { Required } from "@/components/shared/Required";
 import { useToast } from "../shared";
 
 /**

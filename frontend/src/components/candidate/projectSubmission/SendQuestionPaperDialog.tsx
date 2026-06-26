@@ -617,7 +617,7 @@ export function SendQuestionPaperDialog({
             <HoverCardTrigger delay={10} closeDelay={10}>
               ({finalAssignedPaper?.email_sent_count ?? 0})
             </HoverCardTrigger>
-            <HoverCardContent className="w-full p-1 py-2 text-xs rounded-lg">
+            <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
               <p>{finalAssignedPaper?.email_sent_count ?? 0} times email sent to candidate</p>
             </HoverCardContent>
           </HoverCard>

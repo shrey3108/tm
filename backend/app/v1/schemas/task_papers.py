@@ -2,19 +2,40 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 from typing import Literal, Optional
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from app.v1.schemas.skill import SkillRead
+
+
+class QuestionItem(BaseModel):
+    question: str = Field(..., description="The content of the question")
+    duration: Optional[int] = Field(None, description="Duration in minutes")
+    marks: Optional[int] = Field(None, description="Marks allocated")
 
 
 class MCQItem(BaseModel):
     question: str = Field(..., description="The MCQ question text")
     options: list[str] = Field(..., description="Options for the MCQ (e.g. four choices)")
     answer: Optional[str] = Field(None, description="The correct option / answer")
+    duration: Optional[int] = Field(None, description="Duration in minutes")
+    marks: Optional[int] = Field(None, description="Marks allocated")
+
+
+class SubTask(BaseModel):
+    name: str = Field(..., description="The name or title of the sub-task")
+    description: Optional[str] = Field(None, description="Description of the sub-task")
+    marks: Optional[int] = Field(None, description="Marks allocated")
 
 
 class TaskItem(BaseModel):
-    task: str = Field(..., description="The main project task description or title")
-    instructions: str = Field(..., description="Detailed instructions for the task")
+    # Old fields for backward compatibility
+    task: Optional[str] = Field(None, description="The main project task description or title")
+    instructions: Optional[str] = Field(None, description="Detailed instructions for the task")
+    
+    # New nested fields
+    title: Optional[str] = Field(None, description="The overall title of the project")
+    description: Optional[str] = Field(None, description="The overall description of the project")
+    duration: Optional[int] = Field(None, description="Duration in minutes for the whole project")
+    tasks: Optional[list[SubTask]] = Field(default_factory=list, description="List of sub-tasks for this project")
 
 
 class QuestionSetPaperCreate(BaseModel):
@@ -23,7 +44,7 @@ class QuestionSetPaperCreate(BaseModel):
     skill_ids: list[uuid.UUID] = Field(..., description="The associated skill IDs", min_length=1)
     paper_type: Literal["normal", "mcq", "task", "mixed"] = Field("mixed", description="The type of the paper")
     source_mix: Optional[list[SourceMixItem]] = Field(default_factory=list, description="List of items to mix from existing papers")
-    questions: list[str] = Field(default_factory=list, description="Questions for this paper")
+    questions: list[QuestionItem] = Field(default_factory=list, description="Questions for this paper")
     mcqs: list[MCQItem] = Field(default_factory=list, description="Multiple choice questions for this paper")
     project_task: list[TaskItem] = Field(default_factory=list, description="The structured project task definitions")
 
@@ -35,10 +56,53 @@ class QuestionSetPaperCreate(BaseModel):
         new_tasks = []
         for item in v:
             if isinstance(item, str):
-                new_tasks.append({"task": item, "instructions": ""})
+                new_tasks.append({"task": item, "description": item, "instructions": ""})
+            elif isinstance(item, dict):
+                t_val = item.get("task")
+                d_val = item.get("description")
+                if t_val and not d_val:
+                    item["description"] = t_val
+                elif d_val and not t_val:
+                    item["task"] = d_val
+                new_tasks.append(item)
             else:
                 new_tasks.append(item)
         return new_tasks
+
+    @field_validator("questions", mode="before")
+    @classmethod
+    def coerce_questions_to_list(cls, v):
+        if not v: return []
+        new_questions = []
+        for item in v:
+            if isinstance(item, str):
+                new_questions.append({"question": item})
+            else:
+                new_questions.append(item)
+        return new_questions
+
+    @field_validator("mcqs", mode="before")
+    @classmethod
+    def coerce_mcqs(cls, v):
+        if not v: return []
+        new_mcqs = []
+        for item in v:
+            if isinstance(item, dict) and "question" in item and "options" in item and "answer" in item:
+                new_mcqs.append(item)
+            else:
+                new_mcqs.append(item)
+        return new_mcqs
+
+    @model_validator(mode="after")
+    def validate_project_task_lengths(self):
+        for pt in getattr(self, "project_task", []) or []:
+            d_val = getattr(pt, "description", None) or ""
+            i_val = getattr(pt, "instructions", None) or ""
+            if len(d_val.strip()) < 10:
+                raise ValueError("Project task description must be at least 10 characters long.")
+            if len(i_val.strip()) < 10:
+                raise ValueError("Project task instructions must be at least 10 characters long.")
+        return self
 
 
 
@@ -49,10 +113,24 @@ class SourceMixItem(BaseModel):
     task_indices: list[int] = Field(default_factory=list, description="Indices of project tasks to include")
 
 class QuestionAction(BaseModel):
-    question: str = Field(..., description="The content of the question")
+    question: QuestionItem = Field(..., description="The structured question content")
+
+    @field_validator("question", mode="before")
+    @classmethod
+    def coerce_question(cls, v):
+        if isinstance(v, str):
+            return {"question": v}
+        return v
 
 class MCQAction(BaseModel):
-    mcq: dict = Field(..., description="The content of the multiple choice question")
+    mcq: MCQItem = Field(..., description="The structured multiple choice question content")
+
+    @field_validator("mcq", mode="before")
+    @classmethod
+    def coerce_mcq(cls, v):
+        if isinstance(v, dict) and "question" in v and "options" in v and "answer" in v:
+            return v
+        return v
 
 class TaskAction(BaseModel):
     task: TaskItem = Field(..., description="The structured project task content")
@@ -61,8 +139,25 @@ class TaskAction(BaseModel):
     @classmethod
     def coerce_task(cls, v):
         if isinstance(v, str):
-            return {"task": v, "instructions": ""}
+            return {"task": v, "description": v, "instructions": ""}
+        elif isinstance(v, dict):
+            t_val = v.get("task")
+            d_val = v.get("description")
+            if t_val and not d_val:
+                v["description"] = t_val
+            elif d_val and not t_val:
+                v["task"] = d_val
         return v
+
+    @model_validator(mode="after")
+    def validate_task_length(self):
+        d_val = getattr(self.task, "description", None) or ""
+        i_val = getattr(self.task, "instructions", None) or ""
+        if len(d_val.strip()) < 10:
+            raise ValueError("Project task description must be at least 10 characters long.")
+        if len(i_val.strip()) < 10:
+            raise ValueError("Project task instructions must be at least 10 characters long.")
+        return self
 
 
 class QuestionSetPaperRead(BaseModel):
@@ -72,13 +167,26 @@ class QuestionSetPaperRead(BaseModel):
     position_id: uuid.UUID
     skills: list[SkillRead] = Field(default_factory=list)
     paper_type: str
-    questions: list[str]
+    questions: list[QuestionItem]
     mcqs: list[MCQItem] = Field(default_factory=list)
     project_task: list[TaskItem] = Field(default_factory=list)
     task_file_path: Optional[str] = None
     task_skills: Optional[list[str]] = None
     created_at: datetime
     updated_at: datetime
+
+    @field_validator("questions", mode="before")
+    @classmethod
+    def coerce_questions_to_list(cls, v):
+        if not v:
+            return []
+        new_questions = []
+        for item in v:
+            if isinstance(item, str):
+                new_questions.append({"question": item})
+            else:
+                new_questions.append(item)
+        return new_questions
 
     @field_validator("project_task", mode="before")
     @classmethod
@@ -87,15 +195,24 @@ class QuestionSetPaperRead(BaseModel):
         if not v:
             return []
         if isinstance(v, str):
-            return [{"task": v, "instructions": ""}] if v.strip() else []
+            return [{"task": v, "description": v, "instructions": ""}] if v.strip() else []
             
         new_tasks = []
         for item in v:
             if isinstance(item, str):
-                new_tasks.append({"task": item, "instructions": ""})
+                new_tasks.append({"task": item, "description": item, "instructions": ""})
             elif isinstance(item, dict):
+                t_val = item.get("task")
+                d_val = item.get("description")
+                if t_val and not d_val:
+                    item["description"] = t_val
+                elif d_val and not t_val:
+                    item["task"] = d_val
+                
                 if "task" not in item:
                     item["task"] = item.get("title", item.get("content", "Untitled Task"))
+                if "description" not in item:
+                    item["description"] = item.get("task")
                 if "instructions" not in item:
                     item["instructions"] = ""
                 new_tasks.append(item)
@@ -118,7 +235,7 @@ class CandidateTestPaperRead(BaseModel):
     position_id: uuid.UUID
     job_stage_config_id: Optional[uuid.UUID] = None
     name: str
-    questions: list[str]
+    questions: list[QuestionItem]
     mcqs: list[MCQItem] = Field(default_factory=list)
     project_task: list[TaskItem]
     task_file_path: Optional[str] = None
@@ -129,6 +246,19 @@ class CandidateTestPaperRead(BaseModel):
     job_default_paper_name: Optional[str] = None
     job_default_paper_id: Optional[uuid.UUID] = None
 
+    @field_validator("questions", mode="before")
+    @classmethod
+    def coerce_questions_to_list(cls, v):
+        if not v:
+            return []
+        new_questions = []
+        for item in v:
+            if isinstance(item, str):
+                new_questions.append({"question": item})
+            else:
+                new_questions.append(item)
+        return new_questions
+
     @field_validator("project_task", mode="before")
     @classmethod
     def coerce_project_task_to_list(cls, v):
@@ -136,15 +266,24 @@ class CandidateTestPaperRead(BaseModel):
         if not v:
             return []
         if isinstance(v, str):
-            return [{"task": v, "instructions": ""}] if v.strip() else []
+            return [{"task": v, "description": v, "instructions": ""}] if v.strip() else []
             
         new_tasks = []
         for item in v:
             if isinstance(item, str):
-                new_tasks.append({"task": item, "instructions": ""})
+                new_tasks.append({"task": item, "description": item, "instructions": ""})
             elif isinstance(item, dict):
+                t_val = item.get("task")
+                d_val = item.get("description")
+                if t_val and not d_val:
+                    item["description"] = t_val
+                elif d_val and not t_val:
+                    item["task"] = d_val
+                
                 if "task" not in item:
                     item["task"] = item.get("title", item.get("content", "Untitled Task"))
+                if "description" not in item:
+                    item["description"] = item.get("task")
                 if "instructions" not in item:
                     item["instructions"] = ""
                 new_tasks.append(item)
@@ -162,7 +301,7 @@ class CandidateTestPaperHistoryRead(BaseModel):
     job_id: uuid.UUID
     job_stage_config_id: Optional[uuid.UUID] = None
     name: str
-    questions: list[str]
+    questions: list[QuestionItem]
     mcqs: list[MCQItem] = Field(default_factory=list)
     project_task: list[TaskItem]
     task_file_path: Optional[str] = None
@@ -177,15 +316,24 @@ class CandidateTestPaperHistoryRead(BaseModel):
         if not v:
             return []
         if isinstance(v, str):
-            return [{"task": v, "instructions": ""}] if v.strip() else []
+            return [{"task": v, "description": v, "instructions": ""}] if v.strip() else []
             
         new_tasks = []
         for item in v:
             if isinstance(item, str):
-                new_tasks.append({"task": item, "instructions": ""})
+                new_tasks.append({"task": item, "description": item, "instructions": ""})
             elif isinstance(item, dict):
+                t_val = item.get("task")
+                d_val = item.get("description")
+                if t_val and not d_val:
+                    item["description"] = t_val
+                elif d_val and not t_val:
+                    item["task"] = d_val
+                
                 if "task" not in item:
                     item["task"] = item.get("title", item.get("content", "Untitled Task"))
+                if "description" not in item:
+                    item["description"] = item.get("task")
                 if "instructions" not in item:
                     item["instructions"] = ""
                 new_tasks.append(item)
@@ -215,15 +363,60 @@ class CandidateTestPaperAssign(BaseModel):
     base_paper_id: Optional[uuid.UUID] = Field(
         None, description="The ID of a base paper to inherit task file and skills from (used in 'custom' mode)"
     )
-    questions: Optional[list[str]] = Field(
+    questions: Optional[list[QuestionItem]] = Field(
         None, description="Custom questions (required if mode is 'custom')"
     )
     mcqs: Optional[list[MCQItem]] = Field(
         None, description="Custom MCQs (used if mode is 'custom')"
     )
-    project_task: Optional[str] = Field(
-        None, description="The custom project task description (required if mode is 'custom')"
+    project_task: Optional[list[TaskItem]] = Field(
+        default_factory=list, description="The custom project task description (required if mode is 'custom')"
     )
+
+    @field_validator("questions", mode="before")
+    @classmethod
+    def coerce_questions_to_list(cls, v):
+        if not v:
+            return []
+        new_questions = []
+        for item in v:
+            if isinstance(item, str):
+                new_questions.append({"question": item})
+            else:
+                new_questions.append(item)
+        return new_questions
+
+    @field_validator("project_task", mode="before")
+    @classmethod
+    def coerce_project_task_to_list(cls, v):
+        """Handle legacy DB rows and output structured objects."""
+        if not v:
+            return []
+        if isinstance(v, str):
+            return [{"task": v, "description": v, "instructions": ""}] if v.strip() else []
+            
+        new_tasks = []
+        for item in v:
+            if isinstance(item, str):
+                new_tasks.append({"task": item, "description": item, "instructions": ""})
+            elif isinstance(item, dict):
+                t_val = item.get("task")
+                d_val = item.get("description")
+                if t_val and not d_val:
+                    item["description"] = t_val
+                elif d_val and not t_val:
+                    item["task"] = d_val
+                
+                if "task" not in item:
+                    item["task"] = item.get("title", item.get("content", "Untitled Task"))
+                if "description" not in item:
+                    item["description"] = item.get("task")
+                if "instructions" not in item:
+                    item["instructions"] = ""
+                new_tasks.append(item)
+            else:
+                new_tasks.append(item)
+        return new_tasks
 
 
 class CandidateTestPaperEmailSend(BaseModel):
@@ -239,6 +432,6 @@ class CandidateTestPaperBulkEmailSend(BaseModel):
     force: bool = Field(False, description="Force send the emails even if they have already been sent before")
 
 class TaskPaperPreviewResponse(BaseModel):
-    questions: list[str] = Field(default_factory=list, description="List of randomly selected questions with tech stack tags")
+    questions: list[QuestionItem] = Field(default_factory=list, description="List of randomly selected questions with tech stack tags")
     mcqs: list[MCQItem] = Field(default_factory=list, description="List of randomly selected MCQs with tech stack tags")
     project_task: list[TaskItem] = Field(default_factory=list, description="List of randomly selected project tasks with tech stack tags")

@@ -1,16 +1,44 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { startOfDay, endOfDay } from "date-fns";
 import type { DateRange } from "react-day-picker";
 import type { UserAdminRead } from "@/types/admin";
+import { usePageFilters } from "@/hooks/usePageFilters";
+import type { PaginationState } from "@tanstack/react-table";
 
-export const useUserTableFilters = (users: UserAdminRead[]) => {
-  const [searchFilter, setSearchFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string[]>([]);
-  const [roleFilter, setRoleFilter] = useState<string[]>([]);
-  const [dateRange, setDateRange] = useState<DateRange | undefined>({
-    from: undefined,
-    to: undefined,
+export const useUserTableFilters = (users: UserAdminRead[], pageKey: string = "adminUsers") => {
+  const { filters, setFilter, resetFilters } = usePageFilters(pageKey, {
+    searchFilter: "",
+    statusFilter: [] as string[],
+    roleFilter: [] as string[],
+    dateRange: {
+      from: undefined,
+      to: undefined,
+    } as DateRange | undefined,
+    pagination: {
+      pageIndex: 0,
+      pageSize: 10,
+    } as PaginationState,
   });
+
+  const {
+    searchFilter,
+    statusFilter,
+    roleFilter,
+    dateRange,
+    pagination,
+  } = filters;
+
+  const setSearchFilter = (val: string) => setFilter("searchFilter", val);
+  const setStatusFilter = (val: string[]) => setFilter("statusFilter", val);
+  const setRoleFilter = (val: string[]) => setFilter("roleFilter", val);
+  const setDateRange = (val: DateRange | undefined) => setFilter("dateRange", val);
+  const setPagination = (val: PaginationState | ((prev: PaginationState) => PaginationState)) => {
+    if (typeof val === "function") {
+      setFilter("pagination", val(pagination));
+    } else {
+      setFilter("pagination", val);
+    }
+  };
 
   const minDate = useMemo(() => {
     if (users.length === 0) return new Date();
@@ -61,10 +89,7 @@ export const useUserTableFilters = (users: UserAdminRead[]) => {
     !!dateRange?.to;
 
   const clearFilters = () => {
-    setSearchFilter("");
-    setStatusFilter([]);
-    setRoleFilter([]);
-    setDateRange({ from: undefined, to: undefined });
+    resetFilters();
   };
 
   return {
@@ -81,5 +106,7 @@ export const useUserTableFilters = (users: UserAdminRead[]) => {
     hasActiveFilters,
     clearFilters,
     minDate,
+    pagination,
+    setPagination,
   };
 };

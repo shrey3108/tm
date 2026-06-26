@@ -17,7 +17,7 @@ import {
   SheetFooter
 } from "@/components/ui/sheet";
 import { CollapsibleFilterSection, CheckboxListFilter } from "@/components/shared/FilterComponents";
-import { useJobTask, useJobAssignedTask } from "@/hooks/queries/jobs";
+import { useJobAssignedTask } from "@/hooks/queries/jobs";
 import { useQuestionSetPapers, useDownloadPaperTaskFile } from "@/hooks/queries/taskPapers/useTaskPaperQueries";
 import { toast } from "sonner";
 import type { Job } from "@/types/job";
@@ -116,8 +116,8 @@ export const CandidateTableFilters = ({
 }: CandidateTableFiltersProps) => {
 
   const [hoverValue, setHoverValue] = useState<number | null>(0);
-  const res = useJobTask(job?.id)
-  console.log(res);
+  // const res = useJobTask(job?.id)
+
 
   // Queries for assigned task paper & predefined templates
   const { data: assignedPaper } = useJobAssignedTask(job?.id);

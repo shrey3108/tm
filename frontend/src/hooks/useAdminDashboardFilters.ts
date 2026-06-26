@@ -1,6 +1,7 @@
-import { useState, useMemo, useCallback } from "react";
+import { useMemo, useCallback } from "react";
 import type { HiringReport, JobPipelineStats } from "@/types/admin";
 import type { JobTitle } from "@/types/job";
+import { usePageFilters } from "@/hooks/usePageFilters";
 
 /**
  * State shape for admin dashboard filters.
@@ -17,34 +18,6 @@ const INITIAL_FILTERS: FilterState = {
   jobIds: [],
   stages: [],
   departments: [],
-};
-
-
-/**
- * Builds a lookup map from an array of items with title and id properties.
- * @param items - Array of objects containing title and id properties
- * @returns A record mapping titles to their corresponding IDs
- */
-const buildLookupMap = (items: { title: string; id: string }[]): Record<string, string> => {
-  const map: Record<string, string> = {};
-  for (const item of items) map[item.title] = item.id;
-  return map;
-};
-
-
-/**
- * Builds a mapping from job titles to their departments based on candidate data.
- * @param candidates - Array of candidates with job_title and department properties
- * @returns A record mapping job titles to department names
- */
-const buildDeptMap = (candidates: HiringReport["candidates_by_job"]): Record<string, string> => {
-  const map: Record<string, string> = {};
-  for (const item of candidates) {
-    if (item.job_title && item.department) {
-      map[item.job_title] = item.department;
-    }
-  }
-  return map;
 };
 
 
@@ -74,20 +47,14 @@ export const useAdminDashboardFilters = (
   stages: { name: string }[]
 ) => {
 
-  const [filters, setFilters] = useState<FilterState>(INITIAL_FILTERS);
+  const { filters, setFilters: reduxSetFilters, resetFilters: reduxResetFilters } = usePageFilters("adminDashboard", INITIAL_FILTERS);
 
   // Lookup maps
-  const jobTitleToId = useMemo(() => buildLookupMap(jobs), [jobs]);
   const jobIdToTitle = useMemo(() => {
     const map: Record<string, string> = {};
     jobs.forEach(j => map[j.id] = j.title);
     return map;
   }, [jobs]);
-
-  const jobToDept = useMemo(
-    () => (report ? buildDeptMap(report.candidates_by_job) : {}),
-    [report]
-  );
 
   // All unique departments from report
   const allDepartments = useMemo(
@@ -151,9 +118,6 @@ export const useAdminDashboardFilters = (
   const filteredStages = useMemo(() => {
     if (!report) return stages;
 
-    // If no job or department filters, show all stages that have data
-    // Or just all stages from the template? 
-    // Usually we want to show stages that are relevant to the selection.
     if (filters.jobIds.length === 0 && filters.departments.length === 0) return stages;
 
     let targetJobTitles: Set<string>;
@@ -180,71 +144,82 @@ export const useAdminDashboardFilters = (
       }
     });
 
-    // If activeStages is empty (e.g. no data for selection), we might want to show all or none.
-    // Showing none might be better for "dynamic" feel.
-    return stages.filter(s => activeStages.has(s.name) || filters.stages.includes(s.name));
-  }, [report, filters.jobIds, filters.departments, filters.stages, jobIdToTitle, stages]);
+    // Ensure selected stages are preserved
+    filters.stages.forEach(s => activeStages.add(s));
 
-  // Derived: filtered report
-  const filteredReport = useMemo(() => {
-    if (!report) return null;
+    return stages.filter(s => activeStages.has(s.name));
+  }, [report, filters.jobIds, filters.departments, filters.stages, stages, jobIdToTitle]);
 
-    // No filters selected return original report
-    const hasFilters = Object.values(filters).some((arr) => arr.length > 0);
-    if (!hasFilters) return report;
 
-    // Filter pipeline stats
-    // Find the item that contains the full list of job names
-    const allJobNames = report.job_pipeline_stats.find((item) => item.job_names)?.job_names || [];
+  // Helper: Filter pipeline stats for a given stage
+  const filterPipelineStats = (
+    item: PipelineStatsItem,
+    selectedJobTitles: Set<string> | null
+  ) => {
+    const { stage, total_candidates, ...jobCounts } = item;
+    const filteredCounts: Record<string, number> = {};
 
-    const filteredJobNames = allJobNames.filter((jobName) => {
-      const dept = jobToDept[jobName];
-      const id = jobTitleToId[jobName];
-      return (
-        (filters.departments.length === 0 || (dept && filters.departments.includes(dept))) &&
-        (filters.jobIds.length === 0 || (id && filters.jobIds.includes(id)))
-      );
+    let total = 0;
+    Object.entries(jobCounts).forEach(([jobTitle, count]) => {
+      if (typeof count === "number" && (!selectedJobTitles || selectedJobTitles.has(jobTitle))) {
+        filteredCounts[jobTitle] = count;
+        total += count;
+      }
     });
 
-    const jobPipelineStats = report.job_pipeline_stats
-      .map((item): PipelineStatsItem | null => {
-        // If filtering by stage, only keep the selected stages
-        if (filters.stages.length > 0 && item.stage && !filters.stages.includes(item.stage)) {
-          return null;
-        }
+    return {
+      stage,
+      total_candidates: total,
+      ...filteredCounts
+    } as PipelineStatsItem;
+  };
 
-        const newItem: PipelineStatsItem = { ...item };
+  // Filter report data based on current selections
+  const filteredReport = useMemo(() => {
+    if (!report) return undefined;
 
-        // If it's a data point (has stage), remove non-filtered jobs
-        const filteredJobNameSet = new Set(filteredJobNames);
-        if (item.stage) {
-          allJobNames.forEach(name => {
-            if (!filteredJobNameSet.has(name)) {
-              delete newItem[name];
-            }
-          });
-          // Only keep the stage if at least one filtered job has candidates
-          // Showing data with 0 values is useless
-          return filteredJobNames.some(name => (newItem[name] ?? 0) > 0) ? newItem : null;
-        }
+    const { jobIds, stages: selectedStages, departments: selectedDepts } = filters;
 
-        // If it's the names holder (has job_names), update it
-        if (item.job_names) {
-          newItem.job_names = filteredJobNames;
-          return filteredJobNames.length > 0 ? newItem : null;
-        }
+    // 1. Determine active job titles based on selections
+    let activeJobTitles: Set<string> | null = null;
+    if (jobIds.length > 0) {
+      activeJobTitles = new Set(
+        jobIds.map(id => jobIdToTitle[id]).filter((title): title is string => !!title)
+      );
+    } else if (selectedDepts.length > 0) {
+      const deptSet = new Set(selectedDepts);
+      activeJobTitles = new Set(
+        report.candidates_by_job
+          .filter(c => c.department && deptSet.has(c.department) && c.job_title)
+          .map(c => c.job_title!)
+      );
+    }
 
-        return newItem;
-      })
-      .filter((item): item is PipelineStatsItem => item !== null);
+    // 2. Filter candidates by job (row-level data)
+    let candidates = report.candidates_by_job;
+    if (activeJobTitles) {
+      candidates = candidates.filter(c => c.job_title && activeJobTitles!.has(c.job_title));
+    }
+
+    // 3. Filter pipeline stats (column-level/stage-level aggregations)
+    let pipeline = report.job_pipeline_stats as PipelineStatsItem[];
+    if (selectedStages.length > 0) {
+      const stageSet = new Set(selectedStages);
+      pipeline = pipeline.filter(item => item.stage && stageSet.has(item.stage));
+    }
+
+    // Apply job-specific column filters to pipeline stats
+    if (activeJobTitles) {
+      pipeline = pipeline.map(item => filterPipelineStats(item, activeJobTitles));
+    }
 
     return {
       ...report,
-      job_pipeline_stats: jobPipelineStats,
-    };
-  }, [report, filters, jobToDept, jobTitleToId]);
+      candidates_by_job: candidates,
+      job_pipeline_stats: pipeline as JobPipelineStats[]
+    } as HiringReport;
+  }, [report, filters, jobIdToTitle]);
 
-  /** Whether any filters are currently active */
   const hasActiveFilters =
     useMemo(
       () => Object.values(filters).some((arr) => arr.length > 0), [filters]
@@ -261,18 +236,16 @@ export const useAdminDashboardFilters = (
       key: K,
       value: FilterState[K][number]
     ) => {
-      setFilters((prev) => {
-        const arr = prev[key];
-        const newArr = arr.includes(value)
-          ? arr.filter((v) => v !== value)
-          : [...arr, value];
+      const arr = filters[key];
+      const newArr = arr.includes(value)
+        ? arr.filter((v) => v !== value)
+        : [...arr, value];
 
-        // Clear jobIds when departments change
-        const resetJobs = key === "departments" ? { jobIds: [] as string[] } : {};
-        return { ...prev, [key]: newArr, ...resetJobs };
-      });
+      // Clear jobIds when departments change
+      const resetJobs = key === "departments" ? { jobIds: [] as string[] } : {};
+      reduxSetFilters({ [key]: newArr, ...resetJobs });
     },
-    []
+    [filters, reduxSetFilters]
   );
 
   /**
@@ -286,14 +259,12 @@ export const useAdminDashboardFilters = (
       key: K,
       values: FilterState[K]
     ) => {
-      setFilters((prev) => ({
-        ...prev,
+      reduxSetFilters({
         [key]: values,
-        // Clear jobIds ONLY if we are explicitly changing departments to something else
         ...(key === "departments" ? { jobIds: [] as string[] } : {}),
-      }));
+      });
     },
-    []
+    [reduxSetFilters]
   );
 
   /**
@@ -303,17 +274,16 @@ export const useAdminDashboardFilters = (
    */
   const clearFilter = useCallback(
     <K extends keyof FilterState>(key: K) => {
-      setFilters((prev) => ({
-        ...prev,
+      reduxSetFilters({
         [key]: [] as FilterState[K],
         ...(key === "departments" ? { jobIds: [] as string[] } : {}),
-      }));
+      });
     },
-    []
+    [reduxSetFilters]
   );
 
   /** Resets all filters to their initial state */
-  const resetFilters = useCallback(() => setFilters(INITIAL_FILTERS), []);
+  const resetFilters = useCallback(() => reduxResetFilters(), [reduxResetFilters]);
 
   return {
     filters,

@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { Edit2, Trash2, Plus } from "lucide-react";
+import { Edit2, Trash2, Plus, Award, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import PermissionGuard from "@/components/auth/PermissionGuard";
 import { PERMISSIONS } from "@/lib/permissions";
 import { QuestionModal, DeleteModal, ProjectTaskModal } from "@/components/modal";
+import { ProjectTaskRichPreview } from "@/components/questions-bank/ProjectTaskRichPreview";
+import { formatDuration } from "@/utils/taskFormatter";
 import {
   Accordion,
   AccordionItem,
@@ -20,8 +22,8 @@ import {
   useUpdateProjectTaskInPaperMutation,
   useDeleteProjectTaskFromPaperMutation,
 } from "@/hooks/mutations/taskPapers/useTaskPaperMutations";
-import type { QuestionSetPaperRead, TaskItem } from "@/types/taskPaper";
 import { extractErrorMessage } from "@/utils/error";
+import type { QuestionSetPaperRead, TaskItem, QuestionItem } from "@/types/taskPaper";
 
 interface QuestionsBankAccordionProps {
   questionPapers: QuestionSetPaperRead[];
@@ -46,14 +48,14 @@ export function QuestionsBankAccordion({
   const [questionModalMode, setQuestionModalMode] = useState<"add" | "edit">("add");
   const [selectedQuestionPaperId, setSelectedQuestionPaperId] = useState<string | null>(null);
   const [selectedQuestionIndex, setSelectedQuestionIndex] = useState<number | null>(null);
-  const [selectedQuestionText, setSelectedQuestionText] = useState("");
+  const [selectedQuestionValue, setSelectedQuestionValue] = useState<QuestionItem | string>("");
 
   // Modal states for Project Task
   const [isProjectTaskModalOpen, setIsProjectTaskModalOpen] = useState(false);
   const [projectTaskModalMode, setProjectTaskModalMode] = useState<"add" | "edit">("add");
   const [selectedProjectTaskPaperId, setSelectedProjectTaskPaperId] = useState<string | null>(null);
   const [selectedProjectTaskIndex, setSelectedProjectTaskIndex] = useState<number | null>(null);
-  const [selectedProjectTaskText, setSelectedProjectTaskText] = useState("");
+  const [selectedProjectTaskText, setSelectedProjectTaskText] = useState<TaskItem | string>("");
 
   // Delete Confirmation Modal states
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
@@ -68,7 +70,8 @@ export function QuestionsBankAccordion({
   // Flatten logic
   const allQuestions = (questionPapers || []).flatMap((paper) =>
     (paper.questions || []).map((q, idx) => ({
-      text: q,
+      text: typeof q === "string" ? q : q.question || "",
+      rawData: q,
       index: idx,
       paperId: paper.id,
       paperName: paper.name,
@@ -78,6 +81,7 @@ export function QuestionsBankAccordion({
   const allProjectTasks = (questionPapers || []).flatMap((paper) =>
     (paper.project_task || []).map((task, idx) => ({
       text: typeof task === "string" ? task : task?.task || "",
+      rawData: task,
       index: idx,
       paperId: paper.id,
       paperName: paper.name,
@@ -93,25 +97,25 @@ export function QuestionsBankAccordion({
     setQuestionModalMode("add");
     setSelectedQuestionPaperId(questionPapers[0].id); // Always add to the first paper available // require paper id !! 
     setSelectedQuestionIndex(null);
-    setSelectedQuestionText("");
+    setSelectedQuestionValue("");
     setIsQuestionModalOpen(true);
   };
 
-  const handleOpenEditQuestionModal = (paperId: string, index: number, text: string) => {
+  const handleOpenEditQuestionModal = (paperId: string, index: number, q: QuestionItem | string) => {
     setQuestionModalMode("edit");
     setSelectedQuestionPaperId(paperId);
     setSelectedQuestionIndex(index);
-    setSelectedQuestionText(text);
+    setSelectedQuestionValue(q);
     setIsQuestionModalOpen(true);
   };
 
-  const handleSaveQuestion = async (text: string) => {
+  const handleSaveQuestion = async (question: QuestionItem) => {
     const paperId = selectedQuestionPaperId;
     if (!paperId) return;
 
     if (questionModalMode === "add") {
       await addQuestionMutation.mutateAsync(
-        { paperId, question: text },
+        { paperId, question },
         {
           onSuccess: () => {
             toast.success("Question added successfully!");
@@ -124,7 +128,7 @@ export function QuestionsBankAccordion({
       );
     } else if (questionModalMode === "edit" && selectedQuestionIndex !== null) {
       await updateQuestionMutation.mutateAsync(
-        { paperId, index: selectedQuestionIndex, question: text },
+        { paperId, index: selectedQuestionIndex, question },
         {
           onSuccess: () => {
             toast.success("Question updated successfully!");
@@ -158,11 +162,11 @@ export function QuestionsBankAccordion({
     setIsProjectTaskModalOpen(true);
   };
 
-  const handleOpenEditProjectTaskModal = (paperId: string, index: number, text: string) => {
+  const handleOpenEditProjectTaskModal = (paperId: string, index: number, task: TaskItem | string) => {
     setProjectTaskModalMode("edit");
     setSelectedProjectTaskPaperId(paperId);
     setSelectedProjectTaskIndex(index);
-    setSelectedProjectTaskText(text);
+    setSelectedProjectTaskText(task);
     setIsProjectTaskModalOpen(true);
   };
 
@@ -273,44 +277,57 @@ export function QuestionsBankAccordion({
                   </div>
                 ) : (
                   <ul className="pl-6 list-decimal space-y-1.5 pt-1">
-                    {allQuestions.map((q, idx) => (
-                      <li
-                        key={`${q.paperId}-${q.index}-${idx}`}
-                        className="group/item relative p-1 pr-20 hover:bg-muted/30 rounded-lg transition-colors duration-200"
-                      >
-                        <div className="space-y-0.5 min-w-0">
-                          <p className="text-sm font-medium text-foreground leading-relaxed wrap-break-word whitespace-pre-wrap">
-                            {q.text}
-                          </p>
-                          {/* {questionPapers.length > 1 && (
-                            <span className="inline-block text-[10px] text-muted-foreground/75 bg-muted/40 px-1.5 py-0.5 rounded-md font-semibold">
-                              {q.paperName}
-                            </span>
-                          )} */}
-                        </div>
-
-                        <PermissionGuard permissions={PERMISSIONS.QUESTIONS_MANAGE} hideWhenDenied>
-                          <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 ">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleOpenEditQuestionModal(q.paperId, q.index, q.text)}
-                              className="h-8 w-8 text-muted-foreground hover:text-primary rounded-lg hover:bg-primary/10 transition-colors"
-                            >
-                              <Edit2 className="h-3.5 w-3.5" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleOpenDeleteQuestionConfirm(q.paperId, q.index)}
-                              className="h-8 w-8 text-muted-foreground hover:text-destructive rounded-lg hover:bg-destructive/10 transition-colors"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
+                    {allQuestions.map((q, idx) => {
+                      const qMarks = typeof q.rawData === "string" ? undefined : q.rawData.marks;
+                      const qDuration = typeof q.rawData === "string" ? undefined : q.rawData.duration;
+                      return (
+                        <li
+                          key={`${q.paperId}-${q.index}-${idx}`}
+                          className="group/item relative p-2 pr-20 hover:bg-muted/30 rounded-lg transition-colors duration-200"
+                        >
+                          <div className="space-y-1 min-w-0">
+                            <p className="text-sm font-medium text-foreground leading-relaxed wrap-break-word whitespace-pre-wrap">
+                              {q.text}
+                            </p>
+                            {(qMarks !== undefined || (qDuration !== undefined && qDuration > 0)) && (
+                              <div className="flex flex-wrap gap-1.5 text-[10px] font-bold">
+                                {qMarks !== undefined && (
+                                  <span className="inline-flex items-center gap-1 bg-primary/5 text-primary border border-primary/10 px-2 py-0.5 rounded-full">
+                                    <Award className="h-3 w-3" /> {qMarks} Marks
+                                  </span>
+                                )}
+                                {qDuration !== undefined && qDuration > 0 && (
+                                  <span className="inline-flex items-center gap-1 bg-primary/5 text-primary border border-primary/10 px-2 py-0.5 rounded-full">
+                                    <Clock className="h-3 w-3" /> {formatDuration(qDuration)}
+                                  </span>
+                                )}
+                              </div>
+                            )}
                           </div>
-                        </PermissionGuard>
-                      </li>
-                    ))}
+
+                          <PermissionGuard permissions={PERMISSIONS.QUESTIONS_MANAGE} hideWhenDenied>
+                            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 ">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleOpenEditQuestionModal(q.paperId, q.index, q.rawData)}
+                                className="h-8 w-8 text-muted-foreground hover:text-primary rounded-lg hover:bg-primary/10 transition-colors"
+                              >
+                                <Edit2 className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleOpenDeleteQuestionConfirm(q.paperId, q.index)}
+                                className="h-8 w-8 text-muted-foreground hover:text-destructive rounded-lg hover:bg-destructive/10 transition-colors"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          </PermissionGuard>
+                        </li>
+                      );
+                    })}
                   </ul>
                 )}
               </div>
@@ -351,29 +368,20 @@ export function QuestionsBankAccordion({
                     No project tasks available.
                   </div>
                 ) : (
-                  <ul className="pl-6 list-decimal space-y-1.5 pt-1">
+                  <ul className="space-y-3 pt-1">
                     {allProjectTasks.map((t, idx) => (
                       <li
                         key={`${t.paperId}-${t.index}-${idx}`}
-                        className="group/item relative pl-1 pr-20 hover:bg-muted/30 rounded-lg transition-colors duration-200"
+                        className="group/item relative p-3 pr-20 hover:bg-muted/30 rounded-xl border border-border/40 transition-colors duration-200 flex items-start justify-between"
                       >
-                        <div className="space-y-0.5 min-w-0">
-                          <p className="text-sm font-medium text-foreground leading-relaxed wrap-break-word whitespace-pre-wrap">
-                            {t.text}
-                          </p>
-                          {/* {questionPapers.length > 1 && (
-                            <span className="inline-block text-[10px] text-muted-foreground/75 bg-muted/40 px-1.5 py-0.5 rounded-md font-semibold">
-                              {t.paperName}
-                            </span>
-                          )} */}
-                        </div>
+                        <ProjectTaskRichPreview task={t.rawData} globalIndex={idx + 1} />
 
                         <PermissionGuard permissions={PERMISSIONS.QUESTIONS_MANAGE} hideWhenDenied>
-                          <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 ">
+                          <div className="absolute right-2 top-3 flex items-center gap-1">
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => handleOpenEditProjectTaskModal(t.paperId, t.index, t.text)}
+                              onClick={() => handleOpenEditProjectTaskModal(t.paperId, t.index, t.rawData)}
                               className="h-8 w-8 text-muted-foreground hover:text-primary rounded-lg hover:bg-primary/10 transition-colors"
                             >
                               <Edit2 className="h-3.5 w-3.5" />
@@ -416,7 +424,7 @@ export function QuestionsBankAccordion({
         show={isQuestionModalOpen}
         handleClose={() => setIsQuestionModalOpen(false)}
         onSave={handleSaveQuestion}
-        initialValue={selectedQuestionText}
+        initialValue={selectedQuestionValue}
         isSaving={addQuestionMutation.isPending || updateQuestionMutation.isPending}
       />
 

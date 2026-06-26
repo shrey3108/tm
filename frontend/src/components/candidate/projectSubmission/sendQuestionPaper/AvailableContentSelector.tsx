@@ -9,14 +9,15 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import type { MCQItem } from "@/types/taskPaper";
-import { Search, HelpCircle, ListChecks, FileText } from "lucide-react";
+import { Search, HelpCircle, ListChecks, FileText, Award, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { QuestionItem, TaskItem, MCQItem } from "@/types/taskPaper";
+import { formatDuration } from "@/utils/taskFormatter";
 
 interface AvailableContentSelectorProps {
-  availableQuestions: string[];
+  availableQuestions: (QuestionItem | string)[];
   availableMcqs: MCQItem[];
-  availableTasks: string[];
+  availableTasks: (TaskItem | string)[];
   selectedQuestionIndices: number[];
   selectedMcqIndices: number[];
   selectedTaskIndices: number[];
@@ -47,7 +48,10 @@ export function AvailableContentSelector({
   // Filtered lists with indices preserved
   const filteredQuestions = useMemo(() => {
     return availableQuestions
-      .map((text, idx) => ({ text, idx }))
+      .map((q, idx) => {
+        const text = typeof q === "string" ? q : q.question || "";
+        return { text, idx, rawData: q };
+      })
       .filter((q) => q.text.toLowerCase().includes(qSearch.toLowerCase()));
   }, [availableQuestions, qSearch]);
 
@@ -59,7 +63,10 @@ export function AvailableContentSelector({
 
   const filteredTasks = useMemo(() => {
     return availableTasks
-      .map((text, idx) => ({ text, idx }))
+      .map((t, idx) => {
+        const text = typeof t === "string" ? t : t.task || "";
+        return { text, idx, rawData: t };
+      })
       .filter((t) => t.text.toLowerCase().includes(taskSearch.toLowerCase()));
   }, [availableTasks, taskSearch]);
 
@@ -172,16 +179,32 @@ export function AvailableContentSelector({
                         onCheckedChange={() => { }} // toggled on container click
                         className="mt-0.5"
                       />
-                      <Label
-                        htmlFor={`available-q-${q.idx}`}
-                        className={cn(
-                          "text-xs leading-relaxed cursor-pointer flex-1 select-none text-foreground/80",
-                          isChecked && "text-foreground font-medium"
+                      <div className="flex-1 min-w-0">
+                        <Label
+                          htmlFor={`available-q-${q.idx}`}
+                          className={cn(
+                            "text-xs leading-relaxed cursor-pointer block select-none text-foreground/80",
+                            isChecked && "text-foreground font-medium"
+                          )}
+                          onClick={(e) => e.preventDefault()}
+                        >
+                          {q.text}
+                        </Label>
+                        {typeof q.rawData !== "string" && (q.rawData.marks !== undefined || (q.rawData.duration !== undefined && q.rawData.duration > 0)) && (
+                          <div className="flex flex-wrap gap-1.5 text-[9px] font-bold mt-1 select-none">
+                            {q.rawData.marks !== undefined && (
+                              <span className="inline-flex items-center gap-1 bg-primary/5 text-primary border border-primary/10 px-1.5 py-0.5 rounded-full">
+                                <Award className="h-2.5 w-2.5" /> {q.rawData.marks} Marks
+                              </span>
+                            )}
+                            {q.rawData.duration !== undefined && q.rawData.duration > 0 && (
+                              <span className="inline-flex items-center gap-1 bg-primary/5 text-primary border border-primary/10 px-1.5 py-0.5 rounded-full">
+                                <Clock className="h-2.5 w-2.5" /> {formatDuration(q.rawData.duration)}
+                              </span>
+                            )}
+                          </div>
                         )}
-                        onClick={(e) => e.preventDefault()}
-                      >
-                        {q.text}
-                      </Label>
+                      </div>
                     </div>
                   );
                 })
@@ -260,7 +283,7 @@ export function AvailableContentSelector({
                         onCheckedChange={() => { }}
                         className="mt-0.5"
                       />
-                      <div className="flex-1 space-y-1 select-none">
+                      <div className="flex-1 space-y-1 select-none min-w-0">
                         <Label
                           htmlFor={`available-mcq-${m.idx}`}
                           className={cn(
@@ -272,7 +295,7 @@ export function AvailableContentSelector({
                           {m.item.question}
                         </Label>
                         <div className="flex flex-wrap gap-1">
-                          {m.item.options.map((opt, optIdx) => (
+                          {m.item.options.map((opt: string, optIdx: number) => (
                             <span
                               key={optIdx}
                               className={cn(
@@ -286,6 +309,20 @@ export function AvailableContentSelector({
                             </span>
                           ))}
                         </div>
+                        {(m.item.marks !== undefined || (m.item.duration !== undefined && m.item.duration > 0)) && (
+                          <div className="flex flex-wrap gap-1.5 text-[9px] font-bold mt-1 select-none">
+                            {m.item.marks !== undefined && (
+                              <span className="inline-flex items-center gap-1 bg-primary/5 text-primary border border-primary/10 px-1.5 py-0.5 rounded-full">
+                                <Award className="h-2.5 w-2.5" /> {m.item.marks} Marks
+                              </span>
+                            )}
+                            {m.item.duration !== undefined && m.item.duration > 0 && (
+                              <span className="inline-flex items-center gap-1 bg-primary/5 text-primary border border-primary/10 px-1.5 py-0.5 rounded-full">
+                                <Clock className="h-2.5 w-2.5" /> {formatDuration(m.item.duration)}
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   );

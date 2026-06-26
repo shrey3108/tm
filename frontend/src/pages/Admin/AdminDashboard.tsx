@@ -34,8 +34,8 @@ const AdminDashboard = () => {
 
   const jobColumns: Column<any>[] = [
     { header: "Job Title", accessor: "job_title" },
-    { header: "Department", accessor: "department", className: "capitalize" },
-    { header: "Candidate Count", accessor: "candidate_count" },
+    { header: "Department", accessor: "department", className: "capitalize text-center" },
+    { header: "Candidate Count", accessor: "candidate_count", className: "text-center" },
   ];
 
   return (

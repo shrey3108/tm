@@ -168,6 +168,7 @@ const CreateUserModal = ({ show, handleClose, onUserSaved, user }: CreateUserMod
                       onValueChange={field.onChange}
                       value={field.value}
                       disabled={loading}
+                      modal={false}
                     >
                       <FormControl>
                         <SelectTrigger className="w-full">
@@ -176,7 +177,7 @@ const CreateUserModal = ({ show, handleClose, onUserSaved, user }: CreateUserMod
                           </SelectValue>
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
+                      <SelectContent alignItemWithTrigger={false}>
                         {roles.filter(role => role.name !== "superadmin").map((role) => (
                           <SelectItem key={role.id} value={role.id}>
                             {role.name}

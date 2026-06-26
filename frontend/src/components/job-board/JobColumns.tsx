@@ -56,7 +56,7 @@ export const getJobColumns = ({
             className="hover:bg-transparent p-0 font-semibold text-base"
           >
             Title
-            <ArrowUpDown className="ml-2 h-4 w-4" />
+            <ArrowUpDown className="h-4 w-4" />
           </Button>
         );
       },
@@ -114,7 +114,7 @@ export const getJobColumns = ({
               className="hover:bg-transparent p-0 font-semibold text-base"
             >
               Status
-              <ArrowUpDown className="ml-2 h-4 w-4" />
+              <ArrowUpDown className="h-4 w-4" />
             </Button>
           </PermissionGuard>
         );
@@ -140,7 +140,7 @@ export const getJobColumns = ({
             className="hover:bg-transparent p-0 font-semibold text-base"
           >
             Created
-            <ArrowUpDown className="ml-2 h-4 w-4" />
+            <ArrowUpDown className="h-4 w-4" />
           </Button>
         );
       },
@@ -150,11 +150,11 @@ export const getJobColumns = ({
     },
     // {
     //   accessorKey: "activity_sessions",
-    //   // header: "Hiring Activity",
+    //   : "Hiring Activity",
     //   header: () => {
     //     return (
     //       <div className="flex items-center gap-2">
-    //         <span className="font-semibold text-base">Hiring Activity</span>
+    //         <span className="text-base">Hiring Activity</span>
     //       </div>
     //     )
     //   },
@@ -211,7 +211,7 @@ export const getJobColumns = ({
     //                       </Badge>
     //                     )}
     //                   />
-    //                   <HoverCardContent side="top" className="w-auto p-2 min-w-0">
+    //  <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
     //                     <div className="text-[14px] font-semibold text-primary">
     //                       Candidates for this session
     //                     </div>
@@ -266,7 +266,7 @@ export const getJobColumns = ({
           className="hover:bg-transparent p-0 font-semibold text-base"
         >
           Total candidates
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <ArrowUpDown className="h-4 w-4" />
         </Button>
       },
       cell: ({ row }) => {
@@ -279,11 +279,11 @@ export const getJobColumns = ({
     },
     {
       accessorKey: "skills",
-      // header: "Skills",
+
       header: () => {
         return (
           <div className="flex items-center gap-2">
-            <span className="font-semibold text-base">Skills</span>
+            <span className="text-base">Skills</span>
           </div>
         )
       },
@@ -295,11 +295,11 @@ export const getJobColumns = ({
     },
     {
       id: "actions",
-      // header: "Actions",
+
       header: () => {
         return (
           <div className="flex items-center justify-center gap-2">
-            <span className="font-semibold text-base">Actions</span>
+            <span className="text-base">Actions</span>
           </div>
         )
       },
@@ -322,7 +322,7 @@ export const getJobColumns = ({
                 )}
               />
               <HoverCardContent side="top" className="w-auto p-2 min-w-0">
-                <div className="text-sm font-semibold text-primary">
+                <div className="text-primary">
 
                   Edit Job
                 </div>
@@ -345,8 +345,8 @@ export const getJobColumns = ({
                   </Button>
                 )}
               />
-              <HoverCardContent side="top" className="w-auto p-2 min-w-0">
-                <div className="text-sm font-semibold text-destructive">
+              <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
+                <div className=" text-destructive">
                   Delete Job
                 </div>
               </HoverCardContent>
@@ -370,8 +370,8 @@ export const getJobColumns = ({
                   </Button>
                 )}
               />
-              <HoverCardContent side="top" className="w-auto p-2 min-w-0">
-                <div className="text-sm font-semibold text-blue-500">
+              <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
+                <div className="text-blue-500">
                   View Candidates
                 </div>
               </HoverCardContent>

@@ -23,6 +23,7 @@ import { useAppSelector } from "@/store/hooks";
 import { selectCurrentUser } from "@/store/slices/authSlice";
 import { useDepartment } from "@/hooks/queries/admin/useDepartment";
 import { useDeleteDepartmentMutation } from "@/hooks/mutations/admin/useDepartment";
+import { usePageFilters } from "@/hooks/usePageFilters";
 
 const AdminDepartments = () => {
   const toast = useToast();
@@ -31,11 +32,23 @@ const AdminDepartments = () => {
   const deleteDepartmentMutation = useDeleteDepartmentMutation();
   const [showModal, setShowModal] = useState(false);
   const [selectedDepartment, setSelectedDepartment] = useState<DepartmentRead | null>(null);
-  const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
+
+  const { filters, setFilters } = usePageFilters("adminDepartments", {
     pageIndex: 0,
     pageSize: 10,
+    search: "",
   });
-  const [search, setSearch] = useState("");
+  const { pageIndex, pageSize, search } = filters;
+
+  const setPagination = (val: PaginationState | ((prev: PaginationState) => PaginationState)) => {
+    const currentPagination = { pageIndex: filters.pageIndex, pageSize: filters.pageSize };
+    const nextPagination = typeof val === "function" ? val(currentPagination) : val;
+    setFilters({
+      pageIndex: nextPagination.pageIndex,
+      pageSize: nextPagination.pageSize,
+    });
+  };
+
   const [_deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -48,8 +61,10 @@ const AdminDepartments = () => {
   const { data: departments, total, loading, error, refetch } = useDepartment(pageIndex * pageSize, pageSize, debouncedSearch)
 
   const handleSearchChange = (value: string) => {
-    setSearch(value);
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+    setFilters({
+      search: value,
+      pageIndex: 0,
+    });
   };
 
   useEffect(() => {
@@ -154,21 +169,21 @@ const AdminDepartments = () => {
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="hover:bg-transparent p-0 font-semibold"
+          className="hover:bg-transparent p-0 font-semibold text-base"
         >
           Name
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <ArrowUpDown className="h-4 w-4" />
         </Button>
       ),
       cell: ({ row }) => <span className="capitalize"> {row.original.name} </span>
     },
     {
       accessorKey: "description",
-      // header: "Description",
+
       header: () => {
         return (
           <div className="flex items-center gap-2">
-            <span className="font-semibold">Description</span>
+            <span className="text-base">Description</span>
           </div>
         )
       },
@@ -180,7 +195,7 @@ const AdminDepartments = () => {
           id: "actions",
           header: () => (
             <div className="flex items-center justify-center gap-2">
-              <span className="font-semibold">Actions</span>
+              <span className="text-base">Actions</span>
             </div>
           ),
           cell: ({ row }) => (
@@ -200,7 +215,7 @@ const AdminDepartments = () => {
                     </Button>
                   )}
                 />
-                <HoverCardContent className="w-fit px-3 py-1.5 text-xs font-medium" side="top">
+                <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
                   <span className="text-primary">Edit Department</span>
                 </HoverCardContent>
               </HoverCard>
@@ -220,7 +235,7 @@ const AdminDepartments = () => {
                     </Button>
                   )}
                 />
-                <HoverCardContent className="w-fit px-3 py-1.5 text-xs font-medium" side="top">
+                <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
                   <span className="text-destructive">Delete Department</span>
                 </HoverCardContent>
               </HoverCard>

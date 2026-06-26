@@ -74,6 +74,7 @@ export function JobDescriptionView({
                   <Select
                     value={selectedVersionData?.id || ""}
                     onValueChange={onVersionChange}
+                    modal={false}
                   >
                     <SelectTrigger className="h-8.5 rounded-xl border-border/60 bg-muted/30 px-3 text-[11px] font-bold hover:bg-muted/50 transition-colors w-[180px]">
                       <div className="flex items-center gap-2">
@@ -85,7 +86,7 @@ export function JobDescriptionView({
                         </SelectValue>
                       </div>
                     </SelectTrigger>
-                    <SelectContent className="rounded-2xl border-border/60 bg-popover/80 backdrop-blur-xl shadow-2xl">
+                    <SelectContent className="rounded-2xl border-border/60 bg-popover/80 backdrop-blur-xl shadow-2xl" alignItemWithTrigger={false}>
                       <SelectGroup>
                         <SelectLabel className="px-2 py-1.5 text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none">
                           JD History

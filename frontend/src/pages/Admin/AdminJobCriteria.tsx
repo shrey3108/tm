@@ -22,6 +22,7 @@ import PermissionGuard from "@/components/auth/PermissionGuard";
 import { PERMISSIONS } from "@/lib/permissions";
 import { useJobCriteria } from "@/hooks/queries/admin/useJobCriteria";
 import { useDeleteCriterionMutation } from "@/hooks/mutations/admin/useJobCriteria";
+import { usePageFilters } from "@/hooks/usePageFilters";
 
 /**
  * Admin page for managing job evaluation criteria.
@@ -33,11 +34,22 @@ const AdminJobCriteria = () => {
     const toast = useToast();
     const navigate = useNavigate();
 
-    const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
+    const { filters, setFilters } = usePageFilters("adminJobCriteria", {
         pageIndex: 0,
         pageSize: 10,
+        search: "",
     });
-    const [search, setSearch] = useState("");
+    const { pageIndex, pageSize, search } = filters;
+
+    const setPagination = (val: PaginationState | ((prev: PaginationState) => PaginationState)) => {
+        const currentPagination = { pageIndex: filters.pageIndex, pageSize: filters.pageSize };
+        const nextPagination = typeof val === "function" ? val(currentPagination) : val;
+        setFilters({
+            pageIndex: nextPagination.pageIndex,
+            pageSize: nextPagination.pageSize,
+        });
+    };
+
     const [_deletingId, setDeletingId] = useState<string | null>(null);
     const [deleteError, setDeleteError] = useState<string | null>(null);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -59,8 +71,10 @@ const AdminJobCriteria = () => {
         }
     }, [total, debouncedSearch, overallTotal]);
     const handleSearchChange = (value: string) => {
-        setSearch(value);
-        setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+        setFilters({
+            search: value,
+            pageIndex: 0,
+        });
     };
 
 
@@ -149,14 +163,14 @@ const AdminJobCriteria = () => {
                 <Button
                     variant="ghost"
                     onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                    className="hover:bg-transparent p-0 font-semibold"
+                    className="hover:bg-transparent p-0 font-semibold text-base"
                 >
                     Name
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                    <ArrowUpDown className="h-4 w-4" />
                 </Button>
             ),
             cell: ({ row }) => (
-                <span className="font-medium text-foreground capitalize">{row.original.name}</span>
+                <span className="text-foreground capitalize">{row.original.name}</span>
             ),
         },
         {
@@ -164,11 +178,11 @@ const AdminJobCriteria = () => {
             accessorKey: "description",
             header: () => {
                 return <div className="flex items-center gap-2">
-                    <span className="font-semibold">Description</span>
+                    <span className="text-base">Description</span>
                 </div>
             },
             cell: ({ row }) => (
-                <span className="text-muted-foreground truncate line-clamp-1 max-w-sm">
+                <span className="truncate line-clamp-1 max-w-sm">
                     {row.original.description || "No description"}
                 </span>
             ),
@@ -179,10 +193,10 @@ const AdminJobCriteria = () => {
                 <Button
                     variant="ghost"
                     onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                    className="hover:bg-transparent p-0 font-semibold"
+                    className="hover:bg-transparent p-0 font-semibold text-base"
                 >
                     Created At
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                    <ArrowUpDown className="h-4 w-4" />
                 </Button>
             ),
             cell: ({ row }) => <DateDisplay date={row.original.created_at} />,
@@ -191,7 +205,7 @@ const AdminJobCriteria = () => {
             id: "actions",
             header: () => {
                 return <div className="flex items-center justify-center gap-2">
-                    <span className="font-semibold">Actions</span>
+                    <span className="text-base">Actions</span>
                 </div>
             },
             cell: ({ row }) => (
@@ -211,7 +225,7 @@ const AdminJobCriteria = () => {
                                 </Button>
                             )}
                         />
-                        <HoverCardContent className="w-fit px-3 py-1.5 text-xs font-medium" side="top">
+                        <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
                             <span className="text-blue-600">View Info</span>
                         </HoverCardContent>
                     </HoverCard>
@@ -232,7 +246,7 @@ const AdminJobCriteria = () => {
                                     </Button>
                                 )}
                             />
-                            <HoverCardContent className="w-fit px-3 py-1.5 text-xs font-medium" side="top">
+                            <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
                                 <span className="text-primary">Edit Criteria</span>
                             </HoverCardContent>
                         </HoverCard>
@@ -254,7 +268,7 @@ const AdminJobCriteria = () => {
                                     </Button>
                                 )}
                             />
-                            <HoverCardContent className="w-fit px-3 py-1.5 text-xs font-medium" side="top">
+                            <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
                                 <span className="text-destructive">Delete Criteria</span>
                             </HoverCardContent>
                         </HoverCard>
