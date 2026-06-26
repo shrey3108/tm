@@ -393,12 +393,22 @@ class CandidateTestPaperAssign(BaseModel):
         if not v:
             return []
         if isinstance(v, str):
+            if "---" in v:
+                import re
+                parts = [p.strip() for p in re.split(r'\s*---\s*', v) if p.strip()]
+                return [{"task": p, "description": p, "instructions": ""} for p in parts]
             return [{"task": v, "description": v, "instructions": ""}] if v.strip() else []
             
         new_tasks = []
         for item in v:
             if isinstance(item, str):
-                new_tasks.append({"task": item, "description": item, "instructions": ""})
+                if "---" in item:
+                    import re
+                    parts = [p.strip() for p in re.split(r'\s*---\s*', item) if p.strip()]
+                    for p in parts:
+                        new_tasks.append({"task": p, "description": p, "instructions": ""})
+                else:
+                    new_tasks.append({"task": item, "description": item, "instructions": ""})
             elif isinstance(item, dict):
                 t_val = item.get("task")
                 d_val = item.get("description")

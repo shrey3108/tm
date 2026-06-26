@@ -299,8 +299,8 @@ async def assign_test_paper_to_candidate(
         assigned_name = paper.name
         # Allow overriding template questions/tasks manually
         assigned_questions = [q.model_dump() if hasattr(q, "model_dump") else q for q in assign_data.questions] if assign_data.questions is not None else paper.questions
-        assigned_mcqs = [m.model_dump() if hasattr(m, "model_dump") else m for m in assign_data.mcqs] if assign_data.mcqs is not None else paper.mcqs
-        assigned_task = [t.model_dump() if hasattr(t, "model_dump") else t for t in assign_data.project_task] if assign_data.project_task is not None else paper.project_task
+        assigned_mcqs = [m.model_dump() if hasattr(m, "model_dump") else m for m in assign_data.mcqs] if assign_data.mcqs else paper.mcqs
+        assigned_task = [t.model_dump() if hasattr(t, "model_dump") else t for t in assign_data.project_task] if assign_data.project_task else paper.project_task
         assigned_file_path = paper.task_file_path
         assigned_skills = paper.task_skills
 
@@ -341,7 +341,13 @@ async def assign_test_paper_to_candidate(
                     all_mcqs.append(new_m)
 
         # Ensure we have at least 5 unique questions or fallback to total pool
-        unique_questions = list(set(all_questions))
+        seen_questions = set()
+        unique_questions = []
+        for q in all_questions:
+            q_text = q.get("question") if isinstance(q, dict) else getattr(q, "question", "")
+            if q_text and q_text not in seen_questions:
+                seen_questions.add(q_text)
+                unique_questions.append(q)
         if len(unique_questions) < 5:
             unique_questions = all_questions
 
@@ -898,8 +904,7 @@ async def delete_job_default_test_paper(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="No default test paper assigned to this job.",
         )
-    for paper in papers:
-        await db.delete(paper)
+    await db.delete(paper)
     await db.commit()
 
     # Invalidate job cache immediately after deleting job default test paper

@@ -194,7 +194,7 @@ async def test_task_papers_flow():
             paper_a = response.json()
             paper_a_id = paper_a["id"]
             assert paper_a["name"].startswith("Custom Paper - ")
-            assert paper_a["questions"] == data_a["questions"]
+            assert [q["question"] for q in paper_a["questions"]] == data_a["questions"]
             assert len(paper_a["project_task"]) == 1
 
             # Manual Paper B
@@ -218,7 +218,7 @@ async def test_task_papers_flow():
             paper_b = response.json()
             paper_b_id = paper_b["id"]
             assert paper_b["name"].startswith("Custom Paper - ")
-            assert paper_b["questions"] == data_b["questions"]
+            assert [q["question"] for q in paper_b["questions"]] == data_b["questions"]
             assert len(paper_b["project_task"]) == 1
 
             # 4. List question set papers
@@ -334,7 +334,7 @@ async def test_task_papers_flow():
             assert response.status_code == 200
             override_assigned = response.json()
             assert override_assigned["name"].startswith("Custom Paper - ")
-            assert override_assigned["questions"] == ["Override Q1", "Override Q2", "Override Q3", "Override Q4", "Override Q5"]
+            assert [q["question"] for q in override_assigned["questions"]] == ["Override Q1", "Override Q2", "Override Q3", "Override Q4", "Override Q5"]
             assert override_assigned["project_task"][0]["task"] == "Override Project Task Description"
             assert override_assigned["task_file_path"] is None
             assert override_assigned["task_skills"] is None
@@ -366,7 +366,8 @@ async def test_task_papers_flow():
             ]
             import re
             for q in random_assigned["questions"]:
-                assert re.sub(r"^\[.*?\]\s*", "", q) in pooled_questions
+                q_text = q["question"] if isinstance(q, dict) else q
+                assert re.sub(r"^\[.*?\]\s*", "", q_text) in pooled_questions
             # Project task should be either from paper A or paper B
             clean_project_task = [re.sub(r"^\[.*?\]\s*", "", t["task"]) for t in random_assigned["project_task"]]
             assert clean_project_task in [
@@ -387,7 +388,7 @@ async def test_task_papers_flow():
             assert response.status_code == 200
             custom_assigned = response.json()
             assert custom_assigned["name"] == "Custom Test Paper"
-            assert custom_assigned["questions"] == [
+            assert [q["question"] for q in custom_assigned["questions"]] == [
                 "Custom Q1",
                 "Custom Q2",
                 "Custom Q3",
@@ -900,7 +901,7 @@ async def test_task_papers_duplicate_checks():
                     "answer": "A"
                 }
             ],
-            "project_task": [{"task": "Implement Python task", "instructions": ""}]
+            "project_task": [{"task": "Implement Python task", "instructions": "Implement the task with proper tests."}]
         }
         res = client.post("/api/v1/task-papers/manual", json=data_1)
         assert res.status_code == 201
@@ -935,7 +936,7 @@ async def test_task_papers_duplicate_checks():
         }
         res = client.post("/api/v1/task-papers/manual", json=data_2)
         assert res.status_code == 400
-        assert "already exists in the system. The existing question bank has been updated with the new skill." in res.json()["detail"]
+        assert "This question already exists in the system." in res.json()["detail"]
 
         # Verify that Paper 1's skills now include both Python AND FastAPI!
         res_p1 = client.get(f"/api/v1/task-papers/{paper_1_id}")
@@ -962,7 +963,7 @@ async def test_task_papers_duplicate_checks():
         }
         res = client.post("/api/v1/task-papers/manual", json=data_mcq_dup)
         assert res.status_code == 400
-        assert "already exists in the system. The existing question bank has been updated with the new skill." in res.json()["detail"]
+        assert "This MCQ already exists in the system." in res.json()["detail"]
 
         # E. Test system duplicate Task check
         data_task_dup = {
@@ -972,11 +973,11 @@ async def test_task_papers_duplicate_checks():
             "paper_type": "mixed",
             "questions": [],
             "mcqs": [],
-            "project_task": [{"task": "Implement Python task", "instructions": ""}]
+            "project_task": [{"task": "Implement Python task", "instructions": "Implement the task with proper tests."}]
         }
         res = client.post("/api/v1/task-papers/manual", json=data_task_dup)
         assert res.status_code == 400
-        assert "already exists in the system. The existing question bank has been updated with the new skill." in res.json()["detail"]
+        assert "This task already exists in the system." in res.json()["detail"]
 
         # F. Create a new independent paper with different position (should allow same question)
         # Create a new position
@@ -1115,7 +1116,7 @@ async def test_dynamic_stage_requirements():
             "paper_type": "mixed",
             "questions": ["Q1"],
             "mcqs": [],
-            "project_task": [{"task": "Task1", "instructions": ""}]
+            "project_task": [{"task": "Build a task runner project in Python.", "instructions": "Implement the task with proper tests."}]
         }
         res_paper = client.post("/api/v1/task-papers/manual", json=data_paper)
         assert res_paper.status_code == 201
