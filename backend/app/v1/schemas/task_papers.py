@@ -10,7 +10,6 @@ class QuestionItem(BaseModel):
     question: str = Field(..., description="The content of the question")
     duration: Optional[int] = Field(None, description="Duration in minutes")
     marks: Optional[int] = Field(None, description="Marks allocated")
-    weightage: Optional[int] = Field(None, description="Weightage percentage")
 
 
 class MCQItem(BaseModel):
@@ -19,14 +18,12 @@ class MCQItem(BaseModel):
     answer: Optional[str] = Field(None, description="The correct option / answer")
     duration: Optional[int] = Field(None, description="Duration in minutes")
     marks: Optional[int] = Field(None, description="Marks allocated")
-    weightage: Optional[int] = Field(None, description="Weightage percentage")
 
 
 class SubTask(BaseModel):
     name: str = Field(..., description="The name or title of the sub-task")
     description: Optional[str] = Field(None, description="Description of the sub-task")
     marks: Optional[int] = Field(None, description="Marks allocated")
-    weightage: Optional[int] = Field(None, description="Weightage percentage")
 
 
 class TaskItem(BaseModel):
@@ -59,7 +56,15 @@ class QuestionSetPaperCreate(BaseModel):
         new_tasks = []
         for item in v:
             if isinstance(item, str):
-                new_tasks.append({"task": item, "instructions": ""})
+                new_tasks.append({"task": item, "description": item, "instructions": ""})
+            elif isinstance(item, dict):
+                t_val = item.get("task")
+                d_val = item.get("description")
+                if t_val and not d_val:
+                    item["description"] = t_val
+                elif d_val and not t_val:
+                    item["task"] = d_val
+                new_tasks.append(item)
             else:
                 new_tasks.append(item)
         return new_tasks
@@ -89,30 +94,14 @@ class QuestionSetPaperCreate(BaseModel):
         return new_mcqs
 
     @model_validator(mode="after")
-    def validate_total_weightage(self):
-        total_weightage = 0
-        has_weightage = False
-        
-        for q in getattr(self, "questions", []) or []:
-            if q.weightage is not None:
-                total_weightage += q.weightage
-                has_weightage = True
-                
-        for m in getattr(self, "mcqs", []) or []:
-            if m.weightage is not None:
-                total_weightage += m.weightage
-                has_weightage = True
-                
+    def validate_project_task_lengths(self):
         for pt in getattr(self, "project_task", []) or []:
-            if pt.tasks:
-                for sub in pt.tasks:
-                    if sub.weightage is not None:
-                        total_weightage += sub.weightage
-                        has_weightage = True
-                        
-        if has_weightage and total_weightage != 100:
-            raise ValueError(f"Total weightage of all items must sum up to exactly 100%. Current sum is {total_weightage}%")
-            
+            d_val = getattr(pt, "description", None) or ""
+            i_val = getattr(pt, "instructions", None) or ""
+            if len(d_val.strip()) < 10:
+                raise ValueError("Project task description must be at least 10 characters long.")
+            if len(i_val.strip()) < 10:
+                raise ValueError("Project task instructions must be at least 10 characters long.")
         return self
 
 
@@ -150,8 +139,25 @@ class TaskAction(BaseModel):
     @classmethod
     def coerce_task(cls, v):
         if isinstance(v, str):
-            return {"task": v, "instructions": ""}
+            return {"task": v, "description": v, "instructions": ""}
+        elif isinstance(v, dict):
+            t_val = v.get("task")
+            d_val = v.get("description")
+            if t_val and not d_val:
+                v["description"] = t_val
+            elif d_val and not t_val:
+                v["task"] = d_val
         return v
+
+    @model_validator(mode="after")
+    def validate_task_length(self):
+        d_val = getattr(self.task, "description", None) or ""
+        i_val = getattr(self.task, "instructions", None) or ""
+        if len(d_val.strip()) < 10:
+            raise ValueError("Project task description must be at least 10 characters long.")
+        if len(i_val.strip()) < 10:
+            raise ValueError("Project task instructions must be at least 10 characters long.")
+        return self
 
 
 class QuestionSetPaperRead(BaseModel):
@@ -189,15 +195,24 @@ class QuestionSetPaperRead(BaseModel):
         if not v:
             return []
         if isinstance(v, str):
-            return [{"task": v, "instructions": ""}] if v.strip() else []
+            return [{"task": v, "description": v, "instructions": ""}] if v.strip() else []
             
         new_tasks = []
         for item in v:
             if isinstance(item, str):
-                new_tasks.append({"task": item, "instructions": ""})
+                new_tasks.append({"task": item, "description": item, "instructions": ""})
             elif isinstance(item, dict):
+                t_val = item.get("task")
+                d_val = item.get("description")
+                if t_val and not d_val:
+                    item["description"] = t_val
+                elif d_val and not t_val:
+                    item["task"] = d_val
+                
                 if "task" not in item:
                     item["task"] = item.get("title", item.get("content", "Untitled Task"))
+                if "description" not in item:
+                    item["description"] = item.get("task")
                 if "instructions" not in item:
                     item["instructions"] = ""
                 new_tasks.append(item)
@@ -250,15 +265,24 @@ class CandidateTestPaperRead(BaseModel):
         if not v:
             return []
         if isinstance(v, str):
-            return [{"task": v, "instructions": ""}] if v.strip() else []
+            return [{"task": v, "description": v, "instructions": ""}] if v.strip() else []
             
         new_tasks = []
         for item in v:
             if isinstance(item, str):
-                new_tasks.append({"task": item, "instructions": ""})
+                new_tasks.append({"task": item, "description": item, "instructions": ""})
             elif isinstance(item, dict):
+                t_val = item.get("task")
+                d_val = item.get("description")
+                if t_val and not d_val:
+                    item["description"] = t_val
+                elif d_val and not t_val:
+                    item["task"] = d_val
+                
                 if "task" not in item:
                     item["task"] = item.get("title", item.get("content", "Untitled Task"))
+                if "description" not in item:
+                    item["description"] = item.get("task")
                 if "instructions" not in item:
                     item["instructions"] = ""
                 new_tasks.append(item)
@@ -290,15 +314,24 @@ class CandidateTestPaperHistoryRead(BaseModel):
         if not v:
             return []
         if isinstance(v, str):
-            return [{"task": v, "instructions": ""}] if v.strip() else []
+            return [{"task": v, "description": v, "instructions": ""}] if v.strip() else []
             
         new_tasks = []
         for item in v:
             if isinstance(item, str):
-                new_tasks.append({"task": item, "instructions": ""})
+                new_tasks.append({"task": item, "description": item, "instructions": ""})
             elif isinstance(item, dict):
+                t_val = item.get("task")
+                d_val = item.get("description")
+                if t_val and not d_val:
+                    item["description"] = t_val
+                elif d_val and not t_val:
+                    item["task"] = d_val
+                
                 if "task" not in item:
                     item["task"] = item.get("title", item.get("content", "Untitled Task"))
+                if "description" not in item:
+                    item["description"] = item.get("task")
                 if "instructions" not in item:
                     item["instructions"] = ""
                 new_tasks.append(item)
@@ -357,51 +390,30 @@ class CandidateTestPaperAssign(BaseModel):
         if not v:
             return []
         if isinstance(v, str):
-            return [{"task": v, "instructions": ""}] if v.strip() else []
+            return [{"task": v, "description": v, "instructions": ""}] if v.strip() else []
             
         new_tasks = []
         for item in v:
             if isinstance(item, str):
-                new_tasks.append({"task": item, "instructions": ""})
+                new_tasks.append({"task": item, "description": item, "instructions": ""})
             elif isinstance(item, dict):
+                t_val = item.get("task")
+                d_val = item.get("description")
+                if t_val and not d_val:
+                    item["description"] = t_val
+                elif d_val and not t_val:
+                    item["task"] = d_val
+                
                 if "task" not in item:
                     item["task"] = item.get("title", item.get("content", "Untitled Task"))
+                if "description" not in item:
+                    item["description"] = item.get("task")
                 if "instructions" not in item:
                     item["instructions"] = ""
                 new_tasks.append(item)
             else:
                 new_tasks.append(item)
         return new_tasks
-
-    @model_validator(mode="after")
-    def validate_total_weightage(self):
-        total_weightage = 0
-        has_weightage = False
-        
-        for q in getattr(self, "questions", []) or []:
-            if q.weightage is not None:
-                total_weightage += q.weightage
-                has_weightage = True
-                
-        for m in getattr(self, "mcqs", []) or []:
-            if m.weightage is not None:
-                total_weightage += m.weightage
-                has_weightage = True
-                
-        for pt in getattr(self, "project_task", []) or []:
-            if pt.tasks:
-                for sub in pt.tasks:
-                    if sub.weightage is not None:
-                        total_weightage += sub.weightage
-                        has_weightage = True
-                        
-        if getattr(self, "mode", None) == "hybrid":
-            return self
-
-        if has_weightage and total_weightage != 100:
-            raise ValueError(f"Total weightage of all items must sum up to exactly 100%. Current sum is {total_weightage}%")
-            
-        return self
 
 
 class CandidateTestPaperEmailSend(BaseModel):

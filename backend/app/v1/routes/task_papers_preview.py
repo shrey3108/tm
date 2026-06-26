@@ -91,7 +91,7 @@ async def preview_random_questions(
         if q_text and q_text not in seen_questions:
             seen_questions.add(q_text)
             if isinstance(q, str):
-                unique_questions.append({"question": q, "marks": 5, "weightage": 5, "duration": 3})
+                unique_questions.append({"question": q, "marks": 5, "duration": 3})
             else:
                 unique_questions.append(q)
     seen_mcq_questions = set()

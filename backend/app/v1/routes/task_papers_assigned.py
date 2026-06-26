@@ -25,6 +25,7 @@ from app.v1.schemas.task_papers import CandidateTestPaperRead, CandidateTestPape
 from app.v1.schemas.user import UserRead
 from app.v1.schemas.upload import CandidateTaskRead, JobCandidateSkillsRead
 from app.v1.services.admin.candidate_task_service import candidate_task_service
+from app.v1.routes.task_papers_predefined import handle_duplicate_question, handle_duplicate_mcq, handle_duplicate_task
 from app.v1.utils.uuid import UUIDHelper
 
 router = APIRouter()
@@ -62,6 +63,73 @@ def parse_frontend_custom_task(text: str) -> tuple[str, str] | None:
     if match:
         return match.group(1).strip(), match.group(2).strip()
     return None
+
+
+async def auto_save_custom_items(
+    questions: list,
+    mcqs: list,
+    tasks: list,
+    department_id: uuid.UUID,
+    position_id: uuid.UUID,
+    db: AsyncSession
+):
+    if not department_id or not position_id:
+        return
+    if not questions and not mcqs and not tasks:
+        return
+
+    # Check if we need to create the auto-saved paper
+    stmt = select(QuestionSetPaper).where(
+        QuestionSetPaper.department_id == department_id,
+        QuestionSetPaper.position_id == position_id,
+        QuestionSetPaper.name == "Auto-Saved Custom Questions"
+    )
+    res = await db.execute(stmt)
+    auto_paper = res.scalars().first()
+    
+    needs_save = False
+    
+    new_q = list(auto_paper.questions) if auto_paper and auto_paper.questions else []
+    new_m = list(auto_paper.mcqs) if auto_paper and auto_paper.mcqs else []
+    new_t = list(auto_paper.project_task) if auto_paper and auto_paper.project_task else []
+
+    if questions:
+        for q in questions:
+            q_text = q.get("question") if isinstance(q, dict) else q.question if hasattr(q, "question") else str(q)
+            if not await handle_duplicate_question(q, department_id, position_id, [], db):
+                new_q.append(q if isinstance(q, dict) else q.model_dump() if hasattr(q, "model_dump") else q)
+                needs_save = True
+
+    if mcqs:
+        for m in mcqs:
+            m_text = m.get("question") if isinstance(m, dict) else m.question if hasattr(m, "question") else str(m)
+            if not await handle_duplicate_mcq(m_text, department_id, position_id, [], db):
+                new_m.append(m if isinstance(m, dict) else m.model_dump() if hasattr(m, "model_dump") else m)
+                needs_save = True
+                
+    if tasks:
+        for t in tasks:
+            t_text = t.get("task") if isinstance(t, dict) else t.task if hasattr(t, "task") else str(t)
+            if not await handle_duplicate_task(t_text, department_id, position_id, [], db):
+                new_t.append(t if isinstance(t, dict) else t.model_dump() if hasattr(t, "model_dump") else t)
+                needs_save = True
+
+    if needs_save:
+        if not auto_paper:
+            auto_paper = QuestionSetPaper(
+                department_id=department_id,
+                position_id=position_id,
+                name="Auto-Saved Custom Questions",
+                paper_type="mixed",
+                questions=[],
+                mcqs=[],
+                project_task=[]
+            )
+            db.add(auto_paper)
+        auto_paper.questions = new_q
+        auto_paper.mcqs = new_m
+        auto_paper.project_task = new_t
+        await db.commit()
 
 
 @router.post("/assign", response_model=CandidateTestPaperRead, status_code=status.HTTP_200_OK)
@@ -313,6 +381,16 @@ async def assign_test_paper_to_candidate(
         assigned_questions = final_questions
         assigned_mcqs = final_mcqs
         assigned_task = final_tasks
+
+    if assign_data.mode in ["custom", "hybrid"]:
+        await auto_save_custom_items(
+            questions=assign_data.questions or [],
+            mcqs=assign_data.mcqs or [],
+            tasks=assign_data.project_task or [],
+            department_id=job.department_id,
+            position_id=job.position_id,
+            db=db
+        )
 
     # Dynamic skill extraction for Random and Custom modes to ensure exact skill matching
     if assign_data.mode in ["random", "custom", "hybrid"]:

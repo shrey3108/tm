@@ -6,6 +6,7 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, status, File as FastAPIFile, UploadFile, Form, Request, Response, Query
 from fastapi.responses import FileResponse, RedirectResponse
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.v1.core.config import settings
@@ -25,6 +26,25 @@ from app.v1.core.cache import cache
 router = APIRouter()
 
 
+
+def normalize_text(text: str) -> str:
+    import re
+    if not text:
+        return ""
+    text = text.lower()
+    text = re.sub(r'[^\\w\\s]', '', text)
+    text = re.sub(r'\\s+', ' ', text).strip()
+    return text
+
+def normalize_text(text: str) -> str:
+    import re
+    if not text:
+        return ""
+    text = text.lower()
+    text = re.sub(r'[^\w\s]', '', text)
+    text = re.sub(r'\s+', ' ', text).strip()
+    return text
+
 async def handle_duplicate_question(
     question_text: str,
     department_id: uuid.UUID,
@@ -37,24 +57,34 @@ async def handle_duplicate_question(
     If it exists, adds any missing skills to that paper and commits.
     Returns True if a duplicate was found.
     """
-    from sqlalchemy import or_
     q_str = question_text.question if hasattr(question_text, "question") else str(question_text)
     
     stmt = (
         select(QuestionSetPaper)
+        .options(selectinload(QuestionSetPaper.skills))
         .where(
             QuestionSetPaper.department_id == department_id,
-            QuestionSetPaper.position_id == position_id,
-            or_(
-                QuestionSetPaper.questions.contains([{"question": q_str}]),
-                QuestionSetPaper.questions.contains([q_str])
-            )
+            QuestionSetPaper.position_id == position_id
         )
     )
     res = await db.execute(stmt)
-    existing_papers = res.scalars().all()
-    if existing_papers:
-        return True
+    papers = res.scalars().all()
+    norm_q = normalize_text(q_str)
+    
+    for p in papers:
+        if p.questions:
+            for ex_q in p.questions:
+                ex_q_str = ex_q.get("question") if isinstance(ex_q, dict) else str(ex_q)
+                if normalize_text(ex_q_str) == norm_q:
+                    existing_skill_ids = {s.id for s in p.skills}
+                    new_skills_added = False
+                    for s in current_skills:
+                        if s.id not in existing_skill_ids:
+                            p.skills.append(s)
+                            new_skills_added = True
+                    if new_skills_added:
+                        await db.commit()
+                    return True
     return False
 
 
@@ -72,6 +102,7 @@ async def handle_duplicate_mcq(
     """
     stmt = (
         select(QuestionSetPaper)
+        .options(selectinload(QuestionSetPaper.skills))
         .where(
             QuestionSetPaper.department_id == department_id,
             QuestionSetPaper.position_id == position_id
@@ -79,10 +110,20 @@ async def handle_duplicate_mcq(
     )
     res = await db.execute(stmt)
     papers = res.scalars().all()
+    norm_m = normalize_text(mcq_question_text)
     for paper in papers:
         if paper.mcqs:
             for m in paper.mcqs:
-                if m.get("question") == mcq_question_text:
+                m_str = m.get("question") if isinstance(m, dict) else str(m)
+                if normalize_text(m_str) == norm_m:
+                    existing_skill_ids = {s.id for s in paper.skills}
+                    new_skills_added = False
+                    for s in current_skills:
+                        if s.id not in existing_skill_ids:
+                            paper.skills.append(s)
+                            new_skills_added = True
+                    if new_skills_added:
+                        await db.commit()
                     return True
     return False
 
@@ -101,6 +142,7 @@ async def handle_duplicate_task(
     """
     stmt = (
         select(QuestionSetPaper)
+        .options(selectinload(QuestionSetPaper.skills))
         .where(
             QuestionSetPaper.department_id == department_id,
             QuestionSetPaper.position_id == position_id
@@ -108,14 +150,23 @@ async def handle_duplicate_task(
     )
     res = await db.execute(stmt)
     papers = res.scalars().all()
+    norm_t = normalize_text(task_text)
     for paper in papers:
         if paper.project_task:
             for t in paper.project_task:
-                if isinstance(t, dict) and t.get("task") == task_text:
-                    return True
-                elif isinstance(t, str) and t == task_text:
+                t_str = t.get("task") if isinstance(t, dict) else str(t)
+                if normalize_text(t_str) == norm_t:
+                    existing_skill_ids = {s.id for s in paper.skills}
+                    new_skills_added = False
+                    for s in current_skills:
+                        if s.id not in existing_skill_ids:
+                            paper.skills.append(s)
+                            new_skills_added = True
+                    if new_skills_added:
+                        await db.commit()
                     return True
     return False
+
 
 
 from app.v1.schemas.task_papers import QuestionSetPaperCreate
@@ -573,7 +624,7 @@ async def update_question_in_paper(
         if any((q.get("question") if isinstance(q, dict) else q) == question_text for q in new_questions):
             raise HTTPException(status_code=400, detail="This question already exists in this paper.")
         if await handle_duplicate_question(question_text, paper.department_id, paper.position_id, paper.skills, db):
-            raise HTTPException(status_code=400, detail="This question already exists in the system.")
+            return paper
             
     new_questions[index] = payload.question.model_dump()
     paper.questions = new_questions
@@ -642,7 +693,7 @@ async def add_mcq_to_paper(
 
     # 2. System duplicate check
     if mcq_question and await handle_duplicate_mcq(mcq_question, paper.department_id, paper.position_id, paper.skills, db):
-        raise HTTPException(status_code=400, detail="This MCQ already exists in the system.")
+        return paper
 
     new_mcqs = list(current_mcqs)
     new_mcqs.append(mcq_data.model_dump())
@@ -687,7 +738,7 @@ async def update_mcq_in_paper(
         if any(m.get("question") == mcq_question for m in new_mcqs):
             raise HTTPException(status_code=400, detail="This MCQ already exists in this paper.")
         if await handle_duplicate_mcq(mcq_question, paper.department_id, paper.position_id, paper.skills, db):
-            raise HTTPException(status_code=400, detail="This MCQ already exists in the system.")
+            return paper
 
     new_mcqs[index] = mcq_data.model_dump()
     paper.mcqs = new_mcqs
@@ -757,7 +808,7 @@ async def add_task_to_paper(
 
     # 2. System duplicate check
     if await handle_duplicate_task(task_obj.task, paper.department_id, paper.position_id, paper.skills, db):
-        raise HTTPException(status_code=400, detail="This task already exists in the system.")
+        return paper
 
     new_tasks = list(paper.project_task) if paper.project_task else []
     new_tasks.append(task_obj.model_dump())
@@ -802,7 +853,7 @@ async def update_task_in_paper(
             if t_text == task_obj.task:
                 raise HTTPException(status_code=400, detail="This task already exists in this paper.")
         if await handle_duplicate_task(task_obj.task, paper.department_id, paper.position_id, paper.skills, db):
-            raise HTTPException(status_code=400, detail="This task already exists in the system.")
+            return paper
 
     new_tasks[index] = task_obj.model_dump()
     paper.project_task = new_tasks
