@@ -72,28 +72,10 @@ async def update_transcript(
     return {"message": "Transcript updated, but no evaluation was found to re-trigger."}
 
 
-@router.post("/upload/{candidate_stage_id}", include_in_schema=False)
-async def upload_transcript(
-    candidate_stage_id: uuid.UUID,
-    file: UploadFile = File(...),
-    db: AsyncSession = Depends(get_db),
-):
-    """
-    Standard multipart upload for transcripts.
-    """
-    if not file.filename:
-        raise HTTPException(status_code=400, detail="No file provided")
-    
-    # Existing file upload logic (simplified for this task)
-    content = await file.read()
-    ext = f".{file.filename.split('.')[-1].lower()}"
-    filename = file.filename
-    
-    # Start processing...
-    from app.v1.services.transcript_tasks import process_transcript_task
-    # Save temp file or process directly
-    # For now, let's keep it consistent with the user's needs.
-    return {"message": "File upload started"}
+
+
+from app.v1.utils.stage import get_stage_required_inputs
+
 
 @router.post("/upload-path/{candidate_stage_id}")
 async def upload_transcript_path(
@@ -120,6 +102,23 @@ async def upload_transcript_path(
     current_stage = res.scalar_one_or_none()
     if not current_stage:
         raise HTTPException(status_code=404, detail="Candidate stage not found")
+
+    # Validate that the stage requires a transcript input
+    await db.refresh(current_stage, ["job_stage"])
+    if current_stage.job_stage:
+        await db.refresh(current_stage.job_stage, ["template"])
+        config = current_stage.job_stage.config or {}
+        if not config and current_stage.job_stage.template:
+            config = current_stage.job_stage.template.default_config or {}
+        
+        template_name = current_stage.job_stage.template.name if current_stage.job_stage.template else None
+        required_inputs = get_stage_required_inputs(config, template_name)
+        if "transcript" not in required_inputs:
+            raise HTTPException(
+                status_code=400,
+                detail=f"This stage is not configured for Transcript upload (required inputs: {required_inputs})."
+            )
+
 
     # 2. Ensure upload directory exists
     upload_dir = resolve_storage_path(settings.TRANSCRIPT_UPLOAD_DIR)

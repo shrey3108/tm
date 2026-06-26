@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import uuid
+from typing import Optional
 import openai
 from pathlib import Path
 from fastapi import UploadFile, HTTPException, status
@@ -383,6 +384,25 @@ Output Format Example (JSON ONLY):
             if client:
                 await client.close()
 
+    async def _get_active_stage_config_id(self, db: AsyncSession, candidate_id: uuid.UUID) -> Optional[uuid.UUID]:
+        from app.v1.db.models.candidate_stages import CandidateStage
+        from app.v1.db.models.job_stage_configs import JobStageConfig
+        from app.v1.db.models.stage_templates import StageTemplate
+        from app.v1.utils.stage import get_question_round_filter
+        stmt = (
+            select(CandidateStage.job_stage_id)
+            .join(JobStageConfig, CandidateStage.job_stage_id == JobStageConfig.id)
+            .join(StageTemplate, JobStageConfig.template_id == StageTemplate.id)
+            .where(
+                CandidateStage.candidate_id == candidate_id,
+                CandidateStage.status == "active",
+                get_question_round_filter(JobStageConfig, StageTemplate)
+            )
+            .limit(1)
+        )
+        res = await db.execute(stmt)
+        return res.scalar_one_or_none()
+
     async def get_candidate_task_skills(self, db: AsyncSession, candidate_id: uuid.UUID) -> dict:
         # 1. Verify Candidate exists
         stmt = select(Candidate).options(selectinload(Candidate.applied_job)).where(Candidate.id == candidate_id)
@@ -399,18 +419,39 @@ Output Format Example (JSON ONLY):
         is_custom_task = False
 
         if not task_file_path:
+            active_stage_id = await self._get_active_stage_config_id(db, candidate_id)
             from app.v1.db.models.candidate_test_paper import CandidateTestPaper
             stmt_paper = select(CandidateTestPaper).where(CandidateTestPaper.candidate_id == candidate_id)
-            res_paper = await db.execute(stmt_paper)
-            test_paper = res_paper.scalar_one_or_none()
+            if active_stage_id:
+                stmt_paper_stage = stmt_paper.where(CandidateTestPaper.job_stage_config_id == active_stage_id)
+                res_paper = await db.execute(stmt_paper_stage)
+                test_paper = res_paper.scalar_one_or_none()
+                if not test_paper:
+                    stmt_paper_none = stmt_paper.where(CandidateTestPaper.job_stage_config_id.is_(None))
+                    res_paper = await db.execute(stmt_paper_none)
+                    test_paper = res_paper.scalar_one_or_none()
+            else:
+                stmt_paper = stmt_paper.where(CandidateTestPaper.job_stage_config_id.is_(None))
+                res_paper = await db.execute(stmt_paper)
+                test_paper = res_paper.scalar_one_or_none()
             
             if not test_paper and candidate.applied_job_id:
                 stmt_job = select(CandidateTestPaper).where(
                     CandidateTestPaper.job_id == candidate.applied_job_id,
                     CandidateTestPaper.candidate_id.is_(None)
                 )
-                res_job = await db.execute(stmt_job)
-                test_paper = res_job.scalar_one_or_none()
+                if active_stage_id:
+                    stmt_job_stage = stmt_job.where(CandidateTestPaper.job_stage_config_id == active_stage_id)
+                    res_job = await db.execute(stmt_job_stage)
+                    test_paper = res_job.scalar_one_or_none()
+                    if not test_paper:
+                        stmt_job_none = stmt_job.where(CandidateTestPaper.job_stage_config_id.is_(None))
+                        res_job = await db.execute(stmt_job_none)
+                        test_paper = res_job.scalar_one_or_none()
+                else:
+                    stmt_job = stmt_job.where(CandidateTestPaper.job_stage_config_id.is_(None))
+                    res_job = await db.execute(stmt_job)
+                    test_paper = res_job.scalar_one_or_none()
             
             if test_paper and test_paper.task_file_path:
                 task_file_path = test_paper.task_file_path
@@ -459,18 +500,39 @@ Output Format Example (JSON ONLY):
         # 4. Fallback logic for candidate task skills
         task_skills = candidate.task_skills
         if not candidate.task_file_path:
+            active_stage_id = await self._get_active_stage_config_id(db, candidate_id)
             from app.v1.db.models.candidate_test_paper import CandidateTestPaper
             stmt_paper = select(CandidateTestPaper).where(CandidateTestPaper.candidate_id == candidate_id)
-            res_paper = await db.execute(stmt_paper)
-            test_paper = res_paper.scalar_one_or_none()
+            if active_stage_id:
+                stmt_paper_stage = stmt_paper.where(CandidateTestPaper.job_stage_config_id == active_stage_id)
+                res_paper = await db.execute(stmt_paper_stage)
+                test_paper = res_paper.scalar_one_or_none()
+                if not test_paper:
+                    stmt_paper_none = stmt_paper.where(CandidateTestPaper.job_stage_config_id.is_(None))
+                    res_paper = await db.execute(stmt_paper_none)
+                    test_paper = res_paper.scalar_one_or_none()
+            else:
+                stmt_paper = stmt_paper.where(CandidateTestPaper.job_stage_config_id.is_(None))
+                res_paper = await db.execute(stmt_paper)
+                test_paper = res_paper.scalar_one_or_none()
             
             if not test_paper and candidate.applied_job_id:
                 stmt_job = select(CandidateTestPaper).where(
                     CandidateTestPaper.job_id == candidate.applied_job_id,
                     CandidateTestPaper.candidate_id.is_(None)
                 )
-                res_job = await db.execute(stmt_job)
-                test_paper = res_job.scalar_one_or_none()
+                if active_stage_id:
+                    stmt_job_stage = stmt_job.where(CandidateTestPaper.job_stage_config_id == active_stage_id)
+                    res_job = await db.execute(stmt_job_stage)
+                    test_paper = res_job.scalar_one_or_none()
+                    if not test_paper:
+                        stmt_job_none = stmt_job.where(CandidateTestPaper.job_stage_config_id.is_(None))
+                        res_job = await db.execute(stmt_job_none)
+                        test_paper = res_job.scalar_one_or_none()
+                else:
+                    stmt_job = stmt_job.where(CandidateTestPaper.job_stage_config_id.is_(None))
+                    res_job = await db.execute(stmt_job)
+                    test_paper = res_job.scalar_one_or_none()
                 
             if test_paper and test_paper.task_file_path:
                 task_skills = test_paper.task_skills or []
@@ -531,7 +593,13 @@ Output Format Example (JSON ONLY):
         except Exception:
             pass
 
-    async def generate_random_paper_for_job(self, db: AsyncSession, job, candidate_id: uuid.UUID | None = None):
+    async def generate_random_paper_for_job(
+        self,
+        db: AsyncSession,
+        job,
+        candidate_id: uuid.UUID | None = None,
+        job_stage_config_id: uuid.UUID | None = None
+    ):
         """Generates a random CandidateTestPaper from bank matching job's dept/pos/skills.
         Returns the CandidateTestPaper instance without committing to DB, or None if no matching questions.
         """
@@ -601,6 +669,7 @@ Output Format Example (JSON ONLY):
             job_id=job.id,
             candidate_id=candidate_id,
             position_id=job.position_id,
+            job_stage_config_id=job_stage_config_id,
             name=assigned_name,
             questions=assigned_questions,
             mcqs=assigned_mcqs,

@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from app.v1.db.models.candidates import Candidate
     from app.v1.db.models.jobs import Job
     from app.v1.db.models.job_positions import JobPosition
+    from app.v1.db.models.job_stage_configs import JobStageConfig
 
 
 class CandidateTestPaper(Base):
@@ -35,7 +36,6 @@ class CandidateTestPaper(Base):
     candidate_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("candidates.id", ondelete="CASCADE"),
-        unique=True,
         nullable=True,
     )
 
@@ -49,6 +49,12 @@ class CandidateTestPaper(Base):
         UUID(as_uuid=True),
         ForeignKey("job_positions.id", ondelete="CASCADE"),
         nullable=False,
+    )
+
+    job_stage_config_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("job_stage_configs.id", ondelete="CASCADE"),
+        nullable=True,
     )
 
     name: Mapped[str] = mapped_column(
@@ -105,4 +111,8 @@ class CandidateTestPaper(Base):
 
     position: Mapped["JobPosition"] = relationship(
         "JobPosition", foreign_keys=[position_id]
+    )
+
+    job_stage: Mapped["JobStageConfig"] = relationship(
+        "JobStageConfig", foreign_keys=[job_stage_config_id]
     )

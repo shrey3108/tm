@@ -12,7 +12,6 @@ STAGE_TEMPLATES = [
         "is_default": True,
         "default_order": 0,
         "default_config": {
-            "type": "document",
             "evaluation_criteria": [
                 "Overall Fit",
                 "Skills Match",
@@ -26,7 +25,6 @@ STAGE_TEMPLATES = [
         "is_default": True,
         "default_order": 1,
         "default_config": {
-            "type": "audio",
             "evaluation_criteria": [
                 "Communication skill",
                 "Confidence",
@@ -41,7 +39,6 @@ STAGE_TEMPLATES = [
         "name": "Technical Practical Round",
         "description": "Video-based round evaluating coding tasks, system design, and practical implementation.",
         "default_config": {
-            "type": "video",
             "evaluation_criteria": [
                 "performance",
                 "architecture",
@@ -56,7 +53,6 @@ STAGE_TEMPLATES = [
         "name": "Technical + HR Panel Evaluation",
         "description": "Final panel interview focusing on technical depth and behavioral attributes.",
         "default_config": {
-            "type": "audio",
             "is_panel_interview": True,
             "evaluation_criteria": [
                 "Communication skill",
@@ -72,7 +68,6 @@ STAGE_TEMPLATES = [
         "name": "CTO Interview",
         "description": "Strategic leadership and architecture discussion for senior positions.",
         "default_config": {
-            "type": "audio",
             "evaluation_criteria": [
                 "Strategic thinking",
                 "System architecture ability",

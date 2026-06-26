@@ -21,3 +21,4 @@ logs*.md
 
 # ignore Phoenix db files
 phoenix_data/
+backend/scratch/

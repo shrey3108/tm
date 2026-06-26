@@ -29,10 +29,12 @@ from app.v1.utils.uuid import UUIDHelper
 
 router = APIRouter()
 
+from app.v1.utils.stage import get_question_round_filter
+
 
 async def get_candidate_active_job_id(db: AsyncSession, candidate: Candidate) -> Optional[uuid.UUID]:
     """Resolve the candidate's active job ID.
-    Looks up CandidateStage for an active Technical Practical Round stage.
+    Looks up CandidateStage for an active Technical Practical / Question-required stage.
     Falls back to candidate.applied_job_id if no active stage exists.
     """
     stmt = (
@@ -42,15 +44,53 @@ async def get_candidate_active_job_id(db: AsyncSession, candidate: Candidate) ->
         .where(
             CandidateStage.candidate_id == candidate.id,
             CandidateStage.status == "active",
-            StageTemplate.name == "Technical Practical Round"
+            get_question_round_filter(JobStageConfig, StageTemplate)
         )
         .limit(1)
     )
+
     res = await db.execute(stmt)
     active_job_id = res.scalar_one_or_none()
     if active_job_id:
         return active_job_id
     return candidate.applied_job_id
+
+
+async def get_candidate_active_stage_config_id(db: AsyncSession, candidate_id: uuid.UUID) -> Optional[uuid.UUID]:
+    """Resolve the candidate's active stage config ID for question/practical rounds."""
+    stmt = (
+        select(CandidateStage.job_stage_id)
+        .join(JobStageConfig, CandidateStage.job_stage_id == JobStageConfig.id)
+        .join(StageTemplate, JobStageConfig.template_id == StageTemplate.id)
+        .where(
+            CandidateStage.candidate_id == candidate_id,
+            CandidateStage.status == "active",
+            get_question_round_filter(JobStageConfig, StageTemplate)
+        )
+        .limit(1)
+    )
+    res = await db.execute(stmt)
+    return res.scalar_one_or_none()
+
+
+async def get_job_first_question_stage_config_id(db: AsyncSession, job_id: uuid.UUID) -> Optional[uuid.UUID]:
+    """Resolve the first (lowest stage_order) question-type JobStageConfig for a job.
+    
+    This is used to automatically tie job-level default papers to the first
+    question round rather than making them stage-agnostic (NULL).
+    """
+    stmt = (
+        select(JobStageConfig.id)
+        .join(StageTemplate, JobStageConfig.template_id == StageTemplate.id)
+        .where(
+            JobStageConfig.job_id == job_id,
+            get_question_round_filter(JobStageConfig, StageTemplate)
+        )
+        .order_by(JobStageConfig.stage_order)
+        .limit(1)
+    )
+    res = await db.execute(stmt)
+    return res.scalar_one_or_none()
 
 
 def parse_frontend_custom_task(text: str) -> tuple[str, str] | None:
@@ -93,23 +133,23 @@ async def assign_test_paper_to_candidate(
 
         candidate_id = candidate.id
 
-        # Verify if Technical Practical Round is completed
+        # Verify if Question/Practical Round is completed
         stmt_stage = (
-            select(CandidateStage)
+            select(CandidateStage, StageTemplate.name)
             .join(JobStageConfig, CandidateStage.job_stage_id == JobStageConfig.id)
             .join(StageTemplate, JobStageConfig.template_id == StageTemplate.id)
             .where(
                 CandidateStage.candidate_id == candidate_id,
-                StageTemplate.name == "Technical Practical Round"
+                get_question_round_filter(JobStageConfig, StageTemplate)
             )
         )
         res_stage = await db.execute(stmt_stage)
-        stages = res_stage.scalars().all()
-        if any(s.status == "completed" for s in stages):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Cannot assign or modify test paper after the candidate has completed the Technical Practical Round.",
-            )
+        for s, stage_name in res_stage.all():
+            if s.status == "completed":
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Cannot assign or modify test paper after the candidate has completed the {stage_name}.",
+                )
 
         job_id = await get_candidate_active_job_id(db, candidate)
         if not job_id:
@@ -129,10 +169,15 @@ async def assign_test_paper_to_candidate(
 
         position_id = job.position_id
 
-        # Delete any existing test paper assignment for this candidate to prevent unique constraint conflicts
-        await db.execute(
-            delete(CandidateTestPaper).where(CandidateTestPaper.candidate_id == candidate_id)
-        )
+        stage_config_id = assign_data.job_stage_id or await get_candidate_active_stage_config_id(db, candidate_id)
+
+        # Delete any existing test paper assignment for this candidate and stage config to prevent unique constraint conflicts
+        delete_stmt = delete(CandidateTestPaper).where(CandidateTestPaper.candidate_id == candidate_id)
+        if stage_config_id:
+            delete_stmt = delete_stmt.where(CandidateTestPaper.job_stage_config_id == stage_config_id)
+        else:
+            delete_stmt = delete_stmt.where(CandidateTestPaper.job_stage_config_id.is_(None))
+        await db.execute(delete_stmt)
         await db.commit()
     else:
         # Assign at Job level (public/common test paper for this job)
@@ -146,13 +191,21 @@ async def assign_test_paper_to_candidate(
             )
         position_id = job.position_id
 
-        # Delete any existing job-level default test paper
-        await db.execute(
-            delete(CandidateTestPaper).where(
-                CandidateTestPaper.job_id == job_id,
-                CandidateTestPaper.candidate_id.is_(None)
-            )
+        # Auto-resolve the first question-type round's stage config if not explicitly provided.
+        # This ensures the job-level default paper is tied to the first round that
+        # requires 'question', rather than being stage-agnostic (NULL).
+        stage_config_id = assign_data.job_stage_id or await get_job_first_question_stage_config_id(db, job_id)
+
+        # Delete any existing job-level default test paper for this stage config
+        delete_stmt = delete(CandidateTestPaper).where(
+            CandidateTestPaper.job_id == job_id,
+            CandidateTestPaper.candidate_id.is_(None)
         )
+        if stage_config_id:
+            delete_stmt = delete_stmt.where(CandidateTestPaper.job_stage_config_id == stage_config_id)
+        else:
+            delete_stmt = delete_stmt.where(CandidateTestPaper.job_stage_config_id.is_(None))
+        await db.execute(delete_stmt)
         await db.commit()
 
     assigned_name = ""
@@ -417,6 +470,7 @@ async def assign_test_paper_to_candidate(
         candidate_id=candidate_id,
         job_id=job_id,
         position_id=position_id,
+        job_stage_config_id=stage_config_id,
         name=assigned_name,
         questions=assigned_questions,
         mcqs=assigned_mcqs,
@@ -430,6 +484,7 @@ async def assign_test_paper_to_candidate(
         history_entry = CandidateTestPaperHistory(
             candidate_id=candidate_id,
             job_id=job_id,
+            job_stage_config_id=stage_config_id,
             name=assigned_name,
             questions=assigned_questions,
             mcqs=assigned_mcqs,
@@ -475,34 +530,50 @@ def are_tasks_equal(tasks_a, tasks_b) -> bool:
 @router.get("/assigned/{candidate_id}", response_model=CandidateTestPaperRead)
 async def get_candidate_test_paper(
     candidate_id: uuid.UUID,
+    job_stage_id: Optional[uuid.UUID] = Query(None, description="Optional job stage configuration ID"),
     db: AsyncSession = Depends(get_db),
     user: UserRead = Depends(check_permission("candidates:access")),
 ):
     """Retrieve the test paper currently assigned to the candidate."""
+    active_stage_id = job_stage_id or await get_candidate_active_stage_config_id(db, candidate_id)
+
     stmt = select(CandidateTestPaper).where(CandidateTestPaper.candidate_id == candidate_id)
-    res = await db.execute(stmt)
-    paper = res.scalar_one_or_none()
+    if active_stage_id:
+        stmt_stage = stmt.where(CandidateTestPaper.job_stage_config_id == active_stage_id)
+        res = await db.execute(stmt_stage)
+        paper = res.scalar_one_or_none()
+        if not paper:
+            stmt_none = stmt.where(CandidateTestPaper.job_stage_config_id.is_(None))
+            res = await db.execute(stmt_none)
+            paper = res.scalar_one_or_none()
+    else:
+        stmt = stmt.where(CandidateTestPaper.job_stage_config_id.is_(None))
+        res = await db.execute(stmt)
+        paper = res.scalar_one_or_none()
 
     is_candidate_specific = (paper is not None)
 
     if not paper:
-        # Check if candidate has reached the Technical Practical Round before falling back
+        # Check if candidate has reached a Question/Practical stage before falling back
         stmt_stage = (
             select(CandidateStage)
             .join(JobStageConfig, CandidateStage.job_stage_id == JobStageConfig.id)
             .join(StageTemplate, JobStageConfig.template_id == StageTemplate.id)
             .where(
                 CandidateStage.candidate_id == candidate_id,
-                StageTemplate.name == "Technical Practical Round",
+                get_question_round_filter(JobStageConfig, StageTemplate),
                 CandidateStage.status.in_(["active", "completed"])
             )
         )
+        if active_stage_id:
+            stmt_stage = stmt_stage.where(CandidateStage.job_stage_id == active_stage_id)
+
         res_stage = await db.execute(stmt_stage)
         stages = res_stage.scalars().all()
         if not stages:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="No test paper assigned. Candidate has not reached the Technical Practical Round yet.",
+                detail="No test paper assigned. Candidate has not reached the test paper stage yet.",
             )
 
         # Fallback to job-level default test paper!
@@ -514,8 +585,25 @@ async def get_candidate_test_paper(
                     CandidateTestPaper.job_id == job_id,
                     CandidateTestPaper.candidate_id.is_(None)
                 )
-                res_job = await db.execute(stmt_job)
-                paper = res_job.scalar_one_or_none()
+                if active_stage_id:
+                    stmt_job_stage = stmt_job.where(CandidateTestPaper.job_stage_config_id == active_stage_id)
+                    res_job = await db.execute(stmt_job_stage)
+                    paper = res_job.scalar_one_or_none()
+                    if not paper:
+                        stmt_job_none = stmt_job.where(CandidateTestPaper.job_stage_config_id.is_(None))
+                        res_job = await db.execute(stmt_job_none)
+                        paper = res_job.scalar_one_or_none()
+                else:
+                    # No active stage resolved: try job's first question stage, then NULL fallback
+                    auto_stage_id = await get_job_first_question_stage_config_id(db, job_id)
+                    if auto_stage_id:
+                        stmt_job_auto = stmt_job.where(CandidateTestPaper.job_stage_config_id == auto_stage_id)
+                        res_job = await db.execute(stmt_job_auto)
+                        paper = res_job.scalar_one_or_none()
+                    if not paper:
+                        stmt_job_none = stmt_job.where(CandidateTestPaper.job_stage_config_id.is_(None))
+                        res_job = await db.execute(stmt_job_none)
+                        paper = res_job.scalar_one_or_none()
 
     if not paper:
         raise HTTPException(
@@ -538,8 +626,26 @@ async def get_candidate_test_paper(
                     CandidateTestPaper.job_id == job_id,
                     CandidateTestPaper.candidate_id.is_(None)
                 )
-                res_job = await db.execute(stmt_job)
-                job_paper = res_job.scalar_one_or_none()
+                job_paper = None
+                if active_stage_id:
+                    stmt_job_stage = stmt_job.where(CandidateTestPaper.job_stage_config_id == active_stage_id)
+                    res_job = await db.execute(stmt_job_stage)
+                    job_paper = res_job.scalar_one_or_none()
+                    if not job_paper:
+                        stmt_job_none = stmt_job.where(CandidateTestPaper.job_stage_config_id.is_(None))
+                        res_job = await db.execute(stmt_job_none)
+                        job_paper = res_job.scalar_one_or_none()
+                else:
+                    # No active stage: try job's first question stage, then NULL fallback
+                    auto_stage_id = await get_job_first_question_stage_config_id(db, job_id)
+                    if auto_stage_id:
+                        stmt_job_auto = stmt_job.where(CandidateTestPaper.job_stage_config_id == auto_stage_id)
+                        res_job = await db.execute(stmt_job_auto)
+                        job_paper = res_job.scalar_one_or_none()
+                    if not job_paper:
+                        stmt_job_none = stmt_job.where(CandidateTestPaper.job_stage_config_id.is_(None))
+                        res_job = await db.execute(stmt_job_none)
+                        job_paper = res_job.scalar_one_or_none()
                 if job_paper:
                     if (paper.name != job_paper.name or
                         not are_tasks_equal(paper.project_task, job_paper.project_task) or
@@ -556,31 +662,47 @@ async def get_candidate_test_paper(
 @router.delete("/assigned/{candidate_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_candidate_test_paper(
     candidate_id: uuid.UUID,
+    job_stage_id: Optional[uuid.UUID] = Query(None, description="Optional job stage configuration ID"),
     db: AsyncSession = Depends(get_db),
     user: UserRead = Depends(check_permission("candidates:decide")),
 ):
     """Unassign/delete the candidate's test paper."""
-    # Verify if Technical Practical Round is completed
+    active_stage_id = job_stage_id or await get_candidate_active_stage_config_id(db, candidate_id)
+
+    # Verify if Question/Practical stage is completed
     stmt_stage = (
-        select(CandidateStage)
+        select(CandidateStage, StageTemplate.name)
         .join(JobStageConfig, CandidateStage.job_stage_id == JobStageConfig.id)
         .join(StageTemplate, JobStageConfig.template_id == StageTemplate.id)
         .where(
             CandidateStage.candidate_id == candidate_id,
-            StageTemplate.name == "Technical Practical Round"
+            get_question_round_filter(JobStageConfig, StageTemplate)
         )
     )
+    if active_stage_id:
+        stmt_stage = stmt_stage.where(CandidateStage.job_stage_id == active_stage_id)
+
     res_stage = await db.execute(stmt_stage)
-    stages = res_stage.scalars().all()
-    if any(s.status == "completed" for s in stages):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Cannot assign or modify test paper after the candidate has completed the Technical Practical Round.",
-        )
+    for s, stage_name in res_stage.all():
+        if s.status == "completed":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Cannot assign or modify test paper after the candidate has completed the {stage_name}.",
+            )
 
     stmt = select(CandidateTestPaper).where(CandidateTestPaper.candidate_id == candidate_id)
-    res = await db.execute(stmt)
-    paper = res.scalar_one_or_none()
+    if active_stage_id:
+        stmt_stage = stmt.where(CandidateTestPaper.job_stage_config_id == active_stage_id)
+        res = await db.execute(stmt_stage)
+        paper = res.scalar_one_or_none()
+        if not paper:
+            stmt_none = stmt.where(CandidateTestPaper.job_stage_config_id.is_(None))
+            res = await db.execute(stmt_none)
+            paper = res.scalar_one_or_none()
+    else:
+        stmt = stmt.where(CandidateTestPaper.job_stage_config_id.is_(None))
+        res = await db.execute(stmt)
+        paper = res.scalar_one_or_none()
     if not paper:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -604,16 +726,49 @@ async def delete_candidate_test_paper(
 @router.get("/assigned/job/{job_id}", response_model=CandidateTestPaperRead)
 async def get_job_default_test_paper(
     job_id: uuid.UUID,
+    job_stage_id: Optional[uuid.UUID] = Query(None, description="Optional job stage configuration ID"),
     db: AsyncSession = Depends(get_db),
     user: UserRead = Depends(check_permission("candidates:access")),
 ):
     """Retrieve the default common test paper assigned to the job (where candidate_id is null)."""
+    if job_stage_id:
+        # Explicit stage requested → strict lookup, no fallback
+        stmt = select(CandidateTestPaper).where(
+            CandidateTestPaper.job_id == job_id,
+            CandidateTestPaper.candidate_id.is_(None),
+            CandidateTestPaper.job_stage_config_id == job_stage_id
+        )
+        res = await db.execute(stmt)
+        paper = res.scalar_one_or_none()
+        if not paper:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"No default test paper assigned to this job for the specified stage.",
+            )
+        return paper
+
+    # No stage given → auto-resolve first question round, then fallback to any job default
+    resolved_stage_id = await get_job_first_question_stage_config_id(db, job_id)
+
     stmt = select(CandidateTestPaper).where(
         CandidateTestPaper.job_id == job_id,
         CandidateTestPaper.candidate_id.is_(None)
     )
+    if resolved_stage_id:
+        stmt = stmt.where(CandidateTestPaper.job_stage_config_id == resolved_stage_id)
+    else:
+        stmt = stmt.where(CandidateTestPaper.job_stage_config_id.is_(None))
     res = await db.execute(stmt)
     paper = res.scalar_one_or_none()
+
+    if not paper:
+        # Fallback: try any job default paper (including legacy stage-agnostic ones)
+        stmt_fallback = select(CandidateTestPaper).where(
+            CandidateTestPaper.job_id == job_id,
+            CandidateTestPaper.candidate_id.is_(None)
+        ).limit(1)
+        res = await db.execute(stmt_fallback)
+        paper = res.scalar_one_or_none()
 
     if not paper:
         raise HTTPException(
@@ -626,16 +781,32 @@ async def get_job_default_test_paper(
 @router.delete("/assigned/job/{job_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_job_default_test_paper(
     job_id: uuid.UUID,
+    job_stage_id: Optional[uuid.UUID] = Query(None, description="Optional job stage configuration ID"),
     db: AsyncSession = Depends(get_db),
     user: UserRead = Depends(check_permission("candidates:decide")),
 ):
     """Delete the default common test paper assigned to the job."""
+    # Auto-resolve the first question-type round if no explicit stage id given.
+    resolved_stage_id = job_stage_id or await get_job_first_question_stage_config_id(db, job_id)
+
     stmt = select(CandidateTestPaper).where(
         CandidateTestPaper.job_id == job_id,
         CandidateTestPaper.candidate_id.is_(None)
     )
+    if resolved_stage_id:
+        stmt = stmt.where(CandidateTestPaper.job_stage_config_id == resolved_stage_id)
+    else:
+        stmt = stmt.where(CandidateTestPaper.job_stage_config_id.is_(None))
     res = await db.execute(stmt)
     paper = res.scalar_one_or_none()
+    if not paper:
+        # Fallback: try any job default paper (including legacy stage-agnostic ones)
+        stmt_fallback = select(CandidateTestPaper).where(
+            CandidateTestPaper.job_id == job_id,
+            CandidateTestPaper.candidate_id.is_(None)
+        ).limit(1)
+        res = await db.execute(stmt_fallback)
+        paper = res.scalar_one_or_none()
     if not paper:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -711,29 +882,41 @@ async def download_candidate_task_file(
         raise HTTPException(status_code=404, detail="Candidate not found")
 
     # 2. Get Test Paper
+    active_stage_id = await get_candidate_active_stage_config_id(db, candidate_id)
     stmt_paper = select(CandidateTestPaper).where(CandidateTestPaper.candidate_id == candidate_id)
-    res_paper = await db.execute(stmt_paper)
-    test_paper = res_paper.scalar_one_or_none()
+    if active_stage_id:
+        stmt_paper_stage = stmt_paper.where(CandidateTestPaper.job_stage_config_id == active_stage_id)
+        res_paper = await db.execute(stmt_paper_stage)
+        test_paper = res_paper.scalar_one_or_none()
+        if not test_paper:
+            stmt_paper_none = stmt_paper.where(CandidateTestPaper.job_stage_config_id.is_(None))
+            res_paper = await db.execute(stmt_paper_none)
+            test_paper = res_paper.scalar_one_or_none()
+    else:
+        stmt_paper = stmt_paper.where(CandidateTestPaper.job_stage_config_id.is_(None))
+        res_paper = await db.execute(stmt_paper)
+        test_paper = res_paper.scalar_one_or_none()
 
     if not test_paper:
-        # Check if candidate has reached the Technical Practical Round before falling back
+        # Check if candidate has reached a Question/Practical stage before falling back
         stmt_stage = (
             select(CandidateStage)
             .join(JobStageConfig, CandidateStage.job_stage_id == JobStageConfig.id)
             .join(StageTemplate, JobStageConfig.template_id == StageTemplate.id)
             .where(
                 CandidateStage.candidate_id == candidate_id,
-                StageTemplate.name == "Technical Practical Round",
+                get_question_round_filter(JobStageConfig, StageTemplate),
                 CandidateStage.status.in_(["active", "completed"])
             )
         )
-
+        if active_stage_id:
+            stmt_stage = stmt_stage.where(CandidateStage.job_stage_id == active_stage_id)
         res_stage = await db.execute(stmt_stage)
         stages = res_stage.scalars().all()
         if not stages:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="No test paper assigned. Candidate has not reached the Technical Practical Round yet.",
+                detail="No test paper assigned. Candidate has not reached the test paper stage yet.",
             )
 
         candidate = await db.get(Candidate, candidate_id)
@@ -744,8 +927,25 @@ async def download_candidate_task_file(
                     CandidateTestPaper.job_id == job_id,
                     CandidateTestPaper.candidate_id.is_(None)
                 )
-                res_job = await db.execute(stmt_job)
-                test_paper = res_job.scalar_one_or_none()
+                if active_stage_id:
+                    stmt_job_stage = stmt_job.where(CandidateTestPaper.job_stage_config_id == active_stage_id)
+                    res_job = await db.execute(stmt_job_stage)
+                    test_paper = res_job.scalar_one_or_none()
+                    if not test_paper:
+                        stmt_job_none = stmt_job.where(CandidateTestPaper.job_stage_config_id.is_(None))
+                        res_job = await db.execute(stmt_job_none)
+                        test_paper = res_job.scalar_one_or_none()
+                else:
+                    # No active stage: try job's first question stage, then NULL fallback
+                    auto_stage_id = await get_job_first_question_stage_config_id(db, job_id)
+                    if auto_stage_id:
+                        stmt_job_auto = stmt_job.where(CandidateTestPaper.job_stage_config_id == auto_stage_id)
+                        res_job = await db.execute(stmt_job_auto)
+                        test_paper = res_job.scalar_one_or_none()
+                    if not test_paper:
+                        stmt_job_none = stmt_job.where(CandidateTestPaper.job_stage_config_id.is_(None))
+                        res_job = await db.execute(stmt_job_none)
+                        test_paper = res_job.scalar_one_or_none()
 
     task_file_path = candidate.task_file_path or (test_paper.task_file_path if test_paper else None)
 

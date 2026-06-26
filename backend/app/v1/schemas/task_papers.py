@@ -116,6 +116,7 @@ class CandidateTestPaperRead(BaseModel):
     candidate_id: Optional[uuid.UUID] = None
     job_id: uuid.UUID
     position_id: uuid.UUID
+    job_stage_config_id: Optional[uuid.UUID] = None
     name: str
     questions: list[str]
     mcqs: list[MCQItem] = Field(default_factory=list)
@@ -159,6 +160,7 @@ class CandidateTestPaperHistoryRead(BaseModel):
     id: uuid.UUID
     candidate_id: uuid.UUID
     job_id: uuid.UUID
+    job_stage_config_id: Optional[uuid.UUID] = None
     name: str
     questions: list[str]
     mcqs: list[MCQItem] = Field(default_factory=list)
@@ -199,6 +201,7 @@ class CandidateTestPaperHistoryRead(BaseModel):
 class CandidateTestPaperAssign(BaseModel):
     candidate_id: Optional[uuid.UUID] = Field(None, description="The candidate's ID (optional if assigning job-level default)")
     job_id: Optional[uuid.UUID] = Field(None, description="The job ID (required if candidate_id is not provided)")
+    job_stage_id: Optional[uuid.UUID] = Field(None, description="The job stage configuration ID (optional)")
     mode: Literal["predefined", "random", "custom", "hybrid"] = Field(
         ..., description="The assignment mode: 'predefined', 'random', or 'custom'"
     )

@@ -104,12 +104,17 @@ async def enrich_stage_configs(
 
     return items if is_list else objects[0]
 
-def prepare_config_for_save(config: Dict[str, Any] | None) -> Dict[str, Any] | None:
+def prepare_config_for_save(config: Any) -> Dict[str, Any] | None:
     """
     Prepares the configuration dictionary for saving to the database.
     
     Converts 'evaluation_criteria' (list of objects) back to 'criteria_ids' (list of strings).
     """
+    if hasattr(config, "model_dump"):
+        config = config.model_dump()
+    elif hasattr(config, "dict"):
+        config = config.dict()
+
     if not isinstance(config, dict):
         return config
     

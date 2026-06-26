@@ -1,5 +1,6 @@
 import uuid
 import logging
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select, func
@@ -17,7 +18,7 @@ from app.v1.schemas.task_papers import (
 )
 from app.v1.schemas.user import UserRead
 from app.v1.services.email_service import send_candidate_task_email_via_smtp
-from app.v1.routes.task_papers_assigned import get_candidate_active_job_id
+from app.v1.routes.task_papers_assigned import get_candidate_active_job_id, get_candidate_active_stage_config_id
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -26,34 +27,59 @@ logger = logging.getLogger(__name__)
 @router.get("/assigned/{candidate_id}/history", response_model=list[CandidateTestPaperHistoryRead])
 async def get_candidate_test_paper_history(
     candidate_id: uuid.UUID,
+    job_stage_id: Optional[uuid.UUID] = None,
     db: AsyncSession = Depends(get_db),
     user: UserRead = Depends(check_permission("candidates:access")),
 ):
     """Retrieve the assignment and email log history for the candidate."""
+    active_stage_id = job_stage_id or await get_candidate_active_stage_config_id(db, candidate_id)
     stmt = (
         select(CandidateTestPaperHistory)
         .where(CandidateTestPaperHistory.candidate_id == candidate_id)
-        .order_by(CandidateTestPaperHistory.assigned_at.desc())
     )
-    res = await db.execute(stmt)
-    history_records = res.scalars().all()
+    if active_stage_id:
+        stmt_stage = stmt.where(CandidateTestPaperHistory.job_stage_config_id == active_stage_id).order_by(CandidateTestPaperHistory.assigned_at.desc())
+        res = await db.execute(stmt_stage)
+        history_records = res.scalars().all()
+        if not history_records:
+            stmt_none = stmt.where(CandidateTestPaperHistory.job_stage_config_id.is_(None)).order_by(CandidateTestPaperHistory.assigned_at.desc())
+            res = await db.execute(stmt_none)
+            history_records = res.scalars().all()
+    else:
+        stmt = stmt.where(CandidateTestPaperHistory.job_stage_config_id.is_(None)).order_by(CandidateTestPaperHistory.assigned_at.desc())
+        res = await db.execute(stmt)
+        history_records = res.scalars().all()
+        
     return history_records
 
 
 @router.get("/assigned/job/{job_id}/history", response_model=list[CandidateTestPaperHistoryRead])
 async def get_job_test_paper_history(
     job_id: uuid.UUID,
+    job_stage_id: Optional[uuid.UUID] = None,
     db: AsyncSession = Depends(get_db),
     user: UserRead = Depends(check_permission("candidates:access")),
 ):
     """Retrieve the assignment and email log history for all candidates under a specific job."""
+    from app.v1.routes.task_papers_assigned import get_job_first_question_stage_config_id
+    resolved_stage_id = job_stage_id or await get_job_first_question_stage_config_id(db, job_id)
     stmt = (
         select(CandidateTestPaperHistory)
         .where(CandidateTestPaperHistory.job_id == job_id)
-        .order_by(CandidateTestPaperHistory.assigned_at.desc())
     )
-    res = await db.execute(stmt)
-    history_records = res.scalars().all()
+    if resolved_stage_id:
+        stmt_stage = stmt.where(CandidateTestPaperHistory.job_stage_config_id == resolved_stage_id).order_by(CandidateTestPaperHistory.assigned_at.desc())
+        res = await db.execute(stmt_stage)
+        history_records = res.scalars().all()
+        if not history_records:
+            stmt_none = stmt.where(CandidateTestPaperHistory.job_stage_config_id.is_(None)).order_by(CandidateTestPaperHistory.assigned_at.desc())
+            res = await db.execute(stmt_none)
+            history_records = res.scalars().all()
+    else:
+        stmt = stmt.where(CandidateTestPaperHistory.job_stage_config_id.is_(None)).order_by(CandidateTestPaperHistory.assigned_at.desc())
+        res = await db.execute(stmt)
+        history_records = res.scalars().all()
+        
     return history_records
 
 
@@ -95,6 +121,10 @@ async def send_test_paper_email(
             CandidateTestPaper.candidate_id == candidate.id,
             CandidateTestPaper.job_id == paper.job_id
         )
+        if paper.job_stage_config_id:
+            stmt_existing = stmt_existing.where(CandidateTestPaper.job_stage_config_id == paper.job_stage_config_id)
+        else:
+            stmt_existing = stmt_existing.where(CandidateTestPaper.job_stage_config_id.is_(None))
         res_existing = await db.execute(stmt_existing)
         existing_paper = res_existing.scalar_one_or_none()
         if existing_paper:
@@ -109,12 +139,14 @@ async def send_test_paper_email(
             existing_paper.project_task = paper.project_task
             existing_paper.task_file_path = paper.task_file_path
             existing_paper.task_skills = paper.task_skills
+            existing_paper.job_stage_config_id = paper.job_stage_config_id
             paper = existing_paper
         else:
             paper = CandidateTestPaper(
                 candidate_id=candidate.id,
                 job_id=paper.job_id,
                 position_id=paper.position_id,
+                job_stage_config_id=paper.job_stage_config_id,
                 name=paper.name,
                 questions=paper.questions,
                 mcqs=paper.mcqs,
@@ -136,6 +168,7 @@ async def send_test_paper_email(
     history_entry = CandidateTestPaperHistory(
         candidate_id=candidate.id,
         job_id=paper.job_id,
+        job_stage_config_id=paper.job_stage_config_id,
         name=paper.name,
         questions=paper.questions,
         mcqs=paper.mcqs,
@@ -249,6 +282,10 @@ async def send_bulk_test_paper_email(
                     CandidateTestPaper.candidate_id == candidate.id,
                     CandidateTestPaper.job_id == paper.job_id
                 )
+                if paper.job_stage_config_id:
+                    stmt_existing = stmt_existing.where(CandidateTestPaper.job_stage_config_id == paper.job_stage_config_id)
+                else:
+                    stmt_existing = stmt_existing.where(CandidateTestPaper.job_stage_config_id.is_(None))
                 res_existing = await db.execute(stmt_existing)
                 existing_paper = res_existing.scalar_one_or_none()
                 if existing_paper:
@@ -263,6 +300,7 @@ async def send_bulk_test_paper_email(
                     existing_paper.project_task = paper.project_task
                     existing_paper.task_file_path = paper.task_file_path
                     existing_paper.task_skills = paper.task_skills
+                    existing_paper.job_stage_config_id = paper.job_stage_config_id
                     current_paper = existing_paper
                 else:
                     # Create a cloned candidate-specific test paper
@@ -270,6 +308,7 @@ async def send_bulk_test_paper_email(
                         candidate_id=candidate.id,
                         job_id=paper.job_id,
                         position_id=paper.position_id,
+                        job_stage_config_id=paper.job_stage_config_id,
                         name=paper.name,
                         questions=paper.questions,
                         mcqs=paper.mcqs,
@@ -285,6 +324,7 @@ async def send_bulk_test_paper_email(
             history_entry = CandidateTestPaperHistory(
                 candidate_id=candidate.id,
                 job_id=current_paper.job_id,
+                job_stage_config_id=current_paper.job_stage_config_id,
                 name=current_paper.name,
                 questions=current_paper.questions,
                 mcqs=current_paper.mcqs,

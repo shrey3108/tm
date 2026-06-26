@@ -87,6 +87,40 @@ if evaluator_app:
     app.mount("/evaluator", evaluator_app)
 
 
+# Custom OpenAPI schema generator to fix Swagger UI file upload picker for array fields
+from fastapi.openapi.utils import get_openapi
+
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+    
+    openapi_schema = get_openapi(
+        title=app.title,
+        version=app.version,
+        openapi_version=app.openapi_version,
+        description=app.description,
+        routes=app.routes,
+    )
+    
+    def fix_octet_stream_schemas(d) -> None:
+        if isinstance(d, dict):
+            if d.get("type") == "string" and d.get("contentMediaType") == "application/octet-stream":
+                d.pop("contentMediaType", None)
+                d["format"] = "binary"
+            else:
+                for v in d.values():
+                    fix_octet_stream_schemas(v)
+        elif isinstance(d, list):
+            for item in d:
+                fix_octet_stream_schemas(item)
+
+    fix_octet_stream_schemas(openapi_schema)
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+app.openapi = custom_openapi
+
+
 @app.get("/")
 async def root():
     """Root endpoint returning a welcome message.

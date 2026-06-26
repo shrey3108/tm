@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from app.v1.db.models.candidates import Candidate
     from app.v1.db.models.jobs import Job
     from app.v1.db.models.user import User
+    from app.v1.db.models.job_stage_configs import JobStageConfig
 
 
 class CandidateTestPaperHistory(Base):
@@ -43,6 +44,12 @@ class CandidateTestPaperHistory(Base):
         UUID(as_uuid=True),
         ForeignKey("jobs.id", ondelete="CASCADE"),
         nullable=False,
+    )
+
+    job_stage_config_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("job_stage_configs.id", ondelete="CASCADE"),
+        nullable=True,
     )
 
     name: Mapped[str] = mapped_column(

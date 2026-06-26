@@ -471,14 +471,20 @@ Output Format Example (JSON ONLY):
 
         # Attempt to auto-generate a random question paper from question bank
         from app.v1.services.admin.candidate_task_service import candidate_task_service
+        from app.v1.routes.task_papers_assigned import get_job_first_question_stage_config_id
         job.default_paper_assigned = False
         try:
-            random_paper = await candidate_task_service.generate_random_paper_for_job(db=db, job=job)
+            first_question_stage_id = await get_job_first_question_stage_config_id(db, job.id)
+            random_paper = await candidate_task_service.generate_random_paper_for_job(
+                db=db,
+                job=job,
+                job_stage_config_id=first_question_stage_id
+            )
             if random_paper:
                 db.add(random_paper)
                 await db.commit()
                 job.default_paper_assigned = True
-                logger.info(f"Auto-generated random question paper for new job {job.id}")
+                logger.info(f"Auto-generated random question paper for new job {job.id} (stage={first_question_stage_id})")
         except Exception as e:
             logger.warning(f"Could not auto-generate random paper for job {job.id}: {e}")
 

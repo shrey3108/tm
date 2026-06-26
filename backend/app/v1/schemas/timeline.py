@@ -17,6 +17,7 @@ class TimelineEvent(BaseModel):
     stage_id: Optional[uuid.UUID] = None
     stage_name: Optional[str] = None
     job_id: Optional[uuid.UUID] = None
+    job_stage_config_id: Optional[uuid.UUID] = None
     metadata: Optional[dict[str, Any]] = None
 
 class HiringTimelineResponse(BaseModel):

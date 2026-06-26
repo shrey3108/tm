@@ -298,10 +298,21 @@ async def candidate_stage_decision(
         raise HTTPException(status_code=500, detail=f"Failed to record decision: {str(e)}")
 
 
+from app.v1.utils.stage import get_stage_required_inputs
+
+
 def is_practical_evaluation(stage: CandidateStage) -> bool:
     """Determine if a stage is configured for Technical Practical / GitHub Evaluation."""
-    template = stage.job_stage.template if stage.job_stage else None
-    return template.name == "Technical Practical Round" if template else False
+    if not stage.job_stage:
+        return False
+    config = stage.job_stage.config or {}
+    if not config and stage.job_stage.template:
+        config = stage.job_stage.template.default_config or {}
+        
+    template_name = stage.job_stage.template.name if stage.job_stage.template else None
+    required_inputs = get_stage_required_inputs(config, template_name)
+    return "github" in required_inputs
+
 
 
 class GitHubEvaluationRequest(BaseModel):
@@ -373,10 +384,22 @@ async def evaluate_candidate_github_repo(
     # 4. Save/update candidate task_file_path with the solution repo URL
     candidate.task_file_path = github_url
 
-    # 5. Fetch all papers in CandidateTestPaperHistory for this candidate
-    stmt_history = select(CandidateTestPaperHistory).where(CandidateTestPaperHistory.candidate_id == candidate.id)
-    res_history = await db.execute(stmt_history)
-    history_records = res_history.scalars().all()
+    # 5. Fetch all papers in CandidateTestPaperHistory for this candidate and stage
+    stmt_history = select(CandidateTestPaperHistory).where(
+        CandidateTestPaperHistory.candidate_id == candidate.id
+    )
+    if stage.job_stage_id:
+        stmt_history_stage = stmt_history.where(CandidateTestPaperHistory.job_stage_config_id == stage.job_stage_id)
+        res_history = await db.execute(stmt_history_stage)
+        history_records = res_history.scalars().all()
+        if not history_records:
+            stmt_history_none = stmt_history.where(CandidateTestPaperHistory.job_stage_config_id.is_(None))
+            res_history = await db.execute(stmt_history_none)
+            history_records = res_history.scalars().all()
+    else:
+        stmt_history = stmt_history.where(CandidateTestPaperHistory.job_stage_config_id.is_(None))
+        res_history = await db.execute(stmt_history)
+        history_records = res_history.scalars().all()
 
     has_assigned_paper = False
     task_skills = []
@@ -389,9 +412,21 @@ async def evaluate_candidate_github_repo(
         task_skills = list(set(task_skills))
     else:
         # Fallback to active CandidateTestPaper (if assigned but not emailed yet)
-        stmt_paper = select(CandidateTestPaper).where(CandidateTestPaper.candidate_id == candidate.id)
-        res_paper = await db.execute(stmt_paper)
-        test_paper = res_paper.scalar_one_or_none()
+        stmt_paper = select(CandidateTestPaper).where(
+            CandidateTestPaper.candidate_id == candidate.id
+        )
+        if stage.job_stage_id:
+            stmt_paper_stage = stmt_paper.where(CandidateTestPaper.job_stage_config_id == stage.job_stage_id)
+            res_paper = await db.execute(stmt_paper_stage)
+            test_paper = res_paper.scalar_one_or_none()
+            if not test_paper:
+                stmt_paper_none = stmt_paper.where(CandidateTestPaper.job_stage_config_id.is_(None))
+                res_paper = await db.execute(stmt_paper_none)
+                test_paper = res_paper.scalar_one_or_none()
+        else:
+            stmt_paper = stmt_paper.where(CandidateTestPaper.job_stage_config_id.is_(None))
+            res_paper = await db.execute(stmt_paper)
+            test_paper = res_paper.scalar_one_or_none()
 
         # Fallback to job-level default test paper
         if not test_paper and candidate.applied_job_id:
@@ -399,8 +434,18 @@ async def evaluate_candidate_github_repo(
                 CandidateTestPaper.job_id == candidate.applied_job_id,
                 CandidateTestPaper.candidate_id.is_(None)
             )
-            res_job = await db.execute(stmt_job)
-            test_paper = res_job.scalar_one_or_none()
+            if stage.job_stage_id:
+                stmt_job_stage = stmt_job.where(CandidateTestPaper.job_stage_config_id == stage.job_stage_id)
+                res_job = await db.execute(stmt_job_stage)
+                test_paper = res_job.scalar_one_or_none()
+                if not test_paper:
+                    stmt_job_none = stmt_job.where(CandidateTestPaper.job_stage_config_id.is_(None))
+                    res_job = await db.execute(stmt_job_none)
+                    test_paper = res_job.scalar_one_or_none()
+            else:
+                stmt_job = stmt_job.where(CandidateTestPaper.job_stage_config_id.is_(None))
+                res_job = await db.execute(stmt_job)
+                test_paper = res_job.scalar_one_or_none()
 
         if test_paper:
             has_assigned_paper = True

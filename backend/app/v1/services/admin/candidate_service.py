@@ -178,12 +178,14 @@ class CandidateAdminService:
         if test_email_sent is not None:
             from app.v1.db.models.candidate_test_paper import CandidateTestPaper
             
+            from app.v1.utils.stage import get_question_round_filter
+            
             tech_round_cond = Candidate.stages.any(
                 and_(
                     CandidateStage.job_stage.has(
                         and_(
                             JobStageConfig.template_id == StageTemplate.id,
-                            StageTemplate.name == "Technical Practical Round"
+                            get_question_round_filter(JobStageConfig, StageTemplate)
                         )
                     ),
                     CandidateStage.status == "active"
@@ -693,12 +695,14 @@ class CandidateAdminService:
         if test_email_sent is not None:
             from app.v1.db.models.candidate_test_paper import CandidateTestPaper
             
+            from app.v1.utils.stage import get_question_round_filter
+            
             tech_round_cond = Candidate.stages.any(
                 and_(
                     CandidateStage.job_stage.has(
                         and_(
                             JobStageConfig.template_id == StageTemplate.id,
-                            StageTemplate.name == "Technical Practical Round"
+                            get_question_round_filter(JobStageConfig, StageTemplate)
                         )
                     ),
                     CandidateStage.status == "active"
@@ -1450,6 +1454,7 @@ class CandidateAdminService:
                 "stage_id": stage.id,
                 "stage_name": title,
                 "job_id": stage.job_stage.job_id if stage.job_stage else None,
+                "job_stage_config_id": stage.job_stage_id if stage.job_stage_id else None,
                 "stage_order": get_order(stage),
                 "metadata": metadata
             }

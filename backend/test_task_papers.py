@@ -1024,7 +1024,166 @@ async def test_task_papers_duplicate_checks():
             await conn.execute(text("DELETE FROM roles WHERE id = :id"), {"id": role_id})
 
 
+
+@pytest.mark.anyio
+async def test_dynamic_stage_requirements():
+    test_id_suffix = str(UUIDHelper.generate_uuid7())[:8]
+    job_title = f"Test Job {test_id_suffix}"
+    position_name = f"Test Pos {test_id_suffix}"
+    candidate_email = f"candidate_{test_id_suffix}@example.com"
+    user_email = f"user_{test_id_suffix}@example.com"
+
+    async with engine.begin() as conn:
+        role_id = UUIDHelper.generate_uuid7()
+        await conn.execute(
+            text("INSERT INTO roles (id, name, created_at, updated_at) VALUES (:id, :name, NOW(), NOW())"),
+            {"id": role_id, "name": f"Role {test_id_suffix}"},
+        )
+        user_id = UUIDHelper.generate_uuid7()
+        await conn.execute(
+            text("INSERT INTO users (id, email, password_hash, role_id, is_active, created_at, updated_at) VALUES (:id, :email, 'hash', :role_id, true, NOW(), NOW())"),
+            {"id": user_id, "email": user_email, "role_id": role_id},
+        )
+        department_id = UUIDHelper.generate_uuid7()
+        await conn.execute(
+            text("INSERT INTO departments (id, name, description) VALUES (:id, :name, 'Dept')"),
+            {"id": department_id, "name": f"Dept {test_id_suffix}"},
+        )
+        position_id = UUIDHelper.generate_uuid7()
+        await conn.execute(
+            text("INSERT INTO job_positions (id, name, created_at, updated_at) VALUES (:id, :name, NOW(), NOW())"),
+            {"id": position_id, "name": position_name},
+        )
+        
+        # Create a skill
+        skill_id = UUIDHelper.generate_uuid7()
+        await conn.execute(
+            text("INSERT INTO skills (id, name, description) VALUES (:id, :name, 'Description')"),
+            {"id": skill_id, "name": f"Skill {test_id_suffix}"},
+        )
+
+        job_id = UUIDHelper.generate_uuid7()
+        await conn.execute(
+            text("INSERT INTO jobs (id, title, department_id, position_id, is_active, passing_threshold, version, created_at) VALUES (:id, :title, :department_id, :position_id, true, 70.0, 1, NOW())"),
+            {"id": job_id, "title": job_title, "department_id": department_id, "position_id": position_id},
+        )
+        candidate_id = UUIDHelper.generate_uuid7()
+        await conn.execute(
+            text("INSERT INTO candidates (id, first_name, last_name, email, applied_job_id, created_at) VALUES (:id, 'John', 'Doe', :email, :job_id, NOW())"),
+            {"id": candidate_id, "email": candidate_email, "job_id": job_id},
+        )
+        # Stage Template A (Requires: github, question)
+        template_a_id = UUIDHelper.generate_uuid7()
+        await conn.execute(
+            text("INSERT INTO stage_templates (id, name, description, default_config, created_at) VALUES (:id, 'Stage A', 'A', '{\"required_inputs\": [\"github\", \"question\"]}', NOW())"),
+            {"id": template_a_id},
+        )
+        job_stage_a_id = UUIDHelper.generate_uuid7()
+        await conn.execute(
+            text("INSERT INTO job_stage_configs (id, job_id, template_id, stage_order, is_default, config, is_mandatory, created_at) VALUES (:id, :job_id, :template_id, 1, false, '{\"required_inputs\": [\"github\", \"question\"]}', true, NOW())"),
+            {"id": job_stage_a_id, "job_id": job_id, "template_id": template_a_id},
+        )
+        candidate_stage_a_id = UUIDHelper.generate_uuid7()
+        await conn.execute(
+            text("INSERT INTO candidate_stages (id, candidate_id, job_stage_id, status, started_at) VALUES (:id, :candidate_id, :job_stage_id, 'active', NOW())"),
+            {"id": candidate_stage_a_id, "candidate_id": candidate_id, "job_stage_id": job_stage_a_id},
+        )
+
+    mock_user = UserRead(
+        id=user_id,
+        email=user_email,
+        is_active=True,
+        is_superuser=True,
+        first_name="Test",
+        last_name="User",
+        role_id=role_id,
+        role_name=f"Role {test_id_suffix}",
+        permissions=["candidates:decide", "candidates:access", "admin:all"],
+    )
+    app.dependency_overrides[get_current_user] = lambda: mock_user
+    client = TestClient(app)
+
+    try:
+        # Create a paper first
+        data_paper = {
+            "department_id": str(department_id),
+            "position_id": str(position_id),
+            "skill_ids": [str(skill_id)],
+            "paper_type": "mixed",
+            "questions": ["Q1"],
+            "mcqs": [],
+            "project_task": [{"task": "Task1", "instructions": ""}]
+        }
+        res_paper = client.post("/api/v1/task-papers/manual", json=data_paper)
+        assert res_paper.status_code == 201
+        paper_id = res_paper.json()["id"]
+
+        # Test 1: Assign predefined paper to Candidate (should succeed because active stage A requires "question")
+        assign_payload = {
+            "candidate_id": str(candidate_id),
+            "mode": "predefined",
+            "paper_id": paper_id,
+        }
+        res_assign = client.post("/api/v1/task-papers/assign", json=assign_payload)
+        assert res_assign.status_code == 200
+
+        # Test 2: Upload transcript to CandidateStage A (should fail because Stage A doesn't require "transcript")
+        files = {"files": ("test.txt", b"Hello speaker 1: test")}
+        res_upload = client.post(f"/api/v1/transcripts/upload-path/{candidate_stage_a_id}", files=files)
+        assert res_upload.status_code == 400
+        assert "not configured for Transcript upload" in res_upload.json()["detail"]
+
+        # Test 3: Delete CandidateStage A, and add CandidateStage B (Requires: transcript)
+        async with engine.begin() as conn:
+            await conn.execute(text("DELETE FROM candidate_stages WHERE id = :id"), {"id": candidate_stage_a_id})
+            await conn.execute(text("DELETE FROM candidate_test_papers WHERE candidate_id = :id"), {"id": candidate_id})
+            
+            template_b_id = UUIDHelper.generate_uuid7()
+            await conn.execute(
+                text("INSERT INTO stage_templates (id, name, description, default_config, created_at) VALUES (:id, 'Stage B', 'B', '{\"required_inputs\": [\"transcript\"]}', NOW())"),
+                {"id": template_b_id},
+            )
+            job_stage_b_id = UUIDHelper.generate_uuid7()
+            await conn.execute(
+                text("INSERT INTO job_stage_configs (id, job_id, template_id, stage_order, is_default, config, is_mandatory, created_at) VALUES (:id, :job_id, :template_id, 1, false, '{\"required_inputs\": [\"transcript\"]}', true, NOW())"),
+                {"id": job_stage_b_id, "job_id": job_id, "template_id": template_b_id},
+            )
+            candidate_stage_b_id = UUIDHelper.generate_uuid7()
+            await conn.execute(
+                text("INSERT INTO candidate_stages (id, candidate_id, job_stage_id, status, started_at) VALUES (:id, :candidate_id, :job_stage_id, 'active', NOW())"),
+                {"id": candidate_stage_b_id, "candidate_id": candidate_id, "job_stage_id": job_stage_b_id},
+            )
+
+        # Test 4: Get assigned paper (should fail now because active stage B does not require "question")
+        res_get_b = client.get(f"/api/v1/task-papers/assigned/{candidate_id}")
+        assert res_get_b.status_code == 404
+        assert "Candidate has not reached the test paper stage yet." in res_get_b.json()["detail"]
+
+        # Test 5: Upload transcript to CandidateStage B (should succeed/start processing because Stage B requires "transcript")
+        with patch("app.v1.services.transcript_tasks.process_transcript_task.delay") as mock_celery:
+            res_upload_b = client.post(f"/api/v1/transcripts/upload-path/{candidate_stage_b_id}", files=files)
+            assert res_upload_b.status_code == 200
+            assert "Processing started" in res_upload_b.json()["message"]
+            mock_celery.assert_called_once()
+
+    finally:
+        app.dependency_overrides.clear()
+        async with engine.begin() as conn:
+            await conn.execute(text("DELETE FROM candidate_stages WHERE candidate_id = :id"), {"id": candidate_id})
+            await conn.execute(text("DELETE FROM job_stage_configs WHERE job_id = :id"), {"id": job_id})
+            await conn.execute(text("DELETE FROM stage_templates WHERE id IN (:id_a, :id_b)"), {"id_a": template_a_id, "id_b": template_b_id if 'template_b_id' in locals() else template_a_id})
+            await conn.execute(text("DELETE FROM candidates WHERE id = :id"), {"id": candidate_id})
+            await conn.execute(text("DELETE FROM jobs WHERE id = :id"), {"id": job_id})
+            await conn.execute(text("DELETE FROM job_positions WHERE id = :id"), {"id": position_id})
+            await conn.execute(text("DELETE FROM departments WHERE id = :id"), {"id": department_id})
+            await conn.execute(text("DELETE FROM skills WHERE id = :id"), {"id": skill_id})
+            await conn.execute(text("DELETE FROM users WHERE id = :id"), {"id": user_id})
+            await conn.execute(text("DELETE FROM roles WHERE id = :id"), {"id": role_id})
+
+
 if __name__ == "__main__":
     import asyncio
 
     asyncio.run(test_task_papers_flow())
+
+

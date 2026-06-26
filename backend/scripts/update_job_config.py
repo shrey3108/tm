@@ -36,7 +36,6 @@ async def update_job_config():
         stage_id = "019da3b5-39af-7222-9c92-89e5bfe9eb04"
         
         new_config = {
-            "type": "audio",
             "active_criteria": active_criteria,
             "version": "2.0" # Indicating new format
         }
