@@ -397,11 +397,11 @@ export default function AdminJobStageForm() {
                             <div className="space-y-4 pt-4 border-t">
                                 <div className="space-y-2">
                                     <FormLabel className="text-lg font-bold">Associated Criteria</FormLabel>
-                                    <FormDescription>
-                                        Select the evaluation criteria to use for this stage.
-                                        {selectedCriteriaData.length > 0 ? <>
+                                    <FormDescription className="flex items-center justify-between">
+                                        <span>Select the evaluation criteria to use for this stage.</span>
+                                        {selectedCriteriaData.length > 0 ? <span className="text-primary text-sm font-bold">
                                             Selected Criteria ({selectedCriteriaData.length})
-                                        </> : null}
+                                        </span> : null}
                                     </FormDescription>
                                     <div className="relative">
                                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

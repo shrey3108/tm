@@ -464,7 +464,7 @@ export type QuestionFormValues = z.infer<typeof questionFormSchema>;
  * Schema for validating an individual project sub-task.
  */
 export const subTaskSchema = z.object({
-  name: z.string().trim().min(3, "Task name must be at least 3 characters long."),
+  name: z.string().trim().min(3, "Task must be at least 3 characters long."),
   description: z.string().trim().optional().or(z.literal("")),
   marks: z.preprocess(
     (val) => (val === "" || val === undefined || val === null ? undefined : Number(val)),

@@ -12,16 +12,16 @@ import {
   UserCheck,
   CheckSquare,
   Square,
-  Eye,
+  Clock,
 } from "lucide-react";
 import AppPageShell from "@/components/shared/AppPageShell";
 import AppPageHeader from "@/components/shared/AppPageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { LoadingSpinner, PaperContentDisplay, SingleQuestionDisplay, MCQQuestionDisplay, ProjectTaskDisplay } from "@/components/shared";
+import { LoadingSpinner, SingleQuestionDisplay, MCQQuestionDisplay, ProjectTaskDisplay } from "@/components/shared";
 import { useDebouncedValue } from "@/hooks/useDebounced";
 import { slugify } from "@/utils/slug";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { formatDuration } from "@/utils/taskFormatter";
 import { useJob, useJobTitle } from "@/hooks/queries/jobs/useJob";
 import { useJobAssignedTask } from "@/hooks/queries/jobs/useJobTask";
 import { useAllQuestionsAndTasks } from "@/hooks/queries/taskPapers/useTaskPaperQueries";
@@ -129,24 +129,20 @@ export default function AssignPaperPage() {
     q: debouncedSearch || undefined,
     options: { enabled: !!job?.id },
   });
-
-  // Fallback to department/position level only (without jobId/skills) if job-specific content is empty
-  useEffect(() => {
-    if (
-      allContent &&
-      allContentJobId &&
-      allContent.questions.length === 0 &&
-      allContent.mcqs.length === 0 &&
-      allContent.project_task.length === 0
-    ) {
-      setAllContentJobId(undefined);
-    }
-  }, [allContent, allContentJobId]);
-
+  console.log(allContent); // got data 
   // Selection Pools and Custom Added Pools
   const [randomPoolQuestions, setRandomPoolQuestions] = useState<QuestionItem[]>([]);
   const [randomPoolMCQs, setRandomPoolMCQs] = useState<MCQItem[]>([]);
   const [randomPoolTasks, setRandomPoolTasks] = useState<TaskItem[]>([]);
+
+  // Compute total duration of the randomly selected / active pool
+  const poolTotalDuration = useMemo(() => {
+    const qDur = randomPoolQuestions.reduce((sum, q) => sum + (q.duration || 3), 0);
+    const mDur = randomPoolMCQs.reduce((sum, m) => sum + (m.duration || 3), 0);
+    const tDur = randomPoolTasks.reduce((sum, t) => sum + (t.duration || t.total_duration || 30), 0);
+    return qDur + mDur + tDur;
+  }, [randomPoolQuestions, randomPoolMCQs, randomPoolTasks]);
+
 
   const [availablePoolQuestions, setAvailablePoolQuestions] = useState<QuestionItem[]>([]);
   const [availablePoolMCQs, setAvailablePoolMCQs] = useState<MCQItem[]>([]);
@@ -236,6 +232,27 @@ export default function AssignPaperPage() {
     setAvailablePoolMCQs(normMcqs);
     setAvailablePoolTasks(normTasks);
   }, [allContent, randomPoolQuestions, randomPoolMCQs, randomPoolTasks]);
+
+  // Fallback to department/position level only (without jobId/skills) if job-specific content is empty or contains no new available questions
+  useEffect(() => {
+    if (
+      !loadingAllContent &&
+      allContent &&
+      allContentJobId &&
+      availablePoolQuestions.length === 0 &&
+      availablePoolMCQs.length === 0 &&
+      availablePoolTasks.length === 0
+    ) {
+      setAllContentJobId(undefined);
+    }
+  }, [
+    allContent,
+    allContentJobId,
+    loadingAllContent,
+    availablePoolQuestions,
+    availablePoolMCQs,
+    availablePoolTasks,
+  ]);
 
   // Draft Custom Item states
   const [contentType, setContentType] = useState<"question" | "mcq" | "project_task">("question");
@@ -581,11 +598,16 @@ export default function AssignPaperPage() {
         {/* Section 1: Randomly Selected Pool (Checked by Default) */}
         <div className="app-surface-card p-2 space-y-2">
           <div className="flex items-center justify-between border-b pb-1.5 border-border/40">
-            <div>
+            <div className="flex items-center justify-between w-full flex-wrap gap-2">
               <h3 className="text-xs font-bold text-foreground flex items-center gap-1.5">
                 <Sparkles className="h-4 w-4 text-primary" />
                 Randomly Selected Questions
               </h3>
+              {(randomPoolQuestions.length > 0 || randomPoolMCQs.length > 0 || randomPoolTasks.length > 0) && (
+                <span className="bg-primary/10 text-primary px-2.5 py-0.5 rounded-full border border-primary/20 flex items-center gap-1 text-[10px] font-bold">
+                  <Clock className="h-3 w-3" /> Total Duration: {formatDuration(poolTotalDuration)}
+                </span>
+              )}
             </div>
             {/* Implement but do not display in UI as requested */}
             {/*
@@ -607,7 +629,7 @@ export default function AssignPaperPage() {
           {loadingAssignedPaper ? (
             <div className="text-xs text-muted-foreground py-2 text-center">Loading assigned paper...</div>
           ) : loadingRandomPreview ? (
-            <div className="text-xs text-muted-foreground py-2 text-center">Loading randomized pool...</div>
+            <div className="text-xs text-muted-foreground py-2 text-center">Loading randomized questions...</div>
           ) : !assignedPaper && !useRandomPool ? (
             <div className="text-xs text-muted-foreground py-6 text-center border border-dashed rounded-lg border-border/60">
               No default paper has been assigned to this stage yet.
@@ -627,7 +649,7 @@ export default function AssignPaperPage() {
               */}
             </div>
           ) : randomPoolQuestions.length === 0 && randomPoolMCQs.length === 0 && randomPoolTasks.length === 0 ? (
-            <div className="text-xs text-muted-foreground py-2 text-center">No pool available for this job profile.</div>
+            <div className="text-xs text-muted-foreground py-2 text-center">No questions available for this job profile.</div>
           ) : (
             <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
               {/* Normal questions in Pool */}
@@ -1004,7 +1026,7 @@ export default function AssignPaperPage() {
 
         {/* Section 5: Live Preview of Selected Configuration (Collapsible) */}
 
-        <Accordion defaultValue={["questions"]}>
+        {/* <Accordion defaultValue={["questions"]}>
           <AccordionItem value="questions">
             <AccordionTrigger className={"hover:no-underline px-2 py-2"}><h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
               <Eye className="h-4 w-4 text-primary" />
@@ -1019,7 +1041,7 @@ export default function AssignPaperPage() {
               />
             </AccordionContent>
           </AccordionItem>
-        </Accordion>
+        </Accordion> */}
 
         {/* Page Actions */}
         <div className="flex items-center justify-center gap-2 border-t pt-2 border-border/40">

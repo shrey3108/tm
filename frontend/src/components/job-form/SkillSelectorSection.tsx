@@ -103,11 +103,16 @@ export const SkillSelectorSection = ({
     <div className="app-surface-card space-y-6 p-4 sm:p-5">
       <div className="space-y-1">
         <div className="flex items-center justify-between">
-          <div>
+          <div className="w-full mr-4">
 
             <h2 className="text-lg font-bold tracking-tight">Required Skills <Required /></h2>
             <p className="text-muted-foreground text-base font-medium">
-              {placeholderMessage} {selectedSkillIds.length > 0 ? <>Selected ({selectedSkillIds.length})</> : null}
+              <div className="flex items-center justify-between">
+                <span>{placeholderMessage}</span>
+                {selectedSkillIds.length > 0 ? <span className="text-primary text-sm font-bold">
+                  Selected ({selectedSkillIds.length})
+                </span> : null}
+              </div>
             </p>
           </div>
 
