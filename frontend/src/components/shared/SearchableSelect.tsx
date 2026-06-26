@@ -221,6 +221,7 @@ export function SearchableSelect({
           setSearch("");
         }
       }}
+      modal={false}
     >
       <SelectTrigger
         disabled={disabled || loading}
@@ -237,7 +238,7 @@ export function SearchableSelect({
       <SelectContent
         align="start"
         className={cn("p-2 min-w-(--anchor-width) w-max max-w-[min(calc(100vw-1rem),400px)]", contentClassName)}
-        alignItemWithTrigger={true}
+        alignItemWithTrigger={false}
       >
         {(search || options.length >= displayLimit) && (
           <div className="px-1 pb-2">

@@ -8,6 +8,7 @@ import type {
   QuestionSetPaperCreate,
   MCQItem,
   TaskItem,
+  QuestionItem,
 } from "@/types/taskPaper";
 
 /**
@@ -187,7 +188,7 @@ export function useAddQuestionToPaperMutation() {
       question,
     }: {
       paperId: string;
-      question: string;
+      question: QuestionItem | string;
     }) => taskService.addQuestionToPaper(paperId, question),
     onSuccess: () => {
       queryClient.invalidateQueries({
@@ -210,7 +211,7 @@ export function useUpdateQuestionInPaperMutation() {
     }: {
       paperId: string;
       index: number;
-      question: string;
+      question: QuestionItem | string;
     }) => taskService.updateQuestionInPaper(paperId, index, question),
     onSuccess: () => {
       queryClient.invalidateQueries({
