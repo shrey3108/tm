@@ -22,3 +22,6 @@ logs*.md
 # ignore Phoenix db files
 phoenix_data/
 backend/scratch/
+
+# ignore Roo configuration files
+.roo/
