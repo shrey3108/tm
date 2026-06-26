@@ -8,11 +8,28 @@ export interface MCQItem {
   question: string;
   options: string[];
   answer: string;
+  marks?: number;
+  duration?: number; // in minutes
+}
+
+export interface QuestionItem {
+  question: string;
+  marks?: number;
+  duration?: number; // in minutes
+}
+
+export interface SubTaskItem {
+  title: string;
+  marks: number;
+  duration: number; // in minutes
 }
 
 export interface TaskItem {
   task: string;
   instructions: string;
+  tasks?: SubTaskItem[];
+  total_marks?: number;
+  total_duration?: number;
 }
 
 export interface QuestionSetPaperRead {
@@ -22,7 +39,7 @@ export interface QuestionSetPaperRead {
   position_id: string;
   skills: SkillRead[];
   paper_type: string;
-  questions: string[];
+  questions: (QuestionItem | string)[];
   mcqs: MCQItem[];
   project_task: (TaskItem | string)[];
   task_file_path: string | null;
@@ -41,11 +58,10 @@ export interface QuestionSetPaperCreate {
   position_id: string;
   skill_ids: string[];
   paper_type: "normal" | "mcq" | "task" | "mixed";
-  questions: string[];
+  questions: (QuestionItem | string)[];
   mcqs?: MCQItem[];
   project_task: (TaskItem | string)[];
 }
-
 
 export interface CandidateTestPaperRead {
   id: string;
@@ -53,7 +69,7 @@ export interface CandidateTestPaperRead {
   job_id: string;
   position_id: string;
   name: string;
-  questions: string[];
+  questions: (QuestionItem | string)[];
   mcqs: MCQItem[];
   project_task: (TaskItem | string)[];
   task_file_path: string | null;
@@ -79,7 +95,7 @@ export interface CandidateTestPaperAssign {
   paper_id?: string;
   source_paper_ids?: string[];
   base_paper_id?: string;
-  questions?: string[];
+  questions?: (QuestionItem | string)[];
   mcqs?: MCQItem[];
   project_task?: string;
   question_count?: number;
@@ -109,7 +125,7 @@ export interface CandidateTestPaperHistoryRead {
   candidate_id: string;
   job_id: string;
   name: string;
-  questions: string[];
+  questions: (QuestionItem | string)[];
   mcqs: MCQItem[];
   project_task: (TaskItem | string)[];
   task_file_path: string | null;
@@ -119,7 +135,7 @@ export interface CandidateTestPaperHistoryRead {
 }
 
 export interface TaskPaperPreviewResponse {
-  questions: string[];
+  questions: (QuestionItem | string)[];
   mcqs: MCQItem[];
   project_task: string[];
 }

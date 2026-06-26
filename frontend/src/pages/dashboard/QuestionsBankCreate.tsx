@@ -33,9 +33,9 @@ import {
   useUpdateMCQInPaperMutation,
   useUploadQuestionSetPaperMutation,
 } from "@/hooks/mutations/taskPapers/useTaskPaperMutations";
-import type { MCQItem, TaskItem } from "@/types/taskPaper";
-import { mcqSchema } from "@/schemas/taskPaper";
-import { questionSchema, projectTaskSchema } from "@/schemas/admin";
+import type { MCQItem, TaskItem, SubTaskItem, QuestionItem } from "@/types/taskPaper";
+import { mcqFormSchema } from "@/schemas/taskPaper";
+import { questionFormSchema, projectTaskSchema } from "@/schemas/admin";
 import { extractErrorMessage } from "@/utils/error";
 import { slugify } from "@/utils/slug";
 
@@ -138,11 +138,18 @@ export default function QuestionsBankCreate() {
     initialItemIndex !== undefined ? initialItemIndex : 0
   );
   const [questionText, setQuestionText] = useState<string>("");
+  const [questionMarks, setQuestionMarks] = useState<number | "">("");
+  const [questionHours, setQuestionHours] = useState<number | "">("");
+  const [questionMinutes, setQuestionMinutes] = useState<number | "">("");
   const [mcqQuestion, setMCQQuestion] = useState<string>("");
   const [mcqOptions, setMCQOptions] = useState<string[]>(["", ""]);
   const [mcqAnswer, setMCQAnswer] = useState<string>("");
+  const [mcqMarks, setMCqMarks] = useState<number | "">("");
+  const [mcqHours, setMCqHours] = useState<number | "">("");
+  const [mcqMinutes, setMCqMinutes] = useState<number | "">("");
   const [taskDescription, setTaskDescription] = useState<string>("");
   const [taskInstructions, setTaskInstructions] = useState<string>("");
+  const [projectTasks, setProjectTasks] = useState<SubTaskItem[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Clear validation errors when changing content type or options length
@@ -173,43 +180,87 @@ export default function QuestionsBankCreate() {
           const answerIndex = rawOptions.indexOf(answerText);
           const answerLetter = answerIndex !== -1 ? String.fromCharCode(65 + answerIndex) : "A";
           setMCQAnswer(answerLetter);
+          setMCqMarks(mcq.marks || "");
+          const mDur = mcq.duration || 0;
+          setMCqHours(Math.floor(mDur / 60) || "");
+          setMCqMinutes(mDur % 60 || "");
         } else if (initialItemType === "project_task" && paperToEdit.project_task && paperToEdit.project_task[itemIndex]) {
           const task = paperToEdit.project_task[itemIndex];
           if (typeof task === "string") {
             setTaskDescription(task);
             setTaskInstructions("");
+            setProjectTasks([]);
           } else {
             setTaskDescription((task as any)?.task || "");
             setTaskInstructions((task as any)?.instructions || "");
+            setProjectTasks((task as any)?.tasks || []);
           }
         } else if (initialItemType === "question" && paperToEdit.questions && paperToEdit.questions[itemIndex]) {
-          setQuestionText(paperToEdit.questions[itemIndex] || "");
+          const q = paperToEdit.questions[itemIndex];
+          if (typeof q === "string") {
+            setQuestionText(q);
+            setQuestionMarks("");
+            setQuestionHours("");
+            setQuestionMinutes("");
+          } else {
+            setQuestionText((q as any).question || "");
+            setQuestionMarks((q as any).marks || "");
+            const qDur = (q as any).duration || 0;
+            setQuestionHours(Math.floor(qDur / 60) || "");
+            setQuestionMinutes(qDur % 60 || "");
+          }
         }
       } else {
         if (paperToEdit.mcqs && paperToEdit.mcqs.length > 0) {
           setContentType("mcq");
-          setMCQQuestion(paperToEdit.mcqs[0].question || "");
+          const mcq = paperToEdit.mcqs[0];
+          setMCQQuestion(mcq.question || "");
 
-          const rawOptions = paperToEdit.mcqs[0].options || [];
+          const rawOptions = mcq.options || [];
           setMCQOptions(rawOptions);
 
-          const answerText = paperToEdit.mcqs[0].answer || "";
+          const answerText = mcq.answer || "";
           const answerIndex = rawOptions.indexOf(answerText);
           const answerLetter = answerIndex !== -1 ? String.fromCharCode(65 + answerIndex) : "A";
           setMCQAnswer(answerLetter);
+          setMCqMarks(mcq.marks || "");
+          const mDur = mcq.duration || 0;
+          setMCqHours(Math.floor(mDur / 60) || "");
+          setMCqMinutes(mDur % 60 || "");
         } else if (paperToEdit.project_task && paperToEdit.project_task.length > 0) {
           setContentType("project_task");
           const task = paperToEdit.project_task[0];
           if (typeof task === "string") {
             setTaskDescription(task);
             setTaskInstructions("");
+            setProjectTasks([]);
           } else {
             setTaskDescription((task as any)?.task || "");
             setTaskInstructions((task as any)?.instructions || "");
+            setProjectTasks((task as any)?.tasks || []);
           }
         } else {
           setContentType("question");
-          setQuestionText(paperToEdit.questions?.[0] || "");
+          const q = paperToEdit.questions?.[0];
+          if (q) {
+            if (typeof q === "string") {
+              setQuestionText(q);
+              setQuestionMarks("");
+              setQuestionHours("");
+              setQuestionMinutes("");
+            } else {
+              setQuestionText((q as any).question || "");
+              setQuestionMarks((q as any).marks || "");
+              const qDur = (q as any).duration || 0;
+              setQuestionHours(Math.floor(qDur / 60) || "");
+              setQuestionMinutes(qDur % 60 || "");
+            }
+          } else {
+            setQuestionText("");
+            setQuestionMarks("");
+            setQuestionHours("");
+            setQuestionMinutes("");
+          }
         }
       }
     }
@@ -284,10 +335,17 @@ export default function QuestionsBankCreate() {
     }
 
     // Validate content based on selected type
-    let questionTextPayload = "";
+    let questionTextPayload: QuestionItem | string = "";
     if (contentType === "question") {
-      const result = questionSchema.safeParse({
+      const qHours = questionHours === "" ? 0 : Number(questionHours);
+      const qMins = questionMinutes === "" ? 0 : Number(questionMinutes);
+      const duration = qHours * 60 + qMins;
+
+      const result = questionFormSchema.safeParse({
         question: questionText,
+        marks: questionMarks === "" ? undefined : Number(questionMarks),
+        hours: qHours,
+        minutes: qMins,
       });
 
       if (!result.success) {
@@ -301,20 +359,31 @@ export default function QuestionsBankCreate() {
         setErrors(newErrors);
         return;
       }
-      questionTextPayload = questionText.trim();
+      questionTextPayload = {
+        question: questionText.trim(),
+        marks: Number(questionMarks),
+        duration,
+      };
     }
 
     let mcqItemPayload: MCQItem | null = null;
     if (contentType === "mcq") {
-      const result = mcqSchema.safeParse({
+      const mHours = mcqHours === "" ? 0 : Number(mcqHours);
+      const mMins = mcqMinutes === "" ? 0 : Number(mcqMinutes);
+      const duration = mHours * 60 + mMins;
+
+      const result = mcqFormSchema.safeParse({
         question: mcqQuestion,
         options: mcqOptions,
         answer: mcqAnswer,
+        marks: mcqMarks === "" ? undefined : Number(mcqMarks),
+        hours: mHours,
+        minutes: mMins,
       });
 
       if (!result.success) {
         const newErrors: Record<string, string> = {};
-        result.error.issues.forEach((issue) => {
+        result.error.issues.forEach((issue: any) => {
           if (issue.path[0] === "options" && typeof issue.path[1] === "number") {
             const idx = issue.path[1];
             newErrors[`options.${idx}`] = issue.message;
@@ -334,6 +403,8 @@ export default function QuestionsBankCreate() {
         question: mcqQuestion.trim(),
         options: mcqOptions.map((opt) => opt.trim()),
         answer: answerText.trim(),
+        marks: Number(mcqMarks),
+        duration,
       };
     }
 
@@ -342,6 +413,7 @@ export default function QuestionsBankCreate() {
       const result = projectTaskSchema.safeParse({
         project_task: taskDescription,
         instructions: taskInstructions,
+        tasks: projectTasks,
       });
 
       if (!result.success) {
@@ -359,6 +431,9 @@ export default function QuestionsBankCreate() {
       projectTaskItemPayload = {
         task: taskDescription.trim(),
         instructions: taskInstructions.trim(),
+        tasks: projectTasks,
+        total_marks: projectTasks.reduce((sum, t) => sum + (t.marks || 0), 0),
+        total_duration: projectTasks.reduce((sum, t) => sum + (t.duration || 0), 0),
       };
     }
 
@@ -566,7 +641,14 @@ export default function QuestionsBankCreate() {
               <SingleQuestionFormFields
                 questionText={questionText}
                 onQuestionChange={setQuestionText}
-                error={errors.question}
+                marks={questionMarks}
+                onMarksChange={setQuestionMarks}
+                hours={questionHours}
+                onHoursChange={setQuestionHours}
+                minutes={questionMinutes}
+                onMinutesChange={setQuestionMinutes}
+                errors={errors}
+                onClearError={(field) => setErrors((prev) => ({ ...prev, [field]: "" }))}
               />
             )}
 
@@ -578,6 +660,12 @@ export default function QuestionsBankCreate() {
                 onMCQOptionsChange={setMCQOptions}
                 mcqAnswer={mcqAnswer}
                 onMCQAnswerChange={setMCQAnswer}
+                marks={mcqMarks}
+                onMarksChange={setMCqMarks}
+                hours={mcqHours}
+                onHoursChange={setMCqHours}
+                minutes={mcqMinutes}
+                onMinutesChange={setMCqMinutes}
                 errors={errors}
                 onClearError={(field) => setErrors((prev) => ({ ...prev, [field]: "" }))}
               />
@@ -589,6 +677,8 @@ export default function QuestionsBankCreate() {
                 onDescriptionChange={setTaskDescription}
                 taskInstructions={taskInstructions}
                 onInstructionsChange={setTaskInstructions}
+                tasks={projectTasks}
+                onTasksChange={setProjectTasks}
                 errors={errors}
                 onClearError={(field) => setErrors((prev) => ({ ...prev, [field]: "" }))}
               />

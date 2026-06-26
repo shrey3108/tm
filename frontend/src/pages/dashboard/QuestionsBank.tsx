@@ -100,11 +100,12 @@ export default function QuestionsBank() {
 
       // 1. questions
       if (Array.isArray(paper.questions)) {
-        paper.questions.forEach((q: string, idx: number) => {
-          if (q && typeof q === "string") {
+        paper.questions.forEach((q: any, idx: number) => {
+          if (q) {
+            const content = typeof q === "string" ? q : q.question || "";
             items.push({
               id: `${paperId}-q-${idx}`,
-              content: q,
+              content,
               type: "question",
               paperId,
               itemIndex: idx,
