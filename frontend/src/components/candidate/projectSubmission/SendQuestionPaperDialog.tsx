@@ -347,7 +347,7 @@ export function SendQuestionPaperDialog({
       mode: "custom" as const,
       questions: finalQuestions,
       mcqs: finalMcqs,
-      project_task: finalTasks.join("\n\n---\n\n"),
+      project_task: finalTasks,
     };
   };
 

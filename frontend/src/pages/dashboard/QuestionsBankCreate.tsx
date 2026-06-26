@@ -149,6 +149,8 @@ export default function QuestionsBankCreate() {
   const [mcqMinutes, setMCqMinutes] = useState<number | "">("");
   const [taskDescription, setTaskDescription] = useState<string>("");
   const [taskInstructions, setTaskInstructions] = useState<string>("");
+  const [taskHours, setTaskHours] = useState<number | "">("");
+  const [taskMinutes, setTaskMinutes] = useState<number | "">("");
   const [projectTasks, setProjectTasks] = useState<SubTaskItem[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -189,10 +191,15 @@ export default function QuestionsBankCreate() {
           if (typeof task === "string") {
             setTaskDescription(task);
             setTaskInstructions("");
+            setTaskHours("");
+            setTaskMinutes("");
             setProjectTasks([]);
           } else {
             setTaskDescription((task as any)?.task || "");
             setTaskInstructions((task as any)?.instructions || "");
+            const dur = (task as any)?.duration || (task as any)?.total_duration || 0;
+            setTaskHours(Math.floor(dur / 60) || "");
+            setTaskMinutes(dur % 60 || "");
             setProjectTasks((task as any)?.tasks || []);
           }
         } else if (initialItemType === "question" && paperToEdit.questions && paperToEdit.questions[itemIndex]) {
@@ -233,10 +240,15 @@ export default function QuestionsBankCreate() {
           if (typeof task === "string") {
             setTaskDescription(task);
             setTaskInstructions("");
+            setTaskHours("");
+            setTaskMinutes("");
             setProjectTasks([]);
           } else {
             setTaskDescription((task as any)?.task || "");
             setTaskInstructions((task as any)?.instructions || "");
+            const dur = (task as any)?.duration || (task as any)?.total_duration || 0;
+            setTaskHours(Math.floor(dur / 60) || "");
+            setTaskMinutes(dur % 60 || "");
             setProjectTasks((task as any)?.tasks || []);
           }
         } else {
@@ -413,6 +425,8 @@ export default function QuestionsBankCreate() {
       const result = projectTaskSchema.safeParse({
         project_task: taskDescription,
         instructions: taskInstructions,
+        hours: taskHours,
+        minutes: taskMinutes,
         tasks: projectTasks,
       });
 
@@ -428,12 +442,21 @@ export default function QuestionsBankCreate() {
         return;
       }
 
+      const duration = (Number(taskHours) || 0) * 60 + (Number(taskMinutes) || 0);
+
       projectTaskItemPayload = {
         task: taskDescription.trim(),
         instructions: taskInstructions.trim(),
-        tasks: projectTasks,
+        title: taskDescription.trim(),
+        description: taskDescription.trim(),
+        duration,
+        tasks: projectTasks.map((t) => ({
+          name: t.name,
+          description: t.description || undefined,
+          marks: t.marks,
+        })),
         total_marks: projectTasks.reduce((sum, t) => sum + (t.marks || 0), 0),
-        total_duration: projectTasks.reduce((sum, t) => sum + (t.duration || 0), 0),
+        total_duration: duration,
       };
     }
 
@@ -677,6 +700,10 @@ export default function QuestionsBankCreate() {
                 onDescriptionChange={setTaskDescription}
                 taskInstructions={taskInstructions}
                 onInstructionsChange={setTaskInstructions}
+                hours={taskHours}
+                onHoursChange={setTaskHours}
+                minutes={taskMinutes}
+                onMinutesChange={setTaskMinutes}
                 tasks={projectTasks}
                 onTasksChange={setProjectTasks}
                 errors={errors}

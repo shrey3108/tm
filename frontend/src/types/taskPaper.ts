@@ -19,15 +19,23 @@ export interface QuestionItem {
 }
 
 export interface SubTaskItem {
-  title: string;
-  marks: number;
-  duration: number; // in minutes
+  name: string;
+  description?: string;
+  marks?: number;
 }
 
 export interface TaskItem {
-  task: string;
-  instructions: string;
+  // Old fields for backward compatibility
+  task?: string;
+  instructions?: string;
+
+  // New nested fields
+  title?: string;
+  description?: string;
+  duration?: number; // in minutes
   tasks?: SubTaskItem[];
+
+  // Legacy / UI computed values
   total_marks?: number;
   total_duration?: number;
 }
@@ -97,7 +105,7 @@ export interface CandidateTestPaperAssign {
   base_paper_id?: string;
   questions?: (QuestionItem | string)[];
   mcqs?: MCQItem[];
-  project_task?: string;
+  project_task?: (TaskItem | string)[];
   question_count?: number;
   source_mix?: SourceMixItem[];
 }
@@ -137,5 +145,5 @@ export interface CandidateTestPaperHistoryRead {
 export interface TaskPaperPreviewResponse {
   questions: (QuestionItem | string)[];
   mcqs: MCQItem[];
-  project_task: string[];
+  project_task: (TaskItem | string)[];
 }

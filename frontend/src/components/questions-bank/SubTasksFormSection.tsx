@@ -2,11 +2,11 @@ import { useState, useMemo } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2, Award, Clock, ListTodo } from "lucide-react";
+import { Plus, Trash2, Award, ListTodo } from "lucide-react";
 import { subTaskSchema } from "@/schemas/admin";
 import type { SubTaskItem } from "@/types/taskPaper";
-import { formatDuration, formatSubTaskDuration } from "@/utils/taskFormatter";
-import { QuestionMetricsInput } from "./QuestionMetricsInput";
+// import { formatDuration, formatSubTaskDuration } from "@/utils/taskFormatter";
+// import { QuestionMetricsInput } from "./QuestionMetricsInput";
 import { Required } from "@/components/shared/Required";
 
 interface SubTasksFormSectionProps {
@@ -25,28 +25,22 @@ export function SubTasksFormSection({
   disabled = false,
 }: SubTasksFormSectionProps) {
   // Local state for adding a new sub-task
-  const [title, setTitle] = useState("");
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
   const [marks, setMarks] = useState<number | "">("");
-  const [hours, setHours] = useState<number | "">("");
-  const [minutes, setMinutes] = useState<number | "">("");
   const [subTaskErrors, setSubTaskErrors] = useState<Record<string, string>>({});
 
-  // Compute total marks and duration
+  // Compute total marks
   const totalMarks = useMemo(() => tasks.reduce((sum, t) => sum + (t.marks || 0), 0), [tasks]);
-  const totalDuration = useMemo(() => tasks.reduce((sum, t) => sum + (t.duration || 0), 0), [tasks]);
 
   const handleAddSubTask = () => {
     setSubTaskErrors({});
 
-    const parsedHours = hours === "" ? 0 : Number(hours);
-    const parsedMinutes = minutes === "" ? 0 : Number(minutes);
-    const duration = parsedHours * 60 + parsedMinutes;
-
     // Validate using Zod subTaskSchema
     const result = subTaskSchema.safeParse({
-      title,
+      name,
+      description: description.trim() || undefined,
       marks: marks === "" ? undefined : Number(marks),
-      duration: duration === 0 ? undefined : duration,
     });
 
     if (!result.success) {
@@ -62,13 +56,19 @@ export function SubTasksFormSection({
     }
 
     // Add sub-task and clear fields
-    const updatedTasks = [...tasks, { title: title.trim(), marks: Number(marks), duration }];
+    const updatedTasks = [
+      ...tasks,
+      {
+        name: name.trim(),
+        description: description.trim() || undefined,
+        marks: marks === "" ? undefined : Number(marks),
+      },
+    ];
     onTasksChange(updatedTasks);
 
-    setTitle("");
+    setName("");
+    setDescription("");
     setMarks("");
-    setHours("");
-    setMinutes("");
     setSubTaskErrors({});
 
     // Clear main task errors if present
@@ -94,9 +94,6 @@ export function SubTasksFormSection({
                 <span className="bg-primary/10 text-primary px-3 py-1 rounded-full border border-primary/20 flex items-center gap-1.5 font-bold">
                   <Award className="h-3.5 w-3.5" /> Total Marks: {totalMarks}
                 </span>
-                <span className="bg-primary/10 text-primary px-3 py-1 rounded-full border border-primary/20 flex items-center gap-1.5 font-bold">
-                  <Clock className="h-3.5 w-3.5" /> Total Duration: {formatDuration(totalDuration)}
-                </span>
               </div>
             )}
           </div>
@@ -116,16 +113,22 @@ export function SubTasksFormSection({
             >
               <div className="flex-1 min-w-0 pr-4">
                 <p className="text-sm font-semibold text-foreground truncate">
-                  {index + 1}. {task.title}
+                  {index + 1}. {task.name || (task as any).title}
                 </p>
                 <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground font-medium">
-                  <span className="flex items-center gap-1">
-                    <Award className="h-3 w-3" /> {task.marks} Marks
-                  </span>
-                  <span className="h-1 w-1 bg-border rounded-full" />
-                  <span className="flex items-center gap-1">
-                    <Clock className="h-3 w-3" /> {formatSubTaskDuration(task.duration)}
-                  </span>
+                  {task.marks !== undefined && (
+                    <span className="flex items-center gap-1">
+                      <Award className="h-3 w-3" /> {task.marks} Marks
+                    </span>
+                  )}
+                  {task.description && (
+                    <>
+                      {task.marks !== undefined && <span className="h-1 w-1 bg-border rounded-full" />}
+                      <span className="truncate italic">
+                        {task.description}
+                      </span>
+                    </>
+                  )}
                 </div>
               </div>
               <Button
@@ -152,57 +155,86 @@ export function SubTasksFormSection({
         <div className="text-xs font-bold text-foreground">Add New Sub-Task</div>
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-1.5">
-          {/* Title */}
-          <div className="flex flex-col gap-1 md:col-span-6">
-            <Label className="text-xs font-semibold">Task Title <Required /></Label>
+          {/* Name */}
+          <div className="flex flex-col gap-1 md:col-span-5">
+            <Label className="text-xs font-semibold">Task Name <Required /></Label>
             <Input
               type="text"
               placeholder="e.g. setup db"
               disabled={disabled}
-              value={title}
+              value={name}
               onChange={(e) => {
-                setTitle(e.target.value);
-                if (subTaskErrors.title) {
-                  setSubTaskErrors((prev) => ({ ...prev, title: "" }));
+                setName(e.target.value);
+                if (subTaskErrors.name) {
+                  setSubTaskErrors((prev) => ({ ...prev, name: "" }));
                 }
               }}
-              aria-invalid={!!subTaskErrors.title}
+              aria-invalid={!!subTaskErrors.name}
               className="text-xs h-9 bg-background"
             />
-            {subTaskErrors.title && (
-              <p className="text-xs font-semibold text-destructive">{subTaskErrors.title}</p>
+            {subTaskErrors.name && (
+              <p className="text-xs font-semibold text-destructive">{subTaskErrors.name}</p>
             )}
           </div>
 
-          {/* Metrics */}
-          <div className="md:col-span-6 flex items-start gap-1.5">
-            <QuestionMetricsInput
-              marks={marks}
-              onMarksChange={setMarks}
-              hours={hours}
-              onHoursChange={setHours}
-              minutes={minutes}
-              onMinutesChange={setMinutes}
-              marksError={subTaskErrors.marks}
-              durationError={subTaskErrors.duration}
-              onClearMarksError={() => setSubTaskErrors((prev) => ({ ...prev, marks: "" }))}
-              onClearDurationError={() => setSubTaskErrors((prev) => ({ ...prev, duration: "" }))}
+          {/* Description */}
+          <div className="flex flex-col gap-1 md:col-span-4">
+            <Label className="text-xs font-semibold">Description</Label>
+            <Input
+              type="text"
+              placeholder="e.g. setup schema & seed data"
               disabled={disabled}
+              value={description}
+              onChange={(e) => {
+                setDescription(e.target.value);
+                if (subTaskErrors.description) {
+                  setSubTaskErrors((prev) => ({ ...prev, description: "" }));
+                }
+              }}
+              aria-invalid={!!subTaskErrors.description}
+              className="text-xs h-9 bg-background"
             />
-            <div className="flex flex-col gap-1">
-              <Label className="text-xs font-semibold invisible select-none" aria-hidden="true">
-                Add
-              </Label>
-              <Button
-                type="button"
-                onClick={handleAddSubTask}
-                disabled={disabled}
-                variant={"outline"}
-                size={"icon"}
-              >
-                <Plus className="h-3.5 w-3.5" />
-              </Button>
-            </div>
+            {subTaskErrors.description && (
+              <p className="text-xs font-semibold text-destructive">{subTaskErrors.description}</p>
+            )}
+          </div>
+
+          {/* Marks */}
+          <div className="flex flex-col gap-1 md:col-span-2">
+            <Label className="text-xs font-semibold">Marks</Label>
+            <Input
+              type="number"
+              placeholder="10"
+              min={1}
+              disabled={disabled}
+              value={marks}
+              onChange={(e) => {
+                const val = e.target.value === "" ? "" : Number(e.target.value);
+                setMarks(val);
+                if (subTaskErrors.marks) {
+                  setSubTaskErrors((prev) => ({ ...prev, marks: "" }));
+                }
+              }}
+              aria-invalid={!!subTaskErrors.marks}
+              className="text-xs h-9 bg-background font-medium"
+            />
+            {subTaskErrors.marks && (
+              <p className="text-xs font-semibold text-destructive">{subTaskErrors.marks}</p>
+            )}
+          </div>
+
+          {/* Add Button */}
+          <div className="flex flex-col gap-1 md:col-span-1 justify-end">
+            <Button
+              type="button"
+              onClick={handleAddSubTask}
+              disabled={disabled}
+              variant={"outline"}
+              size={"icon"}
+              className="h-9 w-9 bg-background hover:bg-muted"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       </div>
