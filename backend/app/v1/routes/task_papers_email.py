@@ -18,7 +18,7 @@ from app.v1.schemas.task_papers import (
 )
 from app.v1.schemas.user import UserRead
 from app.v1.services.email_service import send_candidate_task_email_via_smtp
-from app.v1.routes.task_papers_assigned import get_candidate_active_job_id, get_candidate_active_stage_config_id
+from app.v1.routes.task_papers_helpers import get_candidate_active_job_id, get_candidate_active_stage_config_id
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -61,7 +61,7 @@ async def get_job_test_paper_history(
     user: UserRead = Depends(check_permission("candidates:access")),
 ):
     """Retrieve the assignment and email log history for all candidates under a specific job."""
-    from app.v1.routes.task_papers_assigned import get_job_first_question_stage_config_id
+    from app.v1.routes.task_papers_helpers import get_job_first_question_stage_config_id
     resolved_stage_id = job_stage_id or await get_job_first_question_stage_config_id(db, job_id)
     stmt = (
         select(CandidateTestPaperHistory)

@@ -444,17 +444,11 @@ Output Format Example (JSON ONLY):
         # Re-fetch the job with all stages and templates fully loaded
         job = await self.get_job_by_id(db, job_id)
 
-        # Auto-generate test paper if a question bank exists
-        if has_question_bank:
-            try:
-                from app.v1.services.admin.candidate_task_service import candidate_task_service
-                random_paper = await candidate_task_service.generate_random_paper_for_job(db, job)
-                if random_paper:
-                    db.add(random_paper)
-                    await db.flush()
-                    logger.info(f"Automatically generated random test paper for job: {job.id}")
-            except Exception as e:
-                logger.warning(f"Failed to auto-generate test paper for job {job.id}: {e}")
+        # NOTE: The generic (NULL-stage) auto-paper generation has been removed.
+        # Attempt 2 below already generates a stage-specific paper tied to the
+        # first question round, which is the correct behaviour. Keeping both
+        # caused duplicate papers and let other rounds silently reuse the
+        # NULL-stage fallback paper.
 
         # Invalidate job board and search caches
         from app.v1.core.cache import cache
@@ -483,7 +477,7 @@ Output Format Example (JSON ONLY):
 
         # Attempt to auto-generate a random question paper from question bank
         from app.v1.services.admin.candidate_task_service import candidate_task_service
-        from app.v1.routes.task_papers_assigned import get_job_first_question_stage_config_id
+        from app.v1.routes.task_papers_helpers import get_job_first_question_stage_config_id
         job.default_paper_assigned = False
         try:
             first_question_stage_id = await get_job_first_question_stage_config_id(db, job.id)
