@@ -2,11 +2,12 @@ import { useState, useMemo } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import { Plus, Trash2, Award, Clock, ListTodo } from "lucide-react";
 import { subTaskSchema } from "@/schemas/admin";
 import type { SubTaskItem } from "@/types/taskPaper";
 import { formatDuration, formatSubTaskDuration } from "@/utils/taskFormatter";
+import { QuestionMetricsInput } from "./QuestionMetricsInput";
+import { Required } from "@/components/shared/Required";
 
 interface SubTasksFormSectionProps {
   tasks: SubTaskItem[];
@@ -153,7 +154,7 @@ export function SubTasksFormSection({
         <div className="grid grid-cols-1 md:grid-cols-12 gap-1.5">
           {/* Title */}
           <div className="flex flex-col gap-1 md:col-span-6">
-            <Label className="text-xs font-semibold">Task Title</Label>
+            <Label className="text-xs font-semibold">Task Title <Required /></Label>
             <Input
               type="text"
               placeholder="e.g. setup db"
@@ -165,93 +166,44 @@ export function SubTasksFormSection({
                   setSubTaskErrors((prev) => ({ ...prev, title: "" }));
                 }
               }}
-              className={cn("text-xs h-9 bg-background", subTaskErrors.title && "border-destructive")}
+              aria-invalid={!!subTaskErrors.title}
+              className="text-xs h-9 bg-background"
             />
             {subTaskErrors.title && (
               <p className="text-xs font-semibold text-destructive">{subTaskErrors.title}</p>
             )}
           </div>
 
-          {/* Marks */}
-          <div className="flex flex-col gap-1 md:col-span-2">
-            <Label className="text-xs font-semibold">Marks</Label>
-            <Input
-              type="number"
-              placeholder="20"
+          {/* Metrics */}
+          <div className="md:col-span-6 flex items-start gap-1.5">
+            <QuestionMetricsInput
+              marks={marks}
+              onMarksChange={setMarks}
+              hours={hours}
+              onHoursChange={setHours}
+              minutes={minutes}
+              onMinutesChange={setMinutes}
+              marksError={subTaskErrors.marks}
+              durationError={subTaskErrors.duration}
+              onClearMarksError={() => setSubTaskErrors((prev) => ({ ...prev, marks: "" }))}
+              onClearDurationError={() => setSubTaskErrors((prev) => ({ ...prev, duration: "" }))}
               disabled={disabled}
-              min={1}
-              value={marks}
-              onChange={(e) => {
-                const val = e.target.value === "" ? "" : Number(e.target.value);
-                setMarks(val);
-                if (subTaskErrors.marks) {
-                  setSubTaskErrors((prev) => ({ ...prev, marks: "" }));
-                }
-              }}
-              className={cn("text-xs h-9 bg-background", subTaskErrors.marks && "border-destructive")}
             />
-            {subTaskErrors.marks && (
-              <p className="text-xs font-semibold text-destructive">{subTaskErrors.marks}</p>
-            )}
+            <div className="flex flex-col gap-1">
+              <Label className="text-xs font-semibold invisible select-none" aria-hidden="true">
+                Add
+              </Label>
+              <Button
+                type="button"
+                onClick={handleAddSubTask}
+                disabled={disabled}
+                variant={"outline"}
+                size={"icon"}
+              >
+                <Plus className="h-3.5 w-3.5" />
+              </Button>
+            </div>
           </div>
-
-          {/* Hours */}
-          <div className="flex flex-col gap-1 md:col-span-2">
-            <Label className="text-xs font-semibold">Hours</Label>
-            <Input
-              type="number"
-              placeholder="1"
-              disabled={disabled}
-              min={0}
-              value={hours}
-              onChange={(e) => {
-                const val = e.target.value === "" ? "" : Number(e.target.value);
-                setHours(val);
-                if (subTaskErrors.duration) {
-                  setSubTaskErrors((prev) => ({ ...prev, duration: "" }));
-                }
-              }}
-              className={cn("text-xs h-9 bg-background", subTaskErrors.duration && "border-destructive")}
-            />
-          </div>
-
-          {/* Minutes */}
-          <div className="flex flex-col gap-1 md:col-span-2">
-            <Label className="text-xs font-semibold">Minutes</Label>
-            <Input
-              type="number"
-              placeholder="30"
-              disabled={disabled}
-              min={0}
-              max={59}
-              value={minutes}
-              onChange={(e) => {
-                const val = e.target.value === "" ? "" : Number(e.target.value);
-                setMinutes(val);
-                if (subTaskErrors.duration) {
-                  setSubTaskErrors((prev) => ({ ...prev, duration: "" }));
-                }
-              }}
-              className={cn("text-xs h-9 bg-background", subTaskErrors.duration && "border-destructive")}
-            />
-          </div>
-        </div>
-
-        {subTaskErrors.duration && (
-          <p className="text-[10px] font-semibold text-destructive">{subTaskErrors.duration}</p>
-        )}
-
-        <div className="flex justify-end pt-1">
-          <Button
-            type="button"
-            onClick={handleAddSubTask}
-            disabled={disabled}
-            variant="outline"
-            size="sm"
-            className="text-xs font-bold flex items-center gap-1 h-8 rounded-lg bg-background hover:bg-muted"
-          >
-            <Plus className="h-3.5 w-3.5" /> Add Task
-          </Button>
         </div>
       </div>
     </div>

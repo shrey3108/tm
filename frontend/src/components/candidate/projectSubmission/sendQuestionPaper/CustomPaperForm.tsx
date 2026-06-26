@@ -14,7 +14,7 @@ import type { MCQItem } from "@/types/taskPaper";
 import { PenLine, Plus, Trash2, Pencil, X, ListChecks } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
-import { Required } from "@/components/job-form/Required";
+import { Required } from "@/components/shared/Required";
 
 interface CustomPaperFormProps {
   customQuestions: string[];

@@ -10,7 +10,7 @@ import { useCreateQuestionSetPaperMutation } from "@/hooks/mutations/taskPapers/
 import type { QuestionSetPaperRead } from "@/types/taskPaper";
 import { extractErrorMessage } from "@/utils/error";
 import { manualQuestionPaperSchema, type ManualQuestionPaperFormValues } from "@/schemas/taskPaper";
-import { Required } from "@/components/job-form/Required";
+import { Required } from "@/components/shared/Required";
 import { useJob } from "@/hooks/queries/jobs";
 
 interface ManualPaperCreateFormProps {

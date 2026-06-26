@@ -78,6 +78,7 @@ interface BaseProps {
   displayLimit?: number;
   /** Optional plural label used in default trigger formatting. */
   pluralLabel?: string;
+  "aria-invalid"?: boolean;
 }
 
 interface SingleProps extends BaseProps {
@@ -126,6 +127,7 @@ export function SearchableSelect({
   multiple = false,
   pluralLabel,
   getTriggerLabel,
+  "aria-invalid": ariaInvalid,
 }: SearchableSelectProps) {
   const [search, setSearch] = useState("");
   const [knownOptionsMap, setKnownOptionsMap] = useState<Record<string, Option>>({});
@@ -225,6 +227,7 @@ export function SearchableSelect({
     >
       <SelectTrigger
         disabled={disabled || loading}
+        aria-invalid={ariaInvalid}
         className={cn(
           "w-full h-11 bg-input/20 hover:bg-input/30 text-sm rounded-xl px-3 justify-between font-normal text-foreground inline-flex items-center cursor-pointer transition-all border border-border/50 outline-none focus:border-border/50",
           triggerClassName

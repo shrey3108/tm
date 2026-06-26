@@ -14,7 +14,7 @@ import { useDepartment } from "@/hooks/queries/admin/useDepartment";
 import { useJobPosition } from "@/hooks/queries/admin/useJobPosition";
 import { QuestionsBankSkillSelector } from "@/components/questions-bank/QuestionsBankSkillSelector";
 import { Form } from "@/components/ui/form";
-import { Required } from "@/components/job-form/Required";
+import { Required } from "@/components/shared/Required";
 import { PERMISSIONS, hasPermissions } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 import { useAppSelector } from "@/store/hooks";
@@ -523,7 +523,7 @@ export default function QuestionsBankCreate() {
   if (loadingPaper) {
     return (
       <AppPageShell width="wide">
-        <LoadingSpinner message="Loading question set paper..." />
+        <LoadingSpinner message="Loading question set paper..." fullPage={true} />
       </AppPageShell>
     );
   }

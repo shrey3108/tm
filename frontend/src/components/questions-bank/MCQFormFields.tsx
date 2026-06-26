@@ -4,10 +4,10 @@ import { Input } from "@/components/ui/input";
 import { SearchableSelect } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Required } from "@/components/job-form/Required";
+import { Required } from "@/components/shared/Required";
 import { useEffect } from "react";
 import { toast } from "sonner";
+import { QuestionMetricsInput } from "./QuestionMetricsInput";
 
 interface MCQFormFieldsProps {
   mcqQuestion: string;
@@ -52,7 +52,7 @@ export function MCQFormFields({
     <div className="space-y-4 animate-in fade-in slide-in-from-top-1 duration-200">
       {/* MCQ Question Text */}
       <div className="flex flex-col gap-1.5">
-        <Label className="text-sm font-semibold">MCQ Question Text</Label>
+        <Label className="text-sm font-semibold">MCQ Question Text <Required /></Label>
         <Textarea
           value={mcqQuestion}
           onChange={(e) => {
@@ -62,10 +62,8 @@ export function MCQFormFields({
             }
           }}
           placeholder="Enter the MCQ question..."
-          className={cn(
-            "min-h-[80px] text-sm bg-background",
-            errors.question && "border-destructive focus-visible:ring-destructive"
-          )}
+          aria-invalid={!!errors.question}
+          className="min-h-[80px] text-sm bg-background"
         />
         {errors.question && (
           <p className="text-xs font-medium text-destructive">{errors.question}</p>
@@ -119,10 +117,8 @@ export function MCQFormFields({
                     }
                   }}
                   placeholder={`Enter option ${String.fromCharCode(65 + idx)}`}
-                  className={cn(
-                    "text-sm",
-                    errors[optionKey] && "border-destructive"
-                  )}
+                  aria-invalid={!!errors[optionKey]}
+                  className="text-sm"
                 />
                 {errors[optionKey] && (
                   <p className="text-xs font-medium text-destructive">{errors[optionKey]}</p>
@@ -149,104 +145,51 @@ export function MCQFormFields({
       </div>
 
       {/* Correct Answer Selector */}
-      <div className="flex flex-col gap-1.5 max-w-sm">
-        <Label className="text-sm font-semibold">Correct Answer Option</Label>
-        <SearchableSelect
-          value={mcqAnswer}
-          onValueChange={(val) => {
-            onMCQAnswerChange(val || "");
-            if (errors.answer) {
-              onClearError("answer");
+      <div className="flex gap-1.5">
+        <div>
+          <Label className="text-sm font-semibold">Correct Answer Option</Label>
+          <SearchableSelect
+            value={mcqAnswer}
+            onValueChange={(val) => {
+              onMCQAnswerChange(val || "");
+              if (errors.answer) {
+                onClearError("answer");
+              }
+            }}
+            options={mcqOptions
+              .map((opt, idx) => {
+                const letter = String.fromCharCode(65 + idx);
+                return {
+                  id: letter,
+                  label: `Option ${letter}${opt.trim() ? `: ${opt}` : ""}`,
+                  text: opt,
+                };
+              })
+              .filter((item) => item.text.trim().length > 0)
             }
-          }}
-          options={mcqOptions
-            .map((opt, idx) => {
-              const letter = String.fromCharCode(65 + idx);
-              return {
-                id: letter,
-                label: `Option ${letter}${opt.trim() ? `: ${opt}` : ""}`,
-                text: opt,
-              };
-            })
-            .filter((item) => item.text.trim().length > 0)
-          }
-          placeholder="Select correct option"
-          searchPlaceholder="Search option..."
-          triggerClassName={cn(
-            "h-10 text-sm font-semibold rounded-lg",
-            errors.answer && "border-destructive focus-visible:ring-destructive"
+            placeholder="Select correct option"
+            searchPlaceholder="Search option..."
+            aria-invalid={!!errors.answer}
+            triggerClassName="h-10 text-sm font-semibold rounded-4xl"
+          />
+          {errors.answer && (
+            <p className="text-xs font-medium text-destructive">{errors.answer}</p>
           )}
+        </div>
+        {/* Marks & Duration Section */}
+        <QuestionMetricsInput
+          marks={marks}
+          onMarksChange={onMarksChange}
+          hours={hours}
+          onHoursChange={onHoursChange}
+          minutes={minutes}
+          onMinutesChange={onMinutesChange}
+          marksError={errors.marks}
+          durationError={errors.duration}
+          onClearMarksError={() => onClearError("marks")}
+          onClearDurationError={() => onClearError("duration")}
+
         />
-        {errors.answer && (
-          <p className="text-xs font-medium text-destructive">{errors.answer}</p>
-        )}
-      </div>
-
-      {/* Marks & Duration Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-4 rounded-xl border border-border bg-muted/20">
-        {/* Marks */}
-        <div className="flex flex-col gap-1.5">
-          <Label className="text-xs font-semibold">Marks</Label>
-          <Input
-            type="number"
-            placeholder="e.g. 10"
-            min={1}
-            value={marks}
-            onChange={(e) => {
-              const val = e.target.value === "" ? "" : Number(e.target.value);
-              onMarksChange(val);
-              if (errors.marks) {
-                onClearError("marks");
-              }
-            }}
-            className={cn("text-xs h-9 bg-background", errors.marks && "border-destructive")}
-          />
-          {errors.marks && (
-            <p className="text-xs font-semibold text-destructive">{errors.marks}</p>
-          )}
-        </div>
-
-        {/* Hours */}
-        <div className="flex flex-col gap-1.5">
-          <Label className="text-xs font-semibold">Duration Hours</Label>
-          <Input
-            type="number"
-            placeholder="0"
-            min={0}
-            value={hours}
-            onChange={(e) => {
-              const val = e.target.value === "" ? "" : Number(e.target.value);
-              onHoursChange(val);
-              if (errors.duration) {
-                onClearError("duration");
-              }
-            }}
-            className="text-xs h-9 bg-background"
-          />
-        </div>
-
-        {/* Minutes */}
-        <div className="flex flex-col gap-1.5">
-          <Label className="text-xs font-semibold">Duration Minutes</Label>
-          <Input
-            type="number"
-            placeholder="5"
-            min={0}
-            max={59}
-            value={minutes}
-            onChange={(e) => {
-              const val = e.target.value === "" ? "" : Number(e.target.value);
-              onMinutesChange(val);
-              if (errors.duration) {
-                onClearError("duration");
-              }
-            }}
-            className={cn("text-xs h-9 bg-background", errors.duration && "border-destructive")}
-          />
-          {errors.duration && (
-            <p className="text-xs font-semibold text-destructive">{errors.duration}</p>
-          )}
-        </div>
       </div>
     </div>
   );

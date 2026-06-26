@@ -8,7 +8,7 @@ import {
   Input,
   Switch,
 } from "@/components";
-import { Required } from "@/components/job-form/Required";
+import { Required } from "@/components/shared/Required";
 
 export const JobSettingsSection = () => {
   const { control } = useFormContext();

@@ -1,8 +1,8 @@
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
 import type { SubTaskItem } from "@/types/taskPaper";
 import { SubTasksFormSection } from "./SubTasksFormSection";
+import { Required } from "@/components/shared/Required";
 
 interface ProjectTaskFormFieldsProps {
   taskDescription: string;
@@ -29,7 +29,7 @@ export function ProjectTaskFormFields({
     <div className="space-y-4 animate-in fade-in slide-in-from-top-1 duration-200">
       {/* Description Field */}
       <div className="flex flex-col gap-1.5">
-        <Label className="text-sm font-semibold">Project Task Description</Label>
+        <Label className="text-sm font-semibold">Project Task Description<Required /></Label>
         <Textarea
           value={taskDescription}
           onChange={(e) => {
@@ -39,10 +39,8 @@ export function ProjectTaskFormFields({
             }
           }}
           placeholder="Enter the project task description"
-          className={cn(
-            "min-h-[100px] text-sm bg-background w-full",
-            errors.project_task && "border-destructive focus-visible:ring-destructive"
-          )}
+          aria-invalid={!!errors.project_task}
+          className="min-h-[100px] text-sm bg-background w-full"
         />
         {errors.project_task && (
           <p className="text-xs font-medium text-destructive">{errors.project_task}</p>
@@ -51,7 +49,7 @@ export function ProjectTaskFormFields({
 
       {/* Instructions Field */}
       <div className="flex flex-col gap-1.5">
-        <Label className="text-sm font-semibold">Instructions</Label>
+        <Label className="text-sm font-semibold">Instructions<Required /></Label>
         <Textarea
           value={taskInstructions}
           onChange={(e) => {
@@ -61,10 +59,8 @@ export function ProjectTaskFormFields({
             }
           }}
           placeholder="Enter detailed instructions for candidates..."
-          className={cn(
-            "min-h-[80px] text-sm bg-background w-full",
-            errors.instructions && "border-destructive focus-visible:ring-destructive"
-          )}
+          aria-invalid={!!errors.instructions}
+          className="min-h-[80px] text-sm bg-background w-full"
         />
         {errors.instructions && (
           <p className="text-xs font-medium text-destructive">{errors.instructions}</p>

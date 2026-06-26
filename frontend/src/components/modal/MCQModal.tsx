@@ -29,7 +29,7 @@ import {
 import { Plus, Trash2 } from "lucide-react";
 import type { MCQItem } from "@/types/taskPaper";
 import { mcqFormSchema, type MCQFormValues } from "@/schemas/taskPaper";
-import { Required } from "@/components/job-form/Required";
+import { Required } from "@/components/shared/Required";
 
 interface MCQModalProps {
   show: boolean;

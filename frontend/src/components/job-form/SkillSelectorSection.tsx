@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input"
 import type { SkillRead } from "@/types/admin";
 import { cn } from "@/lib/utils";
-import { Required } from "@/components/job-form/Required";
+import { Required } from "@/components/shared/Required";
 import { CreateSkillModal } from "../modal";
 import { useDebouncedValue } from "@/hooks/useDebounced";
 import { useSkill } from "@/hooks/queries/admin/useSkill";
