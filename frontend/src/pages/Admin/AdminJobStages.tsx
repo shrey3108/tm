@@ -122,6 +122,24 @@ const AdminJobStages = () => {
 
   const columns: ColumnDef<StageTemplate>[] = [
     {
+      accessorKey: "default_order",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="hover:bg-transparent p-0 font-semibold text-base"
+        >
+          Order
+          <ArrowUpDown className="h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => (
+        <div className="flex items-center justify-center gap-2">
+          {row.original.default_order ?? "N|A"}
+        </div>
+      ),
+    },
+    {
       accessorKey: "name",
       header: ({ column }) => (
         <Button
@@ -170,24 +188,6 @@ const AdminJobStages = () => {
             size="sm"
             disabled={row.original.name === "Resume Screening"}
           />
-        </div>
-      ),
-    },
-    {
-      accessorKey: "default_order",
-      header: ({ column }) => (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="hover:bg-transparent p-0 font-semibold text-base"
-        >
-          Order
-          <ArrowUpDown className="h-4 w-4" />
-        </Button>
-      ),
-      cell: ({ row }) => (
-        <div className="flex items-center justify-center gap-2">
-          {row.original.default_order ?? "N|A"}
         </div>
       ),
     },

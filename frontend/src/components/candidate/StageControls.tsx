@@ -51,11 +51,12 @@ export function StageControls({
 							onValueChange={(value) => value && onStageChange(value)}
 							disabled={isLoadingStages}
 							id="stages"
+							modal={false}
 						>
 							<SelectTrigger className="w-[400px] h-12 rounded-2xl border-primary/20 bg-background font-bold text-sm">
 								<SelectValue placeholder={isLoadingStages ? "Loading stages..." : "Select Stage"} />
 							</SelectTrigger>
-							<SelectContent className="rounded-xl border-primary/10">
+							<SelectContent className="rounded-xl border-primary/10" alignItemWithTrigger={false}>
 								{stages.map((s) => (
 									<SelectItem key={s.id} value={s.stage} className="font-bold py-3">
 										{s.stage}

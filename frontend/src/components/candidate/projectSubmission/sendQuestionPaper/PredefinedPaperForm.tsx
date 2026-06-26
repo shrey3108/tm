@@ -45,7 +45,7 @@ export function PredefinedPaperForm({
         <Label className="text-base font-bold text-foreground shrink-0">
           Select Question Set Template
         </Label>
-        <Select value={selectedPaperId} onValueChange={(val) => onSelectPaperId(val ?? "")}>
+        <Select value={selectedPaperId} onValueChange={(val) => onSelectPaperId(val ?? "")} modal={false}>
           <SelectTrigger className="w-1/2 bg-gray-200/20 hover:bg-gray-200/50 dark:bg-gray-800/20 dark:hover:bg-gray-800/50  transition-all rounded-xl">
             <SelectValue placeholder="Select template" className="w-full capitalize truncate">
               {
@@ -55,7 +55,7 @@ export function PredefinedPaperForm({
               }
             </SelectValue>
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent alignItemWithTrigger={false}>
             {predefinedPapers?.map((paper) => (
               <SelectItem key={paper.id} value={paper.id} className="cursor-pointer capitalize">
                 {paper.name}

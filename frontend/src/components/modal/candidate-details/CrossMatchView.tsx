@@ -191,13 +191,14 @@ export function CrossMatchView({ resumeId, onClose }: CrossMatchViewProps) {
           {matches.length > 0 && <Select
             value={statusFilter}
             onValueChange={(value) => value && setStatusFilter(value)}
+            modal={false}
           >
             <SelectTrigger className="w-[110px] h-10 rounded-xl" size="sm">
               <SelectValue placeholder="Filter">
                 {capitalize(statusFilter)}
               </SelectValue>
             </SelectTrigger>
-            <SelectContent className="" align="end">
+            <SelectContent className="" align="end" alignItemWithTrigger={false}>
               <SelectItem value="all">Results</SelectItem>
               <SelectItem value="pass">Pass</SelectItem>
               <SelectItem value="fail">Fail</SelectItem>

@@ -110,11 +110,12 @@ export function VersionResultView({
           <Select
             value={selectedVersion}
             onValueChange={(val) => val && setSelectedVersion(val)}
+            modal={false}
           >
             <SelectTrigger className="w-fit min-w-[100px] rounded-lg border-muted-foreground/5 h-8 text-xs font-bold shadow-none bg-background gap-2">
               <SelectValue placeholder="Version" className={"min-w-[100px]"} />
             </SelectTrigger>
-            <SelectContent className="rounded-xl border-muted-foreground/10 " side="bottom" >
+            <SelectContent className="rounded-xl border-muted-foreground/10 " side="bottom" alignItemWithTrigger={false}>
               {results.map((r) => (
                 <SelectItem key={r.version} value={String(r.version)} className="rounded-lg text-xs font-medium ">
                   {r.version}

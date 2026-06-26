@@ -14,13 +14,6 @@ import { useDebouncedValue } from "@/hooks";
 import { ArrowUpDown } from "lucide-react";
 import type { ColumnDef, PaginationState } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
-// import {
-//   Select,
-//   SelectContent,
-//   SelectItem,
-//   SelectTrigger,
-//   SelectValue,
-// } from "@/components/ui/select";
 import { formatFileSize, type FileSizeUnit } from "@/utils/converters";
 import { useRecentUploads } from "@/hooks/queries/admin/useRecentUpload";
 import { capitalize, cn } from "@/lib/utils";
@@ -192,19 +185,7 @@ const AdminRecentUploads = () => {
 
             <div className="flex items-center gap-2">
               <span className="font-medium">Unit:</span>
-              {/* <Select
-                value={fileSizeUnit}
-                onValueChange={(value) => setFileSizeUnit(value as FileSizeUnit)}
-              >
-                <SelectTrigger className="w-[150px] h-9 rounded-xl border-border/70 bg-background/90">
-                  <SelectValue placeholder="Unit" className={"text-base"} />
-                </SelectTrigger>
-                <SelectContent side="inline-start" className={"text-sm"}>
-                  <SelectItem value="Auto">Auto</SelectItem>
-                  <SelectItem value="KB">KB</SelectItem>
-                  <SelectItem value="MB">MB</SelectItem>
-                </SelectContent>
-              </Select> */}
+
               <SearchableSelect
                 value={fileSizeUnit}
                 onValueChange={(value) => setFileSizeUnit(value as FileSizeUnit)}

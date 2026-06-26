@@ -227,13 +227,14 @@ export default function MCQModal({
                     disabled={isSaving}
                     onValueChange={field.onChange}
                     value={field.value}
+                    modal={false}
                   >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select correct option" />
                       </SelectTrigger>
                     </FormControl>
-                    <SelectContent>
+                    <SelectContent alignItemWithTrigger={false}>
                       {options.map((opt, idx) => {
                         const letter = String.fromCharCode(65 + idx);
                         const isEmpty = !opt?.trim();

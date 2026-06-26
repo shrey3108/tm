@@ -413,11 +413,11 @@ export function CustomPaperForm({
             </div>
             <div>
               <Label className="text-xs font-semibold mb-1 block">Correct Answer</Label>
-              <Select value={mcqAnswer} onValueChange={(value) => setMcqAnswer(value as "A" | "B" | "C" | "D")}>
+              <Select value={mcqAnswer} onValueChange={(value) => setMcqAnswer(value as "A" | "B" | "C" | "D")} modal={false}>
                 <SelectTrigger className="text-sm rounded-lg border-muted-foreground/20 bg-background">
                   <SelectValue placeholder="Select correct option" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent alignItemWithTrigger={false}>
                   <SelectItem value="A">Option A</SelectItem>
                   <SelectItem value="B">Option B</SelectItem>
                   <SelectItem value="C" disabled={!mcqOptionC.trim()}>Option C{!mcqOptionC.trim() && " (Fill Option C)"}</SelectItem>
