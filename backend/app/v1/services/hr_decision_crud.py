@@ -64,7 +64,7 @@ async def create_decision_impl(
                 .where(JobStageConfig.job_id == actual_job_id)
                 .where(
                     or_(
-                        JobStageConfig.stage_order == 0,
+                        JobStageConfig.stage_order == 1,
                         StageTemplate.name == "Resume Screening"
                     )
                 )
@@ -165,7 +165,7 @@ async def create_decision_impl(
             is_resume_screening_decision = (stage_config_id is None)
             
             is_stage_zero = False
-            if cs_to_advance.job_stage and cs_to_advance.job_stage.stage_order == 0:
+            if cs_to_advance.job_stage and cs_to_advance.job_stage.stage_order == 1:
                 is_stage_zero = True
 
             if is_resume_screening_decision and not is_stage_zero:
@@ -436,7 +436,7 @@ async def update_decision_impl(
             success = decision_data.decision.lower() == "pass"
             is_resume_screening_decision = (decision.stage_config_id is None)
             is_stage_zero = False
-            if cs_to_advance.job_stage and cs_to_advance.job_stage.stage_order == 0:
+            if cs_to_advance.job_stage and cs_to_advance.job_stage.stage_order == 1:
                 is_stage_zero = True
 
             if is_resume_screening_decision and not is_stage_zero:

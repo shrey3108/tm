@@ -63,6 +63,13 @@ class StageTemplateService:
         self, db: AsyncSession, admin_user_id: uuid.UUID, template_in: StageTemplateCreate
     ) -> StageTemplate:
         """Create a new stage template."""
+        existing = await stage_repository.get_template_by_name(db, template_in.name)
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"A stage template with the name '{template_in.name}' already exists."
+            )
+
         template = StageTemplate(
             name=template_in.name,
             description=template_in.description,
@@ -104,6 +111,15 @@ class StageTemplateService:
             )
 
         update_data = template_update.model_dump(exclude_unset=True)
+        
+        if "name" in update_data and update_data["name"].lower() != template.name.lower():
+            existing = await stage_repository.get_template_by_name(db, update_data["name"])
+            if existing:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"A stage template with the name '{update_data['name']}' already exists."
+                )
+
         # Handle the default_config/config mapping
         if "config" in update_data:
             update_data["default_config"] = prepare_config_for_save(update_data.pop("config"))

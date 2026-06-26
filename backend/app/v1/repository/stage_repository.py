@@ -51,6 +51,14 @@ class StageRepository:
         """Retrieve a stage template by its unique identifier."""
         return await db.get(StageTemplate, template_id)
 
+    async def get_template_by_name(
+        self, db: AsyncSession, name: str
+    ) -> StageTemplate | None:
+        """Retrieve a stage template by its exact name (case-insensitive)."""
+        stmt = select(StageTemplate).where(func.lower(StageTemplate.name) == name.lower())
+        result = await db.execute(stmt)
+        return result.scalar_one_or_none()
+
     async def create_template(
         self, db: AsyncSession, template_in: StageTemplate
     ) -> StageTemplate:

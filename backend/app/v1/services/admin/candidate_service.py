@@ -1023,7 +1023,7 @@ class CandidateAdminService:
                 # If no stage_config_id, it's a "Resume Screening" decision.
                 # Map it to the stage with order 0 if it exists.
                 for cs in candidate_stages:
-                    if cs.job_stage and cs.job_stage.stage_order == 0:
+                    if cs.job_stage and cs.job_stage.stage_order == 1:
                         if cs.job_stage_id not in decisions_by_stage or (
                             d.decided_at > decisions_by_stage[cs.job_stage_id].decided_at
                         ):
@@ -1075,7 +1075,7 @@ class CandidateAdminService:
                 job_stage_id=cs.job_stage_id,
                 template_name=cs.job_stage.template.name if cs.job_stage and cs.job_stage.template else "Unknown",
                 status=response_status,
-                order=cs.job_stage.stage_order if cs.job_stage else 0,
+                order=cs.job_stage.stage_order if cs.job_stage else 1,
                 job_id=cs.job_stage.job_id if cs.job_stage else None,
                 job_name=cs.job_stage.job.title if cs.job_stage and cs.job_stage.job else None,
                 completed_at=cs.completed_at,
@@ -1086,7 +1086,7 @@ class CandidateAdminService:
                 evaluation_data=cs.evaluation_data
             )
 
-        sorted_stages = sorted(candidate_stages, key=lambda x: x.job_stage.stage_order if x.job_stage else 0)
+        sorted_stages = sorted(candidate_stages, key=lambda x: x.job_stage.stage_order if x.job_stage else 1)
         pipeline = [_map_stage(cs) for cs in sorted_stages]
         
         current_stage = None
@@ -1174,7 +1174,7 @@ class CandidateAdminService:
         # Note: We calculate min_order from ALL candidate stages, not just the filtered pipeline.
         is_interview_focus = False
         if focus_stage_id and current_stage and candidate_stages:
-            global_min_order = min((cs.job_stage.stage_order if cs.job_stage else 0) for cs in candidate_stages)
+            global_min_order = min((cs.job_stage.stage_order if cs.job_stage else 1) for cs in candidate_stages)
             if current_stage.order > global_min_order:
                 is_interview_focus = True
         
@@ -1378,7 +1378,7 @@ class CandidateAdminService:
 
         # Helper for order
         def get_order(s):
-            return s.job_stage.stage_order if s.job_stage else 0
+            return s.job_stage.stage_order if s.job_stage else 1
 
         # 3. Map stages and their evaluations
         for stage in stages:
@@ -1387,7 +1387,7 @@ class CandidateAdminService:
             eval_obj = (await db.execute(eval_stmt)).scalar_one_or_none()
 
             title = stage.job_stage.template.name if stage.job_stage and stage.job_stage.template else "Unknown Stage"
-            is_resume_screening = title == "Resume Screening" or (stage.job_stage and stage.job_stage.stage_order == 0)
+            is_resume_screening = title == "Resume Screening" or (stage.job_stage and stage.job_stage.stage_order == 1)
             
             # Base status and results
             result = {
@@ -1464,7 +1464,7 @@ class CandidateAdminService:
             # Robust check: does this job already have a Resume Screening event?
             has_rs = any(
                 str(ev.get("job_id")) == str(j_id) and 
-                (ev.get("stage_order") == 0 or ev.get("title") == "Resume Screening")
+                (ev.get("stage_order") == 1 or ev.get("title") == "Resume Screening")
                 for ev in events_map.values()
             )
             if not has_rs:
@@ -1483,7 +1483,7 @@ class CandidateAdminService:
                     "stage_id": None,
                     "stage_name": "Resume Screening",
                     "job_id": r_res.job_id,
-                    "stage_order": 0,
+                    "stage_order": 1,
                     "metadata": {
                         "screening_id": str(r_res.id),
                         "match_percentage": r_res.resume_score,
@@ -1505,7 +1505,7 @@ class CandidateAdminService:
             # Match decision to the best possible event
             target_ev = None
             dec_job_id_str = str(dec.job_id)
-            dec_order = dec.stage_config.stage_order if dec.stage_config else 0
+            dec_order = dec.stage_config.stage_order if dec.stage_config else 1
             
             # Prioritize matching by stage_id if we have it in the decision
             # (Though legacy decisions might not have it)
@@ -1548,7 +1548,7 @@ class CandidateAdminService:
             events = [e for e in events if q in e["title"].lower() or q in (e["description"] or "").lower()]
 
         def sort_key(x):
-            order = x.get("stage_order", 0)
+            order = x.get("stage_order", 1)
             dt = x.get("event_date")
             if dt is None:
                 dt = datetime.max.replace(tzinfo=timezone.utc)

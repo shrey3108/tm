@@ -10,7 +10,7 @@ STAGE_TEMPLATES = [
         "name": "Resume Screening",
         "description": "Initial automated screening of the resume against the job description and required skills.",
         "is_default": True,
-        "default_order": 0,
+        "default_order": 1,
         "default_config": {
             "evaluation_criteria": [
                 "Overall Fit",
@@ -23,7 +23,7 @@ STAGE_TEMPLATES = [
         "name": "HR Screening Round",
         "description": "Initial HR call to evaluate communication, confidence, and cultural fit.",
         "is_default": True,
-        "default_order": 1,
+        "default_order": 2,
         "default_config": {
             "evaluation_criteria": [
                 "Communication skill",
@@ -38,6 +38,8 @@ STAGE_TEMPLATES = [
     {
         "name": "Technical Practical Round",
         "description": "Video-based round evaluating coding tasks, system design, and practical implementation.",
+        "is_default": True,
+        "default_order": 3,
         "default_config": {
             "evaluation_criteria": [
                 "performance",
@@ -52,6 +54,8 @@ STAGE_TEMPLATES = [
     {
         "name": "Technical + HR Panel Evaluation",
         "description": "Final panel interview focusing on technical depth and behavioral attributes.",
+        "is_default": True,
+        "default_order": 4,
         "default_config": {
             "is_panel_interview": True,
             "evaluation_criteria": [

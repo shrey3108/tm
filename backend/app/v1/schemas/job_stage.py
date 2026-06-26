@@ -106,7 +106,7 @@ class JobStageConfigBase(BaseModel):
     """Base schema for Job Stage Configuration data."""
 
     stage_order: int = Field(
-        ..., ge=0, description="Sequence order of this stage"
+        ..., ge=1, description="Sequence order of this stage"
     )
     config: StageConfig | dict[str, Any] | None = Field(
         None, description="Job-specific configuration for this stage"
@@ -136,7 +136,7 @@ class JobStageBulkCreate(BaseModel):
 class JobStageConfigUpdate(BaseModel):
     """Schema for updating a job-specific stage configuration."""
 
-    stage_order: int | None = Field(None, ge=0)
+    stage_order: int | None = Field(None, ge=1)
     config: StageConfig | dict[str, Any] | None = None
     is_mandatory: bool | None = None
     is_default: bool | None = None
