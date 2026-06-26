@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { usePageFilters } from "@/hooks/usePageFilters";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -57,24 +57,17 @@ export default function QuestionsBank() {
   // const handleSkillSearch = useCallback((query: string) => setSkillSearch(query), []);
 
   const hasActiveFilters = useMemo(() => {
-    const defaultDeptId = departments && departments.length > 0 ? departments[0].id : "";
     return (
       selectedPositionId !== "" ||
       selectedSkillId !== "" ||
       selectedContentType !== "all" ||
-      (selectedDeptId !== "" && selectedDeptId !== defaultDeptId)
+      selectedDeptId !== ""
     );
-  }, [selectedPositionId, selectedSkillId, selectedContentType, selectedDeptId, departments]);
+  }, [selectedPositionId, selectedSkillId, selectedContentType, selectedDeptId]);
 
   const clearFilters = useCallback(() => {
     resetFilters();
   }, [resetFilters]);
-
-  useEffect(() => {
-    if (departments.length > 0 && !selectedDeptId) {
-      setFilter("selectedDeptId", departments[0].id);
-    }
-  }, [departments, selectedDeptId, setFilter]);
 
   // Fetch predefined Question Set Papers
   const {

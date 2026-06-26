@@ -5,7 +5,6 @@ import { toast } from "sonner";
 import {
   ArrowLeft,
   Sparkles,
-  CheckCircle2,
   Plus,
   Trash2,
   Save,
@@ -14,26 +13,20 @@ import {
   CheckSquare,
   Square,
   Eye,
-  EyeOff,
-  ChevronDown,
-  ChevronUp
 } from "lucide-react";
-
 import AppPageShell from "@/components/shared/AppPageShell";
 import AppPageHeader from "@/components/shared/AppPageHeader";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { SearchableSelect, LoadingSpinner, PaperContentDisplay } from "@/components/shared";
-
-import { useJobBySlugOrId } from "@/hooks/queries/jobs/useJob";
+import { Input } from "@/components/ui/input";
+import { LoadingSpinner, PaperContentDisplay, SingleQuestionDisplay, MCQQuestionDisplay, ProjectTaskDisplay } from "@/components/shared";
+import { useDebouncedValue } from "@/hooks/useDebounced";
+import { slugify } from "@/utils/slug";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { useJob, useJobTitle } from "@/hooks/queries/jobs/useJob";
 import { useJobAssignedTask } from "@/hooks/queries/jobs/useJobTask";
 import { useAllQuestionsAndTasks } from "@/hooks/queries/taskPapers/useTaskPaperQueries";
-import {
-  useAssignTestPaperMutation,
-  useDeleteJobDefaultTestPaperMutation,
-} from "@/hooks/mutations/taskPapers/useTaskPaperMutations";
+import { useAssignTestPaperMutation, useDeleteJobDefaultTestPaperMutation } from "@/hooks/mutations/taskPapers/useTaskPaperMutations";
 import { taskService } from "@/apis/task";
-
 import type { MCQItem, TaskItem, SubTaskItem, QuestionItem } from "@/types/taskPaper";
 import { mcqFormSchema } from "@/schemas/taskPaper";
 import { questionFormSchema, projectTaskSchema } from "@/schemas/admin";
@@ -46,8 +39,19 @@ export default function AssignPaperPage() {
   const navigate = useNavigate();
   const { jobSlug } = useParams<{ jobSlug: string }>();
 
+  // Fetch job title list to resolve ID from slug
+  const { data: jobsList, loading: loadingJobsList } = useJobTitle("", !!jobSlug);
+
+  const resolvedJobId = useMemo(() => {
+    if (!jobsList || !jobSlug) return undefined;
+    const found = jobsList.find((j) => slugify(j.title) === jobSlug);
+    return found ? found.id : undefined;
+  }, [jobsList, jobSlug]);
+
   // Fetch job detail
-  const { data: job, loading: loadingJob } = useJobBySlugOrId(undefined, jobSlug, true);
+  const { data: job, loading: loadingJobDetail } = useJob(resolvedJobId);
+
+  const loadingJob = loadingJobsList || loadingJobDetail;
 
   // Filter stage rounds that require technical questions
   const questionStages = useMemo(() => {
@@ -71,26 +75,73 @@ export default function AssignPaperPage() {
   // Fetch currently assigned job-level default paper
   const { data: assignedPaper, loading: loadingAssignedPaper, refetch: refetchAssignedPaper } = useJobAssignedTask(
     job?.id,
-    selectedStageId || undefined
+    // selectedStageId || undefined
   );
 
   // Collapsible toggle states
-  const [showCurrentDetails, setShowCurrentDetails] = useState(false);
-  const [showLivePreview, setShowLivePreview] = useState(false);
+  // const [showCurrentDetails, setShowCurrentDetails] = useState(false);
+
+  // Trigger state to determine if random preview generator is active
+  const [useRandomPool, setUseRandomPool] = useState(false);
+
+  // Reset useRandomPool and clear custom selections when selectedStageId changes
+  useEffect(() => {
+    setUseRandomPool(false);
+    setCustomQuestions([]);
+    setCustomMCQs([]);
+    setCustomTasks([]);
+  }, [selectedStageId]);
 
   // Fetch random preview questions from the backend
-  const { data: randomPreview, isLoading: loadingRandomPreview, refetch: refetchRandomPreview } = useQuery({
+  const { data: randomPreview, isLoading: loadingRandomPreview } = useQuery({
     queryKey: ["random-preview", job?.id, selectedStageId],
     queryFn: () => taskService.previewRandomQuestions({ jobId: job!.id, count: 5 }),
-    enabled: !!job?.id,
+    enabled: !!job?.id && useRandomPool,
     staleTime: 0,
   });
 
+  // Search states for filtering the available question bank pool
+  const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearch = useDebouncedValue(searchQuery, 300);
+
+  // Job ID tracking state for filtering, supporting fallback when job-specific results are empty
+  const [allContentJobId, setAllContentJobId] = useState<string | undefined>(undefined);
+
+  // Reset jobId when job or selected stage configuration changes
+  useEffect(() => {
+    if (job?.id) {
+      setAllContentJobId(job.id);
+    }
+  }, [selectedStageId, job?.id]);
+
+  // Reset allContentJobId back to job.id when user changes search query, to try job-specific papers first
+  useEffect(() => {
+    if (job?.id) {
+      setAllContentJobId(job.id);
+    }
+  }, [debouncedSearch, job?.id]);
+
   // Fetch all question bank content for matching position/department
   const { data: allContent, loading: loadingAllContent } = useAllQuestionsAndTasks({
-    jobId: job?.id,
+    jobId: allContentJobId,
+    departmentId: job?.department_id || undefined,
+    positionId: job?.position_id || undefined,
+    q: debouncedSearch || undefined,
     options: { enabled: !!job?.id },
   });
+
+  // Fallback to department/position level only (without jobId/skills) if job-specific content is empty
+  useEffect(() => {
+    if (
+      allContent &&
+      allContentJobId &&
+      allContent.questions.length === 0 &&
+      allContent.mcqs.length === 0 &&
+      allContent.project_task.length === 0
+    ) {
+      setAllContentJobId(undefined);
+    }
+  }, [allContent, allContentJobId]);
 
   // Selection Pools and Custom Added Pools
   const [randomPoolQuestions, setRandomPoolQuestions] = useState<QuestionItem[]>([]);
@@ -109,9 +160,41 @@ export default function AssignPaperPage() {
   const [customMCQs, setCustomMCQs] = useState<MCQItem[]>([]);
   const [customTasks, setCustomTasks] = useState<TaskItem[]>([]);
 
-  // Setup pools and default selections from random pool
+  // Setup pools and default selections from assigned default test paper if one exists
   useEffect(() => {
-    if (!randomPreview) return;
+    if (!assignedPaper) {
+      if (!useRandomPool) {
+        setRandomPoolQuestions([]);
+        setRandomPoolMCQs([]);
+        setRandomPoolTasks([]);
+        setSelectedQuestions([]);
+        setSelectedMCQs([]);
+        setSelectedTasks([]);
+      }
+      return;
+    }
+
+    const normQs = (assignedPaper.questions || []).map((q) =>
+      typeof q === "string" ? { question: q, marks: 5, duration: 3 } : q
+    );
+    const normMcqs = assignedPaper.mcqs || [];
+    const normTasks = (assignedPaper.project_task || []).map((t) =>
+      typeof t === "string" ? { task: t, description: t, instructions: "", duration: 30, tasks: [] } : t
+    );
+
+    setRandomPoolQuestions(normQs);
+    setRandomPoolMCQs(normMcqs);
+    setRandomPoolTasks(normTasks);
+
+    // Checked by default
+    setSelectedQuestions(normQs);
+    setSelectedMCQs(normMcqs);
+    setSelectedTasks(normTasks);
+  }, [assignedPaper, useRandomPool]);
+
+  // Setup pools and default selections from random pool when fallback is triggered
+  useEffect(() => {
+    if (!useRandomPool || !randomPreview) return;
     const normQs = (randomPreview.questions || []).map((q) =>
       typeof q === "string" ? { question: q, marks: 5, duration: 3 } : q
     );
@@ -128,33 +211,31 @@ export default function AssignPaperPage() {
     setSelectedQuestions(normQs);
     setSelectedMCQs(normMcqs);
     setSelectedTasks(normTasks);
-  }, [randomPreview]);
+  }, [randomPreview, useRandomPool]);
 
-  // Setup remaining available questions for the available bank pool (filtered to exclude random pool duplicates)
+  // Setup remaining available questions for the available bank pool (filtered to exclude active pool duplicates)
   useEffect(() => {
-    if (!allContent || !randomPreview) return;
-    const randomQs = (randomPreview.questions || []).map((q) => (typeof q === "string" ? q : q.question));
-    const randomMcqs = (randomPreview.mcqs || []).map((m) => m.question);
-    const randomTasks = (randomPreview.project_task || []).map((t) =>
-      typeof t === "string" ? t : t.task || t.title || ""
-    );
+    if (!allContent) return;
+    const activePoolQs = randomPoolQuestions.map((q) => q.question);
+    const activePoolMcqs = randomPoolMCQs.map((m) => m.question);
+    const activePoolTasks = randomPoolTasks.map((t) => t.task || t.title || "");
 
     const normQs = (allContent.questions || [])
       .map((q) => (typeof q === "string" ? { question: q, marks: 5, duration: 3 } : q))
-      .filter((q) => !randomQs.includes(q.question));
+      .filter((q) => !activePoolQs.includes(q.question));
 
-    const normMcqs = (allContent.mcqs || []).filter((m) => !randomMcqs.includes(m.question));
+    const normMcqs = (allContent.mcqs || []).filter((m) => !activePoolMcqs.includes(m.question));
 
     const normTasks = (allContent.project_task || [])
       .map((t) =>
         typeof t === "string" ? { task: t, description: t, instructions: "", duration: 30, tasks: [] } : t
       )
-      .filter((t) => !randomTasks.includes(t.task || t.title || ""));
+      .filter((t) => !activePoolTasks.includes(t.task || t.title || ""));
 
     setAvailablePoolQuestions(normQs);
     setAvailablePoolMCQs(normMcqs);
     setAvailablePoolTasks(normTasks);
-  }, [allContent, randomPreview]);
+  }, [allContent, randomPoolQuestions, randomPoolMCQs, randomPoolTasks]);
 
   // Draft Custom Item states
   const [contentType, setContentType] = useState<"question" | "mcq" | "project_task">("question");
@@ -368,11 +449,17 @@ export default function AssignPaperPage() {
       });
       toast.success("Successfully assigned default test paper to job!");
       refetchAssignedPaper();
+      if (jobSlug) {
+        navigate(`/dashboard/jobs/${jobSlug}/candidates`);
+      } else {
+        navigate(-1);
+      }
     } catch (err: any) {
       toast.error("Failed to assign test paper.");
     }
   };
 
+  // @ts-ignore
   const handleUnassign = async () => {
     if (!job?.id || !selectedStageId) return;
     try {
@@ -413,7 +500,7 @@ export default function AssignPaperPage() {
       />
 
       <div className="space-y-2 pb-1">
-        {/* Stage selection & Current assignment section */}
+        {/*         
         <div className="rounded-xl border border-border bg-card p-2 shadow-xs space-y-2">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             <div className="flex flex-col gap-0.5">
@@ -434,7 +521,7 @@ export default function AssignPaperPage() {
               )}
             </div>
 
-            {/* Current assignment panel */}
+            
             <div className="flex flex-col justify-center border-t md:border-t-0 md:border-l border-border pt-2 md:pt-0 md:pl-2">
               <Label className="text-xs font-bold text-foreground">Active Assigned Test Paper</Label>
               {loadingAssignedPaper ? (
@@ -489,7 +576,7 @@ export default function AssignPaperPage() {
               )}
             </div>
           </div>
-        </div>
+        </div> */}
 
         {/* Section 1: Randomly Selected Pool (Checked by Default) */}
         <div className="app-surface-card p-2 space-y-2">
@@ -497,23 +584,48 @@ export default function AssignPaperPage() {
             <div>
               <h3 className="text-xs font-bold text-foreground flex items-center gap-1.5">
                 <Sparkles className="h-4 w-4 text-primary" />
-                Randomly Selected Pool
+                Randomly Selected Questions
               </h3>
-              <p className="text-[10px] text-muted-foreground">Checked by default. Uncheck to exclude.</p>
             </div>
+            {/* Implement but do not display in UI as requested */}
+            {/*
             <Button
               variant="outline"
               size="sm"
               className="h-7 text-[10px] font-semibold"
-              onClick={() => refetchRandomPreview()}
+              onClick={() => {
+                setUseRandomPool(true);
+                refetchRandomPreview();
+              }}
               disabled={loadingRandomPreview}
             >
               Regenerate Pool
             </Button>
+            */}
           </div>
 
-          {loadingRandomPreview ? (
+          {loadingAssignedPaper ? (
+            <div className="text-xs text-muted-foreground py-2 text-center">Loading assigned paper...</div>
+          ) : loadingRandomPreview ? (
             <div className="text-xs text-muted-foreground py-2 text-center">Loading randomized pool...</div>
+          ) : !assignedPaper && !useRandomPool ? (
+            <div className="text-xs text-muted-foreground py-6 text-center border border-dashed rounded-lg border-border/60">
+              No default paper has been assigned to this stage yet.
+              {/* Generate Random Pool button - implemented but hidden */}
+              {/* 
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-2 text-xs font-semibold"
+                onClick={() => {
+                  setUseRandomPool(true);
+                  refetchRandomPreview();
+                }}
+              >
+                Generate Random Pool
+              </Button>
+              */}
+            </div>
           ) : randomPoolQuestions.length === 0 && randomPoolMCQs.length === 0 && randomPoolTasks.length === 0 ? (
             <div className="text-xs text-muted-foreground py-2 text-center">No pool available for this job profile.</div>
           ) : (
@@ -537,12 +649,7 @@ export default function AssignPaperPage() {
                             <Square className="h-4 w-4 text-muted-foreground shrink-0" />
                           )}
                         </div>
-                        <div className="text-xs">
-                          <p className="font-medium text-foreground">{item.question}</p>
-                          <span className="text-[10px] text-muted-foreground font-semibold">
-                            Marks: {item.marks || 5} • Duration: {item.duration || 3} mins
-                          </span>
-                        </div>
+                        <SingleQuestionDisplay question={item} variant="simple" />
                       </div>
                     );
                   })}
@@ -568,15 +675,7 @@ export default function AssignPaperPage() {
                             <Square className="h-4 w-4 text-muted-foreground shrink-0" />
                           )}
                         </div>
-                        <div className="text-xs">
-                          <p className="font-medium text-foreground">{item.question}</p>
-                          <p className="text-[10px] text-muted-foreground font-semibold">
-                            Options: {item.options?.join(" | ") || ""}
-                          </p>
-                          <span className="text-[10px] text-muted-foreground font-semibold">
-                            Marks: {item.marks || 5} • Duration: {item.duration || 3} mins
-                          </span>
-                        </div>
+                        <MCQQuestionDisplay mcq={item} variant="simple" />
                       </div>
                     );
                   })}
@@ -603,13 +702,7 @@ export default function AssignPaperPage() {
                             <Square className="h-4 w-4 text-muted-foreground shrink-0" />
                           )}
                         </div>
-                        <div className="text-xs">
-                          <p className="font-medium text-foreground">{item.task || item.title}</p>
-                          {item.instructions && <p className="text-[10px] text-muted-foreground truncate">{item.instructions}</p>}
-                          <span className="text-[10px] text-muted-foreground font-semibold">
-                            Duration: {item.duration || item.total_duration || 30} mins
-                          </span>
-                        </div>
+                        <ProjectTaskDisplay task={item} variant="simple" />
                       </div>
                     );
                   })}
@@ -621,12 +714,22 @@ export default function AssignPaperPage() {
 
         {/* Section 2: Available Pool (Unchecked by Default) */}
         <div className="app-surface-card p-2 space-y-2">
-          <div>
-            <h3 className="text-xs font-bold text-foreground flex items-center gap-1.5">
-              <BookOpen className="h-4 w-4 text-indigo-500" />
-              Available Question Bank Pool
-            </h3>
-            <p className="text-[10px] text-muted-foreground">Remaining questions in library for this job. Unchecked by default.</p>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b pb-1.5 border-border/40">
+            <div>
+              <h3 className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                <BookOpen className="h-4 w-4 text-indigo-500" />
+                Available Questions
+              </h3>
+            </div>
+            <div className="w-full sm:w-60">
+              <Input
+                type="text"
+                placeholder="Search question bank..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="h-7 text-xs bg-muted/10 border border-border/40 focus-visible:ring-1"
+              />
+            </div>
           </div>
 
           {loadingAllContent ? (
@@ -654,12 +757,7 @@ export default function AssignPaperPage() {
                             <Square className="h-4 w-4 text-muted-foreground shrink-0" />
                           )}
                         </div>
-                        <div className="text-xs">
-                          <p className="font-medium text-foreground">{item.question}</p>
-                          <span className="text-[10px] text-muted-foreground font-semibold">
-                            Marks: {item.marks || 5} • Duration: {item.duration || 3} mins
-                          </span>
-                        </div>
+                        <SingleQuestionDisplay question={item} variant="simple" />
                       </div>
                     );
                   })}
@@ -685,15 +783,7 @@ export default function AssignPaperPage() {
                             <Square className="h-4 w-4 text-muted-foreground shrink-0" />
                           )}
                         </div>
-                        <div className="text-xs">
-                          <p className="font-medium text-foreground">{item.question}</p>
-                          <p className="text-[10px] text-muted-foreground font-semibold">
-                            Options: {item.options?.join(" | ") || ""}
-                          </p>
-                          <span className="text-[10px] text-muted-foreground font-semibold">
-                            Marks: {item.marks || 5} • Duration: {item.duration || 3} mins
-                          </span>
-                        </div>
+                        <MCQQuestionDisplay mcq={item} variant="simple" />
                       </div>
                     );
                   })}
@@ -720,13 +810,7 @@ export default function AssignPaperPage() {
                             <Square className="h-4 w-4 text-muted-foreground shrink-0" />
                           )}
                         </div>
-                        <div className="text-xs">
-                          <p className="font-medium text-foreground">{item.task || item.title}</p>
-                          {item.instructions && <p className="text-[10px] text-muted-foreground truncate">{item.instructions}</p>}
-                          <span className="text-[10px] text-muted-foreground font-semibold">
-                            Duration: {item.duration || item.total_duration || 30} mins
-                          </span>
-                        </div>
+                        <ProjectTaskDisplay task={item} variant="simple" />
                       </div>
                     );
                   })}
@@ -749,12 +833,12 @@ export default function AssignPaperPage() {
                   key={idx}
                   className="flex items-center justify-between p-1.5 rounded-lg border border-border/40 bg-emerald-500/5 gap-2"
                 >
-                  <div className="text-xs">
-                    <p className="font-bold text-foreground">{item.question}</p>
-                    <span className="text-[10px] text-muted-foreground">
-                      Marks: {item.marks} • Duration: {item.duration} mins (Normal Question)
-                    </span>
-                  </div>
+                  <SingleQuestionDisplay
+                    question={item}
+                    variant="simple"
+                    titleClassName="font-bold"
+                    showTypeSuffix={true}
+                  />
                   <Button
                     variant="ghost"
                     size="sm"
@@ -771,12 +855,12 @@ export default function AssignPaperPage() {
                   key={idx}
                   className="flex items-center justify-between p-1.5 rounded-lg border border-border/40 bg-emerald-500/5 gap-2"
                 >
-                  <div className="text-xs">
-                    <p className="font-bold text-foreground">{item.question}</p>
-                    <span className="text-[10px] text-muted-foreground">
-                      Correct: {item.answer} • Marks: {item.marks} • Duration: {item.duration} mins (MCQ)
-                    </span>
-                  </div>
+                  <MCQQuestionDisplay
+                    mcq={item}
+                    variant="simple"
+                    titleClassName="font-bold"
+                    showTypeSuffix={true}
+                  />
                   <Button
                     variant="ghost"
                     size="sm"
@@ -793,12 +877,12 @@ export default function AssignPaperPage() {
                   key={idx}
                   className="flex items-center justify-between p-1.5 rounded-lg border border-border/40 bg-emerald-500/5 gap-2"
                 >
-                  <div className="text-xs">
-                    <p className="font-bold text-foreground">{item.task || item.title}</p>
-                    <span className="text-[10px] text-muted-foreground">
-                      Duration: {item.duration} mins • Subtasks: {item.tasks?.length || 0} (Project Task)
-                    </span>
-                  </div>
+                  <ProjectTaskDisplay
+                    task={item}
+                    variant="simple"
+                    titleClassName="font-bold"
+                    showTypeSuffix={true}
+                  />
                   <Button
                     variant="ghost"
                     size="sm"
@@ -820,7 +904,6 @@ export default function AssignPaperPage() {
               <Plus className="h-4 w-4 text-primary" />
               Create Custom Question / Task
             </h3>
-            <p className="text-[10px] text-muted-foreground">Fill in fields and click Add to append to the paper.</p>
           </div>
 
           {/* Type Selector Tabs */}
@@ -920,30 +1003,23 @@ export default function AssignPaperPage() {
         </div>
 
         {/* Section 5: Live Preview of Selected Configuration (Collapsible) */}
-        <div className="app-surface-card p-2 space-y-2">
-          <button
-            type="button"
-            className="flex items-center justify-between w-full text-left outline-none"
-            onClick={() => setShowLivePreview(!showLivePreview)}
-          >
-            <h3 className="text-xs font-bold text-foreground flex items-center gap-1.5">
-              <Eye className="h-4 w-4 text-primary" />
-              Live Preview of Selected Configuration ({selectedQuestions.length + customQuestions.length} Qs •{" "}
-              {selectedMCQs.length + customMCQs.length} MCQs • {selectedTasks.length + customTasks.length} Tasks)
-            </h3>
-            {showLivePreview ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-          </button>
 
-          {showLivePreview && (
-            <div className="pt-2 border-t border-border/30 max-h-[350px] overflow-y-auto pr-1">
+        <Accordion defaultValue={["questions"]}>
+          <AccordionItem value="questions">
+            <AccordionTrigger className={"hover:no-underline px-2 py-2"}><h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
+              <Eye className="h-4 w-4 text-primary" />
+              Preview of Selected Configuration ({selectedQuestions.length + customQuestions.length} Qs •{" "}
+              {selectedMCQs.length + customMCQs.length} MCQs • {selectedTasks.length + customTasks.length} Tasks)
+            </h3></AccordionTrigger>
+            <AccordionContent>
               <PaperContentDisplay
                 questions={[...selectedQuestions, ...customQuestions]}
                 mcqs={[...selectedMCQs, ...customMCQs]}
                 project_task={[...selectedTasks, ...customTasks]}
               />
-            </div>
-          )}
-        </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
 
         {/* Page Actions */}
         <div className="flex items-center justify-center gap-2 border-t pt-2 border-border/40">

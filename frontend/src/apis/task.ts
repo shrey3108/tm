@@ -35,11 +35,18 @@ export const taskService = {
    * @param jobId - The UUID of the job
    * @returns Promise resolving to the job task configuration
    */
-  getJobAssignedTask: async (jobId: string, jobStageId?: string): Promise<CandidateTestPaperRead> => {
-    const response = await client.get<CandidateTestPaperRead>(`/task-papers/assigned/job/${jobId}`, {
-      params: { job_stage_id: jobStageId },
-    });
-    return response.data;
+  getJobAssignedTask: async (jobId: string, jobStageId?: string): Promise<CandidateTestPaperRead | null> => {
+    try {
+      const response = await client.get<CandidateTestPaperRead>(`/task-papers/assigned/job/${jobId}`, {
+        params: { job_stage_id: jobStageId },
+      });
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        return null;
+      }
+      throw error;
+    }
   },
   /**
    * Uploads a candidate task PDF for a specific job and extracts skills.
