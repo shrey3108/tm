@@ -25,3 +25,6 @@ backend/scratch/
 
 # ignore Roo configuration files
 .roo/
+
+# ignore local documentation files
+docs/
