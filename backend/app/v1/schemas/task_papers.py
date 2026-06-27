@@ -10,6 +10,7 @@ class QuestionItem(BaseModel):
     question: str = Field(..., description="The content of the question")
     duration: Optional[int] = Field(None, description="Duration in minutes")
     marks: Optional[int] = Field(None, description="Marks allocated")
+    skill_ids: Optional[list[uuid.UUID]] = Field(None, description="Skill IDs associated with this question")
 
 
 class MCQItem(BaseModel):
@@ -18,6 +19,7 @@ class MCQItem(BaseModel):
     answer: Optional[str] = Field(None, description="The correct option / answer")
     duration: Optional[int] = Field(None, description="Duration in minutes")
     marks: Optional[int] = Field(None, description="Marks allocated")
+    skill_ids: Optional[list[uuid.UUID]] = Field(None, description="Skill IDs associated with this MCQ")
 
 
 class SubTask(BaseModel):
@@ -36,6 +38,7 @@ class TaskItem(BaseModel):
     description: Optional[str] = Field(None, description="The overall description of the project")
     duration: Optional[int] = Field(None, description="Duration in minutes for the whole project")
     tasks: Optional[list[SubTask]] = Field(default_factory=list, description="List of sub-tasks for this project")
+    skill_ids: Optional[list[uuid.UUID]] = Field(None, description="Skill IDs associated with this task")
 
 
 class QuestionSetPaperCreate(BaseModel):
@@ -114,6 +117,7 @@ class SourceMixItem(BaseModel):
 
 class QuestionAction(BaseModel):
     question: QuestionItem = Field(..., description="The structured question content")
+    skill_ids: Optional[list[uuid.UUID]] = Field(None, description="Skills to append to this paper when adding the question")
 
     @field_validator("question", mode="before")
     @classmethod
@@ -124,6 +128,7 @@ class QuestionAction(BaseModel):
 
 class MCQAction(BaseModel):
     mcq: MCQItem = Field(..., description="The structured multiple choice question content")
+    skill_ids: Optional[list[uuid.UUID]] = Field(None, description="Skills to append to this paper when adding the MCQ")
 
     @field_validator("mcq", mode="before")
     @classmethod
@@ -134,6 +139,7 @@ class MCQAction(BaseModel):
 
 class TaskAction(BaseModel):
     task: TaskItem = Field(..., description="The structured project task content")
+    skill_ids: Optional[list[uuid.UUID]] = Field(None, description="Skills to append to this paper when adding the task")
 
     @field_validator("task", mode="before")
     @classmethod
@@ -371,6 +377,9 @@ class CandidateTestPaperAssign(BaseModel):
     )
     project_task: Optional[list[TaskItem]] = Field(
         default_factory=list, description="The custom project task description (required if mode is 'custom')"
+    )
+    custom_skills: Optional[list[str]] = Field(
+        None, description="Custom skills provided by the user for custom questions/tasks"
     )
 
     @field_validator("questions", mode="before")

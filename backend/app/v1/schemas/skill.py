@@ -4,7 +4,7 @@ Pydantic schemas for Skill-related data transfer.
 
 import uuid
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class SkillBase(BaseModel):
@@ -14,6 +14,7 @@ class SkillBase(BaseModel):
 
     name: str
     description: str | None = None
+    default_weightage: float | None = Field(default=10.0, description="Default weightage for this skill")
 
 
 class SkillCreate(SkillBase):
@@ -31,6 +32,7 @@ class SkillUpdate(BaseModel):
 
     name: str | None = None
     description: str | None = None
+    default_weightage: float | None = Field(default=10.0, description="Default weightage for this skill")
 
 
 class SkillRead(SkillBase):

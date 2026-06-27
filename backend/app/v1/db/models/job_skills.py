@@ -1,4 +1,4 @@
-from sqlalchemy import Column, ForeignKey, Table
+from sqlalchemy import Column, ForeignKey, Table, Float
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.v1.db.base_class import Base
@@ -23,5 +23,11 @@ job_skills = Table(
         ForeignKey("skills.id", ondelete="CASCADE"),
         primary_key=True,
         nullable=False,
+    ),
+    Column(
+        "weightage",
+        Float,
+        nullable=True,
+        default=10.0,
     ),
 )

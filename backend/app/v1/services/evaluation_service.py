@@ -310,10 +310,29 @@ class EvaluationService:
         criteria_names = [obj.name for obj in criteria_objs.values()]
         logger.info(f"Invoking LLM for synthesis. Criteria: {criteria_names}")
         
-        # Build enriched JD text including skills
-        skills_list = [s.name for s in job.skills]
-        skills_str = ", ".join(skills_list) if skills_list else "None listed"
-        full_jd_text = f"TITLE: {job.title}\n\nDESCRIPTION:\n{job.jd_text or ''}\n\nREQUIRED SKILLS:\n{skills_str}"
+        # Build enriched JD text including skills and their normalized weightages
+        from sqlalchemy import text
+        job_skills_query = text("SELECT skill_id, weightage FROM job_skills WHERE job_id = :job_id")
+        job_skills_res = await db.execute(job_skills_query, {"job_id": job.id})
+        raw_weights = {str(row[0]): float(row[1]) for row in job_skills_res.fetchall()}
+        
+        total_weight = sum(raw_weights.values())
+        normalized_weights = {}
+        if total_weight > 0:
+            for s_id, w in raw_weights.items():
+                normalized_weights[s_id] = (w / total_weight) * 100
+        else:
+            # Fallback if no weights or total is 0
+            for s_id in raw_weights.keys():
+                normalized_weights[s_id] = 100.0 / len(raw_weights) if len(raw_weights) > 0 else 0.0
+
+        skills_list = []
+        for s in job.skills:
+            w_pct = normalized_weights.get(str(s.id), 0.0)
+            skills_list.append(f"{s.name} (Weight: {w_pct:.2f}%)")
+            
+        skills_str = "\n".join([f"- {s}" for s in skills_list]) if skills_list else "None listed"
+        full_jd_text = f"TITLE: {job.title}\n\nDESCRIPTION:\n{job.jd_text or ''}\n\nREQUIRED SKILLS (Normalized Weightages):\n{skills_str}"
 
         # Option to skip resume context in LLM synthesis for testing/privacy
         resume_to_send = resume_summary

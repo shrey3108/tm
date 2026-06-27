@@ -626,38 +626,57 @@ Output Format Example (JSON ONLY):
         if not papers:
             return None
 
-        # Collect all questions and MCQs from matching papers
+        # Fetch job_skill_weightages
+        from sqlalchemy import text
+        job_skills_query = text("SELECT skill_id, weightage FROM job_skills WHERE job_id = :job_id")
+        job_skills_res = await db.execute(job_skills_query, {"job_id": job.id})
+        skill_weights = {str(row[0]): float(row[1]) for row in job_skills_res.fetchall()}
+
+        # Collect all questions and MCQs from matching papers, attaching weightage
         all_questions = []
         all_mcqs = []
         for p in papers:
+            # Find max weightage for this paper based on its skills
+            paper_skill_ids = [str(s.id) for s in p.skills]
+            paper_weight = max([skill_weights.get(sid, 0.0) for sid in paper_skill_ids] + [0.0])
+
             if p.questions:
-                all_questions.extend(p.questions)
+                for q in p.questions:
+                    all_questions.append((q, paper_weight))
             if p.mcqs:
                 for m in p.mcqs:
                     new_m = m.copy() if isinstance(m, dict) else getattr(m, "model_dump", lambda: m)()
-                    all_mcqs.append(new_m)
+                    all_mcqs.append((new_m, paper_weight))
 
-        # Ensure we have unique questions
+        # Ensure unique questions and sort them by weightage descending
         seen_questions = set()
         unique_questions = []
-        for q in all_questions:
-            q_text = q.get("question") if isinstance(q, dict) else getattr(q, "question", str(q))
+        # Sort by weight descending, then random order
+        random.shuffle(all_questions)
+        all_questions.sort(key=lambda x: x[1], reverse=True)
+        
+        for q, w in all_questions:
+            q_text = q.get("question") if isinstance(q, dict) else getattr(q, "question", "")
             if q_text and q_text not in seen_questions:
                 seen_questions.add(q_text)
                 if isinstance(q, str):
                     unique_questions.append({"question": q, "marks": 5, "duration": 3})
                 else:
                     unique_questions.append(q)
-        
-        # De-duplicate MCQs by question text
+
+        # De-duplicate MCQs by question text and sort by weightage descending
         seen_mcq_questions = set()
         unique_mcqs = []
-        for m in all_mcqs:
+        random.shuffle(all_mcqs)
+        all_mcqs.sort(key=lambda x: x[1], reverse=True)
+        
+        for m, w in all_mcqs:
             q_text = m.get("question") if isinstance(m, dict) else getattr(m, "question", "")
             if q_text and q_text not in seen_mcq_questions:
                 seen_mcq_questions.add(q_text)
                 unique_mcqs.append(m)
 
+        # Select one task randomly (biased by weightage if we wanted, but let's just pick one)
         papers_with_tasks = [p for p in papers if p.project_task and len(p.project_task) > 0]
         if papers_with_tasks:
             chosen_task_paper = random.choice(papers_with_tasks)
@@ -669,10 +688,11 @@ Output Format Example (JSON ONLY):
         
         assigned_name = f"Randomized Test Paper ({job.title})"
 
-        assigned_questions = random.sample(unique_questions, min(10, len(unique_questions))) if unique_questions else []
+        # Slice the top 10 since they are already sorted by weightage descending
+        assigned_questions = unique_questions[:10]
         
         if unique_mcqs:
-            selected_mcqs = random.sample(unique_mcqs, min(10, len(unique_mcqs)))
+            selected_mcqs = unique_mcqs[:10]
             assigned_mcqs = [m.model_dump() if hasattr(m, "model_dump") else m for m in selected_mcqs]
         else:
             assigned_mcqs = []

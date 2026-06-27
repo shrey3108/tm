@@ -126,6 +126,7 @@ class JobRepository:
         payload = object.model_dump()
         skill_ids = payload.pop("skill_ids", [])
         payload.pop("stages", None)  # handled separately in job_service, not an ORM field
+        payload.pop("skill_weightages", None)  # handled separately in job_service, not an ORM field
 
         job = Job(**payload, created_by=created_by)
 
@@ -173,6 +174,7 @@ class JobRepository:
         payload = object.model_dump(exclude_unset=True)
         skill_ids = payload.pop("skill_ids", None)
         payload.pop("stages", None)  # handled separately in job_service, not an ORM field
+        payload.pop("skill_weightages", None)  # handled separately in job_service, not an ORM field
 
         # Remove status from payload to prevent version creation on status changes
         status_change = payload.pop("status", None)
@@ -361,14 +363,28 @@ class JobRepository:
     async def _sync_skills(
         self, db: AsyncSession, job_id: uuid.UUID, skill_ids: list[uuid.UUID]
     ) -> None:
-        """Replace a job's skill links with the provided skill ids."""
+        """Replace a job's skill links with the provided skill ids and their default weightages."""
         await db.execute(delete(job_skills).where(job_skills.c.job_id == job_id))
         if not skill_ids:
             return
 
+        # Fetch the default weightage for each skill
+        from app.v1.db.models.skills import Skill
+        from sqlalchemy import select
+        skill_stmt = select(Skill.id, Skill.default_weightage).where(Skill.id.in_(skill_ids))
+        skill_res = await db.execute(skill_stmt)
+        skill_weights = {row[0]: row[1] or 10.0 for row in skill_res.fetchall()}
+
         await db.execute(
             insert(job_skills),
-            [{"job_id": job_id, "skill_id": skill_id} for skill_id in skill_ids],
+            [
+                {
+                    "job_id": job_id, 
+                    "skill_id": skill_id, 
+                    "weightage": skill_weights.get(skill_id, 10.0)
+                } 
+                for skill_id in skill_ids
+            ],
         )
 
 

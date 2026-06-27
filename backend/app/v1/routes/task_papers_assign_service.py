@@ -74,6 +74,10 @@ class TaskPaperAssignService:
             await self._build_assigned_content(db, assign_data, job, position_id)
         )
 
+        # Attach manual custom skills for Custom/Hybrid modes
+        if assign_data.mode in ["custom", "hybrid"] and assign_data.custom_skills:
+            assigned_skills = list(set((assigned_skills or []) + assign_data.custom_skills))
+
         # Auto-save custom items for custom/hybrid modes
         if assign_data.mode in ["custom", "hybrid"]:
             await auto_save_custom_items(
@@ -82,13 +86,8 @@ class TaskPaperAssignService:
                 tasks=assign_data.project_task or [],
                 department_id=job.department_id,
                 position_id=job.position_id,
+                extracted_skills=assigned_skills,
                 db=db,
-            )
-
-        # Dynamic skill extraction for Random and Custom modes
-        if assign_data.mode in ["random", "custom", "hybrid"]:
-            assigned_skills = await self._extract_skills_dynamically(
-                assigned_questions, assigned_mcqs, assigned_task, assigned_skills
             )
 
         # Normalize project_task into a list of dicts/strings and restore instructions
@@ -317,39 +316,66 @@ class TaskPaperAssignService:
                 detail="No question set papers available for this job and experience level to generate a random test.",
             )
 
-        # Collect all questions and MCQs from matching papers
+        # Fetch job_skill_weightages
+        from sqlalchemy import text
+        job_skills_query = text("SELECT skill_id, weightage FROM job_skills WHERE job_id = :job_id")
+        job_skills_res = await db.execute(job_skills_query, {"job_id": job.id})
+        skill_weights = {str(row[0]): float(row[1]) for row in job_skills_res.fetchall()}
+
+        # Collect all questions and MCQs from matching papers, attaching weightage
         all_questions = []
         all_mcqs = []
         for p in papers:
+            # Find max weightage for this paper based on its skills
+            paper_skill_ids = [str(s.id) for s in p.skills]
+            paper_weight = max([skill_weights.get(sid, 0.0) for sid in paper_skill_ids] + [0.0])
+
             if p.questions:
-                all_questions.extend(p.questions)
+                for q in p.questions:
+                    all_questions.append((q, paper_weight))
             if p.mcqs:
                 for m in p.mcqs:
                     new_m = m.copy() if isinstance(m, dict) else getattr(m, "model_dump", lambda: m)()
-                    all_mcqs.append(new_m)
+                    all_mcqs.append((new_m, paper_weight))
 
-        # Ensure we have at least 5 unique questions or fallback to total pool
+        # Ensure unique questions and sort them by weightage descending
         seen_questions = set()
         unique_questions = []
-        for q in all_questions:
+        # Sort by weight descending, then random order
+        random.shuffle(all_questions)
+        all_questions.sort(key=lambda x: x[1], reverse=True)
+        
+        for q, w in all_questions:
             q_text = q.get("question") if isinstance(q, dict) else getattr(q, "question", "")
             if q_text and q_text not in seen_questions:
                 seen_questions.add(q_text)
                 unique_questions.append(q)
-        if len(unique_questions) < 5:
-            unique_questions = all_questions
 
-        # De-duplicate MCQs by question text
+        # De-duplicate MCQs by question text and sort by weightage descending
         seen_mcq_questions = set()
         unique_mcqs = []
-        for m in all_mcqs:
+        random.shuffle(all_mcqs)
+        all_mcqs.sort(key=lambda x: x[1], reverse=True)
+
+        for m, w in all_mcqs:
             q_text = m.get("question") if isinstance(m, dict) else getattr(m, "question", "")
             if q_text and q_text not in seen_mcq_questions:
                 seen_mcq_questions.add(q_text)
                 unique_mcqs.append(m)
 
         # Select one task randomly (associated file path comes from that same chosen paper)
-        chosen_paper = random.choice(papers)
+        # We can also bias task selection by weightage, but random choice among highest weighted is best
+        weighted_papers = []
+        for p in papers:
+            p_weight = max([skill_weights.get(str(s.id), 0.0) for s in p.skills] + [0.0])
+            weighted_papers.append((p, p_weight))
+        weighted_papers.sort(key=lambda x: x[1], reverse=True)
+        
+        # Pick top papers to randomly choose task from
+        top_weight = weighted_papers[0][1] if weighted_papers else 0
+        top_papers = [p for p, w in weighted_papers if w == top_weight]
+        chosen_paper = random.choice(top_papers) if top_papers else random.choice(papers)
+        
         assigned_task = chosen_paper.project_task if chosen_paper.project_task else []
         assigned_file_path = chosen_paper.task_file_path
 
@@ -357,16 +383,10 @@ class TaskPaperAssignService:
 
         assigned_name = f"Randomized Test Paper ({job.title})"
 
-        if unique_questions:
-            assigned_questions = random.sample(unique_questions, min(10, len(unique_questions)))
-        else:
-            assigned_questions = []
-
-        if unique_mcqs:
-            selected_mcqs = random.sample(unique_mcqs, min(10, len(unique_mcqs)))
-            assigned_mcqs = [m.model_dump() if hasattr(m, "model_dump") else m for m in selected_mcqs]
-        else:
-            assigned_mcqs = []
+        # Slice the top 10 since they are already sorted by weightage descending
+        assigned_questions = unique_questions[:10]
+        selected_mcqs = unique_mcqs[:10]
+        assigned_mcqs = [m.model_dump() if hasattr(m, "model_dump") else m for m in selected_mcqs]
 
         return assigned_name, assigned_questions, assigned_mcqs, assigned_task, assigned_file_path, assigned_skills
 
@@ -463,48 +483,6 @@ class TaskPaperAssignService:
     # ------------------------------------------------------------------
     # Skill extraction & task normalization
     # ------------------------------------------------------------------
-    async def _extract_skills_dynamically(
-        self,
-        assigned_questions: list,
-        assigned_mcqs: list,
-        assigned_task,
-        assigned_skills,
-    ):
-        """Dynamic skill extraction for Random and Custom modes to ensure exact skill matching."""
-        raw_text_parts = []
-        if assigned_questions:
-            for q in assigned_questions:
-                q_text = q.get("question") if isinstance(q, dict) else getattr(q, "question", str(q))
-                if q_text:
-                    raw_text_parts.append(q_text)
-        if assigned_mcqs:
-            for m in assigned_mcqs:
-                q_text = m.get("question") if isinstance(m, dict) else getattr(m, "question", "")
-                if q_text:
-                    raw_text_parts.append(q_text)
-        if assigned_task:
-            if isinstance(assigned_task, list):
-                for t in assigned_task:
-                    if isinstance(t, str):
-                        raw_text_parts.append(t)
-                    elif isinstance(t, dict):
-                        task_name = t.get("task", t.get("title", t.get("content", "")))
-                        instructions = t.get("instructions", "")
-                        raw_text_parts.append(f"{task_name} {instructions}")
-            else:
-                raw_text_parts.append(str(assigned_task))
-
-        if raw_text_parts:
-            raw_text = "\n\n".join(raw_text_parts)
-            try:
-                extracted = await candidate_task_service._extract_skills_from_text(raw_text)
-                if extracted:
-                    assigned_skills = extracted
-            except Exception as e:
-                logger.error("Dynamic skill extraction failed during assignment: %s", e)
-
-        return assigned_skills
-
     async def _normalize_project_tasks(self, db: AsyncSession, assigned_task) -> list:
         """Ensure project_task is normalized to a list of dicts/strings, and restore instructions from predefined tasks bank."""
         assigned_task_list: list = []

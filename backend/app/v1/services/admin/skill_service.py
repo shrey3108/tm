@@ -106,6 +106,7 @@ class SkillService:
         skill = Skill(
             name=skill_in.name,
             description=skill_in.description,
+            default_weightage=skill_in.default_weightage,
         )
         db.add(skill)
         await db.commit()

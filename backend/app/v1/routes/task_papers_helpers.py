@@ -102,15 +102,16 @@ async def auto_save_custom_items(
     tasks: list,
     department_id: uuid.UUID,
     position_id: uuid.UUID,
-    db: AsyncSession
+    db: AsyncSession,
+    extracted_skills: list[str] = None
 ):
     if not department_id or not position_id:
         return
     if not questions and not mcqs and not tasks:
         return
 
-    # Check if we need to create the auto-saved paper
-    stmt = select(QuestionSetPaper).where(
+    from sqlalchemy.orm import selectinload
+    stmt = select(QuestionSetPaper).options(selectinload(QuestionSetPaper.skills)).where(
         QuestionSetPaper.department_id == department_id,
         QuestionSetPaper.position_id == position_id,
         QuestionSetPaper.name == "Auto-Saved Custom Questions"
@@ -160,6 +161,32 @@ async def auto_save_custom_items(
         auto_paper.questions = new_q
         auto_paper.mcqs = new_m
         auto_paper.project_task = new_t
+
+        if extracted_skills:
+            from app.v1.db.models.skills import Skill
+            from sqlalchemy import func
+            existing_skills_stmt = select(Skill).where(
+                func.lower(Skill.name).in_([s.lower() for s in extracted_skills])
+            )
+            res_skills = await db.execute(existing_skills_stmt)
+            existing_skills = res_skills.scalars().all()
+            existing_skill_names = {s.name.lower(): s for s in existing_skills}
+            
+            for s_name in extracted_skills:
+                s_name_lower = s_name.lower()
+                if s_name_lower not in existing_skill_names:
+                    new_skill = Skill(name=s_name, description=f"Auto-extracted skill: {s_name}")
+                    db.add(new_skill)
+                    existing_skills.append(new_skill)
+            
+            # Avoid duplicating skills that are already attached to auto_paper
+            current_skill_ids = {str(s.id) for s in auto_paper.skills} if auto_paper.skills else set()
+            for skill in existing_skills:
+                if str(skill.id) not in current_skill_ids and skill.id is not None:
+                    auto_paper.skills.append(skill)
+                elif skill.id is None: # newly added
+                    auto_paper.skills.append(skill)
+
         await db.commit()
 
 

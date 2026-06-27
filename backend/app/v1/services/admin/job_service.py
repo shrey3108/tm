@@ -328,6 +328,14 @@ Output Format Example (JSON ONLY):
         job_read.total_candidates = stats["total_candidates"]
         job_read.current_session_candidates = stats["current_session_count"]
         job_read.activity_sessions = stats["sessions"]
+        
+        # Populate skill weightages
+        from sqlalchemy import text
+        job_skills_query = text("SELECT skill_id, weightage FROM job_skills WHERE job_id = :job_id")
+        job_skills_res = await db.execute(job_skills_query, {"job_id": job_id})
+        raw_weights = {str(row[0]): float(row[1]) for row in job_skills_res.fetchall()}
+        job_read.job_skill_weightages = raw_weights
+        
         return job_read
 
     async def get_job_version(self, db: AsyncSession, version_id: uuid.UUID) -> Any:
@@ -409,6 +417,20 @@ Output Format Example (JSON ONLY):
         job = await job_repository.create(
             db=db, object=job_in, created_by=admin_user_id
         )
+        
+        # Update skill weightages in job_skills association table if provided
+        if job_in.skill_weightages:
+            from app.v1.db.models.job_skills import job_skills
+            from sqlalchemy import update
+            for s_id, w in job_in.skill_weightages.items():
+                if str(s_id) in [str(sid) for sid in (job_in.skill_ids or [])]:
+                    stmt_update = (
+                        update(job_skills)
+                        .where(job_skills.c.job_id == job.id)
+                        .where(job_skills.c.skill_id == s_id)
+                        .values(weightage=w)
+                    )
+                    await db.execute(stmt_update)
 
         # Setup stages for the new job
         from app.v1.services.stage_service import stage_service
@@ -506,7 +528,7 @@ Output Format Example (JSON ONLY):
         if not has_question_bank:
             job.message = "There is no question available you need to add it manualy"
 
-        return JobRead.model_validate(job)
+        return job
 
     async def update_job(
         self,
@@ -590,6 +612,20 @@ Output Format Example (JSON ONLY):
                     job_update.priority_end_date = job_update.priority_start_date + timedelta(days=priority.duration_days)
 
         updated_job = await job_repository.update(db=db, id=job_id, object=job_update)
+        
+        # Update skill weightages in job_skills association table if provided
+        if job_update.skill_weightages:
+            from app.v1.db.models.job_skills import job_skills
+            from sqlalchemy import update
+            for s_id, w in job_update.skill_weightages.items():
+                if str(s_id) in [str(sid) for sid in (job_update.skill_ids or [s.id for s in current_job.skills])]:
+                    stmt_update = (
+                        update(job_skills)
+                        .where(job_skills.c.job_id == job_id)
+                        .where(job_skills.c.skill_id == s_id)
+                        .values(weightage=w)
+                    )
+                    await db.execute(stmt_update)
         
         # Handle stages update if provided (same logic as create_job)
         if job_update.stages is not None:
@@ -677,7 +713,7 @@ Output Format Example (JSON ONLY):
         await cache.clear(pattern="jobs:list:*")
         await cache.clear(pattern="jobs:search:*")
 
-        return JobRead.model_validate(updated_job)
+        return updated_job
 
     async def update_job_status(
         self,
@@ -713,7 +749,7 @@ Output Format Example (JSON ONLY):
         await cache.clear(pattern="jobs:list:*")
         await cache.clear(pattern="jobs:search:*")
 
-        return JobRead.model_validate(updated_job)
+        return await self.get_job_by_id(db, job_id)
 
 
     async def delete_job(

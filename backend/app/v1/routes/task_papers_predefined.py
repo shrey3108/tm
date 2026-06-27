@@ -45,6 +45,25 @@ def normalize_text(text: str) -> str:
     text = re.sub(r'\s+', ' ', text).strip()
     return text
 
+async def _append_skills_to_paper(
+    db: AsyncSession, paper: QuestionSetPaper, skill_ids: Optional[list[uuid.UUID]]
+) -> bool:
+    """Appends new skills to the paper if they don't already exist."""
+    if not skill_ids:
+        return False
+
+    stmt = select(Skill).where(Skill.id.in_(skill_ids))
+    fetched_skills = (await db.execute(stmt)).scalars().all()
+
+    existing_skill_ids = {s.id for s in paper.skills}
+    new_skills_added = False
+    for s in fetched_skills:
+        if s.id not in existing_skill_ids:
+            paper.skills.append(s)
+            new_skills_added = True
+
+    return new_skills_added
+
 async def handle_duplicate_question(
     question_text: str,
     department_id: uuid.UUID,
@@ -585,6 +604,9 @@ async def add_question_to_paper(
     new_questions.append(payload.question.model_dump())
     paper.questions = new_questions
     
+    # Append skills if provided
+    await _append_skills_to_paper(db, paper, payload.skill_ids)
+    
     await db.commit()
     await db.refresh(paper)
     await cache.clear("cache:GET:/api/v1/task-papers*")
@@ -629,6 +651,9 @@ async def update_question_in_paper(
     new_questions[index] = payload.question.model_dump()
     paper.questions = new_questions
     
+    # Append skills if provided
+    await _append_skills_to_paper(db, paper, payload.skill_ids)
+
     await db.commit()
     await db.refresh(paper)
     await cache.clear("cache:GET:/api/v1/task-papers*")
@@ -699,6 +724,9 @@ async def add_mcq_to_paper(
     new_mcqs.append(mcq_data.model_dump())
     paper.mcqs = new_mcqs
     
+    # Append skills if provided
+    await _append_skills_to_paper(db, paper, payload.skill_ids)
+    
     await db.commit()
     await db.refresh(paper)
     await cache.clear("cache:GET:/api/v1/task-papers*")
@@ -742,6 +770,9 @@ async def update_mcq_in_paper(
 
     new_mcqs[index] = mcq_data.model_dump()
     paper.mcqs = new_mcqs
+    
+    # Append skills if provided
+    await _append_skills_to_paper(db, paper, payload.skill_ids)
     
     await db.commit()
     await db.refresh(paper)
@@ -814,6 +845,9 @@ async def add_task_to_paper(
     new_tasks.append(task_obj.model_dump())
     paper.project_task = new_tasks
     
+    # Append skills if provided
+    await _append_skills_to_paper(db, paper, payload.skill_ids)
+    
     await db.commit()
     await db.refresh(paper)
     await cache.clear("cache:GET:/api/v1/task-papers*")
@@ -857,6 +891,9 @@ async def update_task_in_paper(
 
     new_tasks[index] = task_obj.model_dump()
     paper.project_task = new_tasks
+    
+    # Append skills if provided
+    await _append_skills_to_paper(db, paper, payload.skill_ids)
     
     await db.commit()
     await db.refresh(paper)

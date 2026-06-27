@@ -2,7 +2,7 @@ import uuid
 from typing import TYPE_CHECKING
 
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import Text
+from sqlalchemy import Text, Float
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -25,6 +25,7 @@ class Skill(Base):
         name: The unique name of the skill (not null).
         description: A short description of the skill (optional).
         skill_embedding: Vector embedding of name + description.
+        default_weightage: The default weightage given to this skill, nullable.
     """
 
     __tablename__ = "skills"
@@ -52,6 +53,12 @@ class Skill(Base):
     skill_embedding: Mapped[list | None] = mapped_column(
         Vector(settings.EMBEDDING_VECTOR_DIM),
         nullable=True,
+    )
+
+    default_weightage: Mapped[float | None] = mapped_column(
+        Float,
+        nullable=True,
+        default=10.0,
     )
 
     jobs: Mapped[list["Job"]] = relationship(
