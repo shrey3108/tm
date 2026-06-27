@@ -25,7 +25,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useFormModal } from "@/hooks";
-import { skillCreateSchema, type SkillCreateFormValues } from "@/schemas/admin";
+import { skillCreateSchema, type SkillCreateFormValues } from "@/schemas/skill";
 import ErrorDisplay from "@/components/shared/ErrorDisplay";
 
 interface CreateSkillModalProps {
@@ -38,6 +38,7 @@ interface CreateSkillModalProps {
 const DEFAULT_SKILL_VALUES: SkillCreateFormValues = {
   name: "",
   description: "",
+  default_weightage: 10,
 };
 
 const CreateSkillModal = ({ show, handleClose, onSkillSaved, skill }: CreateSkillModalProps) => {
@@ -49,6 +50,7 @@ const CreateSkillModal = ({ show, handleClose, onSkillSaved, skill }: CreateSkil
     (s: SkillRead): SkillCreateFormValues => ({
       name: s.name,
       description: s.description || "",
+      default_weightage: s.default_weightage ?? 10,
     }),
     [],
   );
@@ -107,6 +109,20 @@ const CreateSkillModal = ({ show, handleClose, onSkillSaved, skill }: CreateSkil
                   <FormLabel>Description</FormLabel>
                   <FormControl>
                     <Textarea placeholder="Briefly describe the skill..." rows={4} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={control}
+              name="default_weightage"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Default Weightage</FormLabel>
+                  <FormControl>
+                    <Input type="number" min="0" step="any" placeholder="e.g. 10" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

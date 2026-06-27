@@ -22,7 +22,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useFormModal } from "@/hooks";
-import { permissionCreateSchema, type PermissionCreateFormValues } from "@/schemas/admin";
+import { permissionCreateSchema, type PermissionCreateFormValues } from "@/schemas/permission-role";
 import ErrorDisplay from "@/components/shared/ErrorDisplay";
 import { useCreatePermissionMutation } from "@/hooks/mutations/admin/usePermission";
 

@@ -239,6 +239,7 @@ export interface JobCreate {
   jd_text: string;
   is_active?: boolean;
   skill_ids: string[];
+  skill_weightages?: Record<string, number> | null;
   passing_threshold?: number;
   custom_extraction_fields?: string[];
   priority_id: string;
@@ -257,6 +258,7 @@ export interface JobUpdate {
   jd_text?: string;
   is_active?: boolean;
   skill_ids?: string[];
+  skill_weightages?: Record<string, number> | null;
   passing_threshold?: number;
   custom_extraction_fields?: string[];
   priority_id?: string;
@@ -276,6 +278,7 @@ export interface SkillBase {
   id: string;
   name: string;
   description?: string;
+  default_weightage?: number;
 }
 
 /**

@@ -35,7 +35,7 @@ import {
 } from "@/hooks/mutations/taskPapers/useTaskPaperMutations";
 import type { MCQItem, TaskItem, SubTaskItem, QuestionItem } from "@/types/taskPaper";
 import { mcqFormSchema } from "@/schemas/taskPaper";
-import { questionFormSchema, projectTaskSchema } from "@/schemas/admin";
+import { questionFormSchema, projectTaskSchema } from "@/schemas/question";
 import { extractErrorMessage } from "@/utils/error";
 import { slugify } from "@/utils/slug";
 
@@ -375,6 +375,7 @@ export default function QuestionsBankCreate() {
         question: questionText.trim(),
         marks: Number(questionMarks),
         duration,
+        skill_ids: selectedSkillIds,
       };
     }
 
@@ -417,6 +418,7 @@ export default function QuestionsBankCreate() {
         answer: answerText.trim(),
         marks: Number(mcqMarks),
         duration,
+        skill_ids: selectedSkillIds,
       };
     }
 
@@ -457,6 +459,7 @@ export default function QuestionsBankCreate() {
         })),
         total_marks: projectTasks.reduce((sum, t) => sum + (t.marks || 0), 0),
         total_duration: duration,
+        skill_ids: selectedSkillIds,
       };
     }
 
@@ -469,11 +472,13 @@ export default function QuestionsBankCreate() {
               paperId: paperToEdit.id,
               index: itemIndex,
               question: questionTextPayload,
+              skillIds: selectedSkillIds,
             });
           } else {
             await addQuestionMutation.mutateAsync({
               paperId: paperToEdit.id,
               question: questionTextPayload,
+              skillIds: selectedSkillIds,
             });
           }
         } else if (contentType === "mcq") {
@@ -482,11 +487,13 @@ export default function QuestionsBankCreate() {
               paperId: paperToEdit.id,
               index: itemIndex,
               mcq: mcqItemPayload!,
+              skillIds: selectedSkillIds,
             });
           } else {
             await addMCQMutation.mutateAsync({
               paperId: paperToEdit.id,
               mcq: mcqItemPayload!,
+              skillIds: selectedSkillIds,
             });
           }
         } else if (contentType === "project_task") {
@@ -495,11 +502,13 @@ export default function QuestionsBankCreate() {
               paperId: paperToEdit.id,
               index: itemIndex,
               projectTask: projectTaskItemPayload!,
+              skillIds: selectedSkillIds,
             });
           } else {
             await addProjectTaskMutation.mutateAsync({
               paperId: paperToEdit.id,
               projectTask: projectTaskItemPayload!,
+              skillIds: selectedSkillIds,
             });
           }
         }

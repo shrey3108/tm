@@ -95,7 +95,11 @@ export default function QuestionsBank() {
       if (Array.isArray(paper.questions)) {
         paper.questions.forEach((q: any, idx: number) => {
           if (q) {
-            const content = typeof q === "string" ? q : q.question || "";
+            const content = typeof q === "string" ? q : (q.question || "");
+            const itemSkillIds = (q && typeof q !== "string") ? q.skill_ids : undefined;
+            const resolvedSkills = itemSkillIds && Array.isArray(itemSkillIds) && itemSkillIds.length > 0
+              ? paper.skills?.filter((s: any) => itemSkillIds.includes(s.id))
+              : paper.skills;
             items.push({
               id: `${paperId}-q-${idx}`,
               content,
@@ -104,7 +108,7 @@ export default function QuestionsBank() {
               itemIndex: idx,
               rawData: q,
               paperName: paper.name,
-              skills: paper.skills,
+              skills: resolvedSkills,
             });
           }
         });
@@ -116,6 +120,10 @@ export default function QuestionsBank() {
           if (task) {
             const taskContent = typeof task === "string" ? task : (task.task || task.instructions || "");
             if (taskContent) {
+              const itemSkillIds = (task && typeof task !== "string") ? task.skill_ids : undefined;
+              const resolvedSkills = itemSkillIds && Array.isArray(itemSkillIds) && itemSkillIds.length > 0
+                ? paper.skills?.filter((s: any) => itemSkillIds.includes(s.id))
+                : paper.skills;
               items.push({
                 id: `${paperId}-t-${idx}`,
                 content: taskContent,
@@ -124,7 +132,7 @@ export default function QuestionsBank() {
                 itemIndex: idx,
                 rawData: task,
                 paperName: paper.name,
-                skills: paper.skills,
+                skills: resolvedSkills,
               });
             }
           }
@@ -137,6 +145,10 @@ export default function QuestionsBank() {
           if (mcq) {
             const mcqContent = typeof mcq === "string" ? mcq : (mcq.question || "");
             if (mcqContent) {
+              const itemSkillIds = (mcq && typeof mcq !== "string") ? mcq.skill_ids : undefined;
+              const resolvedSkills = itemSkillIds && Array.isArray(itemSkillIds) && itemSkillIds.length > 0
+                ? paper.skills?.filter((s: any) => itemSkillIds.includes(s.id))
+                : paper.skills;
               items.push({
                 id: `${paperId}-m-${idx}`,
                 content: mcqContent,
@@ -145,7 +157,7 @@ export default function QuestionsBank() {
                 itemIndex: idx,
                 rawData: mcq,
                 paperName: paper.name,
-                skills: paper.skills,
+                skills: resolvedSkills,
               });
             }
           }

@@ -61,7 +61,7 @@ export const getJobColumns = ({
         );
       },
       cell: ({ row }) => (
-        <div className="flex flex-col gap-1 min-w-[200px] max-w-[320px]">
+        <div className="flex flex-col gap-1 min-w-50 max-w-[320px]">
           <div className="flex items-center gap-2">
             <span
               className="font-medium text-wrap capitalize"
@@ -289,7 +289,10 @@ export const getJobColumns = ({
       },
       cell: ({ row }) => (
         <div className="min-w-[160px] max-w-[220px]">
-          <SkillsBadgeList skills={row.original.skills} maxVisible={2} />
+          <SkillsBadgeList
+            skills={row.original.skills}
+            maxVisible={2}
+          />
         </div>
       ),
     },

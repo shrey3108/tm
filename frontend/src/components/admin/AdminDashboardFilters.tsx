@@ -111,7 +111,7 @@ const AdminDashboardFilters = ({
             ? "border-primary/40 bg-primary/5 text-foreground hover:bg-primary/5 hover:text-foreground"
             : "border-input bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground"
         )}
-        contentClassName="min-w-[200px]"
+        contentClassName="min-w-50"
       />
 
       {/* Stage Filter */}
@@ -138,7 +138,7 @@ const AdminDashboardFilters = ({
             ? "border-primary/40 bg-primary/5 text-foreground hover:bg-primary/5 hover:text-foreground"
             : "border-input bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground"
         )}
-        contentClassName="min-w-[200px]"
+        contentClassName="min-w-50"
       />
 
       {/* Department Filter */}
@@ -165,7 +165,7 @@ const AdminDashboardFilters = ({
             ? "border-primary/40 bg-primary/5 text-foreground hover:bg-primary/5 hover:text-foreground"
             : "border-input bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground"
         )}
-        contentClassName="min-w-[200px]"
+        contentClassName="min-w-50"
       />
       {hasActiveFilters && (
         <HoverCard>

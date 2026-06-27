@@ -29,7 +29,7 @@ import { useAssignTestPaperMutation, useDeleteJobDefaultTestPaperMutation } from
 import { taskService } from "@/apis/task";
 import type { MCQItem, TaskItem, SubTaskItem, QuestionItem } from "@/types/taskPaper";
 import { mcqFormSchema } from "@/schemas/taskPaper";
-import { questionFormSchema, projectTaskSchema } from "@/schemas/admin";
+import { questionFormSchema, projectTaskSchema } from "@/schemas/question";
 
 import { SingleQuestionFormFields } from "@/components/questions-bank/SingleQuestionFormFields";
 import { MCQFormFields } from "@/components/questions-bank/MCQFormFields";
@@ -463,6 +463,7 @@ export default function AssignPaperPage() {
         questions: finalQuestions,
         mcqs: finalMCQs,
         project_task: finalTasks,
+        custom_skills: job.skills?.map((s: any) => s.name) || [],
       });
       toast.success("Successfully assigned default test paper to job!");
       refetchAssignedPaper();

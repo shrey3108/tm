@@ -17,7 +17,7 @@ import {
 } from "@/components/job-form";
 
 import type { SkillBase } from "@/types/admin";
-import { jobCreateSchema, type JobCreateFormValues } from "@/schemas/admin";
+import { jobCreateSchema, type JobCreateFormValues } from "@/schemas/job";
 import AppPageShell from "@/components/shared/AppPageShell";
 import PageHeader from "@/components/shared/PageHeader";
 import { extractErrorMessage } from "@/utils/error";
@@ -82,6 +82,7 @@ export default function CreateJob() {
       jd_text: "",
       is_active: true,
       skill_ids: [],
+      skill_weightages: {},
       passing_threshold: DEFAULT_PASSING_THRESHOLD,
       custom_extraction_fields: [],
       priority_id: "",
@@ -110,6 +111,7 @@ export default function CreateJob() {
         jd_text: job.jd_text || "",
         is_active: job.is_active ?? true,
         skill_ids: job.skills?.map((s: any) => s.id) || [],
+        skill_weightages: job.job_skill_weightages || {},
         passing_threshold: job.passing_threshold ?? DEFAULT_PASSING_THRESHOLD,
         custom_extraction_fields: job.custom_extraction_fields || [],
         priority_id: job.priority_id || "",

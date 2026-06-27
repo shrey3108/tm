@@ -18,7 +18,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useFormModal } from "@/hooks";
-import { projectTaskSchema, type ProjectTaskFormValues } from "@/schemas/admin";
+import { projectTaskSchema, type ProjectTaskFormValues } from "@/schemas/question";
 import type { TaskItem } from "@/types/taskPaper";
 import { SubTasksFormSection } from "../questions-bank/SubTasksFormSection";
 

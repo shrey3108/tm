@@ -97,15 +97,15 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
                   c.current_stage.template_name.toLowerCase().includes("coding") ||
                   c.current_stage.template_name.toLowerCase().includes("test")
                 ) && <HoverCard>
-                  <HoverCardTrigger delay={10} closeDelay={10}>
-                    <CandidateEmailBadge email_sent_count={c.email_sent_count} />
-                  </HoverCardTrigger>
-                  <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
-                    <p className="">
-                       {c.email_sent_count && c.email_sent_count > 0 ? `Total email sent: ${c.email_sent_count}` : "No email sent yet"}
-                    </p>
-                  </HoverCardContent>
-                </HoverCard>}
+                    <HoverCardTrigger delay={10} closeDelay={10}>
+                      <CandidateEmailBadge email_sent_count={c.email_sent_count} />
+                    </HoverCardTrigger>
+                    <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
+                      <p className="">
+                        {c.email_sent_count && c.email_sent_count > 0 ? `Total email sent: ${c.email_sent_count}` : "No email sent yet"}
+                      </p>
+                    </HoverCardContent>
+                  </HoverCard>}
               </div>
             </div>
           );
@@ -129,7 +129,7 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
               if (!jobId || !jobName) return <span className="text-muted-foreground text-sm font-medium italic">N/A</span>;
               const slug = slugify(jobName);
               return (
-                <div className="flex items-center gap-1.5 min-w-[120px] max-w-[200px]">
+                <div className="flex items-center gap-1.5 min-w-[120px] max-w-50">
                   <Link
                     to={`/dashboard/jobs/${slug}/candidates`}
                     state={{ state: { jobId: jobId } }}

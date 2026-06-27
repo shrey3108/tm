@@ -208,10 +208,12 @@ export function useAddQuestionToPaperMutation() {
     mutationFn: ({
       paperId,
       question,
+      skillIds,
     }: {
       paperId: string;
       question: QuestionItem | string;
-    }) => taskService.addQuestionToPaper(paperId, question),
+      skillIds?: string[];
+    }) => taskService.addQuestionToPaper(paperId, question, skillIds),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.TASK_PAPERS.LIST],
@@ -236,11 +238,13 @@ export function useUpdateQuestionInPaperMutation() {
       paperId,
       index,
       question,
+      skillIds,
     }: {
       paperId: string;
       index: number;
       question: QuestionItem | string;
-    }) => taskService.updateQuestionInPaper(paperId, index, question),
+      skillIds?: string[];
+    }) => taskService.updateQuestionInPaper(paperId, index, question, skillIds),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.TASK_PAPERS.LIST],
@@ -291,10 +295,12 @@ export function useAddProjectTaskToPaperMutation() {
     mutationFn: ({
       paperId,
       projectTask,
+      skillIds,
     }: {
       paperId: string;
       projectTask: TaskItem | string;
-    }) => taskService.addProjectTaskToPaper(paperId, projectTask),
+      skillIds?: string[];
+    }) => taskService.addProjectTaskToPaper(paperId, projectTask, skillIds),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.TASK_PAPERS.LIST],
@@ -319,11 +325,13 @@ export function useUpdateProjectTaskInPaperMutation() {
       paperId,
       index,
       projectTask,
+      skillIds,
     }: {
       paperId: string;
       index: number;
       projectTask: TaskItem | string;
-    }) => taskService.updateProjectTaskInPaper(paperId, index, projectTask),
+      skillIds?: string[];
+    }) => taskService.updateProjectTaskInPaper(paperId, index, projectTask, skillIds),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.TASK_PAPERS.LIST],
@@ -376,10 +384,12 @@ export function useAddMCQToPaperMutation() {
     mutationFn: ({
       paperId,
       mcq,
+      skillIds,
     }: {
       paperId: string;
       mcq: MCQItem;
-    }) => taskService.addMCQToPaper(paperId, mcq),
+      skillIds?: string[];
+    }) => taskService.addMCQToPaper(paperId, mcq, skillIds),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.TASK_PAPERS.LIST],
@@ -404,11 +414,13 @@ export function useUpdateMCQInPaperMutation() {
       paperId,
       index,
       mcq,
+      skillIds,
     }: {
       paperId: string;
       index: number;
       mcq: MCQItem;
-    }) => taskService.updateMCQInPaper(paperId, index, mcq),
+      skillIds?: string[];
+    }) => taskService.updateMCQInPaper(paperId, index, mcq, skillIds),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.TASK_PAPERS.LIST],

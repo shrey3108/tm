@@ -25,7 +25,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useFormModal } from "@/hooks";
-import { jobPositionCreateSchema, type JobPositionCreateFormValues } from "@/schemas/admin";
+import { jobPositionCreateSchema, type JobPositionCreateFormValues } from "@/schemas/jobPosition";
 import ErrorDisplay from "@/components/shared/ErrorDisplay";
 
 interface PositionModalProps {

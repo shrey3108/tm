@@ -8,7 +8,7 @@ import type { SkillRead } from "@/types/admin";
  */
 interface SkillsBadgeListProps {
   /** Optional array of skill objects */
-  skills?: (SkillRead | { name: string; description: string | null })[];
+  skills?: SkillRead[];
   /** Additional CSS class name */
   className?: string;
   /** Whether to show a label when no skills are found (default: "N/A") */
@@ -42,15 +42,24 @@ const SkillsBadgeList = ({
   return (
     <TooltipProvider delay={200}>
       <div className={cn("flex flex-wrap gap-1.5 items-start", className)}>
-        {visibleSkills.map((skill, index) => (
-          <Badge
-            key={"id" in skill ? skill.id : `${skill.name}-${index}`}
-            variant="secondary"
-            className="text-sm font-normal px-1.5 py-0.5 rounded-md border-muted-foreground/20 overflow-visible whitespace-normal [word-break:break-word] leading-snug h-auto"
-          >
-            {skill.name}
-          </Badge>
-        ))}
+        {visibleSkills.map((skill, index) => {
+          const skillId = "id" in skill ? skill.id : undefined;
+
+          return (
+            <Badge
+              key={skillId || `${skill.name}-${index}`}
+              variant="secondary"
+              className="text-sm font-normal px-1.5 py-0.5 rounded-md border-muted-foreground/20 overflow-visible whitespace-normal [word-break:break-word] leading-snug h-auto"
+            >
+              {skill.name}
+              {/* {skill.default_weightage !== undefined && (
+                <span className="text-xs font-semibold text-primary">
+                  ({skill.default_weightage})
+                </span>
+              )} */}
+            </Badge>
+          );
+        })}
         {remainingSkills.length > 0 && (
           <Tooltip>
             <TooltipTrigger
@@ -71,15 +80,24 @@ const SkillsBadgeList = ({
               <div className="text-sm font-semibold border-b pb-1 mb-1 border-border/50">
                 Additional Skills
               </div>
-              <div className="flex flex-wrap gap-1 max-w-[200px]">
-                {remainingSkills.map((skill, index) => (
-                  <span
-                    key={"id" in skill ? skill.id : `${skill.name}-${index}`}
-                    className="px-0.5 py-0.5 rounded bg-muted text-xs font-medium"
-                  >
-                    {skill.name}
-                  </span>
-                ))}
+              <div className="flex flex-wrap gap-1 max-w-50">
+                {remainingSkills.map((skill, index) => {
+                  const skillId = "id" in skill ? skill.id : undefined;
+
+                  return (
+                    <span
+                      key={skillId || `${skill.name}-${index}`}
+                      className="px-1.5 py-0.5 rounded bg-muted text-xs font-medium inline-flex items-center gap-1"
+                    >
+                      {skill.name}
+                      {/* {skill.default_weightage !== undefined && (
+                        <span className="text-[10px] font-bold text-primary">
+                          ({skill.default_weightage})
+                        </span>
+                      )} */}
+                    </span>
+                  );
+                })}
               </div>
             </TooltipContent>
           </Tooltip>

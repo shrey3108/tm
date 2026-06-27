@@ -32,7 +32,7 @@ import {
   FieldDescription,
 } from "@/components";
 import { useFormModal } from "@/hooks";
-import { roleCreateSchema, type RoleCreateFormValues } from "@/schemas/admin";
+import { roleCreateSchema, type RoleCreateFormValues } from "@/schemas/permission-role";
 import { cn } from "@/lib/utils";
 import { Required } from "@/components/shared/Required";
 import { useToast } from "../shared";

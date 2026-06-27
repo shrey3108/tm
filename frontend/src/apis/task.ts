@@ -397,11 +397,12 @@ export const taskService = {
    */
   addQuestionToPaper: async (
     paperId: string,
-    question: QuestionItem | string
+    question: QuestionItem | string,
+    skillIds?: string[]
   ): Promise<QuestionSetPaperRead> => {
     const response = await client.post<QuestionSetPaperRead>(
       `/task-papers/${paperId}/questions`,
-      { question }
+      { question, skill_ids: skillIds }
     );
     return response.data;
   },
@@ -412,11 +413,12 @@ export const taskService = {
   updateQuestionInPaper: async (
     paperId: string,
     index: number,
-    question: QuestionItem | string
+    question: QuestionItem | string,
+    skillIds?: string[]
   ): Promise<QuestionSetPaperRead> => {
     const response = await client.put<QuestionSetPaperRead>(
       `/task-papers/${paperId}/questions/${index}`,
-      { question }
+      { question, skill_ids: skillIds }
     );
     return response.data;
   },
@@ -438,11 +440,12 @@ export const taskService = {
    */
   addMCQToPaper: async (
     paperId: string,
-    mcq: MCQItem
+    mcq: MCQItem,
+    skillIds?: string[]
   ): Promise<QuestionSetPaperRead> => {
     const response = await client.post<QuestionSetPaperRead>(
       `/task-papers/${paperId}/mcqs`,
-      { mcq }
+      { mcq, skill_ids: skillIds }
     );
     return response.data;
   },
@@ -453,11 +456,12 @@ export const taskService = {
   updateMCQInPaper: async (
     paperId: string,
     index: number,
-    mcq: MCQItem
+    mcq: MCQItem,
+    skillIds?: string[]
   ): Promise<QuestionSetPaperRead> => {
     const response = await client.put<QuestionSetPaperRead>(
       `/task-papers/${paperId}/mcqs/${index}`,
-      { mcq }
+      { mcq, skill_ids: skillIds }
     );
     return response.data;
   },
@@ -480,11 +484,12 @@ export const taskService = {
    */
   addProjectTaskToPaper: async (
     paperId: string,
-    projectTask: TaskItem | string
+    projectTask: TaskItem | string,
+    skillIds?: string[]
   ): Promise<QuestionSetPaperRead> => {
     const response = await client.post<QuestionSetPaperRead>(
       `/task-papers/${paperId}/tasks`,
-      { task: projectTask }
+      { task: projectTask, skill_ids: skillIds }
     );
     return response.data;
   },
@@ -495,11 +500,12 @@ export const taskService = {
   updateProjectTaskInPaper: async (
     paperId: string,
     index: number,
-    projectTask: TaskItem | string
+    projectTask: TaskItem | string,
+    skillIds?: string[]
   ): Promise<QuestionSetPaperRead> => {
     const response = await client.put<QuestionSetPaperRead>(
       `/task-papers/${paperId}/tasks/${index}`,
-      { task: projectTask }
+      { task: projectTask, skill_ids: skillIds }
     );
     return response.data;
   },

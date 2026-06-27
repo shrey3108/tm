@@ -82,7 +82,8 @@ export interface Job {
   /** Timestamp when the job was created */
   created_at: string;
   /** Skills linked to the job */
-  skills: { id: string; name: string; description: string | null }[];
+  skills: { id: string; name: string; description?: string; default_weightage?: number }[];
+  job_skill_weightages?: Record<string, number> | null;
 
   total_candidates: number;
   current_session_candidates: number;

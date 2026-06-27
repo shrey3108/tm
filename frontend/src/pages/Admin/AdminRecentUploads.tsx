@@ -196,7 +196,7 @@ const AdminRecentUploads = () => {
                 triggerClassName={cn(
                   "w-fit inline-flex items-center gap-2 h-9 px-3 rounded-xl border text-sm font-medium cursor-pointer select-none transition-colors",
                 )}
-                contentClassName="min-w-[200px]"
+                contentClassName="min-w-50"
               />
             </div>
           }

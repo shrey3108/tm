@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
-import { Plus, Check, Search, Loader2 } from "lucide-react";
+import { Plus, Check, Search, Loader2, X } from "lucide-react";
 import { FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input"
@@ -35,6 +35,11 @@ export const SkillSelectorSection = ({
     name: "skill_ids",
     defaultValue: [],
   });
+  const skillWeightages = useWatch({
+    control,
+    name: "skill_weightages",
+    defaultValue: {},
+  }) || {};
 
   const debouncedSearch = useDebouncedValue(skillSearch);
 
@@ -58,13 +63,22 @@ export const SkillSelectorSection = ({
 
   const toggleSkill = (skillId: string) => {
     const current = [...selectedSkillIds];
+    const currentWeightages = { ...skillWeightages };
     const index = current.indexOf(skillId);
     if (index > -1) {
       current.splice(index, 1);
+      delete currentWeightages[skillId];
     } else {
       current.push(skillId);
+      const skillObj = allSkills.find((s) => s.id === skillId);
+      currentWeightages[skillId] = skillObj?.default_weightage ?? 10;
     }
     setValue("skill_ids", current, {
+      shouldValidate: true,
+      shouldDirty: true,
+      shouldTouch: true,
+    });
+    setValue("skill_weightages", currentWeightages, {
       shouldValidate: true,
       shouldDirty: true,
       shouldTouch: true,
@@ -201,31 +215,62 @@ export const SkillSelectorSection = ({
         )}
       </div>
 
-      {/* {selectedSkillIds.length > 0 && (
-        <div className="pt-6 border-t border-muted-foreground/10">
-          <p className="text-sm font-bold text-muted-foreground mb-4 uppercase tracking-wider">
-            Selected ({selectedSkillIds.length})
+      {selectedSkillIds.length > 0 && (
+        <div className="pt-6 border-t border-muted-foreground/10 space-y-4 animate-in fade-in duration-300">
+          <p className="text-sm font-bold text-muted-foreground uppercase tracking-wider">
+            Selected Skills & Custom Weightages ({selectedSkillIds.length})
           </p>
-          <div className="flex flex-wrap gap-2">
-            {selectedSkills.map((skill) => (
-              <Badge
-                key={skill.id}
-                variant="secondary"
-                className="pl-2 pr-1 py-1 text-sm rounded-xl bg-primary/20 text-primary border-none font-bold animate-in zoom-in duration-300"
-              >
-                {skill.name}
-                <button
-                  type="button"
-                  onClick={() => toggleSkill(skill.id)}
-                  className="ml-2 hover:bg-primary/20 rounded-full p-1 transition-colors"
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            {selectedSkills.map((skill) => {
+              const weightageValue = skillWeightages[skill.id] ?? skill.default_weightage ?? 10;
+              return (
+                <div
+                  key={skill.id}
+                  className="flex items-center justify-between p-3 rounded-xl border border-muted-foreground/20 bg-background/50 hover:bg-background/80 transition-colors"
                 >
-                  <X className="h-3 w-3" />
-                </button>
-              </Badge>
-            ))}
+                  <div className="flex flex-col min-w-0 mr-2">
+                    <span className="font-bold text-sm truncate">{skill.name}</span>
+                    <span className="text-xs text-muted-foreground italic">
+                      Default: {skill.default_weightage ?? 10}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-semibold text-muted-foreground">Weight:</span>
+                      <Input
+                        type="number"
+                        min="0"
+                        step="any"
+                        value={weightageValue}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value) || 0;
+                          const currentWeightages = { ...skillWeightages };
+                          currentWeightages[skill.id] = val;
+                          setValue("skill_weightages", currentWeightages, {
+                            shouldValidate: true,
+                            shouldDirty: true,
+                            shouldTouch: true,
+                          });
+                        }}
+                        className="w-20 h-8 text-center text-sm font-bold p-1 rounded-lg border-muted-foreground/20"
+                      />
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      type="button"
+                      onClick={() => toggleSkill(skill.id)}
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
-      )} */}
+      )}
       <CreateSkillModal show={showModal} handleClose={handleCloseModal}
         onSkillSaved={refetchSkills}
         skill={selectedSkill} />

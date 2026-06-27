@@ -165,7 +165,7 @@ const AdminSkills = () => {
     {
       accessorKey: "name",
       header: ({ column }) => (
-        <div className="min-w-[200px]">
+        <div className="max-w-50">
           <Button
             variant="ghost"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
@@ -177,7 +177,7 @@ const AdminSkills = () => {
         </div>
       ),
       cell: ({ row }) => (
-        <div className="flex items-center gap-2 min-w-[200px] truncate ">
+        <div className="flex items-center gap-2 min-w-50 truncate ">
           {row.original.name}
         </div>
       ),
@@ -187,14 +187,30 @@ const AdminSkills = () => {
 
       header: () => {
         return (
-          <div className="flex items-center gap-2  max-w-[800px]">
+          <div className="flex items-center gap-2  max-w-150">
             <span>Description</span>
           </div>
         )
       },
       cell: ({ row }) => (
-        <div className="flex items-center gap-2 max-w-[800px] truncate ">
+        <div className="flex items-center gap-2 max-w-150 truncate ">
           {row.original.description || "No description provided"}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "default_weightage",
+
+      header: () => {
+        return (
+          <div className="flex items-center justify-center gap-2">
+            <span>Default Weightage</span>
+          </div>
+        )
+      },
+      cell: ({ row }) => (
+        <div className="flex items-center justify-center gap-2 max-w-37.5 font-medium text-foreground">
+          {row.original.default_weightage ?? 10}
         </div>
       ),
     },

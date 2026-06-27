@@ -28,7 +28,7 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/components/shared/ToastProvider";
 import AppPageShell from "@/components/shared/AppPageShell";
 import PageHeader from "@/components/shared/PageHeader";
-import { stageTemplateCreateSchema, type StageTemplateCreateFormValues } from "@/schemas/admin";
+import { stageTemplateCreateSchema, type StageTemplateCreateFormValues } from "@/schemas/stageTemplate";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useJobCriteria } from "@/hooks/queries/admin/useJobCriteria";
 import { useJobStage } from "@/hooks/queries/admin/useJobStage";

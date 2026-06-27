@@ -19,7 +19,7 @@ import {
 import { useToast } from "@/components/shared/ToastProvider";
 import AppPageShell from "@/components/shared/AppPageShell";
 import PageHeader from "@/components/shared/PageHeader";
-import { enhanceJobCriteriaSchema, jobCriteriaCreateSchema, type JobCriteriaCreateFormValues } from "@/schemas/admin";
+import { enhanceJobCriteriaSchema, jobCriteriaCreateSchema, type JobCriteriaCreateFormValues } from "@/schemas/jobCriteria";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     useCreateCriterionMutation,

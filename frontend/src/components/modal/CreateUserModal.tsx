@@ -32,7 +32,7 @@ import {
   FormMessage,
 } from "@/components";
 import { useFormModal } from "@/hooks";
-import { userCreateSchema, type UserCreateFormValues } from "@/schemas/admin";
+import { userCreateSchema, type UserCreateFormValues } from "@/schemas/user";
 import { useAdminRoles } from "@/hooks/queries/admin/useAdminRoles";
 
 

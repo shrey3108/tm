@@ -24,7 +24,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useFormModal } from "@/hooks";
-import { jobPriorityCreateSchema, type JobPriorityCreateFormValues } from "@/schemas/admin";
+import { jobPriorityCreateSchema, type JobPriorityCreateFormValues } from "@/schemas/jobPriority";
 import ErrorDisplay from "@/components/shared/ErrorDisplay";
 
 interface CreateJobPriorityModalProps {

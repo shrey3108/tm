@@ -10,12 +10,14 @@ export interface MCQItem {
   answer: string;
   marks?: number;
   duration?: number; // in minutes
+  skill_ids?: string[];
 }
 
 export interface QuestionItem {
   question: string;
   marks?: number;
   duration?: number; // in minutes
+  skill_ids?: string[];
 }
 
 export interface SubTaskItem {
@@ -34,6 +36,7 @@ export interface TaskItem {
   description?: string;
   duration?: number; // in minutes
   tasks?: SubTaskItem[];
+  skill_ids?: string[];
 
   // Legacy / UI computed values
   total_marks?: number;
@@ -110,6 +113,7 @@ export interface CandidateTestPaperAssign {
   project_task?: (TaskItem | string)[];
   question_count?: number;
   source_mix?: SourceMixItem[];
+  custom_skills?: string[];
 }
 
 export interface CandidateTestPaperEmailSend {

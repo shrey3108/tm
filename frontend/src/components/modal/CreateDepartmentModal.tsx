@@ -25,7 +25,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useFormModal } from "@/hooks";
-import { departmentCreateSchema, type DepartmentCreateFormValues } from "@/schemas/admin";
+import { departmentCreateSchema, type DepartmentCreateFormValues } from "@/schemas/department";
 import ErrorDisplay from "@/components/shared/ErrorDisplay";
 
 interface CreateDepartmentModalProps {

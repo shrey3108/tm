@@ -3,7 +3,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2, Award, ListTodo, Pencil, Check, X } from "lucide-react";
-import { subTaskSchema } from "@/schemas/admin";
+import { subTaskSchema } from "@/schemas/question";
 import type { SubTaskItem } from "@/types/taskPaper";
 // import { formatDuration, formatSubTaskDuration } from "@/utils/taskFormatter";
 // import { QuestionMetricsInput } from "./QuestionMetricsInput";
