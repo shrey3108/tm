@@ -129,21 +129,21 @@ async def auto_save_custom_items(
         for q in questions:
             q_text = q.get("question") if isinstance(q, dict) else q.question if hasattr(q, "question") else str(q)
             if not await handle_duplicate_question(q, department_id, position_id, [], db):
-                new_q.append(q if isinstance(q, dict) else q.model_dump() if hasattr(q, "model_dump") else q)
+                new_q.append(q if isinstance(q, dict) else q.model_dump(mode="json") if hasattr(q, "model_dump") else q)
                 needs_save = True
 
     if mcqs:
         for m in mcqs:
             m_text = m.get("question") if isinstance(m, dict) else m.question if hasattr(m, "question") else str(m)
             if not await handle_duplicate_mcq(m_text, department_id, position_id, [], db):
-                new_m.append(m if isinstance(m, dict) else m.model_dump() if hasattr(m, "model_dump") else m)
+                new_m.append(m if isinstance(m, dict) else m.model_dump(mode="json") if hasattr(m, "model_dump") else m)
                 needs_save = True
                 
     if tasks:
         for t in tasks:
             t_text = t.get("task") if isinstance(t, dict) else t.task if hasattr(t, "task") else str(t)
             if not await handle_duplicate_task(t_text, department_id, position_id, [], db):
-                new_t.append(t if isinstance(t, dict) else t.model_dump() if hasattr(t, "model_dump") else t)
+                new_t.append(t if isinstance(t, dict) else t.model_dump(mode="json") if hasattr(t, "model_dump") else t)
                 needs_save = True
 
     if needs_save:

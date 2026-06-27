@@ -285,5 +285,11 @@ class Settings(BaseSettings):
     SMTP_FROM_EMAIL: str = Field(default="", description="Sender email address")
     SMTP_TARGET_EMAIL_OVERRIDE: str | None = Field(default=None, description="Override target email for testing")
 
+    # Application base URL (used to build links in emails, e.g. associate review form)
+    APP_BASE_URL: str = Field(
+        default="http://localhost:8000",
+        description="Base URL of the backend API for generating links in emails"
+    )
+
 
 settings = Settings()

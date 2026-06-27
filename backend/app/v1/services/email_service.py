@@ -1,6 +1,7 @@
 import os
 import html
 import smtplib
+import uuid
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
@@ -216,7 +217,8 @@ async def send_candidate_task_email_via_smtp(
             details_html += '<div class="details-title">Assigned Questions:</div>'
             details_html += '<ol class="questions-list">'
             for q in test_paper.questions:
-                q_html = markdown_to_html(q)
+                q_text = q.get("question", str(q)) if isinstance(q, dict) else str(q)
+                q_html = markdown_to_html(q_text)
                 details_html += f'<li style="margin-bottom: 15px;"><div style="font-family: inherit;">{q_html}</div></li>'
             details_html += '</ol>'
         if test_paper.project_task:
@@ -391,6 +393,339 @@ async def send_candidate_task_email_via_smtp(
             logger.error(f"Failed to attach file to email: {e}")
 
     # Send email synchronously in threadpool to avoid blocking event loop
+    def send_sync():
+        with smtplib.SMTP(smtp_host, smtp_port) as server:
+            server.ehlo()
+            if server.has_extn('STARTTLS'):
+                server.starttls()
+                server.ehlo()
+            if smtp_user and smtp_password:
+                server.login(smtp_user, smtp_password)
+            server.sendmail(smtp_from, [target_recipient], msg.as_string())
+
+    try:
+        await asyncio.to_thread(send_sync)
+    finally:
+        if temp_file_to_delete and os.path.exists(temp_file_to_delete):
+            try:
+                os.unlink(temp_file_to_delete)
+            except Exception:
+                pass
+
+
+async def send_associate_notification_email(
+    associate_name: str,
+    associate_email: str,
+    candidate: Candidate,
+    test_paper: CandidateTestPaper,
+    github_url: str,
+    review_token: uuid.UUID,
+    db: AsyncSession,
+) -> None:
+    """Send test paper + candidate GitHub URL to an associate for the GitHub+Question round.
+
+    Reuses the same PDF generation and SMTP safety pattern as
+    ``send_candidate_task_email_via_smtp`` but targets an associate (reviewer)
+    instead of the candidate.
+    """
+    temp_file_to_delete = None
+    attachment_path = None
+    attachment_name = None
+
+    # 1. Resolve job/position/department details for the email subject and body
+    from app.v1.db.models.jobs import Job
+
+    job_title = ""
+    job_position = "Position"
+    job_department = "Department"
+    if candidate.applied_job_id:
+        job = await db.get(Job, candidate.applied_job_id)
+        if job:
+            job_title = job.title or ""
+            # department and position are lazy="joined" relationships
+            if job.department:
+                job_department = job.department.name or "Department"
+            if job.position:
+                job_position = job.position.name or "Position"
+
+    job_info_str = f" for the <strong>{job_title}</strong> position" if job_title else ""
+    candidate_full_name = f"{candidate.first_name or 'Candidate'} {candidate.last_name or ''}".strip()
+    work_drive_link = "https://www.augustinfotech.com/"
+
+    # Build the review form link using the unique review token (no auth required).
+    # The associate clicks this link to open a backend-served HTML form where they
+    # enter marks per question and submit.
+    review_form_url = f"{settings.APP_BASE_URL.rstrip('/')}/api/v1/associate-reviews/{review_token}"
+
+    # 2. Determine attachment (reuse same logic as candidate email)
+    task_file_path = test_paper.task_file_path if test_paper else None
+    external_url = None
+    if task_file_path and task_file_path.startswith(("http://", "https://")):
+        external_url = task_file_path
+    elif task_file_path and task_file_path.lower().endswith(".pdf"):
+        abs_path = resolve_storage_path(task_file_path)
+        if abs_path.is_file():
+            attachment_path = str(abs_path)
+            attachment_name = os.path.basename(task_file_path)
+    else:
+        # Generate PDF dynamically
+        try:
+            temp_file_to_delete = generate_candidate_task_pdf_file(
+                candidate, test_paper, job_name=job_title
+            )
+            attachment_path = temp_file_to_delete
+            attachment_name = f"Test_Paper_{candidate.first_name or 'Candidate'}.pdf"
+        except Exception as e:
+            logger.error(f"Failed to generate task PDF for associate email: {e}")
+
+    # 3. Build HTML body (questions/tasks are in the attached PDF, not in the email body)
+    html_body = f"""
+    <html>
+      <head>
+        <style>
+          body {{
+            font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background-color: #f4f6f9;
+            color: #333333;
+            margin: 0;
+            padding: 0;
+          }}
+          .container {{
+            max-width: 600px;
+            margin: 40px auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            overflow: hidden;
+            border: 1px solid #eef2f6;
+          }}
+          .header {{
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            padding: 30px;
+            text-align: center;
+            color: #ffffff;
+          }}
+          .header h1 {{
+            margin: 0;
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+          }}
+          .content {{
+            padding: 40px 30px;
+          }}
+          .greeting {{
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #111827;
+          }}
+          .message {{
+            font-size: 15px;
+            line-height: 1.6;
+            color: #4b5563;
+            margin-bottom: 30px;
+          }}
+          .github-box {{
+            background-color: #eff6ff;
+            border-radius: 8px;
+            padding: 20px;
+            border-left: 4px solid #2563eb;
+            margin-bottom: 30px;
+          }}
+          .github-title {{
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 10px;
+          }}
+          .github-link {{
+            font-size: 15px;
+            word-break: break-all;
+          }}
+          .candidate-info-box {{
+            background-color: #f9fafb;
+            border-radius: 8px;
+            padding: 20px;
+            border-left: 4px solid #3b82f6;
+            margin-bottom: 30px;
+          }}
+          .info-row {{
+            display: flex;
+            margin-bottom: 10px;
+            font-size: 14px;
+            line-height: 1.5;
+          }}
+          .info-label {{
+            font-weight: 600;
+            color: #1f2937;
+            min-width: 140px;
+          }}
+          .info-value {{
+            color: #4b5563;
+            flex: 1;
+          }}
+          .work-drive-box {{
+            background-color: #ecfdf5;
+            border-radius: 8px;
+            padding: 20px;
+            border-left: 4px solid #10b981;
+            margin-bottom: 30px;
+          }}
+          .work-drive-title {{
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 10px;
+          }}
+          .work-drive-link {{
+            font-size: 15px;
+          }}
+          .review-form-box {{
+            background-color: #fef3c7;
+            border-radius: 8px;
+            padding: 24px 20px;
+            border-left: 4px solid #f59e0b;
+            margin-bottom: 30px;
+            text-align: center;
+          }}
+          .review-form-title {{
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 12px;
+            font-size: 16px;
+          }}
+          .review-form-text {{
+            font-size: 14px;
+            color: #4b5563;
+            margin-bottom: 16px;
+            line-height: 1.5;
+          }}
+          .review-form-button {{
+            display: inline-block;
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: #ffffff !important;
+            text-decoration: none;
+            padding: 12px 32px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 15px;
+          }}
+          .footer {{
+            background-color: #f9fafb;
+            padding: 20px 30px;
+            text-align: center;
+            font-size: 12px;
+            color: #9ca3af;
+            border-top: 1px solid #eef2f6;
+          }}
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>Candidate Evaluation Assignment</h1>
+          </div>
+          <div class="content">
+            <div class="greeting">Hello {html.escape(associate_name)},</div>
+            <div class="message">
+              You have been assigned to evaluate the GitHub repository and test paper for
+              <strong>{html.escape(candidate_full_name)}</strong>{job_info_str}.
+            </div>
+
+            <div class="candidate-info-box">
+              <div class="info-row">
+                <div class="info-label">Candidate Name:</div>
+                <div class="info-value">{html.escape(candidate_full_name)}</div>
+              </div>
+              <div class="info-row">
+                <div class="info-label">Job Role:</div>
+                <div class="info-value">{html.escape(job_title) or 'N/A'}</div>
+              </div>
+              <div class="info-row">
+                <div class="info-label">Department:</div>
+                <div class="info-value">{html.escape(job_department)}</div>
+              </div>
+              <div class="info-row">
+                <div class="info-label">Position:</div>
+                <div class="info-value">{html.escape(job_position)}</div>
+              </div>
+            </div>
+
+            <div class="github-box">
+              <div class="github-title">Candidate GitHub Repository:</div>
+              <div class="github-link">
+                <a href="{html.escape(github_url)}" target="_blank" style="color: #2563eb; text-decoration: underline;">{html.escape(github_url)}</a>
+              </div>
+            </div>
+
+            <div class="work-drive-box">
+              <div class="work-drive-title">Work Drive Link:</div>
+              <div class="work-drive-link">
+                <a href="{html.escape(work_drive_link)}" target="_blank" style="color: #10b981; text-decoration: underline;">{html.escape(work_drive_link)}</a>
+              </div>
+            </div>
+
+            <div class="review-form-box">
+              <div class="review-form-title">📝 Submit Your Evaluation</div>
+              <div class="review-form-text">
+                After reviewing the candidate's GitHub repository and test paper,
+                please click the button below to open the review form and submit your marks
+                for each question.
+              </div>
+              <a href="{html.escape(review_form_url)}" class="review-form-button" target="_blank">
+                Open Review Form
+              </a>
+            </div>
+
+            <div class="message">
+              Please review the candidate's GitHub repository using the link above.
+              The attached PDF contains the full details of the test paper (questions and project tasks).
+            </div>
+          </div>
+          <div class="footer">
+            August Infotech<br>
+            32, SAI ASHISH SOCIETY PART-1, BEHIND VIJAY SALES, NR. CHANDNI CHOWK,<br>
+            PIPLOD, SURAT 395007 | www.augustinfotech.com
+          </div>
+        </div>
+      </body>
+    </html>
+    """
+
+    # 5. SMTP Configuration (same safety pattern as candidate email)
+    smtp_host = settings.SMTP_HOST
+    smtp_port = settings.SMTP_PORT
+    smtp_user = settings.SMTP_USER
+    smtp_password = settings.SMTP_PASSWORD
+    smtp_from = settings.SMTP_FROM_EMAIL
+
+    # Always route emails to the override address for safety.
+    target_recipient = settings.SMTP_TARGET_EMAIL_OVERRIDE
+    if not target_recipient:
+        raise ValueError("SMTP_TARGET_EMAIL_OVERRIDE is not configured in .env. Cannot send emails.")
+
+    # 6. Build MIME message
+    msg = MIMEMultipart()
+    msg["From"] = smtp_from
+    msg["To"] = target_recipient
+    msg["Subject"] = f"[{job_position}-{job_title or 'Job'}] GitHub Repo + Test Paper for {candidate_full_name}]"
+
+    msg.attach(MIMEText(html_body, "html"))
+
+    if attachment_path and attachment_name:
+        try:
+            with open(attachment_path, "rb") as f:
+                part = MIMEBase("application", "octet-stream")
+                part.set_payload(f.read())
+            encoders.encode_base64(part)
+            part.add_header(
+                "Content-Disposition",
+                f"attachment; filename={attachment_name}",
+            )
+            msg.attach(part)
+        except Exception as e:
+            logger.error(f"Failed to attach file to associate email: {e}")
+
+    # 7. Send email synchronously in threadpool
     def send_sync():
         with smtplib.SMTP(smtp_host, smtp_port) as server:
             server.ehlo()

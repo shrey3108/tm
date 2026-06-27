@@ -267,17 +267,17 @@ class TaskPaperAssignService:
         assigned_name = paper.name
         # Allow overriding template questions/tasks manually
         assigned_questions = (
-            [q.model_dump() if hasattr(q, "model_dump") else q for q in assign_data.questions]
+            [q.model_dump(mode="json") if hasattr(q, "model_dump") else q for q in assign_data.questions]
             if assign_data.questions is not None
             else paper.questions
         )
         assigned_mcqs = (
-            [m.model_dump() if hasattr(m, "model_dump") else m for m in assign_data.mcqs]
+            [m.model_dump(mode="json") if hasattr(m, "model_dump") else m for m in assign_data.mcqs]
             if assign_data.mcqs
             else paper.mcqs
         )
         assigned_task = (
-            [t.model_dump() if hasattr(t, "model_dump") else t for t in assign_data.project_task]
+            [t.model_dump(mode="json") if hasattr(t, "model_dump") else t for t in assign_data.project_task]
             if assign_data.project_task
             else paper.project_task
         )
@@ -386,7 +386,7 @@ class TaskPaperAssignService:
         # Slice the top 10 since they are already sorted by weightage descending
         assigned_questions = unique_questions[:10]
         selected_mcqs = unique_mcqs[:10]
-        assigned_mcqs = [m.model_dump() if hasattr(m, "model_dump") else m for m in selected_mcqs]
+        assigned_mcqs = [m.model_dump(mode="json") if hasattr(m, "model_dump") else m for m in selected_mcqs]
 
         return assigned_name, assigned_questions, assigned_mcqs, assigned_task, assigned_file_path, assigned_skills
 
@@ -399,17 +399,17 @@ class TaskPaperAssignService:
 
         assigned_name = "Custom Test Paper"
         assigned_questions = (
-            [q.model_dump() if hasattr(q, "model_dump") else q for q in assign_data.questions]
+            [q.model_dump(mode="json") if hasattr(q, "model_dump") else q for q in assign_data.questions]
             if assign_data.questions
             else []
         )
         assigned_mcqs = (
-            [m.model_dump() if hasattr(m, "model_dump") else m for m in assign_data.mcqs]
+            [m.model_dump(mode="json") if hasattr(m, "model_dump") else m for m in assign_data.mcqs]
             if assign_data.mcqs
             else []
         )
         assigned_task = (
-            [t.model_dump() if hasattr(t, "model_dump") else t for t in assign_data.project_task]
+            [t.model_dump(mode="json") if hasattr(t, "model_dump") else t for t in assign_data.project_task]
             if assign_data.project_task
             else []
         )
@@ -428,19 +428,19 @@ class TaskPaperAssignService:
     async def _build_hybrid(self, db: AsyncSession, assign_data: CandidateTestPaperAssign) -> tuple:
         assigned_name = "Hybrid Custom Test Paper"
         final_questions = (
-            [q.model_dump() if hasattr(q, "model_dump") else q for q in assign_data.questions]
+            [q.model_dump(mode="json") if hasattr(q, "model_dump") else q for q in assign_data.questions]
             if assign_data.questions
             else []
         )
         final_mcqs = (
-            [m.model_dump() if hasattr(m, "model_dump") else m for m in assign_data.mcqs]
+            [m.model_dump(mode="json") if hasattr(m, "model_dump") else m for m in assign_data.mcqs]
             if assign_data.mcqs
             else []
         )
         final_tasks = (
             [
                 t if isinstance(t, dict)
-                else t.model_dump() if hasattr(t, "model_dump")
+                else t.model_dump(mode="json") if hasattr(t, "model_dump")
                 else {"task": str(t), "instructions": ""}
                 for t in assign_data.project_task
             ]

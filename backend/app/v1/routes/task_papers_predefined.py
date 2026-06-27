@@ -264,9 +264,11 @@ async def create_manual_question_set_paper(
                 )
 
     # Process source_mix for hybrid mode
-    final_questions = [q.model_dump() for q in payload.questions] if payload.questions else []
-    final_mcqs = [m.model_dump() for m in payload.mcqs] if payload.mcqs else []
-    final_tasks = [t.model_dump() for t in payload.project_task] if payload.project_task else []
+    # Use mode="json" so UUID objects in skill_ids are converted to strings
+    # (otherwise JSONB serialization fails with "Object of type UUID is not JSON serializable")
+    final_questions = [q.model_dump(mode="json") for q in payload.questions] if payload.questions else []
+    final_mcqs = [m.model_dump(mode="json") for m in payload.mcqs] if payload.mcqs else []
+    final_tasks = [t.model_dump(mode="json") for t in payload.project_task] if payload.project_task else []
 
     if getattr(payload, "source_mix", None):
         for mix_item in payload.source_mix:
@@ -427,48 +429,63 @@ async def get_all_questions_and_tasks(
     result = await db.execute(query)
     items = result.all()
     
-    all_questions = set()
-    all_tasks = set()
-    all_mcqs = []
-    seen_mcq_questions = set()
-    
+    # Use dicts keyed by question/task text so we preserve marks, duration, etc.
+    all_questions: dict[str, dict] = {}
+    all_tasks: dict[str, dict] = {}
+    all_mcqs: list[dict] = []
+    seen_mcq_questions: set[str] = set()
+
     for questions, tasks, mcqs in items:
         if questions:
             for question_item in questions:
                 if isinstance(question_item, str):
-                    all_questions.add(question_item)
+                    if question_item not in all_questions:
+                        all_questions[question_item] = {"question": question_item}
                 elif isinstance(question_item, dict):
                     val = question_item.get('question') or question_item.get('content')
                     if val and isinstance(val, str):
-                        all_questions.add(val)
+                        # Keep the first occurrence (with marks/duration) to deduplicate.
+                        if val not in all_questions:
+                            # Preserve skill_ids (now safe — model_dump(mode="json")
+                            # converts UUIDs to strings). Needed for skill-weighted marks.
+                            all_questions[val] = question_item
         if tasks:
             for t in tasks:
                 if isinstance(t, str):
-                    all_tasks.add(t)
+                    if t not in all_tasks:
+                        all_tasks[t] = {"task": t}
                 elif isinstance(t, dict):
                     val = t.get('task') or t.get('content') or t.get('task_title') or t.get('title')
                     if val and isinstance(val, str):
-                        all_tasks.add(val)
+                        if val not in all_tasks:
+                            # Preserve skill_ids (now safe — model_dump(mode="json")
+                            # converts UUIDs to strings). Needed for skill-weighted marks.
+                            all_tasks[val] = t
         if mcqs:
             for m in mcqs:
                 if isinstance(m, dict):
                     q_text = m.get("question")
                     if q_text and q_text not in seen_mcq_questions:
                         seen_mcq_questions.add(q_text)
-                        # Exclude the answer key to show only the question and options
+                        # Exclude the answer key to show only the question and options,
+                        # but preserve marks, duration, and skill_ids (needed for
+                        # skill-weighted marks; safe as strings via model_dump(mode="json")).
                         all_mcqs.append({
                             "question": q_text,
-                            "options": m.get("options", [])
+                            "options": m.get("options", []),
+                            "marks": m.get("marks"),
+                            "duration": m.get("duration"),
+                            "skill_ids": m.get("skill_ids"),
                         })
-                        
+
     if q:
         q_lower = q.lower()
-        all_questions = {x for x in all_questions if q_lower in x.lower()}
-        all_tasks = {x for x in all_tasks if q_lower in x.lower()}
+        all_questions = {k: v for k, v in all_questions.items() if q_lower in k.lower()}
+        all_tasks = {k: v for k, v in all_tasks.items() if q_lower in k.lower()}
         all_mcqs = [m for m in all_mcqs if q_lower in m.get("question", "").lower()]
 
-    q_list = list(all_questions)
-    t_list = list(all_tasks)
+    q_list = list(all_questions.values())
+    t_list = list(all_tasks.values())
     
     if limit is not None:
         q_list = q_list[skip:skip + limit]
@@ -601,7 +618,7 @@ async def add_question_to_paper(
         raise HTTPException(status_code=400, detail="This question already exists in the system.")
 
     new_questions = list(paper.questions) if paper.questions else []
-    new_questions.append(payload.question.model_dump())
+    new_questions.append(payload.question.model_dump(mode="json"))
     paper.questions = new_questions
     
     # Append skills if provided
@@ -648,7 +665,7 @@ async def update_question_in_paper(
         if await handle_duplicate_question(question_text, paper.department_id, paper.position_id, paper.skills, db):
             return paper
             
-    new_questions[index] = payload.question.model_dump()
+    new_questions[index] = payload.question.model_dump(mode="json")
     paper.questions = new_questions
     
     # Append skills if provided
@@ -721,7 +738,7 @@ async def add_mcq_to_paper(
         return paper
 
     new_mcqs = list(current_mcqs)
-    new_mcqs.append(mcq_data.model_dump())
+    new_mcqs.append(mcq_data.model_dump(mode="json"))
     paper.mcqs = new_mcqs
     
     # Append skills if provided
@@ -768,7 +785,7 @@ async def update_mcq_in_paper(
         if await handle_duplicate_mcq(mcq_question, paper.department_id, paper.position_id, paper.skills, db):
             return paper
 
-    new_mcqs[index] = mcq_data.model_dump()
+    new_mcqs[index] = mcq_data.model_dump(mode="json")
     paper.mcqs = new_mcqs
     
     # Append skills if provided
@@ -842,7 +859,7 @@ async def add_task_to_paper(
         return paper
 
     new_tasks = list(paper.project_task) if paper.project_task else []
-    new_tasks.append(task_obj.model_dump())
+    new_tasks.append(task_obj.model_dump(mode="json"))
     paper.project_task = new_tasks
     
     # Append skills if provided
@@ -889,7 +906,7 @@ async def update_task_in_paper(
         if await handle_duplicate_task(task_obj.task, paper.department_id, paper.position_id, paper.skills, db):
             return paper
 
-    new_tasks[index] = task_obj.model_dump()
+    new_tasks[index] = task_obj.model_dump(mode="json")
     paper.project_task = new_tasks
     
     # Append skills if provided

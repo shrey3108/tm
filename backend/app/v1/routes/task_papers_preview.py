@@ -109,7 +109,7 @@ async def preview_random_questions(
     assigned_mcqs = []
     if unique_mcqs:
         selected_mcqs = random.sample(unique_mcqs, min(count, len(unique_mcqs)))
-        assigned_mcqs = [m.model_dump() if hasattr(m, "model_dump") else m for m in selected_mcqs]
+        assigned_mcqs = [m.model_dump(mode="json") if hasattr(m, "model_dump") else m for m in selected_mcqs]
 
     papers_with_tasks = [p for p in papers if p.project_task and len(p.project_task) > 0]
     if papers_with_tasks:

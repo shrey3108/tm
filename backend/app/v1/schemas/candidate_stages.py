@@ -51,3 +51,32 @@ class StageOverrideCreate(BaseModel):
 class StageDecisionCreate(BaseModel):
     decision: Literal["pass", "fail", "May Be"] = Field(..., description="Final decision for this stage")
     notes: Optional[str] = Field(None, description="Optional decision notes")
+
+
+class SendToAssociatesRequest(BaseModel):
+    """Request body for sending test paper + GitHub URL to multiple associates."""
+    associate_ids: list[uuid.UUID] = Field(
+        ..., min_length=1, description="List of associate IDs to notify via email"
+    )
+
+
+class AssociateEmailResult(BaseModel):
+    """Result of sending an email to a single associate."""
+    associate_id: uuid.UUID
+    name: str
+    email: str
+    status: str  # "sent" or "failed"
+    error: Optional[str] = None
+
+
+class SendToAssociatesResponse(BaseModel):
+    """Response after sending test paper + GitHub URL to associates."""
+    status: str
+    message: str
+    candidate_stage_id: uuid.UUID
+    candidate_name: str
+    github_url: str
+    paper_id: Optional[uuid.UUID] = None
+    paper_name: Optional[str] = None
+    sent_to: list[AssociateEmailResult] = []
+    failed: list[AssociateEmailResult] = []

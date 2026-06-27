@@ -1,11 +1,11 @@
 import uuid
 from datetime import datetime, timezone
-from typing import Any, List
+from typing import Any, List, Optional
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Path
 from pydantic import BaseModel
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -21,13 +21,29 @@ from app.v1.db.models.jobs import Job
 from app.v1.db.models.stage_templates import StageTemplate
 from app.v1.db.models.candidate_test_paper import CandidateTestPaper
 from app.v1.db.models.candidate_test_paper_history import CandidateTestPaperHistory
-from app.v1.schemas.candidate_stages import StageOverrideCreate, StageDecisionCreate, EvaluationRead
+from app.v1.schemas.candidate_stages import (
+    StageOverrideCreate,
+    StageDecisionCreate,
+    EvaluationRead,
+    SendToAssociatesRequest,
+    SendToAssociatesResponse,
+    AssociateEmailResult,
+)
+from app.v1.schemas.associate_review import (
+    AssociateResultsResponse,
+    AssociateReviewResult,
+    QuestionMark,
+)
 from app.v1.schemas.user import UserRead
 from app.v1.dependencies import check_permission
 from app.v1.services.admin_service import admin_service
 from app.v1.services.hr_decision_service import HRDecisionService
 from app.v1.schemas.hr_decision import HRDecisionCreate
 from app.v1.services.evaluation_tasks import evaluate_candidate_practical_task
+from app.v1.db.models.associates import Associate
+from app.v1.db.models.associate_evaluations import AssociateEvaluation
+from app.v1.services.email_service import send_associate_notification_email
+from app.v1.services.admin.audit_service import audit_service
 
 router = APIRouter(prefix="/candidate-stages", tags=["candidate-stages"])
 
@@ -362,19 +378,8 @@ async def evaluate_candidate_github_repo(
     if not candidate or not job:
         raise HTTPException(status_code=400, detail="Candidate or Job association missing.")
 
-    # 3. Resolve GitHub URL (payload URL takes precedence)
+    # 3. Resolve GitHub URL from payload only
     github_url = payload.github_url
-    if not github_url:
-        # Fallback to the one specifically saved for this stage
-        if stage.evaluation_data and isinstance(stage.evaluation_data, dict):
-            github_url = stage.evaluation_data.get("github_url")
-            
-        # If still not found, fallback to candidate global URL
-        if not github_url:
-            task_path = candidate.task_file_path or ""
-            if task_path.startswith(("http://", "https://")) and "github.com" in task_path.lower():
-                github_url = task_path
-
     if not github_url:
         raise HTTPException(
             status_code=400,
@@ -580,8 +585,16 @@ async def retry_candidate_stage_evaluation(
     await db.refresh(stage.job_stage, ["template"])
     
     if is_practical_evaluation(stage):
-        # Retry GitHub evaluation using the empty payload fallback logic
-        payload = GitHubEvaluationRequest(github_url=None)
+        # Retry GitHub evaluation using the previously saved github_url
+        saved_url = None
+        if stage.evaluation_data and isinstance(stage.evaluation_data, dict):
+            saved_url = stage.evaluation_data.get("github_url")
+        if not saved_url:
+            raise HTTPException(
+                status_code=400,
+                detail="GitHub URL not found. Please provide a valid GitHub repository URL in the request body.",
+            )
+        payload = GitHubEvaluationRequest(github_url=saved_url)
         return await evaluate_candidate_github_repo(id, payload, db, user)
         
     else:
@@ -653,3 +666,417 @@ async def delete_candidate_stage_results(
         "candidate_stage_id": id,
         "status": "pending"
     }
+
+
+@router.post("/{id}/send-to-associates", response_model=SendToAssociatesResponse)
+async def send_paper_to_associates(
+    id: uuid.UUID,
+    payload: SendToAssociatesRequest,
+    db: AsyncSession = Depends(get_db),
+    user: UserRead = Depends(check_permission("candidates:decide")),
+) -> Any:
+    """Send the default test paper + candidate GitHub URL to multiple associates via email.
+
+    Used for the GitHub + Question round where associates need the paper and the
+    candidate's GitHub repository link to evaluate the submission.
+    """
+    # 1. Fetch CandidateStage with eager relationships
+    stmt = (
+        select(CandidateStage)
+        .options(
+            selectinload(CandidateStage.job_stage).options(
+                selectinload(JobStageConfig.job).options(
+                    selectinload(Job.skills),
+                    selectinload(Job.position),
+                ),
+                selectinload(JobStageConfig.template),
+            ),
+            selectinload(CandidateStage.candidate),
+        )
+        .where(CandidateStage.id == id)
+    )
+    res = await db.execute(stmt)
+    stage = res.scalars().first()
+
+    if not stage:
+        raise HTTPException(status_code=404, detail="Candidate stage not found")
+
+    candidate = stage.candidate
+    if not candidate:
+        raise HTTPException(status_code=400, detail="Candidate association missing.")
+
+    # 2. Resolve GitHub URL from the saved stage evaluation_data
+    #    (saved automatically when evaluate-github endpoint runs)
+    github_url = None
+    if stage.evaluation_data and isinstance(stage.evaluation_data, dict):
+        github_url = stage.evaluation_data.get("github_url")
+    if not github_url:
+        raise HTTPException(
+            status_code=400,
+            detail="GitHub URL not found. Please run the GitHub evaluation for this stage first to save the repository URL.",
+        )
+
+    # 3. Fetch the default test paper for this job stage
+    #    (CandidateTestPaper where candidate_id IS NULL = job-level default)
+    test_paper = None
+    if candidate.applied_job_id:
+        stmt_job = select(CandidateTestPaper).where(
+            CandidateTestPaper.job_id == candidate.applied_job_id,
+            CandidateTestPaper.candidate_id.is_(None),
+        )
+        if stage.job_stage_id:
+            # Try stage-specific paper first
+            stmt_job_stage = stmt_job.where(CandidateTestPaper.job_stage_config_id == stage.job_stage_id)
+            res_job = await db.execute(stmt_job_stage)
+            test_paper = res_job.scalar_one_or_none()
+            if not test_paper:
+                # Fallback to NULL stage paper
+                stmt_job_none = stmt_job.where(CandidateTestPaper.job_stage_config_id.is_(None))
+                res_job = await db.execute(stmt_job_none)
+                test_paper = res_job.scalar_one_or_none()
+        else:
+            stmt_job = stmt_job.where(CandidateTestPaper.job_stage_config_id.is_(None))
+            res_job = await db.execute(stmt_job)
+            test_paper = res_job.scalar_one_or_none()
+
+    if not test_paper:
+        raise HTTPException(
+            status_code=400,
+            detail="No default test paper found for this job stage. Please assign a test paper first.",
+        )
+
+    # 4. Fetch associates by IDs
+    stmt_assoc = select(Associate).where(Associate.id.in_(payload.associate_ids))
+    res_assoc = await db.execute(stmt_assoc)
+    associates = res_assoc.scalars().all()
+
+    if not associates:
+        raise HTTPException(
+            status_code=404,
+            detail="No associates found for the provided IDs.",
+        )
+
+    # 5. Send email to each associate
+    candidate_full_name = f"{candidate.first_name or 'Candidate'} {candidate.last_name or ''}".strip()
+    sent_results: list[AssociateEmailResult] = []
+    failed_results: list[AssociateEmailResult] = []
+
+    for associate in associates:
+        try:
+            # Create an AssociateEvaluation record with a unique review token.
+            # This token is used to build the link to the review form (no auth required).
+            evaluation = AssociateEvaluation(
+                candidate_stage_id=stage.id,
+                associate_id=associate.id,
+                test_paper_id=test_paper.id,
+                candidate_id=candidate.id,
+                job_id=candidate.applied_job_id,
+            )
+            db.add(evaluation)
+            await db.flush()  # populate review_token + id
+
+            await send_associate_notification_email(
+                associate_name=associate.name,
+                associate_email=associate.email,
+                candidate=candidate,
+                test_paper=test_paper,
+                github_url=github_url,
+                review_token=evaluation.review_token,
+                db=db,
+            )
+            sent_results.append(
+                AssociateEmailResult(
+                    associate_id=associate.id,
+                    name=associate.name,
+                    email=associate.email,
+                    status="sent",
+                )
+            )
+        except Exception as e:
+            get_logger(__name__).exception(
+                f"Failed to send paper email to associate {associate.email}: {e}"
+            )
+            failed_results.append(
+                AssociateEmailResult(
+                    associate_id=associate.id,
+                    name=associate.name,
+                    email=associate.email,
+                    status="failed",
+                    error=str(e),
+                )
+            )
+
+    # 6. Log audit entry
+    try:
+        await audit_service.log_action(
+            db=db,
+            user_id=user.id,
+            action="send_paper_to_associates",
+            entity_type="candidate_stage",
+            entity_id=id,
+            details={
+                "candidate_name": candidate_full_name,
+                "github_url": github_url,
+                "paper_id": str(test_paper.id),
+                "paper_name": test_paper.name,
+                "associate_count": len(associates),
+                "sent_count": len(sent_results),
+                "failed_count": len(failed_results),
+            },
+        )
+    except Exception as e:
+        get_logger(__name__).warning(f"Failed to log audit entry: {e}")
+    finally:
+        # Always commit so AssociateEvaluation records (with review tokens)
+        # are persisted even if audit logging fails.
+        await db.commit()
+
+    # 7. Build response
+    if not sent_results and failed_results:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to send any emails. Error sample: {failed_results[0].error}",
+        )
+
+    return SendToAssociatesResponse(
+        status="success",
+        message=f"Test paper + GitHub URL email processed: {len(sent_results)} sent, {len(failed_results)} failed.",
+        candidate_stage_id=id,
+        candidate_name=candidate_full_name,
+        github_url=github_url,
+        paper_id=test_paper.id,
+        paper_name=test_paper.name,
+        sent_to=sent_results,
+        failed=failed_results,
+    )
+
+
+@router.get("/{id}/associate-results", response_model=AssociateResultsResponse)
+async def get_associate_results(
+    id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    user: UserRead = Depends(check_permission("candidates:decide")),
+) -> Any:
+    """Retrieve all associate evaluation results for a candidate stage.
+
+    Returns 404 if no AssociateEvaluation records exist for this stage (i.e. no
+    email was ever sent to associates). Each review includes per-question marks,
+    total marks, sent/submitted timestamps, and pass/fail result.
+    """
+    # 1. Fetch the CandidateStage with eager relationships for job info
+    stmt = (
+        select(CandidateStage)
+        .options(
+            selectinload(CandidateStage.job_stage).options(
+                selectinload(JobStageConfig.job).options(
+                    selectinload(Job.department),
+                    selectinload(Job.position),
+                ),
+            ),
+            selectinload(CandidateStage.candidate),
+        )
+        .where(CandidateStage.id == id)
+    )
+    res = await db.execute(stmt)
+    stage = res.scalars().first()
+
+    if not stage:
+        raise HTTPException(status_code=404, detail="Candidate stage not found")
+
+    candidate = stage.candidate
+    if not candidate:
+        raise HTTPException(status_code=400, detail="Candidate association missing.")
+
+    # 2. Fetch all AssociateEvaluation records for this stage (eager-load associate + job)
+    eval_stmt = (
+        select(AssociateEvaluation)
+        .options(
+            selectinload(AssociateEvaluation.associate),
+            selectinload(AssociateEvaluation.job).options(
+                selectinload(Job.department),
+                selectinload(Job.position),
+            ),
+        )
+        .where(AssociateEvaluation.candidate_stage_id == id)
+        .order_by(AssociateEvaluation.sent_at)
+    )
+    eval_res = await db.execute(eval_stmt)
+    evaluations = eval_res.scalars().all()
+
+    # 3. Return 404 if no records exist (no email was sent to associates)
+    if not evaluations:
+        raise HTTPException(
+            status_code=404,
+            detail="No associate evaluations found for this candidate stage. "
+            "Please send the test paper to associates first.",
+        )
+
+    # 4. Resolve candidate name
+    candidate_full_name = f"{candidate.first_name or 'Candidate'} {candidate.last_name or ''}".strip()
+
+    # 5. Resolve job info (job_name, department, position) from the first evaluation's job
+    job = evaluations[0].job
+    job_name = ""
+    department_name = ""
+    position_name = ""
+    if job:
+        job_name = job.title or ""
+        if job.department:
+            department_name = job.department.name or ""
+        if job.position:
+            position_name = job.position.name or ""
+
+    # 6. Fetch job_skills weightages for skill-weighted marks computation.
+    #    Each question's weight = its skill's weightage (from job_skills).
+    #    We then normalize all question weights to a 100 basis so the final
+    #    weighted score is directly comparable across papers.
+    job_id = evaluations[0].job_id
+    skill_weightages: dict[str, float] = {}
+    if job_id:
+        js_query = text(
+            "SELECT skill_id, weightage FROM job_skills WHERE job_id = :job_id"
+        )
+        js_res = await db.execute(js_query, {"job_id": job_id})
+        skill_weightages = {
+            str(row[0]): float(row[1]) for row in js_res.fetchall()
+        }
+
+    # 7. Resolve github_url from stage.evaluation_data
+    github_url = None
+    if stage.evaluation_data and isinstance(stage.evaluation_data, dict):
+        github_url = stage.evaluation_data.get("github_url")
+
+    # Default weightage for skills not found in job_skills or for
+    # questions without any skill_ids tagging.
+    _DEFAULT_SKILL_WEIGHT = 10.0
+
+    # 8. Build review result list
+    reviews: list[AssociateReviewResult] = []
+    submitted_count = 0
+    for ev in evaluations:
+        associate = ev.associate
+
+        # Parse marks JSONB into QuestionMark list with skill-weighted fields.
+        question_marks: list[QuestionMark] | None = None
+        weighted_total: Optional[float] = None
+        weighted_max_total: Optional[float] = None
+        weighted_result_out_of_5: Optional[float] = None
+
+        if ev.marks:
+            question_marks = []
+
+            # --- First pass: compute raw weight per question ---
+            # raw_weight = average of the skill weightages tagged on the
+            # question.  Questions without skill_ids get the default weight.
+            raw_weights: list[float] = []
+            for m in ev.marks:
+                if not isinstance(m, dict):
+                    raw_weights.append(_DEFAULT_SKILL_WEIGHT)
+                    continue
+                s_ids = m.get("skill_ids")
+                if s_ids:
+                    weights = [
+                        skill_weightages.get(str(sid), _DEFAULT_SKILL_WEIGHT)
+                        for sid in s_ids
+                    ]
+                    raw_w = sum(weights) / len(weights) if weights else 0.0
+                else:
+                    raw_w = _DEFAULT_SKILL_WEIGHT
+                raw_weights.append(raw_w)
+
+            # --- Normalize to 100 basis ---
+            # new_question_weight = old_question_weight / total * 100
+            total_raw_weight = sum(raw_weights)
+            normalized_weights: list[float] = []
+            if total_raw_weight > 0:
+                for rw in raw_weights:
+                    normalized_weights.append((rw / total_raw_weight) * 100)
+            else:
+                # Fallback: equal weights when all raw weights are zero.
+                n = len(raw_weights)
+                normalized_weights = (
+                    [100.0 / n] * n if n > 0 else []
+                )
+
+            # --- Second pass: build QuestionMark objects ---
+            w_total = 0.0
+            w_max = 0.0
+            for idx, m in enumerate(ev.marks):
+                if not isinstance(m, dict):
+                    continue
+                max_m = m.get("max_marks")
+                awarded = m.get("awarded_marks")
+                sw = (
+                    normalized_weights[idx]
+                    if idx < len(normalized_weights)
+                    else 0.0
+                )
+
+                w_marks: Optional[float] = None
+                w_max_q: Optional[float] = None
+                if max_m is not None and max_m > 0:
+                    # This question is scorable.
+                    w_max_q = sw
+                    w_max += sw
+                    if awarded is not None:
+                        w_marks = (awarded / max_m) * sw
+                        w_total += w_marks
+
+                question_marks.append(
+                    QuestionMark(
+                        item_type=str(m.get("item_type", "question")),
+                        question_text=str(m.get("question_text", "")),
+                        max_marks=max_m,
+                        awarded_marks=awarded,
+                        skill_ids=m.get("skill_ids"),
+                        skill_weight=round(sw, 2),
+                        weighted_marks=(
+                            round(w_marks, 2) if w_marks is not None else None
+                        ),
+                        weighted_max=(
+                            round(w_max_q, 2) if w_max_q is not None else None
+                        ),
+                    )
+                )
+
+            # Compute aggregate weighted scores and convert to a scale of 5
+            # so the result is easy to interpret (e.g. 40/60 -> 3.33 out of 5).
+            if w_max > 0:
+                weighted_total = round(w_total, 2)
+                weighted_max_total = round(w_max, 2)
+                weighted_result_out_of_5 = round((w_total / w_max) * 5, 2)
+
+        if ev.status == "submitted":
+            submitted_count += 1
+
+        reviews.append(
+            AssociateReviewResult(
+                id=ev.id,
+                associate_id=ev.associate_id,
+                associate_name=associate.name if associate else "Unknown",
+                associate_email=associate.email if associate else "",
+                sent_at=ev.sent_at,
+                submitted_at=ev.submitted_at,
+                status=ev.status,
+                marks=question_marks,
+                total_marks=ev.total_marks,
+                max_total_marks=ev.max_total_marks,
+                result=ev.result,
+                weighted_total=weighted_total,
+                weighted_max=weighted_max_total,
+                weighted_result_out_of_5=weighted_result_out_of_5,
+            )
+        )
+
+    # 9. Build and return response
+    return AssociateResultsResponse(
+        candidate_stage_id=id,
+        candidate_name=candidate_full_name,
+        job_name=job_name,
+        department=department_name,
+        position=position_name,
+        github_url=github_url,
+        reviews=reviews,
+        total_associates=len(reviews),
+        submitted_count=submitted_count,
+    )

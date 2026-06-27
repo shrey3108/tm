@@ -34,6 +34,8 @@ DEFAULT_PERMISSIONS = [
     {"name": "skills:manage", "description": "Create, update, and delete skills."},
     {"name": "departments:access", "description": "View departments list and details."},
     {"name": "departments:manage", "description": "Create, update, and delete departments."},
+    {"name": "associates:access", "description": "View associates list and details."},
+    {"name": "associates:manage", "description": "Create, update, and delete associates."},
 
     {"name": "audit:read", "description": "View system audit logs."},
     {"name": "files:read", "description": "View uploaded files and resumes."},
@@ -60,6 +62,8 @@ ROLE_PERMISSION_NAMES: dict[str, set[str]] = {
         "skills:manage",
         "departments:access",
         "departments:manage",
+        "associates:access",
+        "associates:manage",
 
         "files:read",
         "analytics:read",

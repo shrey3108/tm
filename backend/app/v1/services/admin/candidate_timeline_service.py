@@ -10,7 +10,7 @@ import uuid
 from typing import Any
 
 from fastapi import HTTPException
-from sqlalchemy import select, and_, or_
+from sqlalchemy import select, and_, or_, text
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -21,12 +21,74 @@ from app.v1.db.models.resume_version_results import ResumeVersionResult
 from app.v1.db.models.candidate_stages import CandidateStage
 from app.v1.db.models.job_stage_configs import JobStageConfig
 from app.v1.db.models.evaluations import Evaluation
+from app.v1.db.models.associate_evaluations import AssociateEvaluation
 
 
 class CandidateTimelineService:
     """
     Service for building a candidate's chronological timeline.
     """
+
+    @staticmethod
+    def _compute_weighted_result_out_of_5(
+        marks: list[dict] | None,
+        skill_weightages: dict[str, float],
+        default_weight: float = 10.0,
+    ) -> float | None:
+        """Compute skill-weighted result on a scale of 5 for an associate's marks.
+
+        Mirrors the weighting logic in candidate_stages.get_associate_results:
+        each question's weight is derived from its tagged skills' weightages
+        (from job_skills), normalized to a 100 basis, then the weighted total
+        is converted to a 0-5 scale (e.g. 40/60 -> 3.33 out of 5).
+        """
+        if not marks:
+            return None
+
+        # First pass: compute raw weight per question
+        raw_weights: list[float] = []
+        for m in marks:
+            if not isinstance(m, dict):
+                raw_weights.append(default_weight)
+                continue
+            s_ids = m.get("skill_ids")
+            if s_ids:
+                weights = [
+                    skill_weightages.get(str(sid), default_weight)
+                    for sid in s_ids
+                ]
+                raw_w = sum(weights) / len(weights) if weights else 0.0
+            else:
+                raw_w = default_weight
+            raw_weights.append(raw_w)
+
+        # Normalize to 100 basis
+        total_raw_weight = sum(raw_weights)
+        normalized_weights: list[float] = []
+        if total_raw_weight > 0:
+            for rw in raw_weights:
+                normalized_weights.append((rw / total_raw_weight) * 100)
+        else:
+            n = len(raw_weights)
+            normalized_weights = [100.0 / n] * n if n > 0 else []
+
+        # Second pass: compute weighted total and max
+        w_total = 0.0
+        w_max = 0.0
+        for idx, m in enumerate(marks):
+            if not isinstance(m, dict):
+                continue
+            max_m = m.get("max_marks")
+            awarded = m.get("awarded_marks")
+            sw = normalized_weights[idx] if idx < len(normalized_weights) else 0.0
+            if max_m is not None and max_m > 0:
+                w_max += sw
+                if awarded is not None:
+                    w_total += (awarded / max_m) * sw
+
+        if w_max > 0:
+            return round((w_total / w_max) * 5, 2)
+        return None
 
     async def get_candidate_timeline(
         self, 
@@ -65,6 +127,35 @@ class CandidateTimelineService:
 
         # Build a map for easy lookup by JobStageConfig ID to match with Decisions
         config_to_candidate_stage_map = {s.job_stage_id: s.id for s in stages}
+
+        # Fetch associate evaluations for all stages (github+question round).
+        # Grouped by candidate_stage_id for quick lookup in the stage loop.
+        stage_ids = [s.id for s in stages]
+        assoc_evals_by_stage: dict[uuid.UUID, list] = {}
+        if stage_ids:
+            assoc_stmt = (
+                select(AssociateEvaluation)
+                .where(AssociateEvaluation.candidate_stage_id.in_(stage_ids))
+                .options(selectinload(AssociateEvaluation.associate))
+            )
+            assoc_evals = (await db.execute(assoc_stmt)).scalars().all()
+            for ae in assoc_evals:
+                assoc_evals_by_stage.setdefault(ae.candidate_stage_id, []).append(ae)
+
+        # Fetch job_skills weightages for all relevant jobs (one query per job).
+        job_ids = list({
+            s.job_stage.job_id for s in stages
+            if s.job_stage and s.job_stage.job_id
+        })
+        skill_weightages_by_job: dict[Any, dict[str, float]] = {}
+        for j_id in job_ids:
+            js_query = text(
+                "SELECT skill_id, weightage FROM job_skills WHERE job_id = :job_id"
+            )
+            js_res = await db.execute(js_query, {"job_id": j_id})
+            skill_weightages_by_job[j_id] = {
+                str(row[0]): float(row[1]) for row in js_res.fetchall()
+            }
         
         # Track the 'first' stage (usually Resume Screening) per job for consolidation
         first_stage_per_job = {} # job_id -> event_key
@@ -145,7 +236,24 @@ class CandidateTimelineService:
             event_date = stage.completed_at or (eval_obj.created_at if eval_obj else None) or resume_analyzed_at
             if not event_date and stage.status not in ["pending", "active"]:
                 event_date = stage.started_at
-            
+
+            # Associate evaluation marks (github+question round).
+            # Each submitted associate's weighted result on a 0-5 scale.
+            associate_marks: list[dict[str, Any]] = []
+            stage_assoc_evals = assoc_evals_by_stage.get(stage.id, [])
+            if stage_assoc_evals:
+                j_id = stage.job_stage.job_id if stage.job_stage else None
+                sw_map = skill_weightages_by_job.get(j_id, {}) if j_id else {}
+                for ae in stage_assoc_evals:
+                    if ae.status == "submitted" and ae.marks:
+                        result_5 = self._compute_weighted_result_out_of_5(
+                            ae.marks, sw_map
+                        )
+                        associate_marks.append({
+                            "associate_name": ae.associate.name if ae.associate else "Unknown",
+                            "marks": result_5,
+                        })
+
             event_key = f"stage_{stage.id}"
             events_map[event_key] = {
                 "event_type": "stage",
@@ -163,7 +271,8 @@ class CandidateTimelineService:
                 "job_id": stage.job_stage.job_id if stage.job_stage else None,
                 "job_stage_config_id": stage.job_stage_id if stage.job_stage_id else None,
                 "stage_order": get_order(stage),
-                "metadata": metadata
+                "metadata": metadata,
+                "associate_marks": associate_marks,
             }
 
         # 4. Handle Standalone Screenings (Fallbacks for missing stages)
