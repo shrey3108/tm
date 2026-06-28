@@ -95,11 +95,12 @@ export default function AdminJobStageForm() {
                 name,
                 description: description || "",
                 default_config: {
-                    criteria_ids: config?.evaluation_criteria?.map((item) =>
-                        typeof item === "string"
+                    criteria_ids: config?.evaluation_criteria?.flatMap((item) => {
+                        const val = typeof item === "string"
                             ? item
-                            : (item && typeof item === "object" && "id" in item ? (item as { id?: string | null }).id : "")
-                    ).filter(Boolean) || [],
+                            : (item && typeof item === "object" && "id" in item ? (item as { id?: string | null }).id : "");
+                        return val ? [val] : [];
+                    }) || [],
                     is_active: config?.is_active ?? true,
                     required_inputs: config?.required_inputs || [],
                 },

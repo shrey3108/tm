@@ -119,18 +119,16 @@ const AdminSkills = () => {
     // Simple parser for comma-separated job names: [Job A, Job B]
     const jobNames = jobNamesStr
       .split(",")
-      .map((name) => {
+      .flatMap((name) => {
         const trimmed = name.trim();
         // remove quotes if they exist (for robustness)
-        if (
+        const val =
           (trimmed.startsWith("'") && trimmed.endsWith("'")) ||
           (trimmed.startsWith('"') && trimmed.endsWith('"'))
-        ) {
-          return trimmed.slice(1, -1);
-        }
-        return trimmed;
-      })
-      .filter(Boolean);
+            ? trimmed.slice(1, -1)
+            : trimmed;
+        return val ? [val] : [];
+      });
 
     return (
       <div className="space-y-3 font-medium">

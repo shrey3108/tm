@@ -111,17 +111,15 @@ const AdminJobCriteria = () => {
 
         const jobNames = jobNamesStr
             .split(",")
-            .map((name) => {
+            .flatMap((name) => {
                 let trimmed = name.trim();
-                if (
+                const val =
                     (trimmed.startsWith("'") && trimmed.endsWith("'")) ||
                     (trimmed.startsWith('"') && trimmed.endsWith('"'))
-                ) {
-                    return trimmed.slice(1, -1);
-                }
-                return trimmed;
-            })
-            .filter(Boolean);
+                        ? trimmed.slice(1, -1)
+                        : trimmed;
+                return val ? [val] : [];
+            });
 
         return (
             <div className="space-y-3 font-medium">

@@ -89,8 +89,10 @@ export const SkillSelectorSection = ({
   const selectedSkills = useMemo(() => {
     const uniqueMap = new Map(allSkills.map((s) => [s.id, s]));
     return selectedSkillIds
-      .map((id: string) => uniqueMap.get(id))
-      .filter(Boolean) as SkillRead[];
+      .flatMap((id: string) => {
+        const s = uniqueMap.get(id);
+        return s ? [s] : [];
+      }) as SkillRead[];
   }, [allSkills, selectedSkillIds]);
 
 

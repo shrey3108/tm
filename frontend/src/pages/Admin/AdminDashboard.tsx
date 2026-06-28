@@ -3,14 +3,13 @@
  * Displays analytics summary and hiring reports for administrators.
  */
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, lazy, Suspense } from "react";
 import AdminDataTable, { type Column } from "@/components/shared/AdminDataTable";
 import AppPageShell from "@/components/shared/AppPageShell";
 import PageHeader from "@/components/shared/PageHeader";
 import StatCard from "@/components/shared/StatCard";
 import { useAdminDashboardFilters } from "@/hooks/useAdminDashboardFilters";
 import { Separator } from "@/components/ui/separator";
-import { StageCentricChart } from "@/components/admin/AdminPipelineChart";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { FileText, BarChart3 } from "lucide-react";
@@ -18,7 +17,11 @@ import { useAdminDashboardData } from "@/hooks/queries/admin/useAdminDashboardDa
 import { useJobStage } from "@/hooks/queries/admin/useJobStage";
 import { useJobTitle } from "@/hooks/queries/jobs/useJob";
 import AdminDashboardFilters from "@/components/admin/AdminDashboardFilters";
+import LoadingSpinner from "@/components/shared/LoadingSpinner";
 
+const StageCentricChart = lazy(() =>
+  import("@/components/admin/AdminPipelineChart").then((m) => ({ default: m.StageCentricChart }))
+);
 const AdminDashboard = () => {
   const [viewMode, setViewMode] = useState<"report" | "chart">("report");
   // Fetch job titles
@@ -120,9 +123,11 @@ const AdminDashboard = () => {
             clearFilter={clearFilter}
             hasActiveFilters={hasActiveFilters}
           />
-          <StageCentricChart
-            data={filteredReport?.job_pipeline_stats || []}
-          />
+          <Suspense fallback={<LoadingSpinner message="Loading charts..." fullPage={true} />}>
+            <StageCentricChart
+              data={filteredReport?.job_pipeline_stats || []}
+            />
+          </Suspense>
         </div>
       )}
 

@@ -122,18 +122,16 @@ const AdminJobPriorities = () => {
     // Simple parser for comma-separated job names
     const jobNames = jobNamesStr
       .split(",")
-      .map((name) => {
+      .flatMap((name) => {
         const trimmed = name.trim();
         // remove quotes or brackets if they exist (for robustness)
-        if (
+        const val =
           (trimmed.startsWith("'") && trimmed.endsWith("'")) ||
           (trimmed.startsWith('"') && trimmed.endsWith('"'))
-        ) {
-          return trimmed.slice(1, -1);
-        }
-        return trimmed;
-      })
-      .filter(Boolean);
+            ? trimmed.slice(1, -1)
+            : trimmed;
+        return val ? [val] : [];
+      });
 
     return (
       <div className="space-y-3 font-medium">

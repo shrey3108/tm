@@ -69,7 +69,7 @@ const AdminPrompts = () => {
     // Collect all unique stages from the response data over time
     useEffect(() => {
         if (prompts.length > 0) {
-            const currentStages = prompts.map(p => p.stage).filter(Boolean);
+            const currentStages = prompts.flatMap(p => p.stage ? [p.stage] : []);
             const hasNewStages = currentStages.some(s => !allStages.includes(s));
             if (hasNewStages) {
                 queueMicrotask(() => {

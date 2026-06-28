@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo, useEffect } from "react";
+import { useState, useRef, useMemo, useEffect, lazy, Suspense } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { RotateCw, Layers } from "lucide-react";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
@@ -7,7 +7,6 @@ import { useJobCandidates } from "@/hooks/useJobCandidates";
 import { usePageFilters } from "@/hooks/usePageFilters";
 import { JobCandidatesSkeleton } from "@/components/job/candidates/JobCandidatesSkeleton";
 import { JobCandidatesHeader } from "@/components/job/candidates/JobCandidatesHeader";
-import { JobCandidatesCharts } from "@/components/job/candidates/JobCandidatesCharts";
 import { JobCandidatesStats } from "@/components/job/candidates/JobCandidatesStats";
 import PermissionGuard from "@/components/auth/PermissionGuard";
 import type { CandidateAnalysis } from "@/types/admin";
@@ -26,7 +25,11 @@ import { CandidateDetailsModal } from "@/components/modal/CandidateDetailsModal"
 import { JobInfoModal } from "@/components/modal/JobInfoModal";
 import { Input } from "@/components/ui/input";
 import DeleteModal from "@/components/modal/DeleteModal";
+import LoadingSpinner from "@/components/shared/LoadingSpinner";
 
+const JobCandidatesCharts = lazy(() =>
+  import("@/components/job/candidates/JobCandidatesCharts").then((m) => ({ default: m.JobCandidatesCharts }))
+);
 interface CandidateStagesButtonProps {
   candidate: CandidateAnalysis;
   jobSlug: string | undefined;
@@ -196,10 +199,11 @@ export default function JobCandidates() {
 
   // Compute selected candidates
   const selectedCandidates = useMemo(() => {
-    return Object.keys(rowSelection)
-      .filter((key) => rowSelection[key])
-      .map((key) => candidates[Number(key)])
-      .filter(Boolean);
+    return Object.keys(rowSelection).flatMap((key) => {
+      if (!rowSelection[key]) return [];
+      const candidate = candidates[Number(key)];
+      return candidate ? [candidate] : [];
+    });
   }, [rowSelection, candidates]);
 
   // Compute emailFilterState from filters.test_email_sent
@@ -275,12 +279,16 @@ export default function JobCandidates() {
         {viewMode === "analytics" ? (
           /* Analytics View: Only Charts */
           <div className="animate-in fade-in slide-in-from-right-4 duration-500">
-            <JobCandidatesCharts
-              loading={loading}
-              isRefreshing={isRefreshing}
-              stats={stats}
-              jobStats={jobStats}
-            />
+            <Suspense fallback={
+              <LoadingSpinner message="Loading charts..." fullPage={true} />
+            }>
+              <JobCandidatesCharts
+                loading={loading}
+                isRefreshing={isRefreshing}
+                stats={stats}
+                jobStats={jobStats}
+              />
+            </Suspense>
           </div>
         ) : (
           /* Candidates View: Stats Cards + Table */
