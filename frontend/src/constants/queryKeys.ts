@@ -16,6 +16,8 @@ export const QUERY_KEYS = {
     USERS: "users",
     ROLES: "roles",
     PERMISSIONS: "permissions",
+    ASSOCIATES: "associates",
+    ASSOCIATE_DETAIL: "associate",
     DASHBOARD_DATA: "adminDashboardData",
     CLEAR_CACHE: "adminCache",
   },

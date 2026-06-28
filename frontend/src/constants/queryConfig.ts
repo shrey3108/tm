@@ -29,6 +29,9 @@ export const QUERY_CONFIG = {
     DEPARTMENT: {
         staleTime: minutes(5),
     },
+    ASSOCIATE: {
+        staleTime: minutes(5),
+    },
     LOCATION: {
         staleTime: minutes(5),
     },

@@ -32,6 +32,8 @@ export interface EvaluationRead {
   transcript_id?: string | null;
   version?: number;
   result?: string;
+  status?: string;
+  error_message?: string | null;
   candidate_stage_id: string;
   evaluation_data: Record<string, any> | Record<string, Array<Record<string, Criteria>>>;
   overall_score?: number | null;
@@ -41,7 +43,9 @@ export interface EvaluationRead {
   sim_resume_transcript?: number | null;
   evidence_block?: Record<string, any> | null;
   created_at: string;
-  highlights: Highlight
+  highlights: Highlight;
+  jd_skills?: string[] | null;
+  project_required_skills?: string[] | null;
 }
 
 /**
@@ -98,4 +102,24 @@ export interface Highlights {
   overall_summary: string | CategorizedStringItem[]
   recommendation: string
   [key: string]: any;
+}
+
+export interface AssociateEmailResult {
+  associate_id: string;
+  name: string;
+  email: string;
+  status: string; // "sent" or "failed"
+  error?: string | null;
+}
+
+export interface SendToAssociatesResponse {
+  status: string;
+  message: string;
+  candidate_stage_id: string;
+  candidate_name: string;
+  github_url: string;
+  paper_id?: string | null;
+  paper_name?: string | null;
+  sent_to: AssociateEmailResult[];
+  failed: AssociateEmailResult[];
 }
