@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { adminSkillService } from "@/apis/admin";
-import type { SkillCreate, SkillUpdate } from "@/types/admin";
+import type { SkillCreate, SkillUpdate } from "@/types/skill";
 import { QUERY_KEYS } from "@/constants/queryKeys";
 
 /**

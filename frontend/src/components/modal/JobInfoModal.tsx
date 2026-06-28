@@ -3,7 +3,7 @@
  * including its description, required skills, and hiring stages.
  */
 
-import { InfoLabel } from "@/components/shared";
+import { InfoLabel } from "@/components/shared/InfoLabel";
 import { DateDisplay } from "@/components/shared/DateDisplay";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/componen
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Separator } from "@/components/ui/separator";
-import { useJobVersion } from "@/hooks/queries/jobs";
+import { useJobVersion } from "@/hooks/queries/jobs/useJob";
 import { cn } from "@/lib/utils";
 import type { Job } from "@/types/job";
 import { slugify } from "@/utils/slug";

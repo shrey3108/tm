@@ -1,13 +1,12 @@
 import apiClient from "@/apis/client";
 import type { JobVersionDetail } from "@/types/job";
 import type {
-  JobCreate,
   JobRead,
   JobStageConfigCreate,
   JobStageConfigUpdate,
   JobStageReorder,
-  JobUpdate,
 } from "@/types/admin";
+import type { JobUpdate, JobCreate } from "@/types/job";
 import type { JobResumeInfoResponse, JobResumesResponse } from "@/types/resume";
 import type { JobStageConfig } from "@/types/stage";
 

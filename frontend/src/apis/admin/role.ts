@@ -1,5 +1,6 @@
 import apiClient from "@/apis/client";
-import type { PaginatedResponse, RoleCreate, RoleRead, RoleUpdate, RoleWithPermissions } from "@/types/admin";
+import type { RoleCreate, RoleRead, RoleUpdate, RoleWithPermissions } from "@/types/permission-role";
+import type { PaginatedResponse, } from "@/types/admin";
 
 const ADMIN_PATH = import.meta.env.VITE_ADMIN_API_ENDPOINT || "/admin";
 

@@ -3,18 +3,18 @@
  * Displays all departments with ability to create, edit, and delete.
  */
 import { useState, useEffect } from "react";
-import type { DepartmentRead } from "@/types/admin";
+import type { DepartmentRead } from "@/types/department";
 import AppPageShell from "@/components/shared/AppPageShell";
 import PageHeader from "@/components/shared/PageHeader";
 import { useToast } from "@/components/shared/ToastProvider";
 import { DataTable } from "@/components/shared/DataTable";
 import ErrorDisplay from "@/components/shared/ErrorDisplay";
-import { CreateDepartmentModal, DeleteModal } from "@/components/modal";
-import { useDebouncedValue } from "@/hooks";
+
+import { useDebouncedValue } from "@/hooks/useDebounced";
 import { Edit2, Trash2Icon, ArrowUpDown, AlertCircle, Plus } from "lucide-react";
 import { extractErrorMessage } from "@/utils/error";
 import type { ColumnDef, PaginationState } from "@tanstack/react-table";
-import { Button } from "@/components";
+import { Button } from "@/components/ui/button";
 import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card";
 import { Badge } from "@/components/ui/badge";
 import PermissionGuard from "@/components/auth/PermissionGuard";
@@ -24,6 +24,8 @@ import { selectCurrentUser } from "@/store/slices/authSlice";
 import { useDepartment } from "@/hooks/queries/admin/useDepartment";
 import { useDeleteDepartmentMutation } from "@/hooks/mutations/admin/useDepartment";
 import { usePageFilters } from "@/hooks/usePageFilters";
+import CreateDepartmentModal from "@/components/modal/CreateDepartmentModal";
+import DeleteModal from "@/components/modal/DeleteModal";
 
 const AdminDepartments = () => {
   const toast = useToast();

@@ -1,11 +1,12 @@
-import { z } from "zod";
+import * as z from "zod";
+import { uuidSchema } from "@/schemas/schema-utils";
 
 /**
  * Schema for adding a single stage to a job.
  * Matches backend JobStageConfigCreate.
  */
 export const jobStageConfigCreateSchema = z.object({
-  template_id: z.string().uuid(),
+  template_id: uuidSchema("Invalid template ID"),
   stage_order: z.number().int().min(1),
   config: z.record(z.any(), z.any()).nullable().optional(),
   is_mandatory: z.boolean().default(true),
@@ -34,7 +35,7 @@ export const jobStageBulkCreateSchema = z.object({
  * Matches backend JobStageReorder.
  */
 export const jobStageReorderSchema = z.object({
-  stage_ids: z.array(z.string().uuid()),
+  stage_ids: z.array(z.uuid()),
 });
 
 /**
@@ -42,7 +43,7 @@ export const jobStageReorderSchema = z.object({
  * Matches backend StageConfigUpdate.
  */
 export const stageConfigUpdateSchema = z.object({
-  active_criteria_ids: z.array(z.string().uuid()),
+  active_criteria_ids: z.array(z.uuid()),
   system_prompt_override: z.string().trim().nullable().optional(),
 });
 

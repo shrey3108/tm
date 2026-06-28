@@ -17,10 +17,10 @@ import {
   SheetFooter
 } from "@/components/ui/sheet";
 import { CollapsibleFilterSection, CheckboxListFilter } from "@/components/shared/FilterComponents";
-import { useJobAssignedTask } from "@/hooks/queries/jobs";
 import { useQuestionSetPapers, useDownloadPaperTaskFile } from "@/hooks/queries/taskPapers/useTaskPaperQueries";
 import { toast } from "sonner";
 import type { Job } from "@/types/job";
+import { useJobAssignedTask } from "@/hooks/queries/jobs/useJobTask";
 
 
 interface CandidateTableFiltersProps {

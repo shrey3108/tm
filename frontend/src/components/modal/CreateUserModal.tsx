@@ -6,7 +6,7 @@
 
 import { useCallback } from "react";
 import { useCreateUserMutation, useUpdateUserMutation } from "@/hooks/mutations/admin/useUser";
-import type { UserAdminRead } from "@/types/admin";
+import type { UserAdminRead } from "@/types/permission-role";
 import ErrorDisplay from "@/components/shared/ErrorDisplay";
 import {
   Dialog,
@@ -15,25 +15,15 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  Button,
-  Input,
-  Select,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  Switch,
-  Form,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormMessage,
-} from "@/components";
-import { useFormModal } from "@/hooks";
+import { useFormModal } from "@/hooks/useFormModal";
 import { userCreateSchema, type UserCreateFormValues } from "@/schemas/user";
 import { useAdminRoles } from "@/hooks/queries/admin/useAdminRoles";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+
 
 
 /**

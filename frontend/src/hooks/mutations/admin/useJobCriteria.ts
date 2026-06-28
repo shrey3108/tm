@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { adminCriteriaService } from "@/apis/admin";
-import type { CriterionCreate, CriterionUpdate } from "@/types/admin";
+import type { CriterionCreate, CriterionUpdate } from "@/types/jobCriteria";
 import { QUERY_KEYS } from "@/constants/queryKeys";
 
 /**

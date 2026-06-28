@@ -1,0 +1,11 @@
+import { queryClient } from "@/utils/query-client";
+import { QUERY_KEYS } from "@/constants/queryKeys";
+import { adminAnalyticsService } from "@/apis/admin";
+
+export const adminRecentUploadsLoader = async () => {
+  await queryClient.ensureQueryData({
+    queryKey: [QUERY_KEYS.ADMIN.RECENT_UPLOADS, 0, 10, ""],
+    queryFn: () => adminAnalyticsService.getRecentUploads(0, 10, ""),
+  });
+  return null;
+};

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Loader2, ArrowLeft, FileText, User, UserCheck } from "lucide-react";
 import AppPageShell from "@/components/shared/AppPageShell";
-import { DateDisplay } from "@/components/shared";
+import { DateDisplay } from "@/components/shared/DateDisplay";
 
 /**
  * Page for viewing the full content of an interview transcript.

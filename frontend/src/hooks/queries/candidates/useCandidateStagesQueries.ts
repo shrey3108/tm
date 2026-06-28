@@ -8,7 +8,7 @@ import { transcriptService } from "@/apis/transcript";
 import { candidateDecisionApi } from "@/apis/candidateDecision";
 import { adminCandidateService } from "@/apis/admin/candidate";
 import { slugify, unSlugify } from "@/utils/slug";
-import { useJob, useJobTitle } from "@/hooks/queries/jobs";
+import { useJob, useJobTitle } from "@/hooks/queries/jobs/useJob";
 import type { Job } from "@/types/job";
 import type { CandidateAnalysis } from "@/types/admin";
 

@@ -8,21 +8,21 @@ import { DataTable } from "@/components/shared/DataTable";
 import type { Job } from "@/types/job";
 import { extractErrorMessage } from "@/utils/error";
 import { slugify } from "@/utils/slug";
-import { useAdminJobs } from "@/hooks/queries/jobs";
+import { useAdminJobs } from "@/hooks/queries/jobs/useAdminJobs";
 
 // Sub-components
-import { JobBoardHeader } from "@/components/job-board/JobBoardHeader";
-import { JobDeleteDialog } from "@/components/job-board/JobDeleteDialog";
-import { getJobColumns } from "@/components/job-board/JobColumns";
-import { JobTableFilters } from "@/components/job-board/JobTableFilters";
+import { JobBoardHeader } from "@/components/job/job-board/JobBoardHeader";
+import { JobDeleteDialog } from "@/components/job/job-board/JobDeleteDialog";
+import { getJobColumns } from "@/components/job/job-board/JobColumns";
+import { JobTableFilters } from "@/components/job/job-board/JobTableFilters";
 import {
   useJobTableFilters,
   useFilteredJobs,
   useFilteredDepartmentOptions,
   useFilteredStatusOptions,
 } from "@/hooks/useJobTableFilters";
-import { JobActivityModal } from "@/components/job-board/JobActivityModal";
-import { useDebouncedValue } from "@/hooks";
+import { JobActivityModal } from "@/components/job/job-board/JobActivityModal";
+import { useDebouncedValue } from "@/hooks/useDebounced";
 
 /**
  * AdminJobs page component.

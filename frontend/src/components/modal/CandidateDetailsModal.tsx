@@ -11,7 +11,7 @@ import {
   candidateDecisionSchema,
   type CandidateDecisionFormValues,
 } from "@/schemas/candidate";
-import { useJob, useJobVersion } from "@/hooks/queries/jobs";
+import { useJob, useJobVersion } from "@/hooks/queries/jobs/useJob";
 import { useHrDecisionHistoryQuery } from "@/hooks/queries/candidates";
 import { useSubmitDecisionMutation } from "@/hooks/mutations/candidates/useCandidateStages";
 

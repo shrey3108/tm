@@ -3,8 +3,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { History, CheckCircle2, Calendar } from "lucide-react";
 import type { EvaluationHistoryRead } from "@/types/candidateStage";
 import { cn } from "@/lib/utils";
-import { CandidateStatusBadge, DateDisplay } from "@/components/shared";
-
+import { DateDisplay } from "@/components/shared/DateDisplay";
+import CandidateStatusBadge from "@/components/shared/CandidateStatusBadge";
 interface EvaluationHistoryModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;

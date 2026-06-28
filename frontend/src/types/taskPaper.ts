@@ -1,4 +1,4 @@
-import type { SkillRead } from "./admin";
+import type { SkillRead } from "./skill";
 
 /**
  * TypeScript types for Predefined Question Set Papers and Candidate Assignments.

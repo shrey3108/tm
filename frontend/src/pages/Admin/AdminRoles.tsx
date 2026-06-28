@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useState } from "react";
-import type { PermissionRead, RoleRead } from "@/types/admin";
+import type { PermissionRead, RoleRead } from "@/types/permission-role";
 import { useDeleteRoleMutation, useDeletePermissionMutation } from "@/hooks/mutations/admin/useRole";
 import { DataTable } from "@/components/shared/DataTable";
 import type { ColumnDef, PaginationState } from "@tanstack/react-table";
@@ -12,8 +12,7 @@ import ErrorDisplay from "@/components/shared/ErrorDisplay";
 import AppPageShell from "@/components/shared/AppPageShell";
 import { DateDisplay } from "@/components/shared/DateDisplay";
 import PageHeader from "@/components/shared/PageHeader";
-import { CreatePermissionModal, DeleteModal, RoleModal } from "@/components/modal";
-import { useDebouncedValue, useDeleteConfirmation } from "@/hooks";
+
 import { Button } from "@/components/ui/button";
 import PermissionGuard from "@/components/auth/PermissionGuard";
 import { PERMISSIONS } from "@/lib/permissions";
@@ -21,6 +20,11 @@ import { useAuth } from "@/store/hooks";
 import { Plus } from "lucide-react";
 import { useAdminRoles } from "@/hooks/queries/admin/useAdminRoles";
 import { usePageFilters } from "@/hooks/usePageFilters";
+import CreatePermissionModal from "@/components/modal/CreatePermissionModal";
+import DeleteModal from "@/components/modal/DeleteModal";
+import RoleModal from "@/components/modal/RoleModal";
+import { useDebouncedValue } from "@/hooks/useDebounced";
+import { useDeleteConfirmation } from "@/hooks/useDeleteConfirmation";
 
 const AdminRoles = () => {
   const { user: currentUser } = useAuth();

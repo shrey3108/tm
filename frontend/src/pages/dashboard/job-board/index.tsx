@@ -10,19 +10,19 @@ import { toast } from "sonner";
 import { slugify } from "@/utils/slug";
 
 // Sub-components
-import { JobBoardHeader } from "@/components/job-board/JobBoardHeader";
-import { JobDeleteDialog } from "@/components/job-board/JobDeleteDialog";
-import { getJobColumns } from "@/components/job-board/JobColumns";
-import { JobTableFilters } from "@/components/job-board/JobTableFilters";
+import { JobBoardHeader } from "@/components/job/job-board/JobBoardHeader";
+import { JobDeleteDialog } from "@/components/job/job-board/JobDeleteDialog";
+import { getJobColumns } from "@/components/job/job-board/JobColumns";
+import { JobTableFilters } from "@/components/job/job-board/JobTableFilters";
 import {
   useJobTableFilters,
   useFilteredJobs,
   useFilteredDepartmentOptions,
   useFilteredStatusOptions,
 } from "@/hooks/useJobTableFilters";
-import { JobActivityModal } from "@/components/job-board/JobActivityModal";
-import { useDebouncedValue } from "@/hooks";
-import { useJobs } from "@/hooks/queries/jobs";
+import { JobActivityModal } from "@/components/job/job-board/JobActivityModal";
+import { useDebouncedValue } from "@/hooks/useDebounced";
+import { useJobs } from "@/hooks/queries/jobs/useJobs";
 
 /**
  * JobBoard page component for the dashboard.

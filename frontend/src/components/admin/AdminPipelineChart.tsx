@@ -6,13 +6,14 @@ import {
   ChartTooltip,
 } from "@/components/ui/chart";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import type { JobPipelineStats } from "@/types/admin";
+
 import { cn } from "@/lib/utils";
 import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card"
+import type { JobPipelineStats } from "@/types/job";
 
 interface StageCentricChartProps {
   data: JobPipelineStats[];

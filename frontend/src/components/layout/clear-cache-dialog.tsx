@@ -17,7 +17,7 @@ import { Loader2, Search } from "lucide-react"
 import { extractErrorMessage } from "@/utils/error"
 import { useGetAllCacheKeys } from "@/hooks/queries/admin/useClearCache"
 import { useClearCacheMutation } from "@/hooks/mutations/admin/useClearCache"
-import { useDebouncedValue } from "@/hooks"
+import { useDebouncedValue } from "@/hooks/useDebounced"
 
 interface ClearCacheDialogProps {
   open: boolean

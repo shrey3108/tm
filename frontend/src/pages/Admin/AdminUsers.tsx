@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect } from "react";
-import type { UserAdminRead } from "@/types/admin";
+import type { UserAdminRead } from "@/types/permission-role";
 import AppPageShell from "@/components/shared/AppPageShell";
 import { DateDisplay } from "@/components/shared/DateDisplay";
 import PageHeader from "@/components/shared/PageHeader";
@@ -12,23 +12,22 @@ import StatusBadge from "@/components/shared/StatusBadge";
 import { useToast } from "@/components/shared/ToastProvider";
 import ErrorDisplay from "@/components/shared/ErrorDisplay";
 import { DataTable } from "@/components/shared/DataTable";
-import {
-  CreateUserModal,
-  // CreateUserModal,
-  DeleteModal
-} from "@/components/modal";
-import { useDebouncedValue, useDeleteConfirmation } from "@/hooks";
 import PermissionGuard from "@/components/auth/PermissionGuard";
 import { PERMISSIONS } from "@/lib/permissions";
-import { UserTableFilters } from "./components/UserTableFilters";
+import { UserTableFilters } from "@/components/admin/UserTableFilters";
 import { useUserTableFilters } from "@/hooks/useUserTableFilters";
 
 import type { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown } from "lucide-react";
-import { Button } from "@/components";
+
 import { useAuth } from "@/store/hooks";
 import { useAdminUsers } from "@/hooks/queries/admin/useAdminUsers";
 import { useDeleteUserMutation } from "@/hooks/mutations/admin/useUser";
+import CreateUserModal from "@/components/modal/CreateUserModal";
+import DeleteModal from "@/components/modal/DeleteModal";
+import { useDebouncedValue } from "@/hooks/useDebounced";
+import { useDeleteConfirmation } from "@/hooks/useDeleteConfirmation";
+import { Button } from "@/components/ui/button";
 
 const AdminUsers = () => {
   const toast = useToast();

@@ -17,7 +17,7 @@ import { capitalize } from "@/lib/utils";
 import { extractErrorMessage } from "@/utils/error";
 import { DEFAULT_PASSING_THRESHOLD } from "@/constants";
 import type { ColumnDef, PaginationState } from "@tanstack/react-table";
-import { DataTable } from "@/components/shared";
+import { DataTable } from "@/components/shared/DataTable";
 import { useCandidateCrossJobMatch } from "@/hooks/queries/candidates/useCandidateCrossJobMatch";
 import { useTriggerCrossMatchMutation } from "@/hooks/mutations/candidates/useCandidateCrossJobMatchMutation";
 interface CrossMatchViewProps {

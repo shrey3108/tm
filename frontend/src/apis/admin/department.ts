@@ -1,5 +1,5 @@
 import apiClient from "@/apis/client";
-import type { DepartmentCreate, DepartmentRead, DepartmentUpdate } from "@/types/admin";
+import type { DepartmentCreate, DepartmentRead, DepartmentUpdate } from "@/types/department";
 
 /**
  * Service for managing departments via the admin API.

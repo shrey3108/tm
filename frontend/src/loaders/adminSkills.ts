@@ -1,0 +1,11 @@
+import { queryClient } from "@/utils/query-client";
+import { QUERY_KEYS } from "@/constants/queryKeys";
+import { adminSkillService } from "@/apis/admin";
+
+export const adminSkillsLoader = async () => {
+  await queryClient.ensureQueryData({
+    queryKey: [QUERY_KEYS.ADMIN.SKILLS, 0, 10, ""],
+    queryFn: () => adminSkillService.getAllSkills(0, 10, ""),
+  });
+  return null;
+};

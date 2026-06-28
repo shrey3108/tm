@@ -8,8 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import AppPageShell from "@/components/shared/AppPageShell";
 import PageHeader from "@/components/shared/PageHeader";
-import { SearchableSelect, LoadingSpinner } from "@/components/shared";
-import { useDebouncedValue } from "@/hooks";
 import { useDepartment } from "@/hooks/queries/admin/useDepartment";
 import { useJobPosition } from "@/hooks/queries/admin/useJobPosition";
 import { QuestionsBankSkillSelector } from "@/components/questions-bank/QuestionsBankSkillSelector";
@@ -43,6 +41,9 @@ import { slugify } from "@/utils/slug";
 import { SingleQuestionFormFields } from "@/components/questions-bank/SingleQuestionFormFields";
 import { MCQFormFields } from "@/components/questions-bank/MCQFormFields";
 import { ProjectTaskFormFields } from "@/components/questions-bank/ProjectTaskFormFields";
+import LoadingSpinner from "@/components/shared/LoadingSpinner";
+import { SearchableSelect } from "@/components/shared/SearchableSelect";
+import { useDebouncedValue } from "@/hooks/useDebounced";
 
 
 

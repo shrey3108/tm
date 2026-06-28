@@ -8,7 +8,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useCreateRoleMutation, useUpdateRoleMutation } from "@/hooks/mutations/admin/useRole";
 import { useAdminPermissions } from "@/hooks/queries/admin/useAdminPermissions";
 import { useAdminRoleById } from "@/hooks/queries/admin/useAdminRoleById";
-import type { RoleWithPermissions } from "@/types/admin";
+import type { RoleWithPermissions } from "@/types/permission-role";
 import {
   Dialog,
   DialogContent,
@@ -16,26 +16,19 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  Button,
-  Input,
-  Checkbox,
-  Form,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormMessage,
-  Field,
-  FieldContent,
-  FieldLabel,
-  FieldDescription,
-} from "@/components";
-import { useFormModal } from "@/hooks";
+
+import { useFormModal } from "@/hooks/useFormModal";
 import { roleCreateSchema, type RoleCreateFormValues } from "@/schemas/permission-role";
 import { cn } from "@/lib/utils";
 import { Required } from "@/components/shared/Required";
-import { useToast } from "../shared";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from "@/components/shared/ToastProvider";
+import { Field, FieldContent, FieldDescription, FieldLabel } from "@/components/ui/field";
+
 
 /**
  * Props for the RoleModal component.

@@ -3,7 +3,6 @@ import AppPageShell from "@/components/shared/AppPageShell";
 import { ActionButtons } from "@/components/modal/candidate-details/ActionButtons";
 import { FeedbackDialog } from "@/components/modal/candidate-details/FeedbackDialog";
 import { StageCandidatesHeader } from "@/components/candidate/StageCandidatesHeader";
-import { JobInfoModal } from "@/components/modal";
 import { EvaluationHistoryModal } from "@/components/modal/candidate-details/EvaluationHistoryModal";
 import { CandidateTimeline } from "@/components/candidate/CandidateTimeline";
 import PermissionGuard from "@/components/auth/PermissionGuard";
@@ -14,6 +13,7 @@ import { StageEvaluationView } from "@/components/candidate/StageEvaluationView"
 import { PollingState, EmptyState } from "@/components/candidate/StageStateViews";
 import { useCandidatesStages } from "@/hooks/useCandidatesStages";
 import LoadingSpinner from "@/components/shared/LoadingSpinner";
+import { JobInfoModal } from "@/components/modal/JobInfoModal";
 
 /** 
  * The main page component for viewing and managing a candidate's progress through interview stages.

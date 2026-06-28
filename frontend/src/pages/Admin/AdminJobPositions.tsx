@@ -3,23 +3,26 @@
  * Displays all positions with ability to create, edit, and delete.
  */
 import { useState, useEffect } from "react";
-import type { JobPositionRead } from "@/types/admin";
+import type {
+  JobPositionRead,
+} from "@/types/jobPosition";
 import AppPageShell from "@/components/shared/AppPageShell";
 import PageHeader from "@/components/shared/PageHeader";
 import { useToast } from "@/components/shared/ToastProvider";
 import { DataTable } from "@/components/shared/DataTable";
 import ErrorDisplay from "@/components/shared/ErrorDisplay";
-import { PositionModal, DeleteModal } from "@/components/modal";
-import { useDebouncedValue } from "@/hooks";
+import PositionModal from "@/components/modal/PositionModal";
+import DeleteModal from "@/components/modal/DeleteModal";
+import { useDebouncedValue } from "@/hooks/useDebounced";
 import { Edit2, Trash2Icon, ArrowUpDown, AlertCircle, Plus } from "lucide-react";
 import { extractErrorMessage } from "@/utils/error";
 import type { ColumnDef, PaginationState } from "@tanstack/react-table";
-import { Button } from "@/components";
+import { Button } from "@/components/ui/button";
 import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card";
 import { Badge } from "@/components/ui/badge";
 import PermissionGuard from "@/components/auth/PermissionGuard";
 import { PERMISSIONS } from "@/lib/permissions";
-import { DateDisplay } from "@/components/shared";
+import { DateDisplay } from "@/components/shared/DateDisplay";
 import { useJobPosition } from "@/hooks/queries/admin/useJobPosition";
 import { useDeletePositionMutation } from "@/hooks/mutations/admin/useJobPosition";
 import { usePageFilters } from "@/hooks/usePageFilters";

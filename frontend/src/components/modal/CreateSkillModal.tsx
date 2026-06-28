@@ -4,19 +4,18 @@
  */
 
 import { useCallback } from "react";
-import type { SkillRead } from "@/types/admin";
+import type { SkillRead } from "@/types/skill";
 import { useCreateSkillMutation, useUpdateSkillMutation } from "@/hooks/mutations/admin/useSkill";
 import {
-  Button,
-  Input,
-  Textarea,
   Form,
   FormField,
   FormItem,
   FormLabel,
   FormControl,
   FormMessage,
-} from "@/components";
+} from "@/components/ui/form";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -24,9 +23,10 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { useFormModal } from "@/hooks";
+import { useFormModal } from "@/hooks/useFormModal";
 import { skillCreateSchema, type SkillCreateFormValues } from "@/schemas/skill";
 import ErrorDisplay from "@/components/shared/ErrorDisplay";
+import { Textarea } from "@/components/ui/textarea";
 
 interface CreateSkillModalProps {
   show: boolean;

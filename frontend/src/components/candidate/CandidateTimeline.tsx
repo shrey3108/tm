@@ -8,9 +8,9 @@ import type { Job } from "@/types/job";
 import type { CandidateAnalysis } from "@/types/admin";
 import { useNavigate } from "react-router-dom";
 import { slugify } from "@/utils/slug";
-import { useTimelineStatus } from "./useTimelineStatus";
-import { TimelineCard } from "./TimelineCard";
-import { isEventOngoing } from "./timelineStatusUtils";
+import { useTimelineStatus } from "./timeline/useTimelineStatus";
+import { TimelineCard } from "./timeline/TimelineCard";
+import { isEventOngoing } from "./timeline/timelineStatusUtils";
 
 interface CandidateTimelineProps {
   candidateId?: string;

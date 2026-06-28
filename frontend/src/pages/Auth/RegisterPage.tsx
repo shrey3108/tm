@@ -11,21 +11,23 @@ import { CheckCircle, Eye, EyeOff, Loader2 } from "lucide-react";
 import { registerSchema, type RegisterFormValues } from "@/schemas/auth";
 import { extractErrorMessage } from "@/utils/error";
 import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-  Button,
-  Input,
   Form,
   FormField,
   FormItem,
   FormLabel,
   FormControl,
   FormMessage,
-  Logo,
-} from "@/components";
+} from "@/components/ui/form";
+import { Logo } from "@/components/logo/index"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { INFO } from "@/constants";
 import { InputGroup, InputGroupInput, InputGroupAddon, InputGroupButton } from "@/components/ui/input-group";
 import { useRegisterMutation } from "@/hooks/mutations/auth/useAuthMutations";

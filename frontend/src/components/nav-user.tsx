@@ -28,7 +28,7 @@ import {
 import { cn } from "@/lib/utils"
 import { ModeToggle } from "./shared/mode-toggle"
 import { Separator } from "@/components/ui/separator"
-import { useOutsideClick } from "@/hooks"
+import { useOutsideClick } from "@/hooks/use-outside-click"
 import { useLogoutMutation } from "@/hooks/mutations/auth/useAuthMutations"
 
 export function NavUser() {

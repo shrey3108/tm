@@ -3,8 +3,9 @@
  * Based on the backend Pydantic schemas in app/v1/schemas/admin.py.
  */
 
-import type { Job } from "@/types/job";
+import type { Job, JobCandidatesStats, JobPipelineStats } from "@/types/job";
 import type { JobStageConfig, CandidateStageSummary } from "@/types/stage";
+import type { SkillRead } from "./skill";
 
 /**
  * Generic paginated response wrapper.
@@ -14,106 +15,6 @@ export interface PaginatedResponse<T> {
   total: number;
 }
 
-/**
- * Base fields for a permission.
- */
-export interface PermissionBase {
-  name: string;
-  description: string;
-}
-
-/**
- * Permission returned from read operations.
- */
-export interface PermissionRead extends PermissionBase {
-  id: string;
-  created_at?: string;
-}
-
-/**
- * Payload for creating a new permission.
- */
-export interface PermissionCreate extends PermissionBase { }
-
-/**
- * Base fields for a role.
- */
-export interface RoleBase {
-  name: string;
-}
-
-/**
- * Payload for creating a new role.
- */
-export interface RoleCreate extends RoleBase {
-  permission_ids?: string[];
-}
-
-/**
- * Payload for updating an existing role.
- */
-export interface RoleUpdate {
-  name?: string;
-  permission_ids?: string[];
-}
-
-/**
- * Role returned from read operations.
- */
-export interface RoleRead extends RoleBase {
-  id: string;
-  created_at?: string;
-  updated_at?: string;
-  user_count: number
-}
-
-/**
- * Role with its associated permissions.
- */
-export interface RoleWithPermissions extends RoleRead {
-  permissions: PermissionRead[];
-}
-
-/**
- * Payload for creating a new user via admin.
- */
-export interface UserAdminCreate {
-  email: string;
-  password?: string;
-  full_name?: string;
-  is_active?: boolean;
-  role_id: string;
-}
-
-/**
- * Payload for updating an existing user via admin.
- */
-export interface UserAdminUpdate {
-  full_name?: string;
-  is_active?: boolean;
-  role_id?: string;
-}
-
-/**
- * User returned from admin read operations.
- */
-export interface UserAdminRead {
-  id: string;
-  full_name?: string;
-  email: string;
-  is_active: boolean;
-  role_id: string;
-  role_name: string;
-  created_at?: string;
-  updated_at?: string;
-}
-
-/**
- * User with their role details included.
- */
-export interface UserWithRole extends UserAdminRead {
-  role: RoleRead;
-}
 
 /**
  * Audit log entry for tracking admin actions.
@@ -127,13 +28,6 @@ export interface AuditLogRead {
   target_id?: string;
   details?: Record<string, unknown>;
   created_at?: string;
-}
-
-/**
- * Audit log entry with user details.
- */
-export interface AuditLogWithUser extends AuditLogRead {
-  user: UserAdminRead;
 }
 
 /**
@@ -152,14 +46,6 @@ export interface RecentUploadRead {
   created_at?: string;
 }
 
-/**
- * Recent upload with additional details.
- */
-export interface RecentUploadWithDetails extends RecentUploadRead {
-  candidate_name?: string;
-  job_title?: string;
-  uploader_email?: string;
-}
 
 /**
  * Summary of platform analytics.
@@ -185,28 +71,6 @@ export interface AnalyticsSummary {
 }
 
 /**
- * Candidate statistics for a specific job.
- */
-export interface JobCandidatesStats {
-  job_id: string;
-  job_title: string;
-  department?: string | null;
-  candidate_count: number;
-}
-
-export interface PipelineStageStats {
-  stage_name: string;
-  order: number;
-  count: number;
-}
-
-export interface JobPipelineStats {
-  stage?: string;
-  job_names?: string[];
-  [jobTitle: string]: any;
-}
-
-/**
  * Detailed hiring report with statistics.
  */
 export interface HiringReport {
@@ -225,199 +89,6 @@ export interface HiringReport {
   pending_count: number;
 }
 
-/**
- * Job Management Types
- */
-
-/**
- * Payload for creating a new job posting.
- */
-export interface JobCreate {
-  title: string;
-  vacancy: number;
-  department_id: string;
-  jd_text: string;
-  is_active?: boolean;
-  skill_ids: string[];
-  skill_weightages?: Record<string, number> | null;
-  passing_threshold?: number;
-  custom_extraction_fields?: string[];
-  priority_id: string;
-  position_id: string;
-  priority_start_date?: string | null;
-  priority_end_date?: string | null;
-}
-
-/**
- * Payload for updating an existing job posting.
- */
-export interface JobUpdate {
-  title?: string;
-  vacancy?: number;
-  department_id?: string;
-  jd_text?: string;
-  is_active?: boolean;
-  skill_ids?: string[];
-  skill_weightages?: Record<string, number> | null;
-  passing_threshold?: number;
-  custom_extraction_fields?: string[];
-  priority_id?: string;
-  position_id?: string;
-  priority_start_date?: string | null;
-  priority_end_date?: string | null;
-}
-
-/**
- * Skill Management Types
- */
-
-/**
- * Base fields for a skill.
- */
-export interface SkillBase {
-  id: string;
-  name: string;
-  description?: string;
-  default_weightage?: number;
-}
-
-/**
- * Payload for creating a new skill.
- */
-export interface SkillCreate extends Omit<SkillBase, "id"> { }
-
-/**
- * Payload for updating an existing skill.
- */
-export interface SkillUpdate extends Partial<SkillCreate> { }
-
-/**
- * Skill returned from read operations.
- */
-export interface SkillRead extends SkillBase { }
-
-/**
- * Tech Stack Management Types
- */
-
-/**
- * Shared fields for a tech stack.
- */
-export interface TechStackBase {
-  name: string;
-  description?: string | null;
-}
-
-/**
- * Payload for creating a new tech stack.
- */
-export interface TechStackCreate extends TechStackBase { }
-
-/**
- * Payload for updating an existing tech stack.
- */
-export interface TechStackUpdate {
-  name?: string;
-  description?: string | null;
-}
-
-/**
- * Tech stack returned from read operations.
- */
-export interface TechStackRead extends TechStackBase {
-  id: string;
-}
-
-/**
- * Department Management Types
- */
-
-/**
- * Shared fields for a department.
- */
-export interface DepartmentBase {
-  name: string;
-  description?: string | null;
-}
-
-/**
- * Payload for creating a new department.
- */
-export interface DepartmentCreate extends DepartmentBase { }
-
-/**
- * Payload for updating an existing department.
- */
-export interface DepartmentUpdate {
-  name?: string;
-  description?: string | null;
-}
-
-/**
- * Department returned from read operations.
- */
-export interface DepartmentRead extends DepartmentBase {
-
-  id: string;
-}
-
-/**
- * Job Priority Management Types
- */
-
-/**
- * Job priority returned from read operations.
- */
-export interface JobPriorityRead {
-  id: string;
-  name: string;
-  duration_days: number;
-  created_at: string;
-  updated_at: string;
-  assigned_jobs_count: number
-}
-
-/**
- * Payload for creating a new job priority.
- */
-export interface JobPriorityCreate {
-  duration_days: number;
-}
-
-/**
- * Payload for updating an existing job priority.
- */
-export interface JobPriorityUpdate {
-  duration_days?: number;
-}
-
-/**
- * Job Position Management Types
- */
-
-/**
- * Job position returned from read operations.
- */
-export interface JobPositionRead {
-  id: string;
-  name: string;
-  created_at: string;
-  updated_at: string;
-}
-
-/**
- * Payload for creating a new job position.
- */
-export interface JobPositionCreate {
-  name: string;
-}
-
-/**
- * Payload for updating an existing job position.
- */
-export interface JobPositionUpdate {
-  name?: string;
-}
 
 /**
  * Location Management Types
@@ -635,39 +306,4 @@ export interface JobStatsResponse {
     hr_decisions: Record<string, number>;
     ai_results: JobResultStats;
   }>;
-}
-
-/**
- * Criteria Management Types
- */
-
-/**
- * Shared fields for an evaluation criterion.
- */
-export interface CriterionBase {
-  name: string;
-  description?: string | null;
-  prompt_text: string;
-}
-
-/**
- * Payload for creating a new evaluation criterion.
- */
-export interface CriterionCreate extends CriterionBase { }
-
-/**
- * Payload for updating an existing evaluation criterion.
- */
-export interface CriterionUpdate {
-  name?: string;
-  description?: string | null;
-  prompt_text?: string;
-}
-
-/**
- * Evaluation criterion returned from read operations.
- */
-export interface CriterionRead extends CriterionBase {
-  id: string;
-  created_at: string;
 }

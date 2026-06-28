@@ -1,7 +1,7 @@
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Rectangle, ResponsiveContainer, Label } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig, } from "@/components/ui/chart"
 import { MAX_LOCATION_BAR_CHART_DISPLAY_LIMIT, HR_DECISION_OPTIONS } from "@/constants";
-import type { JobCandidatesStatsProps } from "@/components/candidate/JobCandidatesStats";
+import type { JobCandidatesStatsProps } from "@/components/job/candidates/JobCandidatesStats";
 
 const chartConfig = {
   value: {

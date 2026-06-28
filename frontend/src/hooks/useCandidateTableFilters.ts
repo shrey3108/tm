@@ -6,7 +6,7 @@ import { slugify } from "@/utils/slug";
 import { DEFAULT_PASSING_THRESHOLD, HR_DECISION_OPTIONS, RESUME_SCREENING_RESULT } from "@/constants";
 import type { DateRange } from "react-day-picker";
 import { useDebouncedValue } from "./useDebounced";
-import { useJobTitle } from "./queries/jobs";
+import { useJobTitle } from "@/hooks/queries/jobs/useJob"
 import { useAdminLocations } from "./queries/admin/useLocation";
 
 export interface CandidateActiveFilters {

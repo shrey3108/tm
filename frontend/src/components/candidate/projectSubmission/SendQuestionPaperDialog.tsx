@@ -14,7 +14,7 @@ import {
 } from "@/hooks/mutations/taskPapers/useTaskPaperMutations";
 import { useCandidateDetailsQuery } from "@/hooks/queries/candidates";
 import type { Job } from "@/types/job";
-import { LoadingSpinner } from "@/components/shared";
+import LoadingSpinner from "@/components/shared/LoadingSpinner";
 import { AssignedPaperView } from "./sendQuestionPaper/AssignedPaperView";
 import { extractErrorMessage } from "@/utils/error";
 import { useAppSelector } from "@/store/hooks";

@@ -1,8 +1,8 @@
 import { Plus, X } from "lucide-react";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components";
-import { SearchableSelect } from "@/components/shared";
+import { Label } from "@/components/ui/label";
+import { SearchableSelect } from "@/components/shared/SearchableSelect";
 import PermissionGuard from "@/components/auth/PermissionGuard";
 import { PERMISSIONS } from "@/lib/permissions";
 

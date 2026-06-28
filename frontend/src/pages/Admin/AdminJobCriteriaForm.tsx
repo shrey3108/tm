@@ -4,18 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { Save, ArrowLeft, Sparkle } from "lucide-react";
-import {
-    Button,
-    Form,
-    FormControl,
-    FormDescription,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
-    Input,
-    Textarea,
-} from "@/components";
+
 import { useToast } from "@/components/shared/ToastProvider";
 import AppPageShell from "@/components/shared/AppPageShell";
 import PageHeader from "@/components/shared/PageHeader";
@@ -27,8 +16,12 @@ import {
     useUpdateCriterionMutation,
 } from "@/hooks/mutations/admin/useJobCriteria";
 import { useJobCriteria, useJobCriteriaById } from "@/hooks/queries/admin/useJobCriteria";
-import type { CriterionRead } from "@/types/admin";
+import type { CriterionRead } from "@/types/jobCriteria";
 import { slugify } from "@/utils/slug";
+import { Button } from "@/components/ui/button";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 
 /**
  * Form page for creating or editing job evaluation criteria.

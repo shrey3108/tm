@@ -36,7 +36,7 @@ const JobSummaryCard = ({ job }: JobSummaryCardProps): ReactElement => {
             <h6 className="text-sm font-bold uppercase text-muted-foreground mb-2 opacity-75">
               Required Skills
             </h6>
-            <SkillsBadgeList skills={job.skills} skillWeightages={job.job_skill_weightages} />
+            <SkillsBadgeList skills={job.skills} />
           </div>
         </div>
       </div>

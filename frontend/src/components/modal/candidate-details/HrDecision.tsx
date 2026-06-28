@@ -1,7 +1,9 @@
 import { DateDisplay } from "@/components/shared/DateDisplay"
 import { MessageSquare } from "lucide-react";
 import type { HrDecisionHistoryItem } from "@/apis/candidateDecision";
-import { CandidateStatusBadge, StarRating } from "@/components/shared";
+import { StarRating } from "@/components/shared/StarRating";
+import CandidateStatusBadge from "@/components/shared/CandidateStatusBadge";
+
 
 /**
  * Props for {@link HrDecision}.

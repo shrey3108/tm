@@ -10,7 +10,8 @@ import {
   HoverCardTrigger,
   HoverCardContent,
 } from "@/components/ui/hover-card";
-import { SkillsBadgeList } from "../shared";
+import SkillsBadgeList from "@/components/shared/SkillsBadgeList";
+
 
 export interface FlatItem {
   id: string;

@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { adminDepartmentService } from "@/apis/admin";
-import type { DepartmentCreate, DepartmentUpdate } from "@/types/admin";
+import type { DepartmentCreate, DepartmentUpdate } from "@/types/department";
 import { QUERY_KEYS } from "@/constants/queryKeys";
 
 /**

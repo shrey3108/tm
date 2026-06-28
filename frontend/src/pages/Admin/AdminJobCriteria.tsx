@@ -8,14 +8,11 @@ import { ArrowUpDown, Edit2, Trash2Icon, Plus, Info, AlertCircle } from "lucide-
 import { Button } from "@/components/ui/button";
 import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card";
 import { useNavigate } from "react-router-dom";
-import { ErrorDisplay, useToast } from "@/components/shared";
+
 import { slugify } from "@/utils/slug";
-import {
-    type CriterionRead,
-} from "@/apis/admin";
+
 import { CriteriaInfoModal } from "@/components/admin/CriteriaInfoModal";
-import { DeleteModal } from "@/components/modal";
-import { useDebouncedValue } from "@/hooks";
+import { useDebouncedValue } from "@/hooks/useDebounced";
 import { extractErrorMessage } from "@/utils/error";
 import { Badge } from "@/components/ui/badge";
 import PermissionGuard from "@/components/auth/PermissionGuard";
@@ -23,6 +20,10 @@ import { PERMISSIONS } from "@/lib/permissions";
 import { useJobCriteria } from "@/hooks/queries/admin/useJobCriteria";
 import { useDeleteCriterionMutation } from "@/hooks/mutations/admin/useJobCriteria";
 import { usePageFilters } from "@/hooks/usePageFilters";
+import type { CriterionRead } from "@/types/jobCriteria";
+import DeleteModal from "@/components/modal/DeleteModal";
+import ErrorDisplay from "@/components/shared/ErrorDisplay";
+import { useToast } from "@/components/shared/ToastProvider";
 
 /**
  * Admin page for managing job evaluation criteria.

@@ -9,21 +9,23 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Link } from "react-router-dom";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-  Button,
-  Input,
   Form,
   FormField,
   FormItem,
   FormLabel,
   FormControl,
   FormMessage,
-  Logo,
-} from "@/components";
+} from "@/components/ui/form";
+import { Logo } from "@/components/logo/index"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { loginSchema, type LoginFormValues } from "@/schemas/auth";
 import { extractErrorMessage } from "@/utils/error";
 import { INFO } from "@/constants";
