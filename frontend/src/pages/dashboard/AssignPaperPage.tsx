@@ -18,7 +18,7 @@ import AppPageShell from "@/components/shared/AppPageShell";
 import AppPageHeader from "@/components/shared/AppPageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { LoadingSpinner, SingleQuestionDisplay, MCQQuestionDisplay, ProjectTaskDisplay } from "@/components/shared";
+
 import { useDebouncedValue } from "@/hooks/useDebounced";
 import { slugify } from "@/utils/slug";
 import { formatDuration } from "@/utils/taskFormatter";
@@ -34,6 +34,10 @@ import { questionFormSchema, projectTaskSchema } from "@/schemas/question";
 import { SingleQuestionFormFields } from "@/components/questions-bank/SingleQuestionFormFields";
 import { MCQFormFields } from "@/components/questions-bank/MCQFormFields";
 import { ProjectTaskFormFields } from "@/components/questions-bank/ProjectTaskFormFields";
+import LoadingSpinner from "@/components/shared/LoadingSpinner";
+import { MCQQuestionDisplay } from "@/components/shared/MCQQuestionDisplay";
+import { ProjectTaskDisplay } from "@/components/shared/ProjectTaskDisplay";
+import { SingleQuestionDisplay } from "@/components/shared/SingleQuestionDisplay";
 
 export default function AssignPaperPage() {
   const navigate = useNavigate();

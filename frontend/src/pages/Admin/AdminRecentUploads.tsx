@@ -10,7 +10,7 @@ import { DataTable } from "@/components/shared/DataTable";
 import { DateDisplay } from "@/components/shared/DateDisplay";
 import PageHeader from "@/components/shared/PageHeader";
 import ErrorDisplay from "@/components/shared/ErrorDisplay";
-import { useDebouncedValue } from "@/hooks";
+
 import { ArrowUpDown } from "lucide-react";
 import type { ColumnDef, PaginationState } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,9 @@ import { formatFileSize, type FileSizeUnit } from "@/utils/converters";
 import { useRecentUploads } from "@/hooks/queries/admin/useRecentUpload";
 import { capitalize, cn } from "@/lib/utils";
 import { usePageFilters } from "@/hooks/usePageFilters";
-import { SearchableSelect } from "@/components/shared";
+import { SearchableSelect } from "@/components/shared/SearchableSelect";
+import { useDebouncedValue } from "@/hooks/useDebounced";
+
 
 
 const AdminRecentUploads = () => {

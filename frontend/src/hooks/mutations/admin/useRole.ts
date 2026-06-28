@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { adminRoleService, adminPermissionService } from "@/apis/admin";
-import type { RoleCreate, RoleUpdate } from "@/types/admin";
+import type { RoleCreate, RoleUpdate } from "@/types/permission-role";
 import { QUERY_KEYS } from "@/constants/queryKeys";
 
 /**

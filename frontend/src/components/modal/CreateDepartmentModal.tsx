@@ -4,19 +4,19 @@
  */
 
 import { useCallback } from "react";
-import type { DepartmentRead } from "@/types/admin";
+import type { DepartmentRead } from "@/types/department";
 import { useCreateDepartmentMutation, useUpdateDepartmentMutation } from "@/hooks/mutations/admin/useDepartment";
 import {
-  Button,
-  Input,
-  Textarea,
   Form,
   FormField,
   FormItem,
   FormLabel,
   FormControl,
   FormMessage,
-} from "@/components";
+} from "@/components/ui/form";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -24,7 +24,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { useFormModal } from "@/hooks";
+import { useFormModal } from "@/hooks/useFormModal";
 import { departmentCreateSchema, type DepartmentCreateFormValues } from "@/schemas/department";
 import ErrorDisplay from "@/components/shared/ErrorDisplay";
 

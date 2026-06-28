@@ -8,7 +8,7 @@ import { useMemo } from "react";
 import { startOfDay, endOfDay } from "date-fns";
 import type { DateRange } from "react-day-picker";
 import type { Job } from "@/types/job";
-import type { DepartmentRead } from "@/types/admin";
+import type { DepartmentRead } from "@/types/department";
 import { useDebouncedValue } from "./useDebounced";
 import { useDepartment } from "@/hooks/queries/admin/useDepartment";
 import { usePageFilters } from "@/hooks/usePageFilters";

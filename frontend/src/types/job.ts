@@ -1,44 +1,7 @@
 import type { JobStageConfig } from "@/types/stage";
-import type { JobPositionRead, JobPriorityRead } from "@/types/admin";
-
-export interface JobDecisionSummary {
-  job_id: string;
-  total_candidates: number;
-  approved_count: number;
-  reject_count: number;
-  maybe_count: number;
-  undecided_count: number;
-}
-
-export interface JobActivitySession {
-  session_id: number;
-  start_date: string;
-  end_date: string | null;
-  candidate_count: number;
-  is_current: boolean;
-  approved_count: number,
-  rejected_count: number,
-  pending_count: number
-}
-
-/**
- * Minimal job version metadata returned by the backend.
- */
-export interface JobVersionMinimal {
-  id: string;
-  version_num: number;
-}
-
-export interface JobVersionDetail {
-  id: string;
-  job_id: string;
-  version_number: number;
-  title: string;
-  jd_text: string | null;
-  jd_json: Record<string, unknown> | null;
-  custom_extraction_fields: string[] | null;
-  created_at: string;
-}
+import type { JobPositionRead } from "@/types/jobPosition";
+import type { JobCreateFormValues, JobUpdateFormValues } from "@/schemas/job";
+import type { JobPriorityRead } from "@/types/jobPriority";
 
 /**
  * Represents a job posting in the hiring platform.
@@ -99,6 +62,48 @@ export interface Job {
   message?: string | null;
 }
 
+export type JobCreate = JobCreateFormValues
+export type JobUpdate = JobUpdateFormValues
+
+export interface JobDecisionSummary {
+  job_id: string;
+  total_candidates: number;
+  approved_count: number;
+  reject_count: number;
+  maybe_count: number;
+  undecided_count: number;
+}
+
+export interface JobActivitySession {
+  session_id: number;
+  start_date: string;
+  end_date: string | null;
+  candidate_count: number;
+  is_current: boolean;
+  approved_count: number,
+  rejected_count: number,
+  pending_count: number
+}
+
+/**
+ * Minimal job version metadata returned by the backend.
+ */
+export interface JobVersionMinimal {
+  id: string;
+  version_num: number;
+}
+
+export interface JobVersionDetail {
+  id: string;
+  job_id: string;
+  version_number: number;
+  title: string;
+  jd_text: string | null;
+  jd_json: Record<string, unknown> | null;
+  custom_extraction_fields: string[] | null;
+  created_at: string;
+}
+
 /**
  * Paginated response for job lists including global dashboard metrics.
  */
@@ -141,4 +146,20 @@ export interface JobTitleGroup {
 
 export interface JobTitlesGroupedListResponse {
   data: JobTitleGroup[];
+}
+
+/**
+ * Candidate statistics for a specific job.
+ */
+export interface JobCandidatesStats {
+  job_id: string;
+  job_title: string;
+  department?: string;
+  candidate_count: number;
+}
+
+export interface JobPipelineStats {
+  stage?: string;
+  job_names?: string[];
+  [jobTitle: string]: any;
 }

@@ -1,5 +1,5 @@
 import apiClient from "@/apis/client";
-import type { SkillCreate, SkillRead, SkillUpdate } from "@/types/admin";
+import type { SkillCreate, SkillRead, SkillUpdate } from "@/types/skill";
 
 /**
  * Skill Management APIs

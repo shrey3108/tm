@@ -1,8 +1,9 @@
 import { Card } from "@/components/ui/card";
-import { DateDisplay } from "@/components/shared/DateDisplay"
 import { History, MessageSquare } from "lucide-react";
 import type { HrDecisionHistoryItem } from "@/apis/candidateDecision";
-import { CandidateStatusBadge, StarRating } from "@/components/shared";
+import { DateDisplay } from "@/components/shared/DateDisplay";
+import CandidateStatusBadge from "@/components/shared/CandidateStatusBadge";
+import { StarRating } from "@/components/shared/StarRating";
 
 interface DecisionHistoryProps {
   decisions: HrDecisionHistoryItem[];

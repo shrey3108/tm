@@ -1,4 +1,4 @@
-import { DeleteModal } from "@/components/modal";
+import DeleteModal from "@/components/modal/DeleteModal";
 
 interface QuestionsBankModalsProps {
   activeModal: "delete" | null;

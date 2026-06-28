@@ -3,18 +3,15 @@
  * Displays all skills with ability to create, edit, and delete.
  */
 import { useState, useEffect } from "react";
-import type { SkillRead } from "@/types/admin";
+import type { SkillRead } from "@/types/skill";
 import AppPageShell from "@/components/shared/AppPageShell";
 import PageHeader from "@/components/shared/PageHeader";
 import { useToast } from "@/components/shared/ToastProvider";
 import { DataTable } from "@/components/shared/DataTable";
 import ErrorDisplay from "@/components/shared/ErrorDisplay";
-import { CreateSkillModal, DeleteModal } from "@/components/modal";
-import { useDebouncedValue } from "@/hooks";
 import { Edit2, Trash2Icon, ArrowUpDown, AlertCircle, Plus } from "lucide-react";
 import { extractErrorMessage } from "@/utils/error";
 import type { ColumnDef, PaginationState } from "@tanstack/react-table";
-import { Button } from "@/components";
 import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card";
 import { Badge } from "@/components/ui/badge";
 import PermissionGuard from "@/components/auth/PermissionGuard";
@@ -24,6 +21,10 @@ import { selectCurrentUser } from "@/store/slices/authSlice";
 import { useSkill } from "@/hooks/queries/admin/useSkill";
 import { useDeleteSkillMutation } from "@/hooks/mutations/admin/useSkill";
 import { usePageFilters } from "@/hooks/usePageFilters";
+import CreateSkillModal from "@/components/modal/CreateSkillModal";
+import DeleteModal from "@/components/modal/DeleteModal";
+import { useDebouncedValue } from "@/hooks/useDebounced";
+import { Button } from "@/components/ui/button";
 
 const AdminSkills = () => {
   const toast = useToast();

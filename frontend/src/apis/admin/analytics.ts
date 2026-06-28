@@ -5,9 +5,8 @@ import type {
   HiringReport,
   RecentUploadRead,
   PaginatedResponse,
-  JobPipelineStats,
 } from "@/types/admin";
-
+import type { JobPipelineStats } from "@/types/job";
 const ADMIN_PATH = import.meta.env.VITE_ADMIN_API_ENDPOINT || "/admin";
 
 /**

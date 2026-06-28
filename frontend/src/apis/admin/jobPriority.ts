@@ -1,6 +1,7 @@
 import client from "@/apis/client";
 
-import type { JobPriorityRead, PaginatedResponse } from "@/types/admin";
+import type { PaginatedResponse } from "@/types/admin";
+import type { JobPriorityRead } from "@/types/jobPriority";
 
 
 /**

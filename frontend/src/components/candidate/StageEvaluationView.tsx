@@ -1,9 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { History, ExternalLink, Loader2 } from "lucide-react";
-import { Badge } from "@/components";
+import { Badge } from "@/components/ui/badge";
 import { EvaluationGrid } from "@/components/candidate/EvaluationGrid";
 import { StageOverallSummary, type OverallSummaryData } from "@/components/candidate/StageOverallSummary";
-import { CandidateHistoryGrid } from "@/components/candidate/CandidateHistoryGrid";
+import { CandidateHistoryGrid } from "@/components/candidate/stage/CandidateHistoryGrid";
 import type { EvaluationRead, EvaluationHistoryRead } from "@/types/candidateStage";
 import type { HrDecisionHistoryItem } from "@/apis/candidateDecision";
 import type { Transcript } from "@/types/transcript";
@@ -98,60 +98,60 @@ export function StageEvaluationView({
           stageName.toLowerCase().includes("coding") ||
           stageName.toLowerCase().includes("test")
         ) && (
-          <>
-            {isGithubUploaded && githubUrl && (
-              <HoverCard>
-                <HoverCardTrigger delay={10} closeDelay={10}
-                  render={(props) => (
-                    <Button
-                      {...props}
-                      variant="ghost"
-                      size="icon-sm"
-                      className="rounded-lg"
-                      onClick={(e) => {
-                        if (props.onClick) props.onClick(e);
-                        window.open(githubUrl, "_blank");
-                      }}
-                    >
-                      <GithubLogo className="h-4 w-4" />
-                    </Button>
-                  )}
-                />
-                <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
-                  Github Submmited link
-                </HoverCardContent>
-              </HoverCard>
-            )}
-            {assignedPaper && (
-              <HoverCard>
-                <HoverCardTrigger delay={10} closeDelay={10}
-                  render={(props) => (
-                    <Button
-                      {...props}
-                      variant="ghost"
-                      size="icon-sm"
-                      className="rounded-lg"
-                      onClick={(e) => {
-                        if (props.onClick) props.onClick(e);
-                        handleViewTaskPaper();
-                      }}
-                      disabled={isDownloading}
-                    >
-                      {isDownloading ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <ExternalLink className="h-4 w-4" />
-                      )}
-                    </Button>
-                  )}
-                />
-                <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
-                  View Task file
-                </HoverCardContent>
-              </HoverCard>
-            )}
-          </>
-        )}
+            <>
+              {isGithubUploaded && githubUrl && (
+                <HoverCard>
+                  <HoverCardTrigger delay={10} closeDelay={10}
+                    render={(props) => (
+                      <Button
+                        {...props}
+                        variant="ghost"
+                        size="icon-sm"
+                        className="rounded-lg"
+                        onClick={(e) => {
+                          if (props.onClick) props.onClick(e);
+                          window.open(githubUrl, "_blank");
+                        }}
+                      >
+                        <GithubLogo className="h-4 w-4" />
+                      </Button>
+                    )}
+                  />
+                  <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
+                    Github Submmited link
+                  </HoverCardContent>
+                </HoverCard>
+              )}
+              {assignedPaper && (
+                <HoverCard>
+                  <HoverCardTrigger delay={10} closeDelay={10}
+                    render={(props) => (
+                      <Button
+                        {...props}
+                        variant="ghost"
+                        size="icon-sm"
+                        className="rounded-lg"
+                        onClick={(e) => {
+                          if (props.onClick) props.onClick(e);
+                          handleViewTaskPaper();
+                        }}
+                        disabled={isDownloading}
+                      >
+                        {isDownloading ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <ExternalLink className="h-4 w-4" />
+                        )}
+                      </Button>
+                    )}
+                  />
+                  <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
+                    View Task file
+                  </HoverCardContent>
+                </HoverCard>
+              )}
+            </>
+          )}
 
         {canTakeDecision && (
           <Button

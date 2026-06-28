@@ -6,10 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Info, Edit2, Trash2, ArrowUpDown, Plus } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { StageTemplate } from "@/types/stage";
-import { ErrorDisplay, useToast } from "@/components/shared";
 import { StageDeleteDialog } from "@/components/admin/StageDeleteDialog";
 import { StageDetailDialog } from "@/components/admin/StageDetailDialog";
-import { useDebouncedValue } from "@/hooks";
 import { useNavigate } from "react-router-dom";
 import {
   useUpdateStageTemplateMutation,
@@ -26,6 +24,9 @@ import { Switch } from "@/components/ui/switch"
 import { extractErrorMessage } from "@/utils/error";
 import { useJobStage } from "@/hooks/queries/admin/useJobStage";
 import { usePageFilters } from "@/hooks/usePageFilters";
+import ErrorDisplay from "@/components/shared/ErrorDisplay";
+import { useToast } from "@/components/shared/ToastProvider";
+import { useDebouncedValue } from "@/hooks/useDebounced";
 
 /**
  * Admin page for managing job stage templates.

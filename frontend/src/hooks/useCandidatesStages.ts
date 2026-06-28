@@ -30,6 +30,13 @@ import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { selectActivePollings, startPolling, stopPolling } from "@/store/slices/pollingSlice";
 // import { TEMP_TECHNICAL_ROUND_HR_DECISION, TEMP_TECHNICAL_ROUND_RESPONSE } from "@/constants/temp";
 
+const getInitialStage = (stageSlug: string) => {
+  if (stageSlug) {
+    return stageSlug === "resume-screening" ? "Resume Screening" : stageSlug.replace(/-/g, " ");
+  }
+  return "Resume Screening";
+};
+
 /**
  * A comprehensive hook for managing the state and logic of the Candidate Stages view.
  * Handles fetching candidate data, interview stages, evaluations, and transcript history
@@ -54,14 +61,9 @@ export function useCandidatesStages() {
     location.state?.candidate as CandidateAnalysis | null
   );
 
-  const getInitialStage = () => {
-    if (params.stageSlug) {
-      return params.stageSlug === "resume-screening" ? "Resume Screening" : params.stageSlug.replace(/-/g, " ");
-    }
-    return "Resume Screening";
-  };
 
-  const [currentStage, setCurrentStage] = useState(getInitialStage());
+
+  const [currentStage, setCurrentStage] = useState(() => getInitialStage(params.stageSlug || ""));
 
   const candidateName = candidate
     ? `${candidate.first_name} ${candidate.last_name}`
@@ -99,7 +101,7 @@ export function useCandidatesStages() {
 
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [isJobModalOpen, setIsJobModalOpen] = useState(false);
-  
+
   const dispatch = useAppDispatch();
   const activePollings = useAppSelector(selectActivePollings);
   const isPolling = useMemo(

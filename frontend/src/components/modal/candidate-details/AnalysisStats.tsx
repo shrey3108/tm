@@ -2,7 +2,7 @@ import { CheckCircle2, XCircle } from "lucide-react";
 import type { CandidateResponse } from "@/types/resume";
 import type { CandidateAnalysis } from "@/types/admin";
 import { DEFAULT_PASSING_THRESHOLD } from "@/constants";
-import { CandidateStatusBadge } from "@/components/shared";
+import CandidateStatusBadge from "@/components/shared/CandidateStatusBadge";
 
 /**
  * Props for {@link AnalysisStats}.

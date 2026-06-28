@@ -12,20 +12,21 @@ import PageHeader from "@/components/shared/PageHeader";
 import JobSummaryCard from "@/components/shared/JobSummaryCard";
 import CandidateSearchTable from "@/components/candidate/CandidateSearchTable";
 import QuickResumeUpload from "@/components/candidate/QuickResumeUpload";
-import {
-  CandidateDetailsModal,
-  DeleteModal,
-} from "@/components/modal";
-import { JobCandidatesSkeleton } from "@/components/candidate/JobCandidatesSkeleton";
-import { useDeleteConfirmation } from "@/hooks";
+
+import { JobCandidatesSkeleton } from "@/components/job/candidates/JobCandidatesSkeleton";
 import type { PaginationState } from "@tanstack/react-table";
-import { Button } from "@/components";
+import { Button } from "@/components/ui/button";
 import type { CandidateActiveFilters } from "@/hooks/useCandidateTableFilters";
 import { usePageFilters } from "@/hooks/usePageFilters";
-import { useToast } from "@/components/shared";
-import { useAdminCandidates, useJob } from "@/hooks/queries/jobs";
+import { useToast } from "@/components/shared/ToastProvider";
+
 import { useDeleteResumeMutation } from "@/hooks/mutations/jobs/useResumeMutation";
 import type { DateRange } from "react-day-picker";
+import { useDeleteConfirmation } from "@/hooks/useDeleteConfirmation";
+import { CandidateDetailsModal } from "@/components/modal/CandidateDetailsModal";
+import DeleteModal from "@/components/modal/DeleteModal";
+import { useAdminCandidates } from "@/hooks/queries/jobs/useAdminCandidates";
+import { useJob } from "@/hooks/queries/jobs/useJob";
 
 
 const AdminCandidateSearch = () => {

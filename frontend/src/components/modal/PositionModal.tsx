@@ -4,19 +4,21 @@
  */
 
 import { useCallback } from "react";
-import type { JobPositionRead } from "@/types/admin";
+import type {
+  JobPositionRead,
+} from "@/types/jobPosition";
 import { useCreatePositionMutation, useUpdatePositionMutation } from "@/hooks/mutations/admin/useJobPosition";
-import {
-  Button,
-  Input,
 
+import {
   Form,
   FormField,
   FormItem,
   FormLabel,
   FormControl,
   FormMessage,
-} from "@/components";
+} from "@/components/ui/form";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -24,7 +26,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { useFormModal } from "@/hooks";
+import { useFormModal } from "@/hooks/useFormModal";
 import { jobPositionCreateSchema, type JobPositionCreateFormValues } from "@/schemas/jobPosition";
 import ErrorDisplay from "@/components/shared/ErrorDisplay";
 

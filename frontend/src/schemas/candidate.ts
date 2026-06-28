@@ -35,8 +35,6 @@ export type CandidateDecisionFormValues = z.infer<typeof candidateDecisionSchema
 export const ProjectSubmissionSchema = z.object({
   /** The repository URL for the project */
   repoUrl: z
-    .string()
-    .min(1, "URL is required")
     .url("Must be a valid URL") // we can use direct z.url as well but this will also work
     .refine(
       (url) => {

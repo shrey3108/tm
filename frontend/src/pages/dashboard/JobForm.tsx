@@ -7,22 +7,24 @@ import { X } from "lucide-react";
 
 import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button"
-import {
-  JobFormSkeleton,
-  BasicJobDetails,
-  JobSettingsSection,
-  CustomFieldsSection,
-  SkillSelectorSection,
-  StagePipelineSection,
-} from "@/components/job-form";
+// BasicJobDetails,
+// JobSettingsSection,
+// CustomFieldsSection,
+// SkillSelectorSection,
+// StagePipelineSection,
+import { JobFormSkeleton } from "@/components/job/job-form/JobFormSkeleton";
+import { BasicJobDetails } from "@/components/job/job-form/BasicJobDetails";
+import { JobSettingsSection } from "@/components/job/job-form/JobSettingsSection";
+import { StagePipelineSection } from "@/components/job/job-form/StagePipelineSection";
+import { CustomFieldsSection } from "@/components/job/job-form/CustomFieldsSection";
 
-import type { SkillBase } from "@/types/admin";
+import type { SkillBase } from "@/types/skill";
 import { jobCreateSchema, type JobCreateFormValues } from "@/schemas/job";
 import AppPageShell from "@/components/shared/AppPageShell";
 import PageHeader from "@/components/shared/PageHeader";
 import { extractErrorMessage } from "@/utils/error";
 import { DEFAULT_PASSING_THRESHOLD } from "@/constants";
-import { MoreJobSetting } from "@/components/job-form/MoreJobSetting";
+import { MoreJobSetting } from "@/components/job/job-form/MoreJobSetting";
 import type { JobVersionMinimal } from "@/types/job";
 
 // TanStack Query Hooks
@@ -33,6 +35,7 @@ import { useJobBySlugOrId } from "@/hooks/queries/jobs/useJob";
 import { useCreateJobMutation, useUpdateJobMutation } from "@/hooks/mutations/jobs/useJobMutations";
 import { useJobTask } from "@/hooks/queries/jobs/useJobTask";
 import { useUploadJobTaskMutation, useDeleteJobTaskMutation } from "@/hooks/mutations/jobs/useJobTaskMutations";
+import { SkillSelectorSection } from "@/components/job/job-form/SkillSelectorSection";
 
 
 export default function CreateJob() {

@@ -3,13 +3,13 @@
  * Displays all prompts used by the system with ability to view their content.
  */
 import { useState, useEffect } from "react";
-
 import type { PromptRead } from "@/types/admin";
 import AppPageShell from "@/components/shared/AppPageShell";
 import PageHeader from "@/components/shared/PageHeader";
 import { DataTable } from "@/components/shared/DataTable";
 import type { ColumnDef, PaginationState } from "@tanstack/react-table";
-import { Badge, Button } from "@/components";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card";
 import PermissionGuard from "@/components/auth/PermissionGuard";
 import { PERMISSIONS } from "@/lib/permissions";
@@ -24,7 +24,7 @@ import {
     DialogDescription,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { useDebouncedValue } from "@/hooks";
+import { useDebouncedValue } from "@/hooks/useDebounced";
 import { usePrompts } from "@/hooks/queries/admin/usePrompts";
 import { usePageFilters } from "@/hooks/usePageFilters";
 import ErrorDisplay from "@/components/shared/ErrorDisplay";

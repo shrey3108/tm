@@ -1,5 +1,5 @@
 import ErrorDisplay from "@/components/shared/ErrorDisplay";
-import type { SkillRead } from "@/types/admin";
+import type { SkillRead } from "@/types/skill";
 import { Button } from "../ui/button";
 
 interface JobSkillSelectorProps {
@@ -50,8 +50,8 @@ const JobSkillSelector = ({
               <label
                 key={skill.id}
                 className={`flex flex-col p-2 border rounded cursor-pointer ${selectedSkillIds.includes(skill.id)
-                    ? "border-primary bg-primary/10"
-                    : "bg-background"
+                  ? "border-primary bg-primary/10"
+                  : "bg-background"
                   }`}
                 style={{ width: "calc(33.33% - 0.75rem)", minWidth: "150px" }}
               >

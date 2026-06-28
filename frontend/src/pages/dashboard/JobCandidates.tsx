@@ -1,16 +1,14 @@
 import { useState, useRef, useMemo, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Button, Input } from "@/components/";
 import { RotateCw, Layers } from "lucide-react";
-import { CandidateDetailsModal, JobInfoModal, DeleteModal } from "@/components/modal";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import CandidateTable from "@/components/candidate/CandidateTable";
 import { useJobCandidates } from "@/hooks/useJobCandidates";
 import { usePageFilters } from "@/hooks/usePageFilters";
-import { JobCandidatesSkeleton } from "@/components/candidate/JobCandidatesSkeleton";
-import { JobCandidatesHeader } from "@/components/candidate/JobCandidatesHeader";
-import { JobCandidatesCharts } from "@/components/candidate/JobCandidatesCharts";
-import { JobCandidatesStats } from "@/components/candidate/JobCandidatesStats";
+import { JobCandidatesSkeleton } from "@/components/job/candidates/JobCandidatesSkeleton";
+import { JobCandidatesHeader } from "@/components/job/candidates/JobCandidatesHeader";
+import { JobCandidatesCharts } from "@/components/job/candidates/JobCandidatesCharts";
+import { JobCandidatesStats } from "@/components/job/candidates/JobCandidatesStats";
 import PermissionGuard from "@/components/auth/PermissionGuard";
 import type { CandidateAnalysis } from "@/types/admin";
 import AppPageShell from "@/components/shared/AppPageShell";
@@ -23,6 +21,11 @@ import { SendQuestionPaperDialog } from "@/components/candidate/projectSubmissio
 import { useCandidatesTestPapers } from "@/hooks/queries/taskPapers/useTaskPaperQueries";
 // import { useCandidateTimelineQuery } from "@/hooks/queries/candidates";
 import type { Job } from "@/types/job";
+import { Button } from "@/components/ui/button";
+import { CandidateDetailsModal } from "@/components/modal/CandidateDetailsModal";
+import { JobInfoModal } from "@/components/modal/JobInfoModal";
+import { Input } from "@/components/ui/input";
+import DeleteModal from "@/components/modal/DeleteModal";
 
 interface CandidateStagesButtonProps {
   candidate: CandidateAnalysis;

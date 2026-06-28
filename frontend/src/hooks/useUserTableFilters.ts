@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { startOfDay, endOfDay } from "date-fns";
 import type { DateRange } from "react-day-picker";
-import type { UserAdminRead } from "@/types/admin";
+import type { UserAdminRead } from "@/types/permission-role";
 import { usePageFilters } from "@/hooks/usePageFilters";
 import type { PaginationState } from "@tanstack/react-table";
 

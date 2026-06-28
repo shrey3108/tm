@@ -5,23 +5,23 @@
 
 import { useCallback } from "react";
 import {
-  Button,
-  Input,
-  Form,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormMessage,
-} from "@/components";
-import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { useFormModal } from "@/hooks";
+import { useFormModal } from "@/hooks/useFormModal";
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { permissionCreateSchema, type PermissionCreateFormValues } from "@/schemas/permission-role";
 import ErrorDisplay from "@/components/shared/ErrorDisplay";
 import { useCreatePermissionMutation } from "@/hooks/mutations/admin/usePermission";

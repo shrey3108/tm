@@ -1,18 +1,18 @@
 import { useState, useMemo } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { Plus, Check, Search, Loader2 } from "lucide-react";
+import { Input, } from "@/components/ui/input";
+import type { SkillRead } from "@/types/skill";
+import { cn } from "@/lib/utils";
 import {
   FormField,
   FormItem,
   FormMessage,
-  Input,
-} from "@/components";
-import type { SkillRead } from "@/types/admin";
-import { cn } from "@/lib/utils";
-import { CreateSkillModal } from "../modal";
+} from "@/components/ui/form";
 import { useDebouncedValue } from "@/hooks/useDebounced";
 import { useSkill } from "@/hooks/queries/admin/useSkill";
-import { Button } from "../ui/button";
+import { Button } from "@/components/ui/button";
+import CreateSkillModal from "@/components/modal/CreateSkillModal";
 
 interface QuestionsBankSkillSelectorProps {
   initialSelectedSkills?: SkillRead[];

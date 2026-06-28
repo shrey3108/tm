@@ -8,16 +8,16 @@ import AdminDataTable, { type Column } from "@/components/shared/AdminDataTable"
 import AppPageShell from "@/components/shared/AppPageShell";
 import PageHeader from "@/components/shared/PageHeader";
 import StatCard from "@/components/shared/StatCard";
-import { useAdminDashboardFilters } from "@/hooks";
+import { useAdminDashboardFilters } from "@/hooks/useAdminDashboardFilters";
 import { Separator } from "@/components/ui/separator";
 import { StageCentricChart } from "@/components/admin/AdminPipelineChart";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { FileText, BarChart3 } from "lucide-react";
-import AdminDashboardFilters from "@/components/admin/AdminDashboardFilters";
 import { useAdminDashboardData } from "@/hooks/queries/admin/useAdminDashboardData";
 import { useJobStage } from "@/hooks/queries/admin/useJobStage";
 import { useJobTitle } from "@/hooks/queries/jobs/useJob";
+import AdminDashboardFilters from "@/components/admin/AdminDashboardFilters";
 
 const AdminDashboard = () => {
   const [viewMode, setViewMode] = useState<"report" | "chart">("report");

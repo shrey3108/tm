@@ -1,5 +1,6 @@
 import { useMemo, useCallback } from "react";
-import type { HiringReport, JobPipelineStats } from "@/types/admin";
+import type { HiringReport } from "@/types/admin";
+import type { JobPipelineStats } from "@/types/job";
 import type { JobTitle } from "@/types/job";
 import { usePageFilters } from "@/hooks/usePageFilters";
 

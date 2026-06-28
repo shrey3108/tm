@@ -17,7 +17,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { useFormModal } from "@/hooks";
+import { useFormModal } from "@/hooks/useFormModal";
 import { questionFormSchema, type QuestionFormValues } from "@/schemas/question";
 import type { QuestionItem } from "@/types/taskPaper";
 

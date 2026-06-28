@@ -1,11 +1,12 @@
 import client from "@/apis/client";
 import type {
+  PaginatedResponse
+} from "@/types/admin";
+import type {
   JobPositionRead,
   JobPositionCreate,
   JobPositionUpdate,
-  PaginatedResponse
-} from "@/types/admin";
-
+} from "@/types/jobPosition";
 /**
  * Service for managing job positions via the admin API.
  */

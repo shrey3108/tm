@@ -1,6 +1,9 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { adminJobPositionService } from "@/apis/admin";
-import type { JobPositionCreate, JobPositionUpdate } from "@/types/admin";
+import type {
+  JobPositionCreate,
+  JobPositionUpdate,
+} from "@/types/jobPosition";
 import { QUERY_KEYS } from "@/constants/queryKeys";
 
 /**

@@ -4,18 +4,16 @@
  */
 
 import { useCallback } from "react";
-import type { JobPriorityRead } from "@/types/admin";
+import type { JobPriorityRead } from "@/types/jobPriority";
 import { useCreatePriorityMutation, useUpdatePriorityMutation } from "@/hooks/mutations/admin/useJobPriority";
 import {
-  Button,
-  Input,
   Form,
   FormField,
   FormItem,
   FormLabel,
   FormControl,
   FormMessage,
-} from "@/components";
+} from "@/components/ui/form";
 import {
   Dialog,
   DialogContent,
@@ -23,9 +21,11 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { useFormModal } from "@/hooks";
+import { useFormModal } from "@/hooks/useFormModal";
 import { jobPriorityCreateSchema, type JobPriorityCreateFormValues } from "@/schemas/jobPriority";
 import ErrorDisplay from "@/components/shared/ErrorDisplay";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 interface CreateJobPriorityModalProps {
   show: boolean;

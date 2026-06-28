@@ -10,8 +10,7 @@ import {
   useDeleteProjectTaskFromPaperMutation,
   useDeleteMCQFromPaperMutation,
 } from "@/hooks/mutations/taskPapers/useTaskPaperMutations";
-import { LoadingSpinner, DataTable } from "@/components/shared";
-import { useDebouncedValue } from "@/hooks";
+import { useDebouncedValue } from "@/hooks/useDebounced";
 import { extractErrorMessage } from "@/utils/error";
 import { useDepartment } from "@/hooks/queries/admin/useDepartment";
 import { useJobPosition } from "@/hooks/queries/admin/useJobPosition";
@@ -22,6 +21,8 @@ import { slugify } from "@/utils/slug";
 import { QuestionsBankFilters } from "@/components/questions-bank/QuestionsBankFilters";
 import { QuestionsBankModals } from "@/components/questions-bank/QuestionsBankModals";
 import { getQuestionsBankColumns, type FlatItem } from "@/components/questions-bank/QuestionsBankColumns";
+import { DataTable } from "@/components/shared/DataTable";
+import LoadingSpinner from "@/components/shared/LoadingSpinner";
 
 /** Default filter values for the QuestionsBank page. */
 const questionsBankDefaults = {

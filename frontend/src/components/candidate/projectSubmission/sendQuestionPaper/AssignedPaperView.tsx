@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import type { CandidateTestPaperRead } from "@/types/taskPaper";
-import { PaperContentDisplay } from "@/components/shared";
+import { PaperContentDisplay } from "@/components/shared/PaperContentDisplay";
 
 interface AssignedPaperViewProps {
   assignedPaper: CandidateTestPaperRead;

@@ -1,5 +1,6 @@
 import apiClient from "@/apis/client";
-import type { CriterionCreate, CriterionRead, CriterionUpdate, PaginatedResponse } from "@/types/admin";
+import type { CriterionCreate, CriterionRead, CriterionUpdate } from "@/types/jobCriteria";
+import type { PaginatedResponse } from "@/types/admin";
 
 const ADMIN_PATH = import.meta.env.VITE_ADMIN_API_ENDPOINT || "/admin";
 

@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import type { CriterionRead } from "@/types/admin";
+import type { CriterionRead } from "@/types/jobCriteria";
 import { DateDisplay } from "@/components/shared/DateDisplay";
 import { FileText } from "lucide-react";
 

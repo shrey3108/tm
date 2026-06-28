@@ -6,9 +6,12 @@ import { slugify } from "@/utils/slug";
 import type { CandidateAnalysis, JobStatsResponse } from "@/types/admin";
 import type { Job } from "@/types/job";
 import { useDeleteConfirmation } from "./useDeleteConfirmation";
-import { useJob, useJobCandidatesList, useJobStats, useJobTitle } from "./queries/jobs";
+
 import { useReanalyzeCandidateMutation, useUpdateJobMutation, } from "@/hooks/mutations/jobs/useJobMutations";
 import { useUploadResumeMutation, useDeleteResumeMutation } from "@/hooks/mutations/jobs/useResumeMutation"
+import { useJob, useJobTitle } from "@/hooks/queries/jobs/useJob";
+import { useJobCandidatesList } from "@/hooks/queries/jobs/useJobCandidatesList";
+import { useJobStats } from "@/hooks/queries/jobs/useJobStats";
 type JobRouteState = {
   jobId?: string;
 };
