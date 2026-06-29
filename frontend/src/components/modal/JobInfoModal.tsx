@@ -123,8 +123,8 @@ export function JobInfoModal({ isOpen, onClose, job }: JobInfoModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={(open: boolean) => !open && onClose()}>
       <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-3xl md:max-w-4xl lg:max-w-5xl max-h-[90vh] flex flex-col p-0 overflow-hidden bg-card/95 backdrop-blur-xl border-muted-foreground/20 shadow-2xl rounded-2xl h-[600px]">
-        <DialogHeader className="p-2 pb-2 border-b border-muted-foreground/10 bg-muted/30">
-          <div className="flex flex-col items-start justify-between gap-4">
+        <DialogHeader className="p-2 pb-1 border-b border-muted-foreground/10 bg-muted/30">
+          <div className="flex flex-col items-start justify-between gap-1">
             <DialogTitle className="text-lg font-black tracking-tight text-foreground capitalize flex flex-row items-center justify-between gap-2 ">
               {job.title}
               <Button
@@ -178,7 +178,7 @@ export function JobInfoModal({ isOpen, onClose, job }: JobInfoModalProps) {
           </div>
         </DialogHeader>
 
-        <div className="flex-1 p-4 overflow-y-auto overflow-x-hidden min-h-0 bg-muted/5">
+        <div className="flex-1 p-2 overflow-y-auto overflow-x-hidden min-h-0 bg-muted/5">
           <div className="space-y-4 pb-4">
             {/* Job Description Card */}
             <InfoSection
@@ -247,10 +247,9 @@ export function JobInfoModal({ isOpen, onClose, job }: JobInfoModalProps) {
                     <Badge
                       key={skill.name}
                       variant="secondary"
-                      className="rounded-xl px-3 py-1 text-xs font-semibold bg-secondary/40 hover:bg-secondary text-secondary-foreground border-muted-foreground/5 transition-colors"
-                      title={skill.description || undefined}
+                      className="rounded-xl px-1.5 py-1 text-xs font-semibold bg-secondary/40 hover:bg-secondary text-secondary-foreground border-muted-foreground/5 transition-colors"
                     >
-                      {skill.name}
+                      {skill.name}{" - "}{skill.default_weightage}
                     </Badge>
                   ))}
                 </div>

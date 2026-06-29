@@ -325,7 +325,7 @@ export function SendQuestionPaperDialog({
         <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-3xl md:max-w-4xl lg:max-w-5xl max-h-[90vh] flex flex-col p-0 overflow-hidden bg-card/95 backdrop-blur-xl border-muted-foreground/20 shadow-2xl rounded-2xl h-[550px] gap-2">
 
           {/* Header */}
-          <DialogHeader className="p-4 pb-2 border-b border-muted-foreground/10 shrink-0 text-left">
+          <DialogHeader className="p-2 pb-1 border-b border-muted-foreground/10 shrink-0 text-left">
             <DialogTitle className="text-xl font-bold tracking-tight flex items-center gap-2">
               {titleContent.icon}
               <span>{titleContent.text}</span>
@@ -337,7 +337,7 @@ export function SendQuestionPaperDialog({
           </DialogHeader>
 
           {/* Content body */}
-          <div className="flex-1 overflow-y-auto min-h-0 p-4">
+          <div className="flex-1 overflow-y-auto min-h-0 p-2">
             {loadingAssigned ? (
               <LoadingSpinner message="Checking candidate's test paper assignment..." />
             ) : (
@@ -364,7 +364,7 @@ export function SendQuestionPaperDialog({
           </div>
 
           {/* Footer actions */}
-          <DialogFooter className="p-4 border-t border-muted-foreground/10 bg-muted/20 shrink-0 gap-3 flex items-center justify-end flex-row">
+          <DialogFooter className="p-2 border-t border-muted-foreground/10 bg-muted/20 shrink-0 gap-3 flex items-center justify-end flex-row">
             <Button
               type="button"
               variant="outline"
