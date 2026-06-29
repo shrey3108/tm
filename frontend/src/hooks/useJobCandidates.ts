@@ -188,20 +188,29 @@ export const useJobCandidates = (
     if (!files || files.length === 0 || !job) return;
 
     setIsUploading(true);
-    const uploadPromises = Array.from(files).map(async (file) => {
-      try {
-        await uploadResume({ jobId: job.id, file, jobTitle: job.title });
-        toast.success(`Uploaded ${file.name} successfully!`);
-      } catch (error) {
-        const errorMessage = extractErrorMessage(error);
-        console.error(`Failed to upload ${file.name}:`, error);
-        toast.error(errorMessage || `Failed to upload ${file.name}`);
+    try {
+      const data = await uploadResume({
+        jobId: job.id,
+        files: Array.from(files),
+        jobTitle: job.title,
+      });
+      const successCount = data.successful?.length || 0;
+      const failedCount = data.failed?.length || 0;
+      if (successCount > 0) {
+        toast.success(`Successfully uploaded ${successCount} resume${successCount > 1 ? "s" : ""}!`);
       }
-    });
-
-    await Promise.all(uploadPromises);
-    setIsUploading(false);
-    if (event.target) event.target.value = "";
+      if (failedCount > 0) {
+        data.failed.forEach((fail) => {
+          toast.error(`Failed to upload ${fail.file_name}: ${fail.error}`);
+        });
+      }
+    } catch (error) {
+      const errorMessage = extractErrorMessage(error, "Failed to upload resumes.");
+      toast.error(errorMessage);
+    } finally {
+      setIsUploading(false);
+      if (event.target) event.target.value = "";
+    }
   };
 
   const handleReanalyzeCandidate = useCallback(

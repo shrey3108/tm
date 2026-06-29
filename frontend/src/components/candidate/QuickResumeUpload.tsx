@@ -70,7 +70,7 @@ const QuickResumeUpload = ({
     }
 
     try {
-      await uploadResume({ jobId, file, jobTitle });
+      await uploadResume({ jobId, files: [file], jobTitle });
       toast.success("Resume uploaded successfully!");
       if (onSuccess) {
         onSuccess();

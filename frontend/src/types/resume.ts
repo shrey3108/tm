@@ -80,6 +80,27 @@ export interface ResumeUploadResponse {
 }
 
 /**
+ * Information about a failed resume upload.
+ */
+export interface FailedUpload {
+  /** Name of the file that failed to upload */
+  file_name: string;
+  /** Error message detail */
+  error: string;
+}
+
+/**
+ * Response returned when a batch of resumes is uploaded.
+ */
+export interface BulkResumeUploadResponse {
+  /** List of successfully uploaded resumes */
+  successful: ResumeUploadResponse[];
+  /** List of failed uploads */
+  failed: FailedUpload[];
+}
+
+
+/**
  * Response containing the current status of a resume.
  * Used for polling resume processing status.
  */

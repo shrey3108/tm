@@ -1,11 +1,11 @@
 import apiClient from "@/apis/client";
 import type {
-  ResumeUploadResponse,
   ResumeStatusResponse,
   JobCandidatesResponse,
   JobResumesResponse,
   CustomExtractionRequest,
   CustomExtractionResponse,
+  BulkResumeUploadResponse,
 } from "@/types/resume";
 
 /**
@@ -27,10 +27,12 @@ export const resumeService = {
    * }
    * ```
    */
-  uploadResume: async (jobId: string, file: File): Promise<ResumeUploadResponse> => {
+  uploadResume: async (jobId: string, files: File[]): Promise<BulkResumeUploadResponse> => {
     const formData = new FormData();
-    formData.append("resume", file);
-    const response = await apiClient.post<ResumeUploadResponse>(`/jobs/${jobId}/resume`, formData, {
+    files.forEach((file) => {
+      formData.append("resumes", file);
+    });
+    const response = await apiClient.post<BulkResumeUploadResponse>(`/jobs/${jobId}/resume`, formData, {
       headers: {
         "Content-Type": "multipart/form-data",
       },

@@ -4,6 +4,7 @@ import { QUERY_KEYS } from "@/constants/queryKeys";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAppDispatch } from "@/store/hooks";
 import { startPolling } from "@/store/slices/pollingSlice";
+import type { BulkResumeUploadResponse } from "@/types/resume";
 
 /**
  * Hook for uploading a resume for a job.
@@ -13,8 +14,13 @@ export function useUploadResumeMutation() {
     const dispatch = useAppDispatch();
     
     return useMutation({
-        mutationFn: ({ jobId, file }: { jobId: string; file: File; jobTitle?: string }) =>
-            jobService.uploadResume(jobId, file),
+        mutationFn: async ({ jobId, files }: { jobId: string; files: File[]; jobTitle?: string }) => {
+            const data = await jobService.uploadResume(jobId, files);
+            if (data.failed && data.failed.length === files.length) {
+                throw new Error(data.failed[0].error || "Failed to upload resumes.");
+            }
+            return data;
+        },
 
         onMutate: async ({ jobId }) => {
             // Cancel any in-flight fetches for data we are about to invalidate
@@ -30,20 +36,23 @@ export function useUploadResumeMutation() {
         },
 
         onSuccess: (data, variables) => {
-            const uploadResponse = data as any;
-            const candidateId = uploadResponse?.candidate_id;
+            const uploadResponse = data as BulkResumeUploadResponse;
             const jobId = variables.jobId;
-            if (candidateId) {
-                dispatch(startPolling({
-                    type: "resume",
-                    stageId: candidateId,
-                    candidateId: candidateId,
-                    jobId: jobId,
-                    candidateName: "",
-                    fileName: variables.file.name,
-                    jobTitle: variables.jobTitle || "",
-                }));
-            }
+            
+            uploadResponse?.successful?.forEach((success) => {
+                const candidateId = success.candidate_id;
+                if (candidateId) {
+                    dispatch(startPolling({
+                        type: "resume",
+                        stageId: candidateId,
+                        candidateId: candidateId,
+                        jobId: jobId,
+                        candidateName: "",
+                        fileName: success.file_name,
+                        jobTitle: variables.jobTitle || "",
+                    }));
+                }
+            });
         },
 
         onSettled: (_data, _error, variables) => {
