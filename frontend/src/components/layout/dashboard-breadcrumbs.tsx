@@ -63,6 +63,7 @@ const ROUTE_META: Record<string, { label: string; icon?: LucideIcon }> = {
   positions: { label: "Job Positions", icon: User },
   "questions-bank": { label: "Questions Bank", icon: ListChecks },
   transcript: { label: "Transcript", icon: ScrollText },
+  associates: { label: "Associates", icon: Users },
 
   //  Path-Specific Context Overrides 
   // Job Criteria Forms

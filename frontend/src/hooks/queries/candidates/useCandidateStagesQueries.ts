@@ -285,6 +285,30 @@ export function useTranscriptQuery(transcriptId: string | null | undefined) {
   });
 }
 
+/**
+ * Hook to query candidate stage similarity scores.
+ */
+export function useSimilarityScoresQuery(id: string | null | undefined) {
+  return useQuery({
+    queryKey: [QUERY_KEYS.CANDIDATES.SIMILARITY_SCORES, id],
+    queryFn: () => candidateStageService.getSimilarityScores(id!),
+    enabled: !!id,
+    staleTime: QUERY_CONFIG.CANDIDATE_STAGES.staleTime,
+  });
+}
+
+/**
+ * Hook to query all associate evaluation results for a candidate stage.
+ */
+export function useCandidateAssociateResultsQuery(id: string | null | undefined) {
+  return useQuery({
+    queryKey: [QUERY_KEYS.CANDIDATES.ASSOCIATE_RESULTS, id],
+    queryFn: () => candidateStageService.getAssociateResults(id!),
+    enabled: !!id,
+    staleTime: QUERY_CONFIG.CANDIDATE_STAGES.staleTime,
+  });
+}
+
 // export const useTranscript = useTranscriptQuery;
 // export const useTranscribe = useTranscriptQuery;
 

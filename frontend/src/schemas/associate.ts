@@ -19,5 +19,5 @@ export const associateUpdateSchema = z.object({
   email: emailSchema.optional(),
 });
 
-export type AssociateCreateCreateFormValues = z.infer<typeof associateCreateSchema>;
-export type AssociateUpdateCreateFormValues = z.infer<typeof associateUpdateSchema>;
+export type AssociateCreateFormValues = z.infer<typeof associateCreateSchema>;
+export type AssociateUpdateFormValues = z.infer<typeof associateUpdateSchema>;

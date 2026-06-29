@@ -32,3 +32,12 @@ export type StageOverrideCreate = z.infer<typeof stageOverrideCreateSchema>;
 export type StageDecisionCreate = z.infer<typeof stageDecisionCreateSchema>;
 export type SendToAssociatesRequest = z.infer<typeof sendToAssociatesRequestSchema>;
 
+/**
+ * Zod schema for triggering background GitHub evaluation.
+ * Matches backend GitHubEvaluationRequest.
+ */
+export const gitHubEvaluationRequestSchema = z.object({
+  github_url: z.string().trim().url("Invalid GitHub URL").min(1, "GitHub URL is required"),
+});
+
+export type GitHubEvaluationRequest = z.infer<typeof gitHubEvaluationRequestSchema>;

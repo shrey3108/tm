@@ -25,6 +25,8 @@ export const PERMISSIONS = {
   SYSTEM_MANAGE: "system:manage",
   QUESTIONS_MANAGE: "questions:manage",
   QUESTIONS_UPLOAD: "questions:upload",
+  ASSOCIATES_ACCESS: "associates:access",
+  ASSOCIATES_MANAGE: "associates:manage",
 } as const;
 
 export const ADMIN_ALL_PERMISSION = "admin:all";

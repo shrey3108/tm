@@ -4,6 +4,11 @@ import { taskService } from "@/apis/task";
 import { candidateStageService } from "@/apis/candidateStage";
 import type { CandidateDecisionFormValues } from "@/schemas/candidate";
 import { QUERY_KEYS } from "@/constants/queryKeys";
+import type {
+  StageOverrideCreate,
+  StageDecisionCreate,
+  SendToAssociatesRequest,
+} from "@/schemas/candidateStage";
 
 /**
  * Mutation hook to submit HR decisions.
@@ -105,6 +110,130 @@ export function useRetryEvaluationMutation() {
       });
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.JOBS.CANDIDATES],
+      });
+    },
+  });
+}
+
+/**
+ * Mutation hook to delete results and reset a stage.
+ */
+export function useDeleteCandidateStageResultsMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ stageId }: { stageId: string }) =>
+      candidateStageService.deleteResults(stageId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.CANDIDATES.EVALUATION, variables.stageId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.CANDIDATES.EVALUATION_HISTORY, variables.stageId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.CANDIDATES.TIMELINE],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.JOBS.CANDIDATES],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.CANDIDATES.HR_DECISION_HISTORY],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.CANDIDATES.ASSOCIATE_RESULTS, variables.stageId],
+      });
+    },
+  });
+}
+
+/**
+ * Mutation hook to send a paper to associates.
+ */
+export function useSendToAssociatesMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ stageId, payload }: { stageId: string; payload: SendToAssociatesRequest }) =>
+      candidateStageService.sendToAssociates(stageId, payload),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.CANDIDATES.EVALUATION, variables.stageId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.CANDIDATES.EVALUATION_HISTORY, variables.stageId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.CANDIDATES.TIMELINE],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.JOBS.CANDIDATES],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.CANDIDATES.HR_DECISION_HISTORY],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.CANDIDATES.ASSOCIATE_RESULTS, variables.stageId],
+      });
+    },
+  });
+}
+
+/**
+ * Mutation hook to override AI evaluation.
+ */
+export function useOverrideEvaluationMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ stageId, override }: { stageId: string; override: StageOverrideCreate }) =>
+      candidateStageService.overrideEvaluation(stageId, override),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.CANDIDATES.EVALUATION, variables.stageId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.CANDIDATES.EVALUATION_HISTORY, variables.stageId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.CANDIDATES.TIMELINE],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.JOBS.CANDIDATES],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.CANDIDATES.HR_DECISION_HISTORY],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.CANDIDATES.ASSOCIATE_RESULTS, variables.stageId],
+      });
+    },
+  });
+}
+
+/**
+ * Mutation hook to record HR stage decision.
+ */
+export function useRecordCandidateStageDecisionMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ stageId, decision }: { stageId: string; decision: StageDecisionCreate }) =>
+      candidateStageService.recordDecision(stageId, decision),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.CANDIDATES.EVALUATION, variables.stageId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.CANDIDATES.EVALUATION_HISTORY, variables.stageId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.CANDIDATES.TIMELINE],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.JOBS.CANDIDATES],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.CANDIDATES.HR_DECISION_HISTORY],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.CANDIDATES.ASSOCIATE_RESULTS, variables.stageId],
       });
     },
   });

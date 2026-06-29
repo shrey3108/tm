@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useCallback } from "react"
+import { createContext, useContext, useEffect, useState } from "react"
 
 export type Theme = "dark" | "light" | "system"
 
@@ -32,29 +32,22 @@ export function ThemeProvider({
         () => (sessionStorage.getItem(storageKey) as Theme) || defaultTheme
     )
 
-    const getSystemTheme = useCallback(() => {
-        return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
-    }, [])
+    // const getSystemTheme = useCallback(() => {
+    //     return "light"
+    // }, [])
 
     const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">(
-        themeSetting === "system" ? getSystemTheme() : (themeSetting as "light" | "dark")
+        themeSetting === "system" ? "light" : (themeSetting as "light" | "dark")
     )
 
     // 1. Resolve theme and listen for system changes
     useEffect(() => {
         if (themeSetting === "system") {
-            const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)")
-            const handleChange = () => {
-                setResolvedTheme(mediaQuery.matches ? "dark" : "light")
-            }
-
-            setResolvedTheme(getSystemTheme())
-            mediaQuery.addEventListener("change", handleChange)
-            return () => mediaQuery.removeEventListener("change", handleChange)
+            setResolvedTheme("light")
         } else {
             setResolvedTheme(themeSetting as "light" | "dark")
         }
-    }, [themeSetting, getSystemTheme])
+    }, [themeSetting])
 
     // 2. Sync DOM class with resolved theme
     useEffect(() => {

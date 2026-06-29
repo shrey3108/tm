@@ -3,12 +3,15 @@ import type {
   EvaluationRead,
   SimilarityScores,
   StageDecisionResponse,
-  EvaluationHistoryRead
+  EvaluationHistoryRead,
+  SendToAssociatesResponse,
 } from "@/types/candidateStage";
 import type {
   StageOverrideCreate,
   StageDecisionCreate,
+  SendToAssociatesRequest,
 } from "@/schemas/candidateStage";
+import type { AssociateResultsResponse } from "@/types/associateReview";
 
 /**
  * API service for candidate stage evaluation and decision operations.
@@ -136,6 +139,52 @@ export const candidateStageService = {
       candidate_stage_id: string;
       status: string;
     }>(`/candidate-stages/${id}/retry`);
+    return response.data;
+  },
+
+  /**
+   * Delete all evaluation results and decisions for a candidate stage, resetting its status to pending.
+   * @param id - UUID of the candidate stage.
+   */
+  deleteResults: async (
+    id: string
+  ): Promise<{
+    message: string;
+    candidate_stage_id: string;
+    status: string;
+  }> => {
+    const response = await apiClient.delete<{
+      message: string;
+      candidate_stage_id: string;
+      status: string;
+    }>(`/candidate-stages/${id}/results`);
+    return response.data;
+  },
+
+  /**
+   * Send the default test paper + candidate GitHub URL to multiple associates via email.
+   * @param id - UUID of the candidate stage.
+   * @param payload - Request body containing associate IDs.
+   */
+  sendToAssociates: async (
+    id: string,
+    payload: SendToAssociatesRequest
+  ): Promise<SendToAssociatesResponse> => {
+    const response = await apiClient.post<SendToAssociatesResponse>(
+      `/candidate-stages/${id}/send-to-associates`,
+      payload
+    );
+    return response.data;
+  },
+
+  /**
+   * Retrieve all associate evaluation results for a candidate stage.
+   * @param id - UUID of the candidate stage.
+   */
+  getAssociateResults: async (id: string): Promise<AssociateResultsResponse> => {
+    const response = await apiClient.get<AssociateResultsResponse>(
+      `/candidate-stages/${id}/associate-results`
+    );
     return response.data;
   },
 };

@@ -1,4 +1,4 @@
-import type { AssociateUpdateCreateFormValues, AssociateCreateCreateFormValues } from "@/schemas/associate";
+import type { AssociateUpdateFormValues, AssociateCreateFormValues } from "@/schemas/associate";
 /**
  * Type definitions for Associate read operations.
  * Matches backend AssociateRead.
@@ -9,6 +9,6 @@ export interface AssociateRead {
   email: string;
 }
 
-export type AssociateCreate =AssociateCreateCreateFormValues;
+export type AssociateCreate = AssociateCreateFormValues;
 
-export type AssociateUpdate = AssociateUpdateCreateFormValues;
+export type AssociateUpdate = AssociateUpdateFormValues;

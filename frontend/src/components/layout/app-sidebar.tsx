@@ -58,6 +58,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     PERMISSIONS.SKILLS_ACCESS,
     PERMISSIONS.USERS_READ,
     PERMISSIONS.SYSTEM_MANAGE,
+    PERMISSIONS.ASSOCIATES_ACCESS,
   ])
 
   const navRecruitment = [
@@ -163,6 +164,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           title: "Questions Bank",
           url: "/dashboard/questions-bank",
           permission: PERMISSIONS.JOBS_ACCESS,
+        },
+        {
+          title: "Associates",
+          url: "/dashboard/admin/associates",
+          permission: PERMISSIONS.ASSOCIATES_ACCESS,
         },
       ],
     },

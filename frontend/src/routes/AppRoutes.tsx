@@ -11,6 +11,7 @@ import PublicRoute from "@/components/auth/PublicRoute";
 
 import RoleRoute from "@/components/auth/RoleRoute";
 import { PERMISSIONS } from "@/lib/permissions";
+import RouteErrorBoundary from "@/components/shared/RouteErrorBoundary";
 
 // Loaders
 import { RootLayout } from "@/components/layout/RootLayout";
@@ -24,6 +25,7 @@ import { adminAuditLogsLoader } from "@/loaders/adminAuditLogs";
 import { adminRecentUploadsLoader } from "@/loaders/adminRecentUploads";
 import { adminJobsLoader } from "@/loaders/adminJobs";
 import { adminSkillsLoader } from "@/loaders/adminSkills";
+import { adminAssociatesLoader } from "@/loaders/adminAssociates";
 import { adminDepartmentsLoader, } from "@/loaders/adminDepartments";
 import { adminJobPositionsLoader } from "@/loaders/adminJobPositions";
 import { adminCandidateSearchLoader } from "@/loaders/adminCandidateSearch";
@@ -56,6 +58,7 @@ const AdminRecentUploads = lazy(() => import("@/pages/Admin/AdminRecentUploads")
 const AdminJobs = lazy(() => import("@/pages/Admin/AdminJobs"));
 const AdminCandidateSearch = lazy(() => import("@/pages/Admin/AdminCandidateSearch"));
 const AdminSkills = lazy(() => import("@/pages/Admin/AdminSkills"));
+const AdminAssociates = lazy(() => import("@/pages/Admin/AdminAssociates"));
 const AdminDepartments = lazy(() => import("@/pages/Admin/AdminDepartments"));
 const AdminJobStages = lazy(() => import("@/pages/Admin/AdminJobStages"));
 const AdminJobCriteria = lazy(() => import("@/pages/Admin/AdminJobCriteria"));
@@ -74,6 +77,7 @@ export const router = createBrowserRouter([
   {
     path: "/",
     element: <RootLayout />,
+    errorElement: <RouteErrorBoundary />,
     children: [
       {
         path: "register",
@@ -302,6 +306,15 @@ export const router = createBrowserRouter([
                   </RoleRoute>
                 ),
                 loader: adminSkillsLoader,
+              },
+              {
+                path: "associates",
+                element: (
+                  <RoleRoute requiredPermissions={PERMISSIONS.ASSOCIATES_ACCESS}>
+                    <AdminAssociates />
+                  </RoleRoute>
+                ),
+                loader: adminAssociatesLoader,
               },
               {
                 path: "departments",
