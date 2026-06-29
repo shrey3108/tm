@@ -60,6 +60,20 @@ class ResumeUploadResponse(BaseModel):
     version_results: list[dict] | None = None
 
 
+class FailedUpload(BaseModel):
+    """Information about a failed resume upload."""
+    
+    file_name: str
+    error: str
+
+
+class BulkResumeUploadResponse(BaseModel):
+    """Response returned when a batch of resumes is uploaded."""
+    
+    successful: list[ResumeUploadResponse]
+    failed: list[FailedUpload]
+
+
 
 class ResumeStatusResponse(BaseModel):
     """Response containing the current status and analysis of a resume."""

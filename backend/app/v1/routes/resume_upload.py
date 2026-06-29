@@ -17,6 +17,7 @@ from app.v1.schemas.upload import (
     JobCandidatesResponse,
     ResumeStatusResponse,
     ResumeUploadResponse,
+    BulkResumeUploadResponse,
 )
 from app.v1.schemas.user import UserRead
 from app.v1.services.resume_upload_service import (
@@ -28,33 +29,33 @@ router = APIRouter()
 
 @router.post(
     "/jobs/{job_id}/resume",
-    response_model=ResumeUploadResponse,
+    response_model=BulkResumeUploadResponse,
     status_code=status.HTTP_202_ACCEPTED,
 )
 async def upload_resume_for_job(
     job_id: uuid.UUID,
-    resume: UploadFile = FastAPIFile(...),
+    resumes: list[UploadFile] = FastAPIFile(...),
     db: AsyncSession = Depends(get_db),
     current_user: UserRead = Depends(check_permission("candidates:access")),
-) -> ResumeUploadResponse:
-    """Upload a resume for a specific job.
+) -> BulkResumeUploadResponse:
+    """Upload multiple resumes for a specific job.
 
-    This endpoint accepts a resume file, saves it to disk, and initiates
-    asynchronous processing to extract information and analyze it.
+    This endpoint accepts multiple resume files, saves them to disk, and initiates
+    asynchronous processing to extract information and analyze them.
 
     Args:
-        job_id: The UUID of the job the resume is for.
-        resume: The uploaded resume file.
+        job_id: The UUID of the job the resumes are for.
+        resumes: The uploaded resume files.
         db: The async database session.
         current_user: The authenticated user performing the upload.
 
     Returns:
-        A response indicating the upload was successful and processing has started.
+        A bulk response indicating which uploads were successful and which failed.
     """
-    return await resume_upload_service.upload_resume_for_job(
+    return await resume_upload_service.upload_resumes_for_job(
         db=db,
         job_id=job_id,
-        resume=resume,
+        resumes=resumes,
         current_user=current_user,
     )
 
