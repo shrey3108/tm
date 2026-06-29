@@ -16,7 +16,7 @@ import type { PaginationState } from "@tanstack/react-table";
 import type { CandidateActiveFilters } from "@/hooks/useCandidateTableFilters";
 import { slugify } from "@/utils/slug";
 import type { DateRange } from "react-day-picker";
-import { SendQuestionPaperDialog } from "@/components/candidate/projectSubmission/SendQuestionPaperDialog";
+// import { SendQuestionPaperDialog } from "@/components/candidate/projectSubmission/SendQuestionPaperDialog";
 import { useCandidatesTestPapers } from "@/hooks/queries/taskPapers/useTaskPaperQueries";
 // import { useCandidateTimelineQuery } from "@/hooks/queries/candidates";
 import type { Job } from "@/types/job";
@@ -180,7 +180,7 @@ export default function JobCandidates() {
   const [isJobModalOpen, setIsJobModalOpen] = useState(false);
 
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
-  const [isSendQuestionPaperDialogOpen, setIsSendQuestionPaperDialogOpen] = useState(false);
+  // const [isSendQuestionPaperDialogOpen, setIsSendQuestionPaperDialogOpen] = useState(false);
 
   // Reset rowSelection when filters or pagination changes
   useEffect(() => {
@@ -271,7 +271,15 @@ export default function JobCandidates() {
         viewMode={viewMode}
         setViewMode={setViewMode}
         showSendQuestionPaper={true}
-        onSendQuestionPaperClick={() => setIsSendQuestionPaperDialogOpen(true)}
+        onSendQuestionPaperClick={() => {
+          navigate(`/dashboard/jobs/${jobSlug}/send-paper`, {
+            state: {
+              selectedCandidates,
+              job,
+              emailFilterState: resolvedEmailState
+            }
+          });
+        }}
         emailFilterState={selectedCandidates.length > 0 ? resolvedEmailState : undefined}
       />
 
@@ -494,7 +502,7 @@ export default function JobCandidates() {
         isLoading={isDeleting}
         error={deleteError}
       />
-      {isSendQuestionPaperDialogOpen && (
+      {/* {isSendQuestionPaperDialogOpen && (
         <SendQuestionPaperDialog
           isOpen={isSendQuestionPaperDialogOpen}
           onOpenChange={setIsSendQuestionPaperDialogOpen}
@@ -510,7 +518,7 @@ export default function JobCandidates() {
             setIsSendQuestionPaperDialogOpen(false);
           }}
         />
-      )}
+      )} */}
     </AppPageShell>
   );
 }

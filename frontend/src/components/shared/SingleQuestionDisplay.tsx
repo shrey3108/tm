@@ -22,21 +22,29 @@ export function SingleQuestionDisplay({
 
   if (variant === "simple") {
     return (
-      <div className="text-xs">
-        <p className={cn("font-medium text-foreground", titleClassName)}>{qText}</p>
-        <span className="text-[10px] text-muted-foreground font-semibold">
+      <div className="flex items-start justify-between gap-4 w-full">
+        <div className="flex-1 min-w-0">
+          <p className={cn("text-foreground text-wrap wrap-break-word", titleClassName)}>{qText}</p>
+          {showTypeSuffix && (
+            <span className="text-xs block mt-0.5">
+              (Normal Question)
+            </span>
+          )}
+        </div>
+        <div className="shrink-0 text-right whitespace-nowrap text-xs self-start pt-0.5">
           Marks: {qMarks ?? 5} • Duration: {qDuration ?? 3} mins
-          {showTypeSuffix && " (Normal Question)"}
-        </span>
+        </div>
       </div>
     );
   }
 
   return (
-    <div>
-      <div className={cn("font-medium text-foreground", titleClassName)}>{qText}</div>
+    <div className="flex items-start justify-between gap-4 w-full">
+      <div className="flex-1 min-w-0">
+        <div className={cn("text-foreground text-wrap wrap-break-word", titleClassName)}>{qText}</div>
+      </div>
       {(qMarks !== undefined || (qDuration !== undefined && qDuration > 0)) && (
-        <div className="flex flex-wrap gap-1 mt-1 text-xs select-none">
+        <div className="shrink-0 flex items-center gap-1.5 text-xs select-none whitespace-nowrap self-start">
           {qMarks !== undefined && (
             <span className="inline-flex items-center gap-0.5 bg-primary/5 text-primary border border-primary/10 px-1.5 py-0.5 rounded-full">
               <Award className="h-2.5 w-2.5" /> {qMarks} Marks

@@ -30,7 +30,7 @@ export function PaperContentDisplay({
           <ol className="pl-4 list-decimal space-y-2">
             {questions.map((q, idx) => (
               <li key={idx} className="text-xs text-foreground/80 leading-relaxed">
-                <SingleQuestionDisplay question={q} variant="detailed" />
+                <SingleQuestionDisplay question={q} variant="simple" />
               </li>
             ))}
           </ol>
@@ -49,7 +49,7 @@ export function PaperContentDisplay({
           <ol className="pl-4 list-decimal space-y-2">
             {mcqs.map((mcq, idx) => (
               <li key={idx} className="space-y-1 text-xs text-foreground/80 leading-relaxed">
-                <MCQQuestionDisplay mcq={mcq} variant="detailed" />
+                <MCQQuestionDisplay mcq={mcq} variant="simple" />
               </li>
             ))}
           </ol>
@@ -66,7 +66,7 @@ export function PaperContentDisplay({
           <ol className="pl-4 list-decimal space-y-2">
             {project_task.map((task, idx) => (
               <li key={idx} className="space-y-1 text-xs text-foreground/80 leading-relaxed">
-                <ProjectTaskDisplay task={task} variant="detailed" />
+                <ProjectTaskDisplay task={task} variant="simple" />
               </li>
             ))}
           </ol>

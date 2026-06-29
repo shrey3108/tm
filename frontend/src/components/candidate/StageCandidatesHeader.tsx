@@ -4,7 +4,7 @@ import AppPageHeader from "@/components/shared/AppPageHeader";
 import type { Job } from "@/types/job";
 import { TranscriptUpload } from "./TranscriptUpload";
 import { ProjectSubmissionDialog } from "./projectSubmission/ProjectSubmissionDialog";
-import { SendQuestionPaperDialog } from "./projectSubmission/SendQuestionPaperDialog";
+// import { SendQuestionPaperDialog } from "./projectSubmission/SendQuestionPaperDialog";
 import { CandidateTestPaperHistoryDialog } from "./projectSubmission/CandidateTestPaperHistoryDialog";
 import { useCandidateTestPaper, useDownloadCandidateAssignedTaskFile, useCandidateTestPaperHistory } from "@/hooks/queries/taskPapers/useTaskPaperQueries";
 import { useCandidateAssociateResultsQuery } from "@/hooks/queries/candidates/useCandidateStagesQueries";
@@ -55,7 +55,7 @@ export const StageCandidatesHeader = ({
   onInfoClick,
   // onResumeClick,
   onSuccess,
-  onPaperChange,
+  // onPaperChange,
   stageId,
   isUploaded,
   stageName,
@@ -65,7 +65,7 @@ export const StageCandidatesHeader = ({
 }: StageCandidatesHeaderProps) => {
   const navigate = useNavigate();
   const [isProjectSubmissionDialogOpen, setIsProjectSubmissionDialogOpen] = useState(false);
-  const [isSendQuestionPaperDialogOpen, setIsSendQuestionPaperDialogOpen] = useState(false);
+  // const [isSendQuestionPaperDialogOpen, setIsSendQuestionPaperDialogOpen] = useState(false);
   const [isHistoryDialogOpen, setIsHistoryDialogOpen] = useState(false);
   const activeJobStage = job?.stages?.find((s) => s.id === stageId || s.template?.name === stageName);
 
@@ -154,7 +154,19 @@ export const StageCandidatesHeader = ({
               <Button
                 variant="outline"
                 className="rounded-xl border border-muted-foreground/10 font-semibold text-center h-9"
-                onClick={() => setIsSendQuestionPaperDialogOpen(true)}
+                onClick={() => {
+                  const jobSlug = slugify(job?.title || "");
+                  const candSlug = slugify(candidateName || "");
+                  const stgSlug = slugify(stageName || "");
+                  navigate(`/dashboard/jobs/${jobSlug}/candidates/${candSlug}/stages/${stgSlug}/send-paper`, {
+                    state: {
+                      job,
+                      candidateId,
+                      candidateName,
+                      stageId
+                    }
+                  });
+                }}
                 disabled={isUploaded || !job?.is_active || isGithubUploaded}
               >
                 {assignedPaper ?
@@ -191,7 +203,7 @@ export const StageCandidatesHeader = ({
                   </span>
                 </Button>
               )}
-              <SendQuestionPaperDialog
+              {/* <SendQuestionPaperDialog
                 isOpen={isSendQuestionPaperDialogOpen}
                 onOpenChange={setIsSendQuestionPaperDialogOpen}
                 candidateName={candidateName || "Candidate"}
@@ -199,7 +211,7 @@ export const StageCandidatesHeader = ({
                 job={job}
                 jobStageId={stageId}
                 onSuccess={onPaperChange || onSuccess}
-              />
+              /> */}
               <CandidateTestPaperHistoryDialog
                 isOpen={isHistoryDialogOpen}
                 onOpenChange={setIsHistoryDialogOpen}

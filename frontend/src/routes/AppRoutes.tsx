@@ -49,6 +49,7 @@ const QuestionsBank = lazy(() => import("@/pages/dashboard/QuestionsBank"));
 const QuestionsBankCreate = lazy(() => import("@/pages/dashboard/QuestionsBankCreate"));
 const AssignPaperPage = lazy(() => import("@/pages/dashboard/AssignPaperPage"));
 const AssignAssociatePage = lazy(() => import("@/pages/dashboard/AssignAssociatePage"));
+const SendPaperPage = lazy(() => import("@/pages/dashboard/SendPaperPage"));
 const AssociateReviewPage = lazy(() => import("@/pages/Public/AssociateReviewPage"));
 
 // Admin pages
@@ -183,6 +184,10 @@ export const router = createBrowserRouter([
                         path: "assign-associate",
                         element: <AssignAssociatePage />,
                       },
+                      {
+                        path: "send-paper",
+                        element: <SendPaperPage />,
+                      },
                     ],
                   },
                 ],
@@ -192,6 +197,14 @@ export const router = createBrowserRouter([
                 element: (
                   <RoleRoute requiredPermissions={PERMISSIONS.QUESTIONS_MANAGE}>
                     <AssignPaperPage />
+                  </RoleRoute>
+                ),
+              },
+              {
+                path: ":jobSlug/send-paper",
+                element: (
+                  <RoleRoute requiredPermissions={PERMISSIONS.QUESTIONS_MANAGE}>
+                    <SendPaperPage />
                   </RoleRoute>
                 ),
               },

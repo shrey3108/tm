@@ -61,7 +61,7 @@ export default function AssociateReviewPage() {
     handleSubmit,
     formState: { errors, isValid, isSubmitting },
   } = useForm<Record<string, number>>({
-    resolver: zodResolver(reviewSchema),
+    resolver: zodResolver(reviewSchema) as any,
     defaultValues: dummyQuestions.reduce((acc, q) => ({ ...acc, [q.id]: "" }), {}),
     mode: "onChange",
   });
