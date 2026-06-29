@@ -128,11 +128,11 @@ export const useQuestionSetPaper = (paperId: string | null | undefined) => {
  */
 export const useCandidateTestPaper = (
   candidateId: string | null | undefined,
-  jobStageId?: string
+  _jobStageId?: string // TODO: Temporarily disabled, will enable when backend fix the issue
 ) => {
   const res = useQuery({
-    queryKey: [QUERY_KEYS.TASK_PAPERS.ASSIGNED, candidateId, jobStageId],
-    queryFn: () => taskService.getCandidateTestPaper(candidateId!, jobStageId),
+    queryKey: [QUERY_KEYS.TASK_PAPERS.ASSIGNED, candidateId],
+    queryFn: () => taskService.getCandidateTestPaper(candidateId!), // pass jobStageId again when backend fix issue
     enabled: !!candidateId,
     staleTime: QUERY_CONFIG.TASK_PAPER.staleTime,
   });

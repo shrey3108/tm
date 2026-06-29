@@ -64,6 +64,7 @@ const ROUTE_META: Record<string, { label: string; icon?: LucideIcon }> = {
   "questions-bank": { label: "Questions Bank", icon: ListChecks },
   transcript: { label: "Transcript", icon: ScrollText },
   associates: { label: "Associates", icon: Users },
+  "assign-associate": { label: "Assign Associate", icon: UserCog },
 
   //  Path-Specific Context Overrides 
   // Job Criteria Forms
@@ -152,14 +153,10 @@ export function DashboardBreadcrumbs() {
   return (
     <Breadcrumb>
       <BreadcrumbList className="flex-nowrap overflow-hidden text-[11px] text-muted-foreground sm:text-xs">
-        {crumbs.map(({ routeTo, label, Icon, isLast, crumbIndex }) => (
+        {crumbs.map(({ routeTo, label, Icon, isLast }) => (
           <React.Fragment key={routeTo}>
             <BreadcrumbItem
-              className={
-                crumbIndex === 0
-                  ? "hidden md:flex min-w-0 items-center gap-1.5"
-                  : "flex min-w-0 items-center gap-1.5"
-              }
+              className="flex min-w-0 items-center gap-1.5"
             >
               {isLast ? (
                 <BreadcrumbPage className="flex min-w-0 items-center gap-1.5 font-semibold text-primary">
@@ -183,11 +180,7 @@ export function DashboardBreadcrumbs() {
 
             {!isLast && (
               <BreadcrumbSeparator
-                className={
-                  crumbIndex === 0
-                    ? "hidden md:flex [&>svg]:size-3"
-                    : "[&>svg]:size-3"
-                }
+                className="[&>svg]:size-3"
               >
                 <ChevronRight className="text-muted-foreground/40" />
               </BreadcrumbSeparator>

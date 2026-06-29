@@ -14,6 +14,8 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card"
 import { History } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { slugify } from "@/utils/slug";
 import { isQuestionStage } from "@/utils/stage";
 interface StageCandidatesHeaderProps {
   /** Associated job for the candidate stage view */
@@ -50,7 +52,7 @@ export const StageCandidatesHeader = ({
   candidateName,
   onBack,
   onInfoClick,
-  onResumeClick,
+  // onResumeClick,
   onSuccess,
   onPaperChange,
   stageId,
@@ -60,11 +62,12 @@ export const StageCandidatesHeader = ({
   githubUrl,
   transcriptHistory
 }: StageCandidatesHeaderProps) => {
+  const navigate = useNavigate();
   const [isProjectSubmissionDialogOpen, setIsProjectSubmissionDialogOpen] = useState(false);
   const [isSendQuestionPaperDialogOpen, setIsSendQuestionPaperDialogOpen] = useState(false);
   const [isHistoryDialogOpen, setIsHistoryDialogOpen] = useState(false);
   const activeJobStage = job?.stages?.find((s) => s.id === stageId || s.template?.name === stageName);
-  
+
   // Extract requirements
   const requiredInputs: ("transcript" | "resume" | "question" | "github")[] =
     activeJobStage?.config?.required_inputs ||
@@ -85,11 +88,13 @@ export const StageCandidatesHeader = ({
     ? requiredInputs.includes("transcript")
     : (stageName !== "Resume Screening" && !isQuestionStage(activeJobStage));
 
-  const showResume = hasConfiguredRequirements
-    ? requiredInputs.includes("resume")
-    : false;
+  // const showResume = hasConfiguredRequirements
+  //   ? requiredInputs.includes("resume")
+  //   : false;
 
-  const { data: assignedPaper } = useCandidateTestPaper(candidateId, stageId);
+  // const { data: assignedPaper } = useCandidateTestPaper(candidateId, stageId); // TODO: Temporarily disabled, will enable when backend fix the issue
+  const { data: assignedPaper } = useCandidateTestPaper(candidateId);
+
   const { data: paperHistory } = useCandidateTestPaperHistory(
     (showQuestion || showGithub) ? candidateId : null,
     stageId
@@ -127,7 +132,7 @@ export const StageCandidatesHeader = ({
           >
             JD
           </Button>
-
+          {/* 
           {showResume && onResumeClick && (
             <Button
               variant="outline"
@@ -137,7 +142,7 @@ export const StageCandidatesHeader = ({
             >
               Resume Analysis
             </Button>
-          )}
+          )} */}
 
           {showQuestion && (
             <>
@@ -218,6 +223,28 @@ export const StageCandidatesHeader = ({
                 onSuccess={onSuccess}
                 job={job!}
               />
+              <Button
+                variant="outline"
+                className="rounded-xl border border-muted-foreground/10 px-5 font-semibold text-center h-9 ml-2"
+                onClick={() => {
+                  const jobSlug = slugify(job?.title || "");
+                  const candSlug = slugify(candidateName || "");
+                  const stgSlug = slugify(stageName || "");
+                  navigate(`/dashboard/jobs/${jobSlug}/candidates/${candSlug}/stages/${stgSlug}/assign-associate`, {
+                    state: {
+                      job,
+                      candidate: {
+                        id: candidateId,
+                        first_name: candidateName?.split(" ")[0] || "",
+                        last_name: candidateName?.split(" ").slice(1).join(" ") || "",
+                      }
+                    }
+                  });
+                }}
+                disabled={!job?.is_active || !isGithubUploaded}
+              >
+                Assign Associate
+              </Button>
             </>
           )}
 

@@ -41,7 +41,7 @@ export function useResolvedJobAndCandidate(
 
   // 2. Fetch candidate search matching the unslugified name if candidate is not in state
   const candidateSearchQuery = useQuery({
-    queryKey: [QUERY_KEYS.CANDIDATES.SEARCH, resolvedJob?.id, candidateNameSlug],
+    queryKey: [QUERY_KEYS.CANDIDATES.SEARCH, resolvedJob?.id, stateCandidate?.id],
     queryFn: async () => {
       const response = await jobService.getJobCandidates(
         resolvedJob!.id,
@@ -60,7 +60,7 @@ export function useResolvedJobAndCandidate(
       }
       return found;
     },
-    enabled: !!resolvedJob?.id && !!candidateNameSlug && !stateCandidate,
+    enabled: !!resolvedJob?.id && !!candidateNameSlug,
     staleTime: QUERY_CONFIG.CANDIDATE_STAGES.staleTime,
   });
 
@@ -180,94 +180,6 @@ export function useCandidateTimelineQuery(
     queryFn: () => adminCandidateService.getCandidateTimeline(candidateId!, jobId),
     enabled: !!candidateId,
     staleTime: QUERY_CONFIG.CANDIDATE_STAGES.staleTime,
-    // select: (data) => {
-    //   return {
-    //     ...data,
-    //     current_stage: getCorrectCurrentStage(data)
-    //   };
-    // }
-    /*
-    // TODO: NOTE: Remove this after GEP complete
-    select: (data) => {
-      if (!data || !data.events) return data;
-
-      // 1. Check if the candidate has been marked as failed by HR in any round
-      const failKeywords = ["fail", "failed"];
-      const hasFail = data.events.some((event) => {
-        const decision = event.hr_decision?.toLowerCase() ?? "";
-        return failKeywords.some((k) => decision.includes(k));
-      }) || failKeywords.some((k) => (data.latest_decision?.toLowerCase() ?? "").includes(k));
-
-      if (hasFail) {
-        return {
-          ...data,
-          current_stage: getCorrectCurrentStage(data)
-        };
-      }
-
-      // 2. Check if the candidate passed "HR Screening Round"
-      const hrScreeningEvent = data.events.find(
-        (event) => event.title?.toLowerCase() === "hr screening round"
-      );
-      const hrScreeningPassed = hrScreeningEvent && hrScreeningEvent.hr_decision === "pass"
-
-
-      if (!hrScreeningPassed) {
-        return {
-          ...data,
-          current_stage: getCorrectCurrentStage(data)
-        };
-      }
-
-      // 3. Find the index of the "Technical Practical Round" or "Coding Test Round"
-      const techIndex = data.events.findIndex(
-        (event) => event.title === "Technical Practical Round" || event.title === "Coding Test Round"
-      );
-
-      if (techIndex === -1) {
-        return {
-          ...data,
-          current_stage: getCorrectCurrentStage(data)
-        };
-      }
-
-      // 4. Pass all stages till "Technical Practical Round"
-      const updatedEvents = data.events.map((event, idx) => {
-        if (idx <= techIndex) {
-          return {
-            ...event,
-            result: "pass",
-            ai_result: event.ai_result !== "pending" ? event.ai_result : "pass",
-            hr_decision: "pass",
-            score: event.score ?? 4,
-            ai_score: event.ai_score ?? 4,
-            hr_score: event.hr_score ?? 4,
-            event_date: new Date()
-          };
-        }
-        return event;
-      });
-
-      // 5. Update current_stage if the original current_stage is one of the auto-passed stages
-      let updatedCurrentStage = data.current_stage;
-      const currentStageIndex = data.events.findIndex(
-        (event) => event.title === data.current_stage
-      );
-      if (currentStageIndex !== -1 && currentStageIndex <= techIndex) {
-        // Find the first stage after the Technical Practical Round
-        const nextStage = data.events[techIndex + 1];
-        if (nextStage) {
-          updatedCurrentStage = nextStage.title;
-        }
-      }
-
-      return {
-        ...data,
-        events: updatedEvents,
-        current_stage: updatedCurrentStage,
-      };
-    }
-    */
   });
 }
 

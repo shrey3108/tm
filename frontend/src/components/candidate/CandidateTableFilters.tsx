@@ -1,6 +1,6 @@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Filter, Star, ExternalLink, Loader2 } from "lucide-react";
+import { Filter, Star } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -17,10 +17,7 @@ import {
   SheetFooter
 } from "@/components/ui/sheet";
 import { CollapsibleFilterSection, CheckboxListFilter } from "@/components/shared/FilterComponents";
-import { useQuestionSetPapers, useDownloadPaperTaskFile } from "@/hooks/queries/taskPapers/useTaskPaperQueries";
-import { toast } from "sonner";
 import type { Job } from "@/types/job";
-import { useJobAssignedTask } from "@/hooks/queries/jobs/useJobTask";
 
 
 interface CandidateTableFiltersProps {
@@ -112,7 +109,7 @@ export const CandidateTableFilters = ({
   testEmailSentFilter,
   setTestEmailSentFilter = () => { },
   isTestPaperFilterEnabled = false,
-  job
+  // job
 }: CandidateTableFiltersProps) => {
 
   const [hoverValue, setHoverValue] = useState<number | null>(0);
@@ -120,6 +117,7 @@ export const CandidateTableFilters = ({
 
 
   // Queries for assigned task paper & predefined templates
+  /*
   const { data: assignedPaper } = useJobAssignedTask(job?.id);
   const { data: predefinedPapers } = useQuestionSetPapers({
     jobId: job?.id,
@@ -166,7 +164,7 @@ export const CandidateTableFilters = ({
       toast.error("Failed to download the task file.");
     }
   };
-
+  */
   // @ts-ignore
   const _filteredActivityOptions = useMemo(() => {
     if (!activitySessionOptions) return [];
@@ -515,7 +513,7 @@ export const CandidateTableFilters = ({
               </SheetFooter>
             </SheetContent>
           </Sheet>
-          {job ? <div className="flex gap-2">
+          {/* {job ? <div className="flex gap-2">
             <Button
               variant="outline"
               className="rounded-xl gap-2 px-3 border border-muted-foreground/20 hover:bg-muted/10 bg-background transition-all cursor-pointer"
@@ -529,7 +527,7 @@ export const CandidateTableFilters = ({
               )}
             </Button>
 
-          </div> : null}
+          </div> : null} */}
         </div>
 
         {/* Result Count Area (Anchored Right) */}

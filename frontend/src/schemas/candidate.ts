@@ -1,5 +1,5 @@
 import * as z from "zod";
-
+import { uuidSchema } from "@/schemas/schema-utils";
 /**
  * Zod validation schema for candidate screening decisions.
  */
@@ -58,3 +58,12 @@ export const ProjectSubmissionSchema = z.object({
 });
 
 export type ProjectSubmissionFormValues = z.infer<typeof ProjectSubmissionSchema>;
+
+
+export const assignAssociateSchema = z.object({
+  associates: z.array(uuidSchema("Invalid associate ID.")).min(1, "Please select at least one associate."),
+  // workdriveLink: z.url("Please enter a valid Workdrive URL."),
+  stageId: uuidSchema("Invalid stage ID. Candidate stage could not be resolved."),
+});
+
+export type AssignAssociateFormValues = z.infer<typeof assignAssociateSchema>;

@@ -48,6 +48,8 @@ const TranscriptPage = lazy(() => import("@/pages/dashboard/TranscriptPage"));
 const QuestionsBank = lazy(() => import("@/pages/dashboard/QuestionsBank"));
 const QuestionsBankCreate = lazy(() => import("@/pages/dashboard/QuestionsBankCreate"));
 const AssignPaperPage = lazy(() => import("@/pages/dashboard/AssignPaperPage"));
+const AssignAssociatePage = lazy(() => import("@/pages/dashboard/AssignAssociatePage"));
+const AssociateReviewPage = lazy(() => import("@/pages/Public/AssociateReviewPage"));
 
 // Admin pages
 const AdminDashboard = lazy(() => import("@/pages/Admin/AdminDashboard"));
@@ -94,6 +96,10 @@ export const router = createBrowserRouter([
             <LoginPage />
           </PublicRoute>
         ),
+      },
+      {
+        path: "associate-reviews/:token",
+        element: <AssociateReviewPage />,
       },
       {
         path: "",
@@ -172,6 +178,10 @@ export const router = createBrowserRouter([
                       {
                         path: "transcript",
                         element: <TranscriptPage />,
+                      },
+                      {
+                        path: "assign-associate",
+                        element: <AssignAssociatePage />,
                       },
                     ],
                   },
