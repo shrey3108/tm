@@ -34,6 +34,10 @@ export interface UnifiedCandidate {
   test_email_sent?: boolean | null;
 }
 
+export interface Associate_Marks {
+  associate_name: string;
+  marks: number;
+}
 
 export interface TimelineEvent {
   event_type: "stage" | "decision";
@@ -51,6 +55,7 @@ export interface TimelineEvent {
   ai_result?: string | null;
   hr_decision?: string | null;
   metadata?: Record<string, any> | null;
+  associate_marks?: Associate_Marks[]
 }
 
 export interface HiringTimelineResponse {

@@ -135,6 +135,18 @@ export const TimelineCard = React.memo(function TimelineCard({
               )}
             </div>
           )}
+          {
+            event.associate_marks?.map((mark) => (
+              <div className="flex items-center justify-start gap-2">
+                <span className="text-xs font-bold uppercase tracking-tight text-muted-foreground">
+                  {mark.associate_name}:
+                </span>
+                <span className="text-xs font-bold ">
+                  {mark.marks.toFixed(1)}/5
+                </span>
+              </div>
+            ))
+          }
         </div>
       </div>
     </Card>

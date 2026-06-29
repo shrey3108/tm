@@ -20,6 +20,7 @@ import {
   useCandidateTranscriptsQuery,
   useHrDecisionHistoryQuery,
   useCandidateDetailsQuery,
+  useCandidateAssociateResultsQuery,
 } from "./queries/candidates";
 import {
   useSubmitDecisionMutation,
@@ -239,6 +240,19 @@ export function useCandidatesStages() {
 
   const hrDecisionHistory = hrDecisionHistoryResponse?.decisions ?? [];
 
+  // 9. Candidate associate results query
+  const { data: associateResults, isLoading: isLoadingAssociateResults } =
+    useCandidateAssociateResultsQuery(
+      currentStage === "Resume Screening" ? undefined : instanceId
+    );
+
+  const totalAssociates = associateResults?.total_associates ?? 0;
+  const submittedCount = associateResults?.submitted_count ?? 0;
+  const hasPendingAssociates =
+    currentStage !== "Resume Screening" &&
+    totalAssociates > 0 &&
+    submittedCount < totalAssociates;
+
   const form = useForm<CandidateDecisionFormValues>({
     resolver: zodResolver(candidateDecisionSchema),
     defaultValues: {
@@ -455,6 +469,9 @@ export function useCandidatesStages() {
     canTakeDecision,
     transformedOverall,
     instanceId,
+    associateResults,
+    isLoadingAssociateResults,
+    hasPendingAssociates,
     form,
     handleAction,
     submitFeedback,

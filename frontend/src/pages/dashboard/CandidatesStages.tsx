@@ -67,6 +67,9 @@ export default function CandidatesStages() {
     isFailedEvaluation,
     handleRetry,
     isRetrying,
+    associateResults,
+    isLoadingAssociateResults,
+    hasPendingAssociates,
   } = useCandidatesStages();
 
   const isResumeScreening = currentStage === "Resume Screening";
@@ -167,16 +170,14 @@ export default function CandidatesStages() {
             !isPolling &&
             !isLoadingHistory &&
             canTakeDecision &&
-            (isResumeScreening ? !!candidateData : !!evaluation)
-            // TODO: REMOVE AFTER GEP
-            &&
-            // currentStage !== "Technical Practical Round" &&
-            (
+            (isResumeScreening ? !!candidateData : !!evaluation) && (
               <PermissionGuard permissions={PERMISSIONS.CANDIDATES_DECIDE} hideWhenDenied>
                 <ActionButtons
                   onAction={handleAction}
                   showMaybeButton={!latestDecision || latestDecision.decision.toLowerCase() !== "may be"}
                   className="rounded-2xl bg-none"
+                  disabled={isLoadingAssociateResults || hasPendingAssociates}
+                  associateResults={associateResults}
                 />
               </PermissionGuard>
             )}

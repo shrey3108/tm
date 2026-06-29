@@ -7,6 +7,7 @@ import { ProjectSubmissionDialog } from "./projectSubmission/ProjectSubmissionDi
 import { SendQuestionPaperDialog } from "./projectSubmission/SendQuestionPaperDialog";
 import { CandidateTestPaperHistoryDialog } from "./projectSubmission/CandidateTestPaperHistoryDialog";
 import { useCandidateTestPaper, useDownloadCandidateAssignedTaskFile, useCandidateTestPaperHistory } from "@/hooks/queries/taskPapers/useTaskPaperQueries";
+import { useCandidateAssociateResultsQuery } from "@/hooks/queries/candidates/useCandidateStagesQueries";
 
 import {
   HoverCard,
@@ -101,6 +102,10 @@ export const StageCandidatesHeader = ({
   );
   const { data: candidateAssignedTaskBlob } = useDownloadCandidateAssignedTaskFile(candidateId);
   console.log(candidateAssignedTaskBlob)
+  const { data: associateResults } = useCandidateAssociateResultsQuery(stageId);
+  const totalAssociates = associateResults?.total_associates ?? 0;
+  const submittedCount = associateResults?.submitted_count ?? 0;
+  const allAssociatesSubmitted = totalAssociates > 0 && submittedCount === totalAssociates;
   const hasMultipleAssignments = paperHistory.length > 1;
   const isTranscriptAdded = !!transcriptHistory && transcriptHistory.length > 0;
 
@@ -241,7 +246,7 @@ export const StageCandidatesHeader = ({
                     }
                   });
                 }}
-                disabled={!job?.is_active || !isGithubUploaded}
+                disabled={!job?.is_active || !isGithubUploaded || allAssociatesSubmitted}
               >
                 Assign Associate
               </Button>
