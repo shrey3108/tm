@@ -74,14 +74,23 @@ export function QuestionsBankSkillSelector({
   };
 
   const filteredSkills = useMemo(() => {
-    if (!skillSearch.trim()) {
-      return skills;
+    let result = skills || [];
+    if (skillSearch.trim()) {
+      const query = skillSearch.toLowerCase();
+      result = allSkills.filter((skill) =>
+        skill.name.toLowerCase().includes(query) || (skill.description && skill.description.toLowerCase().includes(query))
+      );
     }
-    const query = skillSearch.toLowerCase();
-    return allSkills.filter((skill) =>
-      skill.name.toLowerCase().includes(query) || (skill.description && skill.description.toLowerCase().includes(query))
-    );
-  }, [skills, allSkills, skillSearch]);
+    
+    // Sort: selected skills first
+    return [...result].sort((a, b) => {
+      const aSelected = selectedSkillIds.includes(a.id);
+      const bSelected = selectedSkillIds.includes(b.id);
+      if (aSelected && !bSelected) return -1;
+      if (!aSelected && bSelected) return 1;
+      return 0;
+    });
+  }, [skills, allSkills, skillSearch, selectedSkillIds]);
 
   const handleCloseModal = () => {
     setShowModal(false);

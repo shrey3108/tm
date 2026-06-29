@@ -30,6 +30,9 @@ import { taskService } from "@/apis/task";
 import type { MCQItem, TaskItem, SubTaskItem, QuestionItem } from "@/types/taskPaper";
 import { mcqFormSchema } from "@/schemas/taskPaper";
 import { questionFormSchema, projectTaskSchema } from "@/schemas/question";
+import { useForm } from "react-hook-form";
+import { Form } from "@/components/ui/form";
+import { QuestionsBankSkillSelector } from "@/components/questions-bank/QuestionsBankSkillSelector";
 
 import { SingleQuestionFormFields } from "@/components/questions-bank/SingleQuestionFormFields";
 import { MCQFormFields } from "@/components/questions-bank/MCQFormFields";
@@ -42,6 +45,15 @@ import { SingleQuestionDisplay } from "@/components/shared/SingleQuestionDisplay
 export default function AssignPaperPage() {
   const navigate = useNavigate();
   const { jobSlug } = useParams<{ jobSlug: string }>();
+
+  // Setup React Hook Form for custom skill selections
+  const form = useForm({
+    defaultValues: {
+      skill_ids: [] as string[],
+    },
+  });
+
+  const selectedSkillIds = form.watch("skill_ids") || [];
 
   // Fetch job title list to resolve ID from slug
   const { data: jobsList, loading: loadingJobsList } = useJobTitle("", !!jobSlug);
@@ -344,6 +356,7 @@ export default function AssignPaperPage() {
         question: questionText.trim(),
         marks: Number(questionMarks),
         duration: (Number(questionHours) || 0) * 60 + (Number(questionMinutes) || 0),
+        skill_ids: selectedSkillIds,
       };
 
       setCustomQuestions((prev) => [...prev, newItem]);
@@ -351,6 +364,7 @@ export default function AssignPaperPage() {
       setQuestionMarks("");
       setQuestionHours("");
       setQuestionMinutes("");
+      form.setValue("skill_ids", []);
       toast.success("Added custom normal question.");
     } else if (contentType === "mcq") {
       const result = mcqFormSchema.safeParse({
@@ -384,6 +398,7 @@ export default function AssignPaperPage() {
         answer: answerText.trim(),
         marks: Number(mcqMarks),
         duration: (Number(mcqHours) || 0) * 60 + (Number(mcqMinutes) || 0),
+        skill_ids: selectedSkillIds,
       };
 
       setCustomMCQs((prev) => [...prev, newItem]);
@@ -393,6 +408,7 @@ export default function AssignPaperPage() {
       setMCqMarks("");
       setMCqHours("");
       setMCqMinutes("");
+      form.setValue("skill_ids", []);
       toast.success("Added custom MCQ question.");
     } else if (contentType === "project_task") {
       const result = projectTaskSchema.safeParse({
@@ -427,6 +443,7 @@ export default function AssignPaperPage() {
         })),
         total_marks: projectTasks.reduce((sum, t) => sum + (t.marks || 0), 0),
         total_duration: duration,
+        skill_ids: selectedSkillIds,
       };
 
       setCustomTasks((prev) => [...prev, newItem]);
@@ -435,6 +452,7 @@ export default function AssignPaperPage() {
       setTaskHours("");
       setTaskMinutes("");
       setProjectTasks([]);
+      form.setValue("skill_ids", []);
       toast.success("Added custom project task.");
     }
   };
@@ -1020,7 +1038,17 @@ export default function AssignPaperPage() {
               />
             )}
 
-            <div className="flex justify-end pt-1">
+            {/* Skills Selector Section */}
+            <div className="mt-4 p-2 bg-background rounded-lg border border-border/50">
+              <Form {...form}>
+                <QuestionsBankSkillSelector
+                  initialSelectedSkills={[]}
+                  placeholderMessage="Select stacks/skills to link to this question/task."
+                />
+              </Form>
+            </div>
+
+            <div className="flex justify-end pt-3">
               <Button type="button" size="sm" className="h-8 text-xs font-semibold gap-1" onClick={handleAddCustom}>
                 <Plus className="h-3.5 w-3.5" />
                 Add to Paper

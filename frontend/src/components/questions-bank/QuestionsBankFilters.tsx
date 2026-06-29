@@ -117,7 +117,7 @@ export function QuestionsBankFilters({
             options={skills?.map((skill) => ({ id: skill.id, label: skill.name })) || []}
             placeholder="All skills"
             searchPlaceholder="Search skills..."
-            disabled={loadingSkills}
+            disabled={loadingSkills || !selectedDeptId || !selectedPositionId}
             loading={loadingSkills}
             loadingPlaceholder="Loading skills..."
             emptyMessage="No skills found"
@@ -169,7 +169,7 @@ export function QuestionsBankFilters({
         <PermissionGuard permissions={PERMISSIONS.QUESTIONS_MANAGE} hideWhenDenied>
           <Button
             onClick={onCreateNew}
-            disabled={!selectedDeptId}
+            disabled={!selectedDeptId || !selectedPositionId}
             className="rounded-xl px-5 font-semibold text-center h-11 gap-1.5"
           >
             <Plus className="h-4 w-4" />

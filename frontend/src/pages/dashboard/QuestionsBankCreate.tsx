@@ -166,8 +166,7 @@ export default function QuestionsBankCreate() {
       setDepartmentId(paperToEdit.department_id || "");
       setPositionId(paperToEdit.position_id || "");
 
-      const skillIds = paperToEdit.skills?.map((s) => s.id) || paperToEdit.task_skills || [];
-      form.reset({ skill_ids: skillIds });
+      let itemSkillIds = paperToEdit.skills?.map((s) => s.id) || paperToEdit.task_skills || [];
 
       // Determine content type and pre-populate
       if (initialItemType) {
@@ -187,6 +186,9 @@ export default function QuestionsBankCreate() {
           const mDur = mcq.duration || 0;
           setMCqHours(Math.floor(mDur / 60) || "");
           setMCqMinutes(mDur % 60 || "");
+          if (mcq.skill_ids && mcq.skill_ids.length > 0) {
+            itemSkillIds = mcq.skill_ids;
+          }
         } else if (initialItemType === "project_task" && paperToEdit.project_task && paperToEdit.project_task[itemIndex]) {
           const task = paperToEdit.project_task[itemIndex];
           if (typeof task === "string") {
@@ -196,12 +198,15 @@ export default function QuestionsBankCreate() {
             setTaskMinutes("");
             setProjectTasks([]);
           } else {
-            setTaskDescription((task as any)?.task || "");
-            setTaskInstructions((task as any)?.instructions || "");
-            const dur = (task as any)?.duration || (task as any)?.total_duration || 0;
+            setTaskDescription((task)?.task || "");
+            setTaskInstructions((task)?.instructions || "");
+            const dur = (task)?.duration || (task)?.total_duration || 0;
             setTaskHours(Math.floor(dur / 60) || "");
             setTaskMinutes(dur % 60 || "");
-            setProjectTasks((task as any)?.tasks || []);
+            setProjectTasks((task)?.tasks || []);
+            if ((task)?.skill_ids && (task)?.skill_ids.length > 0) {
+              itemSkillIds = (task)?.skill_ids;
+            }
           }
         } else if (initialItemType === "question" && paperToEdit.questions && paperToEdit.questions[itemIndex]) {
           const q = paperToEdit.questions[itemIndex];
@@ -211,11 +216,14 @@ export default function QuestionsBankCreate() {
             setQuestionHours("");
             setQuestionMinutes("");
           } else {
-            setQuestionText((q as any).question || "");
-            setQuestionMarks((q as any).marks || "");
-            const qDur = (q as any).duration || 0;
+            setQuestionText((q)?.question || "");
+            setQuestionMarks((q)?.marks || "");
+            const qDur = (q)?.duration || 0;
             setQuestionHours(Math.floor(qDur / 60) || "");
             setQuestionMinutes(qDur % 60 || "");
+            if ((q)?.skill_ids && (q)?.skill_ids.length > 0) {
+              itemSkillIds = (q).skill_ids;
+            }
           }
         }
       } else {
@@ -235,6 +243,9 @@ export default function QuestionsBankCreate() {
           const mDur = mcq.duration || 0;
           setMCqHours(Math.floor(mDur / 60) || "");
           setMCqMinutes(mDur % 60 || "");
+          if (mcq.skill_ids && mcq.skill_ids.length > 0) {
+            itemSkillIds = mcq.skill_ids;
+          }
         } else if (paperToEdit.project_task && paperToEdit.project_task.length > 0) {
           setContentType("project_task");
           const task = paperToEdit.project_task[0];
@@ -245,12 +256,15 @@ export default function QuestionsBankCreate() {
             setTaskMinutes("");
             setProjectTasks([]);
           } else {
-            setTaskDescription((task as any)?.task || "");
-            setTaskInstructions((task as any)?.instructions || "");
-            const dur = (task as any)?.duration || (task as any)?.total_duration || 0;
+            setTaskDescription((task)?.task || "");
+            setTaskInstructions((task)?.instructions || "");
+            const dur = (task)?.duration || (task)?.total_duration || 0;
             setTaskHours(Math.floor(dur / 60) || "");
             setTaskMinutes(dur % 60 || "");
-            setProjectTasks((task as any)?.tasks || []);
+            setProjectTasks((task)?.tasks || []);
+            if ((task)?.skill_ids && (task).skill_ids.length > 0) {
+              itemSkillIds = (task).skill_ids;
+            }
           }
         } else {
           setContentType("question");
@@ -267,6 +281,9 @@ export default function QuestionsBankCreate() {
               const qDur = (q as any).duration || 0;
               setQuestionHours(Math.floor(qDur / 60) || "");
               setQuestionMinutes(qDur % 60 || "");
+              if ((q as any).skill_ids && (q as any).skill_ids.length > 0) {
+                itemSkillIds = (q as any).skill_ids;
+              }
             }
           } else {
             setQuestionText("");
@@ -276,6 +293,8 @@ export default function QuestionsBankCreate() {
           }
         }
       }
+
+      form.reset({ skill_ids: itemSkillIds });
     }
   }, [isEditMode, paperToEdit, form, initialItemType, itemIndex]);
 
@@ -726,37 +745,16 @@ export default function QuestionsBankCreate() {
         {/* Skills Selector Card */}
         <div className="app-surface-card space-y-2 p-2">
           <div className="space-y-1">
-            <Label className="text-sm font-semibold">Associated Tech Stack Skills {!isEditMode && <Required />}</Label>
+            <Label className="text-sm font-semibold">Associated Tech Stack Skills <Required /></Label>
             <div className="w-full">
-              {isEditMode ? (
-                <div className="flex flex-wrap gap-1.5">
-                  {paperToEdit?.skills && paperToEdit.skills.length > 0 ? (
-                    paperToEdit.skills.map((skill) => (
-                      <span
-                        key={skill.id}
-                        className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20"
-                      >
-                        {skill.name}
-                      </span>
-                    ))
-                  ) : (
-                    <span className="text-xs text-muted-foreground italic">No skills associated with this question bank yet.</span>
-                  )}
-                </div>
-              ) : (
-                <Form {...form}>
-                  <QuestionsBankSkillSelector
-                    initialSelectedSkills={[]}
-                    placeholderMessage="Select stacks/skills to link to this question bank."
-                  />
-                </Form>
-              )}
+              <Form {...form}>
+                <QuestionsBankSkillSelector
+                  initialSelectedSkills={paperToEdit?.skills || []}
+                  placeholderMessage="Select stacks/skills to link to this question bank."
+                />
+              </Form>
             </div>
-            {isEditMode && (
-              <p className="text-[11px] text-muted-foreground font-medium pt-1">
-                Note: Skills are automatically updated and linked based on the question details when you save.
-              </p>
-            )}
+
           </div>
         </div>
 

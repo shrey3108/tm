@@ -36,7 +36,7 @@ export default function QuestionsBank() {
   const navigate = useNavigate();
 
   // Persisted filters via Redux + sessionStorage
-  const { filters, setFilter, resetFilters } = usePageFilters("questionsBank", questionsBankDefaults);
+  const { filters, setFilter, setFilters, resetFilters } = usePageFilters("questionsBank", questionsBankDefaults);
   const { selectedDeptId, selectedPositionId, selectedSkillId, selectedContentType } = filters;
 
   // Transient search inputs (not persisted)
@@ -79,6 +79,9 @@ export default function QuestionsBank() {
     departmentId: selectedDeptId || undefined,
     positionId: selectedPositionId || undefined,
     // skillId: selectedSkillId || undefined,
+    options: {
+      enabled: !!selectedDeptId && !!selectedPositionId,
+    },
   });
 
   // Fetch positions for filters
@@ -274,13 +277,13 @@ export default function QuestionsBank() {
         {/* Top Control Bar */}
         <QuestionsBankFilters
           selectedDeptId={selectedDeptId}
-          setSelectedDeptId={(id) => setFilter("selectedDeptId", id)}
+          setSelectedDeptId={(id) => setFilters({ selectedDeptId: id, selectedSkillId: "" })}
           departments={departments}
           loadingDepts={loadingDepts}
           isDeptSearching={isDeptSearching}
           handleDeptSearch={handleDeptSearch}
           selectedPositionId={selectedPositionId}
-          setSelectedPositionId={(id) => setFilter("selectedPositionId", id)}
+          setSelectedPositionId={(id) => setFilters({ selectedPositionId: id, selectedSkillId: "" })}
           positions={positions}
           loadingPositions={loadingPositions}
           selectedSkillId={selectedSkillId}
@@ -297,13 +300,13 @@ export default function QuestionsBank() {
         />
 
         {/* Loading papers state / DataTable */}
-        {!selectedPositionId ? (
+        {(!selectedDeptId || !selectedPositionId) ? (
           <div className="animate-in fade-in duration-300">
             <div className="flex flex-col items-center justify-center h-full gap-2">
               <div className="text-center py-10 border border-dashed border-border/60 rounded-2xl bg-card/10 text-muted-foreground w-full">
-                <p className="font-semibold text-foreground/80">Position Level Required</p>
+                <p className="font-semibold text-foreground/80">Department & Position Level Required</p>
                 <p className="text-sm mt-1 max-w-md mx-auto">
-                  Kindly select a position level first to view and manage the question set papers.
+                  Kindly select both a department and a position level first to view and manage the question set papers.
                 </p>
               </div>
             </div>

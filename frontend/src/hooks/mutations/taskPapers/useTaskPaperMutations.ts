@@ -246,14 +246,18 @@ export function useUpdateQuestionInPaperMutation() {
       skillIds?: string[];
     }) => taskService.updateQuestionInPaper(paperId, index, question, skillIds),
     onSuccess: (_data, variables) => {
+      console.log("inaldjasdksjl")
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.TASK_PAPERS.LIST],
+        refetchType: "all",
       });
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.TASK_PAPERS.DETAIL, variables.paperId],
+        refetchType: "all",
       });
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.TASK_PAPERS.ALL_CONTENT],
+        refetchType: "all",
       });
     },
   });
@@ -335,12 +339,15 @@ export function useUpdateProjectTaskInPaperMutation() {
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.TASK_PAPERS.LIST],
+        refetchType: "all",
       });
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.TASK_PAPERS.DETAIL, variables.paperId],
+        refetchType: "all",
       });
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.TASK_PAPERS.ALL_CONTENT],
+        refetchType: "all",
       });
     },
   });
@@ -424,12 +431,15 @@ export function useUpdateMCQInPaperMutation() {
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.TASK_PAPERS.LIST],
+        refetchType: "all",
       });
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.TASK_PAPERS.DETAIL, variables.paperId],
+        refetchType: "all",
       });
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.TASK_PAPERS.ALL_CONTENT],
+        refetchType: "all",
       });
     },
   });
