@@ -72,28 +72,6 @@ async def get_candidate_test_paper(
     is_candidate_specific = (paper is not None)
 
     if not paper:
-        # Check if candidate has reached a Question/Practical stage before falling back
-        stmt_stage = (
-            select(CandidateStage)
-            .join(JobStageConfig, CandidateStage.job_stage_id == JobStageConfig.id)
-            .join(StageTemplate, JobStageConfig.template_id == StageTemplate.id)
-            .where(
-                CandidateStage.candidate_id == candidate_id,
-                get_question_round_filter(JobStageConfig, StageTemplate),
-                CandidateStage.status.in_(["active", "completed"])
-            )
-        )
-        if active_stage_id:
-            stmt_stage = stmt_stage.where(CandidateStage.job_stage_id == active_stage_id)
-
-        res_stage = await db.execute(stmt_stage)
-        stages = res_stage.scalars().all()
-        if not stages:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="No test paper assigned. Candidate has not reached the test paper stage yet.",
-            )
-
         # Fallback to job-level default test paper!
         candidate = await db.get(Candidate, candidate_id)
         if candidate:
@@ -124,6 +102,28 @@ async def get_candidate_test_paper(
                         paper = res_job.scalar_one_or_none()
 
     if not paper:
+        # Check if candidate has reached a Question/Practical stage
+        stmt_stage = (
+            select(CandidateStage)
+            .join(JobStageConfig, CandidateStage.job_stage_id == JobStageConfig.id)
+            .join(StageTemplate, JobStageConfig.template_id == StageTemplate.id)
+            .where(
+                CandidateStage.candidate_id == candidate_id,
+                get_question_round_filter(JobStageConfig, StageTemplate),
+                CandidateStage.status.in_(["active", "completed"])
+            )
+        )
+        if active_stage_id:
+            stmt_stage = stmt_stage.where(CandidateStage.job_stage_id == active_stage_id)
+
+        res_stage = await db.execute(stmt_stage)
+        stages = res_stage.scalars().all()
+        if not stages:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No test paper assigned. Candidate has not reached the test paper stage yet.",
+            )
+        
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="No test paper assigned to this candidate.",
@@ -416,27 +416,6 @@ async def download_candidate_task_file(
         test_paper = res_paper.scalar_one_or_none()
 
     if not test_paper:
-        # Check if candidate has reached a Question/Practical stage before falling back
-        stmt_stage = (
-            select(CandidateStage)
-            .join(JobStageConfig, CandidateStage.job_stage_id == JobStageConfig.id)
-            .join(StageTemplate, JobStageConfig.template_id == StageTemplate.id)
-            .where(
-                CandidateStage.candidate_id == candidate_id,
-                get_question_round_filter(JobStageConfig, StageTemplate),
-                CandidateStage.status.in_(["active", "completed"])
-            )
-        )
-        if active_stage_id:
-            stmt_stage = stmt_stage.where(CandidateStage.job_stage_id == active_stage_id)
-        res_stage = await db.execute(stmt_stage)
-        stages = res_stage.scalars().all()
-        if not stages:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="No test paper assigned. Candidate has not reached the test paper stage yet.",
-            )
-
         candidate = await db.get(Candidate, candidate_id)
         if candidate:
             job_id = await get_candidate_active_job_id(db, candidate)
@@ -464,6 +443,33 @@ async def download_candidate_task_file(
                         stmt_job_none = stmt_job.where(CandidateTestPaper.job_stage_config_id.is_(None))
                         res_job = await db.execute(stmt_job_none)
                         test_paper = res_job.scalar_one_or_none()
+
+    if not test_paper:
+        # Check if candidate has reached a Question/Practical stage before failing
+        stmt_stage = (
+            select(CandidateStage)
+            .join(JobStageConfig, CandidateStage.job_stage_id == JobStageConfig.id)
+            .join(StageTemplate, JobStageConfig.template_id == StageTemplate.id)
+            .where(
+                CandidateStage.candidate_id == candidate_id,
+                get_question_round_filter(JobStageConfig, StageTemplate),
+                CandidateStage.status.in_(["active", "completed"])
+            )
+        )
+        if active_stage_id:
+            stmt_stage = stmt_stage.where(CandidateStage.job_stage_id == active_stage_id)
+        res_stage = await db.execute(stmt_stage)
+        stages = res_stage.scalars().all()
+        if not stages:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No test paper assigned. Candidate has not reached the test paper stage yet.",
+            )
+            
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No test paper assigned to this candidate.",
+        )
 
     task_file_path = candidate.task_file_path or (test_paper.task_file_path if test_paper else None)
 

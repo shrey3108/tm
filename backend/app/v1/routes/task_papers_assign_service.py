@@ -346,7 +346,13 @@ class TaskPaperAssignService:
         all_questions.sort(key=lambda x: x[1], reverse=True)
         
         for q, w in all_questions:
-            q_text = q.get("question") if isinstance(q, dict) else getattr(q, "question", "")
+            if isinstance(q, dict):
+                q_text = q.get("question", "")
+            elif hasattr(q, "question"):
+                q_text = getattr(q, "question", "")
+            else:
+                q_text = str(q).strip()
+
             if q_text and q_text not in seen_questions:
                 seen_questions.add(q_text)
                 unique_questions.append(q)

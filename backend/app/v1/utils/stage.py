@@ -30,21 +30,33 @@ def get_question_round_filter(job_stage_config_cls, stage_template_cls):
     Returns the SQLAlchemy filter to check if a stage requires 'question'.
     Falls back to template name == 'Technical Practical Round' if required_inputs is absent.
     """
-    from sqlalchemy import or_, and_
+    from sqlalchemy import or_, and_, func
     
     config_has_question = job_stage_config_cls.config["required_inputs"].contains(["question"])
     template_has_question = stage_template_cls.default_config["required_inputs"].contains(["question"])
     
+    config_missing_or_empty = or_(
+        job_stage_config_cls.config.is_(None), 
+        ~job_stage_config_cls.config.has_key("required_inputs"),
+        func.jsonb_array_length(job_stage_config_cls.config["required_inputs"]) == 0
+    )
+    
+    template_missing_or_empty = or_(
+        stage_template_cls.default_config.is_(None), 
+        ~stage_template_cls.default_config.has_key("required_inputs"),
+        func.jsonb_array_length(stage_template_cls.default_config["required_inputs"]) == 0
+    )
+    
     required_inputs_absent_and_name_matches = and_(
-        or_(job_stage_config_cls.config.is_(None), ~job_stage_config_cls.config.has_key("required_inputs")),
-        or_(stage_template_cls.default_config.is_(None), ~stage_template_cls.default_config.has_key("required_inputs")),
+        config_missing_or_empty,
+        template_missing_or_empty,
         stage_template_cls.name == "Technical Practical Round"
     )
     
     return or_(
         config_has_question,
         and_(
-            or_(job_stage_config_cls.config.is_(None), ~job_stage_config_cls.config.has_key("required_inputs")),
+            config_missing_or_empty,
             template_has_question
         ),
         required_inputs_absent_and_name_matches
