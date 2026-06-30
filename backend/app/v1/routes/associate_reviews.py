@@ -19,7 +19,7 @@ from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -213,13 +213,6 @@ async def serve_review_form(token: uuid.UUID, db: AsyncSession = Depends(get_db)
     """Serve the HTML review form for the given review token (no auth)."""
     evaluation = await _load_evaluation(db, token)
 
-    # Already submitted → show a "already submitted" page.
-    if evaluation.status == "submitted":
-        return HTMLResponse(
-            content=_already_submitted_html(),
-            status_code=status.HTTP_200_OK,
-        )
-
     test_paper = evaluation.test_paper
     if test_paper is None:
         raise HTTPException(
@@ -252,6 +245,11 @@ async def serve_review_form(token: uuid.UUID, db: AsyncSession = Depends(get_db)
         work_drive_link=work_drive_link,
         items=items,
         submit_url=submit_url,
+        is_submitted=(evaluation.status == "submitted"),
+        saved_marks_list=evaluation.marks,
+        total_awarded=evaluation.total_marks,
+        total_max=evaluation.max_total_marks,
+        result=evaluation.result,
     ))
 
 
@@ -269,10 +267,7 @@ async def submit_review_form(
     evaluation = await _load_evaluation(db, token)
 
     if evaluation.status == "submitted":
-        return HTMLResponse(
-            content=_already_submitted_html(),
-            status_code=status.HTTP_200_OK,
-        )
+        return RedirectResponse(url=f"/api/v1/associate-reviews/{token}", status_code=303)
 
     test_paper = evaluation.test_paper
     if test_paper is None:
@@ -338,11 +333,8 @@ async def submit_review_form(
     evaluation.status = "submitted"
     await db.commit()
 
-    return HTMLResponse(content=_thank_you_html(
-        total_awarded=round(total_awarded, 2),
-        total_max=round(total_max, 2),
-        result=result,
-    ))
+    # Redirect to the GET endpoint to show the read-only result page
+    return RedirectResponse(url=f"/api/v1/associate-reviews/{token}", status_code=303)
 
 
 # ---------------------------------------------------------------------------
@@ -359,6 +351,11 @@ def _render_form_html(
     work_drive_link: str,
     items: list[dict],
     submit_url: str,
+    is_submitted: bool = False,
+    saved_marks_list: list[dict] = None,
+    total_awarded: float = 0.0,
+    total_max: float = 0.0,
+    result: str = "",
 ) -> str:
     """Render the review form HTML page.
 
@@ -394,13 +391,23 @@ def _render_form_html(
             display_html = "<br>".join(escaped_lines)
             max_marks = it["max_marks"]
             max_label = f" / {max_marks:g}" if max_marks is not None else ""
+            
+            # Determine saved value and disabled state if submitted
+            value_attr = ""
+            disabled_attr = ""
+            if is_submitted and saved_marks_list and global_idx < len(saved_marks_list):
+                awarded = saved_marks_list[global_idx].get("awarded_marks")
+                if awarded is not None:
+                    value_attr = f'value="{awarded:g}"'
+                disabled_attr = "disabled"
+
             rows.append(f"""
             <div class="question-row">
               <div class="question-text">{idx + 1}. {display_html}</div>
               <div class="mark-input">
                 <input type="number" name="marks_{global_idx}" min="0"
                        {f'max="{max_marks:g}"' if max_marks is not None else ''}
-                       step="0.5" placeholder="0" />
+                       step="0.5" placeholder="0" {value_attr} {disabled_attr} />
                 <span class="max-label">{max_label}</span>
               </div>
             </div>""")
@@ -418,6 +425,30 @@ def _render_form_html(
               <div class="box-title">Candidate GitHub Repository:</div>
               <a href="{html.escape(github_url)}" target="_blank" class="link">{html.escape(github_url)}</a>
             </div>"""
+
+    # If submitted, show the score box instead of the submit button.
+    submit_section_html = ""
+    score_box_html = ""
+    if is_submitted:
+        result_label = "PASS" if result == "pass" else "FAIL"
+        result_color = "#10b981" if result == "pass" else "#ef4444"
+        score_box_html = f"""
+        <div class="score-box" style="margin-top:20px; border-left: 4px solid #3b82f6; background: #f9fafb; border-radius: 8px; padding: 20px;">
+          <div style="font-size:18px; font-weight:700; color:#111827; margin-bottom:12px;">Final Result</div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+            <span style="font-weight:600; color:#1f2937;">Total Marks Awarded:</span>
+            <span style="color:#4b5563;">{total_awarded:g} / {total_max:g}</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-weight:600; color:#1f2937;">Status:</span>
+            <span style="display:inline-block; padding: 4px 16px; border-radius: 20px; font-weight:700; font-size:14px; color:#fff; background-color:{result_color};">{result_label}</span>
+          </div>
+        </div>"""
+    else:
+        submit_section_html = """
+        <div class="submit-row">
+          <button type="submit" class="submit-btn">Submit Evaluation</button>
+        </div>"""
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -515,8 +546,13 @@ def _render_form_html(
     <div class="content">
       <div class="greeting">Hello {html.escape(associate_name)},</div>
       <div class="subtext">
-        Please review the candidate below and enter marks for each question, then click Submit.
+        {
+          "This review form has already been submitted. You can review your awarded marks and final result below." if is_submitted 
+          else "Please review the candidate below and enter marks for each question, then click Submit."
+        }
       </div>
+
+      {score_box_html if is_submitted else ""}
 
       <div class="info-box candidate-box">
         <div class="box-title">Candidate Details</div>
@@ -547,9 +583,7 @@ def _render_form_html(
 
       <form method="POST" action="{html.escape(submit_url)}">
         {items_html}
-        <div class="submit-row">
-          <button type="submit" class="submit-btn">Submit Evaluation</button>
-        </div>
+        {submit_section_html}
       </form>
     </div>
     <div class="footer">
@@ -560,137 +594,5 @@ def _render_form_html(
 </html>"""
 
 
-def _thank_you_html(total_awarded: float, total_max: float, result: Optional[str]) -> str:
-    """Render the thank-you / confirmation page after submission."""
-    result_label = "N/A"
-    result_color = "#6b7280"
-    if result == "pass":
-        result_label = "PASS"
-        result_color = "#10b981"
-    elif result == "fail":
-        result_label = "FAIL"
-        result_color = "#ef4444"
-
-    return f"""<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Review Submitted</title>
-  <style>
-    * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-    body {{
-      font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-      background-color: #f4f6f9; color: #333; padding: 20px;
-    }}
-    .container {{
-      max-width: 520px; margin: 60px auto; background: #fff;
-      border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-      overflow: hidden; border: 1px solid #eef2f6; text-align: center;
-    }}
-    .header {{
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-      padding: 40px 30px; color: #fff;
-    }}
-    .header .check {{ font-size: 48px; margin-bottom: 12px; }}
-    .header h1 {{ font-size: 22px; font-weight: 700; }}
-    .content {{ padding: 36px 30px; }}
-    .message {{ font-size: 15px; color: #4b5563; line-height: 1.6; margin-bottom: 24px; }}
-    .score-box {{
-      background: #f9fafb; border-radius: 8px; padding: 20px;
-      margin-bottom: 20px; border-left: 4px solid #3b82f6;
-    }}
-    .score-row {{ display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 15px; }}
-    .score-label {{ font-weight: 600; color: #1f2937; }}
-    .score-value {{ color: #4b5563; }}
-    .result-badge {{
-      display: inline-block; padding: 8px 24px; border-radius: 20px;
-      font-weight: 700; font-size: 16px; color: #fff;
-      background-color: {result_color};
-    }}
-    .footer {{
-      background: #f9fafb; padding: 16px 30px; text-align: center;
-      font-size: 12px; color: #9ca3af; border-top: 1px solid #eef2f6;
-    }}
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <div class="check">&#10004;</div>
-      <h1>Thank You!</h1>
-    </div>
-    <div class="content">
-      <div class="message">
-        Your evaluation has been submitted successfully. You may now close this window.
-      </div>
-      <div class="score-box">
-        <div class="score-row">
-          <span class="score-label">Total Marks:</span>
-          <span class="score-value">{total_awarded:g} / {total_max:g}</span>
-        </div>
-        <div class="score-row">
-          <span class="score-label">Result:</span>
-          <span class="result-badge">{result_label}</span>
-        </div>
-      </div>
-    </div>
-    <div class="footer">
-      August Infotech &mdash; www.augustinfotech.com
-    </div>
-  </div>
-</body>
-</html>"""
 
 
-def _already_submitted_html() -> str:
-    """Render the 'already submitted' page."""
-    return """<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Already Submitted</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-      background-color: #f4f6f9; color: #333; padding: 20px;
-    }
-    .container {
-      max-width: 520px; margin: 60px auto; background: #fff;
-      border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-      overflow: hidden; border: 1px solid #eef2f6; text-align: center;
-    }
-    .header {
-      background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
-      padding: 40px 30px; color: #fff;
-    }
-    .header .icon { font-size: 48px; margin-bottom: 12px; }
-    .header h1 { font-size: 22px; font-weight: 700; }
-    .content { padding: 36px 30px; }
-    .message { font-size: 15px; color: #4b5563; line-height: 1.6; }
-    .footer {
-      background: #f9fafb; padding: 16px 30px; text-align: center;
-      font-size: 12px; color: #9ca3af; border-top: 1px solid #eef2f6;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <div class="icon">&#8505;</div>
-      <h1>Already Submitted</h1>
-    </div>
-    <div class="content">
-      <div class="message">
-        This review form has already been submitted. No further changes can be made.
-        You may now close this window.
-      </div>
-    </div>
-    <div class="footer">
-      August Infotech &mdash; www.augustinfotech.com
-    </div>
-  </div>
-</body>
-</html>"""
