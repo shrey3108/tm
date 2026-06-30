@@ -40,7 +40,7 @@ export function CandidateTimeline({
   onTranscriptDisableChange,
 }: CandidateTimelineProps) {
   const { data: events } = useCandidateTimelineQuery(candidateId, jobId);
-  console.log(events);
+
   const navigate = useNavigate();
 
   const { firstRejectedIndex } = useTimelineStatus({

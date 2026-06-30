@@ -6,7 +6,7 @@ import { TranscriptUpload } from "./TranscriptUpload";
 import { ProjectSubmissionDialog } from "./projectSubmission/ProjectSubmissionDialog";
 // import { SendQuestionPaperDialog } from "./projectSubmission/SendQuestionPaperDialog";
 import { CandidateTestPaperHistoryDialog } from "./projectSubmission/CandidateTestPaperHistoryDialog";
-import { useCandidateTestPaper, useDownloadCandidateAssignedTaskFile, useCandidateTestPaperHistory } from "@/hooks/queries/taskPapers/useTaskPaperQueries";
+import { useCandidateTestPaper, useCandidateTestPaperHistory } from "@/hooks/queries/taskPapers/useTaskPaperQueries";
 import { useCandidateAssociateResultsQuery } from "@/hooks/queries/candidates/useCandidateStagesQueries";
 
 import {
@@ -100,8 +100,8 @@ export const StageCandidatesHeader = ({
     (showQuestion || showGithub) ? candidateId : null,
     stageId
   );
-  const { data: candidateAssignedTaskBlob } = useDownloadCandidateAssignedTaskFile(candidateId);
-  console.log(candidateAssignedTaskBlob)
+  // const { data: candidateAssignedTaskBlob } = useDownloadCandidateAssignedTaskFile(candidateId);
+
   const { data: associateResults } = useCandidateAssociateResultsQuery(stageId);
   const totalAssociates = associateResults?.total_associates ?? 0;
   const submittedCount = associateResults?.submitted_count ?? 0;

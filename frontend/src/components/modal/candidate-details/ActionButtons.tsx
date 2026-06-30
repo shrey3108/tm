@@ -31,11 +31,21 @@ export function ActionButtons({
     <>
       <div className={cn("sticky bottom-0 z-10 border-t border-muted-foreground/10 bg-card/95 p-2 backdrop-blur supports-backdrop-filter:bg-card/80 flex flex-col gap-2 sm:flex-wrap sm:items-center sm:justify-center", className)}>
         {disabled && associateResults && associateResults.total_associates > 0 && (
-          <div className="w-full max-w-md mx-auto text-xs text-amber-600 dark:text-amber-400 font-medium text-center bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-xl py-1 px-1.5 shadow-sm flex items-center justify-center gap-2">
-            <Clock className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
-            <span>
-              Waiting for all assigned associates to submit their reviews ({associateResults.submitted_count}/{associateResults.total_associates})
-            </span>
+          <div className="w-full max-w-md mx-auto text-xs text-amber-600 dark:text-amber-400 font-medium text-center bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-xl py-2 px-3 shadow-sm flex flex-col items-center justify-center gap-1">
+            <div className="flex items-center justify-center gap-2">
+              <Clock className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
+              <span>
+                Waiting for all assigned associates to submit their reviews ({associateResults.submitted_count}/{associateResults.total_associates})
+              </span>
+            </div>
+            {associateResults.reviews && associateResults.reviews.some(r => !r.submitted_at || r.status === "sent") && (
+              <div className="text-xs text-amber-600/80 dark:text-amber-400/80 ">
+                Pending: {associateResults.reviews
+                  .filter(r => !r.submitted_at || r.status === "sent")
+                  .map(r => r.associate_name)
+                  .join(", ")}
+              </div>
+            )}
           </div>
         )}
         <p className="text-md font-medium text-center">HR Decision</p>
