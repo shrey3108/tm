@@ -1,3 +1,9 @@
+/**
+ * @module AssignPaperPage
+ * @component AssignPaperPage
+ *
+ * Evaluation setup page for selecting, assigning, and customizing test papers for candidates.
+ */
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";

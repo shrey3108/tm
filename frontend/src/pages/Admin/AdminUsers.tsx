@@ -1,4 +1,7 @@
 /**
+ * @module AdminUsers
+ * @component AdminUsers
+ *
  * Admin page for managing users.
  * Displays all users with ability to create new users.
  */
@@ -29,7 +32,7 @@ import { useDebouncedValue } from "@/hooks/useDebounced";
 import { useDeleteConfirmation } from "@/hooks/useDeleteConfirmation";
 import { Button } from "@/components/ui/button";
 
-const AdminUsers = () => {
+export default function AdminUsers() {
   const toast = useToast();
   const { user: currentUser } = useAuth();
   const [showModal, setShowModal] = useState(false);
@@ -285,5 +288,3 @@ const AdminUsers = () => {
     </AppPageShell>
   );
 };
-
-export default AdminUsers;

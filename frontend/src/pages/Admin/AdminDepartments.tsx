@@ -1,4 +1,7 @@
 /**
+ * @module AdminDepartments
+ * @component AdminDepartments
+ *
  * Admin page for managing departments.
  * Displays all departments with ability to create, edit, and delete.
  */
@@ -27,7 +30,7 @@ import { usePageFilters } from "@/hooks/usePageFilters";
 import CreateDepartmentModal from "@/components/modal/CreateDepartmentModal";
 import DeleteModal from "@/components/modal/DeleteModal";
 
-const AdminDepartments = () => {
+export default function AdminDepartments() {
   const toast = useToast();
   const user = useAppSelector(selectCurrentUser);
   const hasManagePermission = hasPermissions(user?.permissions, PERMISSIONS.DEPARTMENTS_MANAGE);
@@ -306,5 +309,3 @@ const AdminDepartments = () => {
     </AppPageShell>
   );
 };
-
-export default AdminDepartments;

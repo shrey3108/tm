@@ -1,3 +1,9 @@
+/**
+ * @module AdminJobStages
+ * @component AdminJobStages
+ *
+ * Admin management interface for viewing and managing stages of a job posting.
+ */
 import { useState, useEffect } from "react";
 import AppPageShell from "@/components/shared/AppPageShell";
 import PageHeader from "@/components/shared/PageHeader";
@@ -32,7 +38,7 @@ import { useDebouncedValue } from "@/hooks/useDebounced";
  * Admin page for managing job stage templates.
  * Displays searchable table with view, edit, and delete functionality.
  */
-const AdminJobStages = () => {
+export default function AdminJobStages() {
   const toast = useToast();
   const navigate = useNavigate();
 
@@ -342,5 +348,3 @@ const AdminJobStages = () => {
     </AppPageShell>
   );
 };
-
-export default AdminJobStages;

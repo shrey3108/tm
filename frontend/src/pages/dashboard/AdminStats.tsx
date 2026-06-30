@@ -1,3 +1,9 @@
+/**
+ * @module AdminStats
+ * @component AdminStats
+ *
+ * Dashboard view displaying overall admin statistics, charts, and metrics.
+ */
 import { useAdminDashboardData } from "@/hooks/queries/admin/useAdminDashboardData";
 // import AppPageHeader from "@/components/shared/AppPageHeader";
 import AppPageShell from "@/components/shared/AppPageShell";

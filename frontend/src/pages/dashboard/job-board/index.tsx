@@ -1,3 +1,9 @@
+/**
+ * @module index
+ * @component index
+ *
+ * Main entry/root view for the job board or dashboard routing.
+ */
 
 import AppPageShell from "@/components/shared/AppPageShell";
 import { useDeleteJobMutation, useUpdateJobMutation } from "@/hooks/mutations/jobs/useJobMutations";

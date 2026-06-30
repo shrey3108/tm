@@ -1,4 +1,7 @@
 /**
+ * @module AdminDashboard
+ * @component AdminDashboard
+ *
  * Main admin dashboard page.
  * Displays analytics summary and hiring reports for administrators.
  */
@@ -22,7 +25,7 @@ import LoadingSpinner from "@/components/shared/LoadingSpinner";
 const StageCentricChart = lazy(() =>
   import("@/components/admin/AdminPipelineChart").then((m) => ({ default: m.StageCentricChart }))
 );
-const AdminDashboard = () => {
+export default function AdminDashboard() {
   const [viewMode, setViewMode] = useState<"report" | "chart">("report");
   // Fetch job titles
   const { data: jobs } = useJobTitle("", true);
@@ -152,4 +155,3 @@ const AdminDashboard = () => {
   );
 };
 
-export default AdminDashboard;

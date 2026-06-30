@@ -1,4 +1,7 @@
 /**
+ * @module AdminRoles
+ * @component AdminRoles
+ *
  * Admin page for managing roles and permissions.
  * Displays all roles and permissions with ability to create new permissions.
  */
@@ -26,7 +29,7 @@ import RoleModal from "@/components/modal/RoleModal";
 import { useDebouncedValue } from "@/hooks/useDebounced";
 import { useDeleteConfirmation } from "@/hooks/useDeleteConfirmation";
 
-const AdminRoles = () => {
+export default function AdminRoles() {
   const { user: currentUser } = useAuth();
   const [showPermissionModal, setShowPermissionModal] = useState(false);
   const [showRoleModal, setShowRoleModal] = useState(false);
@@ -298,5 +301,3 @@ const AdminRoles = () => {
     </AppPageShell>
   );
 };
-
-export default AdminRoles;

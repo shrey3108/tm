@@ -1,3 +1,9 @@
+/**
+ * @module JobCandidates
+ * @component JobCandidates
+ *
+ * Detailed view listing candidates applied to a specific job, with stage details.
+ */
 import { useState, useRef, useMemo, useEffect, lazy, Suspense } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { RotateCw, Layers } from "lucide-react";

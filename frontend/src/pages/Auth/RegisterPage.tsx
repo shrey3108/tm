@@ -1,4 +1,7 @@
 /**
+ * @module RegisterPage
+ * @component RegisterPage
+ *
  * Registration page for new user account creation.
  * Provides a form with name, email, and password fields with validation.
  */
@@ -32,7 +35,7 @@ import { INFO } from "@/constants";
 import { InputGroup, InputGroupInput, InputGroupAddon, InputGroupButton } from "@/components/ui/input-group";
 import { useRegisterMutation } from "@/hooks/mutations/auth/useAuthMutations";
 
-const RegisterPage = () => {
+export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false)
   const registerMutation = useRegisterMutation();
 
@@ -229,5 +232,3 @@ const RegisterPage = () => {
     </div>
   );
 };
-
-export default RegisterPage;

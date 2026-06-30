@@ -1,3 +1,9 @@
+/**
+ * @module JobForm
+ * @component JobForm
+ *
+ * Form component for creating or editing job post details.
+ */
 import { useEffect } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";

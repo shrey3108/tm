@@ -1,4 +1,7 @@
 /**
+ * @module AdminJobPriorities
+ * @component AdminJobPriorities
+ *
  * Admin page for managing job priorities.
  * Displays all job priorities with ability to create, edit, and delete.
  */
@@ -26,7 +29,7 @@ import CreateJobPriorityModal from "@/components/modal/CreateJobPriorityModal";
 import DeleteModal from "@/components/modal/DeleteModal";
 
 
-const AdminJobPriorities = () => {
+export default function AdminJobPriorities() {
   const toast = useToast();
   const deletePriorityMutation = useDeletePriorityMutation();
   const [showModal, setShowModal] = useState(false);
@@ -364,5 +367,3 @@ const AdminJobPriorities = () => {
     </AppPageShell>
   );
 };
-
-export default AdminJobPriorities;

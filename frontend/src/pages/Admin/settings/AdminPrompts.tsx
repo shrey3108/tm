@@ -1,4 +1,7 @@
 /**
+ * @module AdminPrompts
+ * @component AdminPrompts
+ *
  * Admin page for viewing AI prompts.
  * Displays all prompts used by the system with ability to view their content.
  */
@@ -30,7 +33,7 @@ import { usePageFilters } from "@/hooks/usePageFilters";
 import ErrorDisplay from "@/components/shared/ErrorDisplay";
 
 
-const AdminPrompts = () => {
+export default function AdminPrompts() {
     const { filters, setFilters } = usePageFilters("adminPrompts", {
         pageIndex: 0,
         pageSize: 10,
@@ -278,5 +281,3 @@ const AdminPrompts = () => {
         </AppPageShell >
     );
 };
-
-export default AdminPrompts;

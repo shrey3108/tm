@@ -1,9 +1,16 @@
 /**
- * Tanstack Query client setup
+ * @module query-client
+ * Shared React Query client configuration for data fetching and caching state management.
  */
 import { QueryClient } from "@tanstack/react-query";
 /**
- * Initializes and exports a new QueryClient instance for @tanstack/react-query.
+ * Pre-configured `QueryClient` instance for `@tanstack/react-query`.
+ * 
+ * Default query configuration:
+ * - `staleTime`: 5 minutes (cached data remains fresh for 5 minutes).
+ * - `gcTime`: 10 minutes (unused query data is garbage collected after 10 minutes).
+ * - `retry`: 1 (failed requests are retried once before throwing error).
+ * - Focus, mount, and reconnect refetches are temporarily disabled.
  */
 export const queryClient = new QueryClient({
     defaultOptions: {

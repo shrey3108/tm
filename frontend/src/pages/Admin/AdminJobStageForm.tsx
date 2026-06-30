@@ -1,3 +1,9 @@
+/**
+ * @module AdminJobStageForm
+ * @component AdminJobStageForm
+ *
+ * Form wizard/editor component for building and configuring job pipeline stages.
+ */
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";

@@ -1,3 +1,9 @@
+/**
+ * @module AdminJobCriteriaForm
+ * @component AdminJobCriteriaForm
+ *
+ * Form component for creating and editing job evaluation criteria, with validation.
+ */
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";

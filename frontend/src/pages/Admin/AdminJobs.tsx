@@ -1,3 +1,9 @@
+/**
+ * @module AdminJobs
+ * @component AdminJobs
+ *
+ * Admin page for listing, filtering, and organizing jobs.
+ */
 import { useCallback, useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -29,7 +35,7 @@ import { useDebouncedValue } from "@/hooks/useDebounced";
  * Mirrored from the dashboard job-board to provide consistent experience with filtration.
  * Uses server-side pagination for better performance with large datasets.
  */
-const AdminJobs = () => {
+export default function AdminJobs() {
   const navigate = useNavigate();
   const deleteMutation = useDeleteJobMutation();
   const updateMutation = useUpdateJobMutation();
@@ -271,5 +277,3 @@ const AdminJobs = () => {
     </AppPageShell>
   );
 };
-
-export default AdminJobs;

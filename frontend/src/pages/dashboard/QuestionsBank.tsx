@@ -1,3 +1,9 @@
+/**
+ * @module QuestionsBank
+ * @component QuestionsBank
+ *
+ * Question library dashboard for organizing, viewing, and selecting test questions.
+ */
 import { useState, useCallback, useMemo } from "react";
 import { usePageFilters } from "@/hooks/usePageFilters";
 import { useNavigate } from "react-router-dom";

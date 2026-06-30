@@ -1,3 +1,9 @@
+/**
+ * @module CandidatesStages
+ * @component CandidatesStages
+ *
+ * Dashboard view mapping candidate progression across different pipeline stages.
+ */
 import { useNavigate } from "react-router-dom";
 import AppPageShell from "@/components/shared/AppPageShell";
 import { ActionButtons } from "@/components/modal/candidate-details/ActionButtons";

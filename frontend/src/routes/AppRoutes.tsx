@@ -35,7 +35,7 @@ import { adminJobStagesLoader } from "@/loaders/adminJobStages";
 import { adminJobStageFormLoader, } from "@/loaders/adminJobStageForm";
 
 // Lazy-loaded route pages
-const LoginPage = lazy(() => import("@/pages/Auth/Login/LoginPage"));
+const LoginPage = lazy(() => import("@/pages/Auth/LoginPage"));
 const RegisterPage = lazy(() => import("@/pages/Auth/RegisterPage"));
 const DashboardLayout = lazy(() => import("@/components/layout/DashboardLayout"));
 const JobBoard = lazy(() => import("@/pages/dashboard/job-board"));

@@ -1,4 +1,7 @@
 /**
+ * @module AdminRecentUploads
+ * @component AdminRecentUploads
+ *
  * Admin page for viewing recent file uploads.
  * Displays a list of recently uploaded resumes and documents.
  */
@@ -23,7 +26,7 @@ import { useDebouncedValue } from "@/hooks/useDebounced";
 
 
 
-const AdminRecentUploads = () => {
+export default function AdminRecentUploads() {
   const { filters, setFilters, setFilter } = usePageFilters("adminRecentUploads", {
     pageIndex: 0,
     pageSize: 10,
@@ -207,6 +210,3 @@ const AdminRecentUploads = () => {
     </AppPageShell>
   );
 };
-
-
-export default AdminRecentUploads;

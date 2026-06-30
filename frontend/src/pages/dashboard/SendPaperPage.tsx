@@ -1,3 +1,9 @@
+/**
+ * @module SendPaperPage
+ * @component SendPaperPage
+ *
+ * Dashboard page for sending selected test papers to candidates via email or portal links.
+ */
 import { useState, useMemo } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { toast } from "sonner";

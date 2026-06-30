@@ -1,4 +1,7 @@
 /**
+ * @module LoginPage
+ * @component LoginPage
+ *
  * Login page for user authentication.
  * Provides email/password form with validation and error handling.
  */
@@ -32,7 +35,7 @@ import { INFO } from "@/constants";
 import { InputGroup, InputGroupInput, InputGroupAddon, InputGroupButton } from "@/components/ui/input-group";
 import { useLoginMutation } from "@/hooks/mutations/auth/useAuthMutations";
 
-const LoginPage = () => {
+export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const loginMutation = useLoginMutation();
 
@@ -178,4 +181,3 @@ const LoginPage = () => {
   );
 };
 
-export default LoginPage;

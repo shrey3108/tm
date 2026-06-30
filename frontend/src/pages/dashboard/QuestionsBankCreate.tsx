@@ -1,3 +1,9 @@
+/**
+ * @module QuestionsBankCreate
+ * @component QuestionsBankCreate
+ *
+ * Creation form for adding new questions with options and test cases to the Questions Bank.
+ */
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { usePageFilters } from "@/hooks/usePageFilters";

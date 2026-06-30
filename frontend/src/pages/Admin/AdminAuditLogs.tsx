@@ -1,4 +1,7 @@
 /**
+ * @module AdminAuditLogs
+ * @component AdminAuditLogs
+ *
  * Admin page for viewing audit logs.
  * Displays a history of user actions and system events.
  */
@@ -17,7 +20,7 @@ import { toTitleCase } from "@/lib/utils";
 import { useAuditLogs } from "@/hooks/queries/admin/useAuditLogs";
 import { usePageFilters } from "@/hooks/usePageFilters";
 
-const AdminAuditLogs = () => {
+export default function AdminAuditLogs() {
   const { filters, setFilters } = usePageFilters("adminAuditLogs", {
     pageIndex: 0,
     pageSize: 10,
@@ -160,7 +163,3 @@ const AdminAuditLogs = () => {
     </AppPageShell>
   );
 };
-
-
-
-export default AdminAuditLogs;

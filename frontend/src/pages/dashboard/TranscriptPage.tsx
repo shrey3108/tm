@@ -1,3 +1,9 @@
+/**
+ * @module TranscriptPage
+ * @component TranscriptPage
+ *
+ * Dashboard view for displaying and analyzing transcripts from candidate interviews or evaluations.
+ */
 import { useNavigate, useLocation } from "react-router-dom";
 import { useTranscriptQuery } from "@/hooks/queries/candidates";
 import { Button } from "@/components/ui/button";

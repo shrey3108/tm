@@ -1,4 +1,7 @@
 /**
+ * @module AdminJobPositions
+ * @component AdminJobPositions
+ *
  * Admin page for managing job positions.
  * Displays all positions with ability to create, edit, and delete.
  */
@@ -27,7 +30,7 @@ import { useJobPosition } from "@/hooks/queries/admin/useJobPosition";
 import { useDeletePositionMutation } from "@/hooks/mutations/admin/useJobPosition";
 import { usePageFilters } from "@/hooks/usePageFilters";
 
-const AdminJobPositions = () => {
+export default function AdminJobPositions() {
   const toast = useToast();
   const deletePositionMutation = useDeletePositionMutation();
   const [showModal, setShowModal] = useState(false);
@@ -307,5 +310,3 @@ const AdminJobPositions = () => {
     </AppPageShell>
   );
 };
-
-export default AdminJobPositions;

@@ -1,4 +1,7 @@
 /**
+ * @module AdminAssociates
+ * @component AdminAssociates
+ *
  * Admin page for managing associates.
  * Displays all associates with ability to create, edit, and delete.
  */
@@ -25,7 +28,7 @@ import DeleteModal from "@/components/modal/DeleteModal";
 import { useDebouncedValue } from "@/hooks/useDebounced";
 import { Button } from "@/components/ui/button";
 
-const AdminAssociates = () => {
+export default function AdminAssociates() {
   const toast = useToast();
   const user = useAppSelector(selectCurrentUser);
   const hasManagePermission = hasPermissions(user?.permissions, PERMISSIONS.ASSOCIATES_MANAGE);
@@ -280,5 +283,3 @@ const AdminAssociates = () => {
     </AppPageShell>
   );
 };
-
-export default AdminAssociates;

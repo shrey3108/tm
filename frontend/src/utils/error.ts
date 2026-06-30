@@ -1,13 +1,29 @@
 /**
- * Utility functions for handling and formatting errors.
+ * @module error
+ * Utility functions for handling, extracting, and formatting errors in a user-friendly format.
  */
 import axios from "axios";
 /**
- * Extracts a user-friendly error message from an axios error or any other error.
- * Handles the common backend structure of fastapi style { detail: string } or fallback to message.
- * @param err - The error object to extract message from
- * @param fallback - Default message if extraction fails
- * @returns A user-friendly error message string
+ * Extracts a user-friendly error message from any error object, specializing in Axios HTTP errors.
+ *
+ * Supports:
+ * - FastAPI validation error lists (arrays of errors under `detail`).
+ * - Standard FastAPI or generic backend `detail` error strings.
+ * - GlobalErrorHandlerMiddleware nested structure (nested `error.message` field).
+ * - Standard JavaScript `Error` objects (`err.message`).
+ * - Fallbacks for unknown error structures.
+ *
+ * @param err - The error object to extract the message from.
+ * @param fallback - Default message returned if extraction fails.
+ * @returns A user-friendly error message string.
+ * @example
+ * ```ts
+ * try {
+ *   await api.getUser();
+ * } catch (err) {
+ *   const msg = extractErrorMessage(err, "Failed to load user.");
+ * }
+ * ```
  */
 export const extractErrorMessage = (
   err: unknown,

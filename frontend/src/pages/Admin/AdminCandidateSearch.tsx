@@ -1,4 +1,7 @@
 /**
+ * @module AdminCandidateSearch
+ * @component AdminCandidateSearch
+ *
  * Admin page for searching candidates globally or for a specific job.
  * Provides advanced search and filtering for HR.
  */
@@ -29,7 +32,7 @@ import { useAdminCandidates } from "@/hooks/queries/jobs/useAdminCandidates";
 import { useJob } from "@/hooks/queries/jobs/useJob";
 
 
-const AdminCandidateSearch = () => {
+export default function AdminCandidateSearch() {
   const { jobId } = useParams<{ jobId: string }>();
   const navigate = useNavigate();
   const location = useLocation();
@@ -216,5 +219,3 @@ const AdminCandidateSearch = () => {
     </AppPageShell>
   );
 };
-
-export default AdminCandidateSearch;

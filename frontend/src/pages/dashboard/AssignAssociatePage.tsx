@@ -1,3 +1,9 @@
+/**
+ * @module AssignAssociatePage
+ * @component AssignAssociatePage
+ *
+ * Hiring manager dashboard page for assigning associates to candidate review cycles.
+ */
 import { useState, useEffect } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { useForm, Controller } from "react-hook-form";

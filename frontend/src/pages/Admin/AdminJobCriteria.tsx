@@ -1,3 +1,9 @@
+/**
+ * @module AdminJobCriteria
+ * @component AdminJobCriteria
+ *
+ * Admin view for listing, managing, and creating evaluation criteria for jobs.
+ */
 import { useState, useEffect } from "react";
 import AppPageShell from "@/components/shared/AppPageShell";
 import PageHeader from "@/components/shared/PageHeader";
@@ -29,7 +35,7 @@ import { useToast } from "@/components/shared/ToastProvider";
  * Admin page for managing job evaluation criteria.
  * Displays searchable table with create, edit, toggle, and delete functionality.
  */
-const AdminJobCriteria = () => {
+export default function AdminJobCriteria() {
     const [selectedCriterion, setSelectedCriterion] = useState<CriterionRead | null>(null);
     const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
     const toast = useToast();
@@ -336,5 +342,3 @@ const AdminJobCriteria = () => {
         </AppPageShell>
     );
 };
-
-export default AdminJobCriteria;

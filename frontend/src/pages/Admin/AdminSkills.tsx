@@ -1,4 +1,7 @@
 /**
+ * @module AdminSkills
+ * @component AdminSkills
+ *
  * Admin page for managing skills.
  * Displays all skills with ability to create, edit, and delete.
  */
@@ -26,7 +29,7 @@ import DeleteModal from "@/components/modal/DeleteModal";
 import { useDebouncedValue } from "@/hooks/useDebounced";
 import { Button } from "@/components/ui/button";
 
-const AdminSkills = () => {
+export default function AdminSkills() {
   const toast = useToast();
   const user = useAppSelector(selectCurrentUser);
   const hasManagePermission = hasPermissions(user?.permissions, PERMISSIONS.SKILLS_MANAGE);
@@ -329,5 +332,3 @@ const AdminSkills = () => {
     </AppPageShell>
   );
 };
-
-export default AdminSkills;
