@@ -190,11 +190,31 @@ class LLMEvaluationService:
         jd_skills: Optional[List[str]] = None,
         project_required_skills: Optional[List[str]] = None,
         prompt_template: Optional[str] = None,
+        secrets_findings: Optional[List[Dict[str, Any]]] = None,
+        bandit_findings: Optional[List[Dict[str, Any]]] = None,
     ) -> str:
         """Construct prompt message for the evaluator model."""
         jd_skills_str = ", ".join(jd_skills) if jd_skills else "None specified"
         project_skills_str = ", ".join(project_required_skills) if project_required_skills else "None specified"
         job_position_str = job_position if job_position else "Not Specified"
+
+        # Format and append static scan findings to the repository context if any exist
+        findings_str = ""
+        if secrets_findings or bandit_findings:
+            findings_str += "\n\nSTATIC SECURITY SCAN FINDINGS:\n"
+            findings_str += "Our automated static security scanners flagged the following potential issues in the candidate's repository:\n"
+            if secrets_findings:
+                findings_str += "1. Potential Hardcoded Secrets/Credentials:\n"
+                for idx, f in enumerate(secrets_findings, start=1):
+                    findings_str += f"   - Finding #{idx}: File '{f.get('file')}', Line {f.get('line')}: {f.get('finding')}\n"
+            if bandit_findings:
+                findings_str += "2. Potential Static Code Vulnerabilities (Bandit):\n"
+                for idx, f in enumerate(bandit_findings, start=1):
+                    findings_str += f"   - Finding #{idx}: File '{f.get('filename')}', Line {f.get('line_number')}: {f.get('issue_text')} (Severity: {f.get('issue_severity')})\n"
+            findings_str += "\nCRITICAL INSTRUCTION FOR SECURITY EVALUATION:\n"
+            findings_str += "Please analyze the flagged code files and findings above. Check if they represent actual active keys, credentials, or dangerous security vulnerabilities. If they are real/dangerous, list them in the 'security_risks' array. If they are just harmless unit test mocks, README documentation placeholders, or false positives, do NOT flag them as risks.\n"
+            
+            repo_context = repo_context + findings_str
 
         if prompt_template:
             formatted = prompt_template
@@ -386,6 +406,8 @@ Expected JSON structure:
         prompt_template: Optional[str] = None,
         tree_str: Optional[str] = None,
         content_str: Optional[str] = None,
+        secrets_findings: Optional[List[Dict[str, Any]]] = None,
+        bandit_findings: Optional[List[Dict[str, Any]]] = None,
     ) -> Dict[str, Any]:
         """Run LLM evaluation of repository context against the job description."""
         # 1. Determine contexts and prompts for code & non_code models
@@ -407,6 +429,8 @@ Expected JSON structure:
                 jd_skills=jd_skills,
                 project_required_skills=project_required_skills,
                 prompt_template=prompt_template,
+                secrets_findings=secrets_findings,
+                bandit_findings=bandit_findings,
             )
             prompt_non_code = self.build_prompt(
                 repo_name=repo_name,
@@ -417,6 +441,8 @@ Expected JSON structure:
                 jd_skills=jd_skills,
                 project_required_skills=project_required_skills,
                 prompt_template=prompt_template,
+                secrets_findings=secrets_findings,
+                bandit_findings=bandit_findings,
             )
         else:
             # Fallback to single context if tree/content not provided
@@ -429,6 +455,8 @@ Expected JSON structure:
                 jd_skills=jd_skills,
                 project_required_skills=project_required_skills,
                 prompt_template=prompt_template,
+                secrets_findings=secrets_findings,
+                bandit_findings=bandit_findings,
             )
             prompt_non_code = prompt_code
 

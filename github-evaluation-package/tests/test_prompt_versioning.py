@@ -143,7 +143,9 @@ async def test_execute_evaluation_with_custom_prompt_version(
         project_required_skills=[],
         prompt_template="Custom instructions for {job_title}",
         tree_str="folder_tree",
-        content_str="content"
+        content_str="content",
+        secrets_findings=[],
+        bandit_findings=[]
     )
 
 

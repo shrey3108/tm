@@ -466,14 +466,18 @@ class RepositoryService:
         findings = []
         try:
             for root_dir, _, filenames in os.walk(local_dir):
-                # Skip common dependency, build, virtual environment, and VCS directories
+                # Skip common dependency, build, virtual environment, VCS, test, and doc directories
                 parts = Path(root_dir).parts
-                ignored_dirs = {".git", ".venv", "venv", "env", "node_modules", "__pycache__", ".pytest_cache", ".mypy_cache", "seed", "seeds"}
+                ignored_dirs = {
+                    ".git", ".venv", "venv", "env", "node_modules", "__pycache__", 
+                    ".pytest_cache", ".mypy_cache", "seed", "seeds", 
+                    "test", "tests", "doc", "docs", "example", "examples"
+                }
                 if any(ignored in parts for ignored in ignored_dirs):
                     continue
                 for filename in filenames:
                     file_path = Path(root_dir) / filename
-                    # Skip common binaries/images
+                    # Skip common binaries/images and documentation/markdown files
                     if file_path.suffix.lower() in (
                         ".png",
                         ".jpg",
@@ -483,6 +487,10 @@ class RepositoryService:
                         ".pdf",
                         ".zip",
                         ".gz",
+                        ".md",
+                        ".txt",
+                        ".rst",
+                        ".html",
                     ):
                         continue
                     
@@ -503,6 +511,19 @@ class RepositoryService:
                                                 or stripped.startswith("#")
                                             ):
                                                 continue
+
+                                        # Skip common placeholder/test values to avoid false positives
+                                        secret_val = match.group(1) if len(match.groups()) >= 1 else match.group(0)
+                                        secret_val_clean = secret_val.lower().strip("'\" ")
+                                        placeholders = {
+                                            "your_api_key", "your_key", "your_token", "your_secret", "your-api-key", "your-key", "your-token", "your-secret",
+                                            "mock_key", "mock_token", "mock_secret", "mock-key", "mock-token", "mock-secret", "mock", "dummy", "placeholder",
+                                            "example", "example_key", "example-key", "my_api_key", "my_key", "my_secret", "my-key", "my-secret", "mysecret",
+                                            "test_key", "test_token", "test-key", "test-token", "test_secret", "test-secret", "test", "password", "db_password",
+                                            "secret", "passwd", "token", "auth_token", "client_secret", "aws_access_key_id", "aws_secret_access_key", "api_key", "apikey"
+                                        }
+                                        if any(p in secret_val_clean for p in placeholders):
+                                            continue
 
                                         rel_path = os.path.relpath(
                                             file_path, local_dir

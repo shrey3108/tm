@@ -316,6 +316,8 @@ async def execute_evaluation(
                     prompt_template=prompt_template,
                     tree_str=tree,
                     content_str=content,
+                    secrets_findings=secrets_findings,
+                    bandit_findings=bandit_findings,
                 )
             except LLMValidationException as e:
                 logger.warning(
@@ -382,7 +384,19 @@ async def execute_evaluation(
 
             # Programmatically adjust security score based on risks list and secrets detection
             if has_secrets:
-                report_score_val = 0.0
+                if filtered_risks:
+                    logger.warning("Secret detected and confirmed by AI: forcing Security score to 0.0")
+                    report_score_val = 0.0
+                else:
+                    logger.info("Secret detected by static scanner but AI did not confirm any security risks. Skipping 0.0 override.")
+                    llm_sec_score = report_json.get("security_score")
+                    if llm_sec_score is None:
+                        llm_sec_score = report_json.get("scores", {}).get("security")
+                    try:
+                        report_score_val = float(llm_sec_score) if llm_sec_score is not None else 5.0
+                    except (ValueError, TypeError):
+                        report_score_val = 5.0
+                    report_score_val = max(0.0, min(5.0, report_score_val))
             elif not filtered_risks:
                 report_score_val = 5.0
             else:
@@ -454,7 +468,7 @@ async def execute_evaluation(
 
             # 7. Compute final weighted scores and apply penalty
             detailed_scores, final_score = ScoringService.calculate_scores(
-                raw_scores, has_secrets=has_secrets, custom_weights=weights
+                raw_scores, has_secrets=(has_secrets and bool(filtered_risks)), custom_weights=weights
             )
 
             # Calculate jd_alignment scores and structure
@@ -470,7 +484,7 @@ async def execute_evaluation(
                     "documentation": 5.0,
                 }
             processed_jd_scores, jd_overall = ScoringService.calculate_scores(
-                raw_jd_scores, has_secrets=has_secrets, custom_weights=weights
+                raw_jd_scores, has_secrets=(has_secrets and bool(filtered_risks)), custom_weights=weights
             )
             jd_decision = raw_jd_align.get("decision", "") if isinstance(raw_jd_align, dict) else ""
             if not isinstance(jd_decision, str) or jd_decision.strip() not in ["Proceed", "Reject"]:
@@ -507,7 +521,7 @@ async def execute_evaluation(
                     "documentation": 5.0,
                 }
             processed_proj_scores, proj_overall = ScoringService.calculate_scores(
-                raw_proj_scores, has_secrets=has_secrets, custom_weights=weights
+                raw_proj_scores, has_secrets=(has_secrets and bool(filtered_risks)), custom_weights=weights
             )
             proj_decision = raw_proj_align.get("decision", "") if isinstance(raw_proj_align, dict) else ""
             if not isinstance(proj_decision, str) or proj_decision.strip() not in ["Proceed", "Reject"]:
@@ -538,8 +552,8 @@ async def execute_evaluation(
             jd_sec = float(processed_jd_scores.get("security", {}).get("score", 0.0))
             proj_sec = float(processed_proj_scores.get("security", {}).get("score", 0.0))
             combined_security_score = round((jd_sec + proj_sec) / 2.0, 1)
-            # Apply has_secrets penalty
-            if has_secrets:
+            # Apply has_secrets penalty only if AI also confirmed actual risks
+            if has_secrets and filtered_risks:
                 combined_security_score = 0.0
 
             # 8. Save scores to DB

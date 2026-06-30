@@ -89,8 +89,34 @@ async def test_security_score_override_no_risks(
     
     # Mock evaluate response with placeholder security risks
     mock_evaluate.return_value = {
-        "jd_evaluation": {"scores": {}},
-        "project_evaluation": {"scores": {}},
+        "jd_alignment": {
+            "strengths": [],
+            "weaknesses": [],
+            "alignment_review": "",
+            "interview_questions": [],
+            "scores": {
+                "correctness": 5.0,
+                "code_quality": 5.0,
+                "architecture": 5.0,
+                "security": 5.0,
+                "performance": 5.0,
+                "documentation": 5.0,
+            }
+        },
+        "project_alignment": {
+            "strengths": [],
+            "weaknesses": [],
+            "alignment_review": "",
+            "interview_questions": [],
+            "scores": {
+                "correctness": 5.0,
+                "code_quality": 5.0,
+                "architecture": 5.0,
+                "security": 5.0,
+                "performance": 5.0,
+                "documentation": 5.0,
+            }
+        },
         "strengths": [],
         "weaknesses": [],
         "security_risks": ["No global security risks identified.", "none"],
@@ -158,8 +184,34 @@ async def test_security_score_override_with_actual_risks(
     
     # Mock evaluate response with actual security risks
     mock_evaluate.return_value = {
-        "jd_evaluation": {"scores": {}},
-        "project_evaluation": {"scores": {}},
+        "jd_alignment": {
+            "strengths": [],
+            "weaknesses": [],
+            "alignment_review": "",
+            "interview_questions": [],
+            "scores": {
+                "correctness": 4.0,
+                "code_quality": 4.0,
+                "architecture": 4.0,
+                "security": 3.0,
+                "performance": 4.0,
+                "documentation": 4.0,
+            }
+        },
+        "project_alignment": {
+            "strengths": [],
+            "weaknesses": [],
+            "alignment_review": "",
+            "interview_questions": [],
+            "scores": {
+                "correctness": 4.0,
+                "code_quality": 4.0,
+                "architecture": 4.0,
+                "security": 3.0,
+                "performance": 4.0,
+                "documentation": 4.0,
+            }
+        },
         "strengths": [],
         "weaknesses": [],
         "security_risks": ["Critical credentials leaked in file configuration", "none"],
@@ -227,11 +279,37 @@ async def test_security_score_override_with_secrets(
     
     # Mock evaluate response with no risks from LLM side
     mock_evaluate.return_value = {
-        "jd_evaluation": {"scores": {}},
-        "project_evaluation": {"scores": {}},
+        "jd_alignment": {
+            "strengths": [],
+            "weaknesses": [],
+            "alignment_review": "",
+            "interview_questions": [],
+            "scores": {
+                "correctness": 4.0,
+                "code_quality": 4.0,
+                "architecture": 4.0,
+                "security": 5.0,
+                "performance": 4.0,
+                "documentation": 4.0,
+            }
+        },
+        "project_alignment": {
+            "strengths": [],
+            "weaknesses": [],
+            "alignment_review": "",
+            "interview_questions": [],
+            "scores": {
+                "correctness": 4.0,
+                "code_quality": 4.0,
+                "architecture": 4.0,
+                "security": 5.0,
+                "performance": 4.0,
+                "documentation": 4.0,
+            }
+        },
         "strengths": [],
         "weaknesses": [],
-        "security_risks": [],
+        "security_risks": ["Critical API Key exposed in config.json"],
         "architecture_review": "",
         "code_quality_review": "",
         "seniority_estimate": "Senior",
