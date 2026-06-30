@@ -34,7 +34,7 @@ router = APIRouter(prefix="/associate-reviews", tags=["associate-reviews"])
 
 # Passing threshold: an associate's review is considered "pass" if the total
 # awarded marks are at least this fraction of the max total marks.
-PASSING_THRESHOLD = 0.5
+PASSING_THRESHOLD = 0.7
 
 
 # ---------------------------------------------------------------------------
@@ -318,7 +318,10 @@ async def submit_review_form(
         )
         if awarded is not None:
             total_awarded += awarded
-        if max_marks is not None:
+            if max_marks is None:
+                max_marks = max(10.0, awarded)
+            total_max += max_marks
+        elif max_marks is not None:
             total_max += max_marks
 
     # Determine pass/fail result (only if we have a meaningful max total).

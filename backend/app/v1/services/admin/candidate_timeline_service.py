@@ -252,6 +252,7 @@ class CandidateTimelineService:
                         associate_marks.append({
                             "associate_name": ae.associate.name if ae.associate else "Unknown",
                             "marks": result_5,
+                            "result": ae.result,
                         })
 
             event_key = f"stage_{stage.id}"

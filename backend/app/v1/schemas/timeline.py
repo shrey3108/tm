@@ -7,6 +7,7 @@ class AssociateMarkEntry(BaseModel):
     """A single associate's weighted evaluation result for a stage."""
     associate_name: str
     marks: Optional[float] = None
+    result: Optional[str] = None
 
 
 class TimelineEvent(BaseModel):
