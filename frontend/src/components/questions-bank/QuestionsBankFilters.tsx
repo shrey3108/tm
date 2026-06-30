@@ -154,7 +154,7 @@ export function QuestionsBankFilters({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-11 px-3 rounded-xl text-xs font-semibold text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-all"
+                  className="h-11 px-3 rounded-xl text-xs font-semibold text-muted-foreground hover:bg-gray-200/60"
                   onClick={clearFilters}
                 >
                   <X className="h-4 w-4" />
@@ -162,7 +162,7 @@ export function QuestionsBankFilters({
               }
             />
             <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
-              <div className="text-xs">Clear all filters</div>
+              Clear all filters
             </HoverCardContent>
           </HoverCard>
         )}

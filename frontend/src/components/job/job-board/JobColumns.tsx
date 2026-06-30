@@ -316,7 +316,7 @@ export const getJobColumns = ({
                     {...props}
                     variant="outline"
                     size="sm"
-                    className="h-9 w-9 rounded-xl hover:bg-primary/10 hover:text-primary transition-all"
+                    className="h-9 w-9 rounded-xl hover:bg-gray-200/60"
                     onClick={() => onEdit(row.original)}
                     isLoading={loadingJobId === row.original.id}
                   >
@@ -324,11 +324,8 @@ export const getJobColumns = ({
                   </Button>
                 )}
               />
-              <HoverCardContent side="top" className="w-auto p-2 min-w-0">
-                <div className="text-primary">
-
-                  Edit Job
-                </div>
+              <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
+                Edit Job
               </HoverCardContent>
             </HoverCard>
           </PermissionGuard>
@@ -340,7 +337,7 @@ export const getJobColumns = ({
                     {...props}
                     variant="outline"
                     size="sm"
-                    className="h-9 w-9 rounded-xl hover:bg-destructive/10 hover:text-destructive transition-all"
+                    className="h-9 w-9 rounded-xl hover:bg-gray-200/60"
                     onClick={() => onDelete(row.original)}
                     disabled={!!row.original.is_active}
                   >
@@ -349,9 +346,7 @@ export const getJobColumns = ({
                 )}
               />
               <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
-                <div className=" text-destructive">
-                  Delete Job
-                </div>
+                Delete Job
               </HoverCardContent>
             </HoverCard>
           </PermissionGuard>
@@ -366,7 +361,7 @@ export const getJobColumns = ({
                     {...props}
                     variant="outline"
                     size="icon"
-                    className="h-9 w-9 rounded-xl hover:bg-blue-500/10 hover:text-blue-500 transition-all"
+                    className="h-9 w-9 rounded-xl hover:bg-gray-200/60"
                     onClick={() => onCandidates(row.original)}
                   >
                     <Users className="h-4 w-4" />
@@ -374,9 +369,7 @@ export const getJobColumns = ({
                 )}
               />
               <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
-                <div className="text-blue-500">
-                  View Candidates
-                </div>
+                View Candidates
               </HoverCardContent>
             </HoverCard>
           </PermissionGuard>

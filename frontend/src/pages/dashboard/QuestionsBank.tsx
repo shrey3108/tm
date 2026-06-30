@@ -270,7 +270,7 @@ export default function QuestionsBank() {
   );
 
   return (
-    <AppPageShell width="wide" className="animate-in fade-in duration-500 bg-background min-h-screen">
+    <AppPageShell width="wide" >
       <AppPageHeader title="Question Bank" />
 
       <div className="space-y-2">

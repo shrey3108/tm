@@ -115,7 +115,7 @@ const AdminJobCriteria = () => {
                 let trimmed = name.trim();
                 const val =
                     (trimmed.startsWith("'") && trimmed.endsWith("'")) ||
-                    (trimmed.startsWith('"') && trimmed.endsWith('"'))
+                        (trimmed.startsWith('"') && trimmed.endsWith('"'))
                         ? trimmed.slice(1, -1)
                         : trimmed;
                 return val ? [val] : [];
@@ -217,7 +217,7 @@ const AdminJobCriteria = () => {
                                     variant="ghost"
                                     size="icon"
                                     onClick={() => handleOpenInfo(row.original)}
-                                    className="h-9 w-9 rounded-xl text-blue-500 hover:bg-blue-500/10 hover:text-blue-600 transition-colors flex items-center justify-center shrink-0"
+                                    className="h-9 w-9 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
                                 >
                                     <Info className="h-4 w-4 shrink-0" />
                                     <span className="sr-only">Info</span>
@@ -225,7 +225,7 @@ const AdminJobCriteria = () => {
                             )}
                         />
                         <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
-                            <span className="text-blue-600">View Info</span>
+                            View Info
                         </HoverCardContent>
                     </HoverCard>
 
@@ -238,7 +238,7 @@ const AdminJobCriteria = () => {
                                         variant="ghost"
                                         size="icon"
                                         onClick={() => handleUpdate(row.original)}
-                                        className="h-9 w-9 rounded-xl hover:bg-primary/10 hover:text-primary transition-colors flex items-center justify-center shrink-0"
+                                        className="h-9 w-9 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
                                     >
                                         <Edit2 className="h-4 w-4 shrink-0" />
                                         <span className="sr-only">Update</span>
@@ -246,7 +246,7 @@ const AdminJobCriteria = () => {
                                 )}
                             />
                             <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
-                                <span className="text-primary">Edit Criteria</span>
+                                Edit Criteria
                             </HoverCardContent>
                         </HoverCard>
                     </PermissionGuard>
@@ -260,7 +260,7 @@ const AdminJobCriteria = () => {
                                         variant="ghost"
                                         size="icon"
                                         onClick={() => handleDeleteClick(row.original)}
-                                        className="h-9 w-9 rounded-xl hover:bg-destructive/10 hover:text-destructive transition-colors flex items-center justify-center shrink-0"
+                                        className="h-9 w-9 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
                                     >
                                         <Trash2Icon className="h-4 w-4 shrink-0" />
                                         <span className="sr-only">Delete</span>
@@ -268,7 +268,7 @@ const AdminJobCriteria = () => {
                                 )}
                             />
                             <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
-                                <span className="text-destructive">Delete Criteria</span>
+                                Delete Criteria
                             </HoverCardContent>
                         </HoverCard>
                     </PermissionGuard>

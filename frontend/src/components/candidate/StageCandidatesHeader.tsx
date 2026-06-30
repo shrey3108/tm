@@ -177,7 +177,7 @@ export const StageCandidatesHeader = ({
                         ({assignedPaper?.email_sent_count ?? 0})
                       </HoverCardTrigger>
                       <HoverCardContent className="w-full p-1 py-2 text-xs rounded-lg">
-                        <p>{assignedPaper?.email_sent_count ?? 0} times email send to candidate</p>
+                        {assignedPaper?.email_sent_count ?? 0} times email send to candidate
                       </HoverCardContent>
                     </HoverCard>
                   </>
@@ -197,7 +197,7 @@ export const StageCandidatesHeader = ({
                         ({paperHistory.length})
                       </HoverCardTrigger>
                       <HoverCardContent className="w-full p-1 py-2 text-xs rounded-lg">
-                        <p>{paperHistory.length} times paper assign to candidate</p>
+                        {paperHistory.length} times paper assign to candidate
                       </HoverCardContent>
                     </HoverCard>
                   </span>

@@ -101,9 +101,9 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
                       <CandidateEmailBadge email_sent_count={c.email_sent_count} />
                     </HoverCardTrigger>
                     <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
-                      <p className="">
-                        {c.email_sent_count && c.email_sent_count > 0 ? `Total email sent: ${c.email_sent_count}` : "No email sent yet"}
-                      </p>
+
+                      {c.email_sent_count && c.email_sent_count > 0 ? `Total email sent: ${c.email_sent_count}` : "No email sent yet"}
+
                     </HoverCardContent>
                   </HoverCard>}
               </div>

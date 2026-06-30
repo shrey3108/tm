@@ -184,7 +184,7 @@ const AdminAssociates = () => {
                       variant="ghost"
                       size="icon"
                       onClick={() => handleEditClick(row.original)}
-                      className="h-9 w-9 rounded-xl hover:bg-primary/10 hover:text-primary transition-colors flex items-center justify-center shrink-0"
+                      className="h-9 w-9 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
                     >
                       <Edit2 className="h-4 w-4 shrink-0" />
                       <span className="sr-only">Edit</span>
@@ -192,7 +192,7 @@ const AdminAssociates = () => {
                   )}
                 />
                 <HoverCardContent className="w-fit px-3 py-1 text-xs" side="top">
-                  <span className="text-primary">Edit Associate</span>
+                  Edit Associate
                 </HoverCardContent>
               </HoverCard>
 
@@ -204,7 +204,7 @@ const AdminAssociates = () => {
                       variant="ghost"
                       size="icon"
                       onClick={() => handleDeleteClick(row.original)}
-                      className="h-9 w-9 rounded-xl hover:bg-destructive/10 hover:text-destructive transition-colors flex items-center justify-center shrink-0"
+                      className="h-9 w-9 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
                     >
                       <Trash2Icon className="h-4 w-4 shrink-0" />
                       <span className="sr-only">Delete</span>
@@ -212,7 +212,7 @@ const AdminAssociates = () => {
                   )}
                 />
                 <HoverCardContent className="w-fit px-3 py-1 text-xs" side="top">
-                  <span className="text-destructive">Delete Associate</span>
+                  Delete Associate
                 </HoverCardContent>
               </HoverCard>
             </div>

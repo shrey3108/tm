@@ -127,7 +127,7 @@ const AdminJobPriorities = () => {
         // remove quotes or brackets if they exist (for robustness)
         const val =
           (trimmed.startsWith("'") && trimmed.endsWith("'")) ||
-          (trimmed.startsWith('"') && trimmed.endsWith('"'))
+            (trimmed.startsWith('"') && trimmed.endsWith('"'))
             ? trimmed.slice(1, -1)
             : trimmed;
         return val ? [val] : [];
@@ -265,7 +265,7 @@ const AdminJobPriorities = () => {
                     variant="ghost"
                     size="icon"
                     onClick={() => handleEditClick(row.original)}
-                    className="h-9 w-9 rounded-xl hover:bg-primary/10 hover:text-primary transition-colors flex items-center justify-center shrink-0"
+                    className="h-9 w-9 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
                     disabled={row.original.assigned_jobs_count > 0}
                   >
                     <Edit2 className="h-4 w-4 shrink-0" />
@@ -274,7 +274,7 @@ const AdminJobPriorities = () => {
                 )}
               />
               <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
-                <span className="text-primary">Edit Priority</span>
+                Edit Priority
               </HoverCardContent>
             </HoverCard>
           </PermissionGuard>
@@ -287,7 +287,7 @@ const AdminJobPriorities = () => {
                     variant="ghost"
                     size="icon"
                     onClick={() => handleDeleteClick(row.original)}
-                    className="h-9 w-9 rounded-xl hover:bg-destructive/10 hover:text-destructive transition-colors flex items-center justify-center shrink-0"
+                    className="h-9 w-9 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
                     disabled={row.original.assigned_jobs_count > 0}
                   >
                     <Trash2Icon className="h-4 w-4 shrink-0" />
@@ -296,7 +296,7 @@ const AdminJobPriorities = () => {
                 )}
               />
               <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
-                <span className="text-destructive">Delete Priority</span>
+                Delete Priority
               </HoverCardContent>
             </HoverCard>
           </PermissionGuard>

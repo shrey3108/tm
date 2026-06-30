@@ -583,8 +583,6 @@ export default function QuestionsBankCreate() {
   return (
     <AppPageShell
       width="wide"
-      gap="default"
-      className="animate-in fade-in duration-500 bg-background"
     >
       <PageHeader
         title={isEditMode ? `Edit Question Paper: ${paperToEdit?.name || ""}` : "Define Question"}

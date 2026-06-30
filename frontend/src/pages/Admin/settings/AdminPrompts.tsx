@@ -154,14 +154,14 @@ const AdminPrompts = () => {
                                     variant="ghost"
                                     size="icon"
                                     onClick={() => handleViewClick(row.original)}
-                                    className="h-9 w-9 p-0 rounded-xl hover:bg-gray-200/50 transition-colors flex items-center justify-center shrink-0"
+                                    className="h-9 w-9 p-0 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
                                 >
                                     <Info className="h-4 w-4 shrink-0" />
                                 </Button>
                             )}
                         />
                         <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
-                            <div className="text-xs">View Prompt</div>
+                            View Prompt
                         </HoverCardContent>
                     </HoverCard>
                 </div>

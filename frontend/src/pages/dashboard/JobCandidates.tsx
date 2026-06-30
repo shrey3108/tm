@@ -66,7 +66,7 @@ function CandidateStagesButton({ candidate, jobSlug, job }: CandidateStagesButto
             {...props}
             variant="secondary"
             size="sm"
-            className="h-9 w-9 p-0 rounded-xl bg-muted/50 hover:bg-muted text-foreground transition-all duration-300 border border-muted-foreground/10 flex items-center justify-center shrink-0"
+            className="h-9 w-9 p-0 rounded-xl bg-muted/50 hover:bg-gray-200/60 text-foreground border border-muted-foreground/10 flex items-center justify-center shrink-0"
             onClick={handleNavigate}
             // disabled={!candidate.pipeline || !candidate.is_parsed || isLoading}
             disabled={!candidate.pipeline || !candidate.is_parsed}
@@ -80,7 +80,7 @@ function CandidateStagesButton({ candidate, jobSlug, job }: CandidateStagesButto
         )}
       />
       <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
-        <div className="text-blue-600">Stages</div>
+        Stages
       </HoverCardContent>
     </HoverCard>
   );
@@ -380,7 +380,7 @@ export default function JobCandidates() {
                                     {...props}
                                     variant="ghost"
                                     size="sm"
-                                    className="h-9 w-9 p-0 rounded-xl border border-amber-300 hover:bg-amber-500/10 transition-all duration-300 flex items-center justify-center shrink-0"
+                                    className="h-9 w-9 p-0 rounded-xl border border-amber-300 hover:bg-gray-200/60 flex items-center justify-center shrink-0"
                                     onClick={(e) => {
                                       if (props.onClick) props.onClick(e);
                                       handleReanalyzeCandidate(candidate.id);
@@ -402,7 +402,7 @@ export default function JobCandidates() {
                                 )}
                               />
                               <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
-                                <div className=" text-amber-700">Reanalyze</div>
+                                Reanalyze
                               </HoverCardContent>
                             </HoverCard>
                           </PermissionGuard>

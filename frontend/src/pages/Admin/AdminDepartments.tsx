@@ -126,7 +126,7 @@ const AdminDepartments = () => {
         // remove quotes if they exist (for robustness)
         const val =
           (trimmed.startsWith("'") && trimmed.endsWith("'")) ||
-          (trimmed.startsWith('"') && trimmed.endsWith('"'))
+            (trimmed.startsWith('"') && trimmed.endsWith('"'))
             ? trimmed.slice(1, -1)
             : trimmed;
         return val ? [val] : [];
@@ -208,7 +208,7 @@ const AdminDepartments = () => {
                       variant="ghost"
                       size="icon"
                       onClick={() => handleEditClick(row.original)}
-                      className="h-9 w-9 rounded-xl hover:bg-primary/10 hover:text-primary transition-colors flex items-center justify-center shrink-0"
+                      className="h-9 w-9 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
                     >
                       <Edit2 className="h-4 w-4 shrink-0" />
                       <span className="sr-only">Edit</span>
@@ -216,7 +216,7 @@ const AdminDepartments = () => {
                   )}
                 />
                 <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
-                  <span className="text-primary">Edit Department</span>
+                  Edit Department
                 </HoverCardContent>
               </HoverCard>
 
@@ -228,7 +228,7 @@ const AdminDepartments = () => {
                       variant="ghost"
                       size="icon"
                       onClick={() => handleDeleteClick(row.original)}
-                      className="h-9 w-9 rounded-xl hover:bg-destructive/10 hover:text-destructive transition-colors flex items-center justify-center shrink-0"
+                      className="h-9 w-9 rounded-xl hover:bg-gray-200/60flex items-center justify-center shrink-0"
                     >
                       <Trash2Icon className="h-4 w-4 shrink-0" />
                       <span className="sr-only">Delete</span>
@@ -236,7 +236,7 @@ const AdminDepartments = () => {
                   )}
                 />
                 <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
-                  <span className="text-destructive">Delete Department</span>
+                  Delete Department
                 </HoverCardContent>
               </HoverCard>
             </div>
