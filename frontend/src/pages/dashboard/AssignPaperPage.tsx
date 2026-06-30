@@ -12,7 +12,6 @@ import {
   UserCheck,
   CheckSquare,
   Square,
-  Clock,
   Pencil,
 } from "lucide-react";
 import AppPageShell from "@/components/shared/AppPageShell";
@@ -43,6 +42,9 @@ import LoadingSpinner from "@/components/shared/LoadingSpinner";
 import { MCQQuestionDisplay } from "@/components/shared/MCQQuestionDisplay";
 import { ProjectTaskDisplay } from "@/components/shared/ProjectTaskDisplay";
 import { SingleQuestionDisplay } from "@/components/shared/SingleQuestionDisplay";
+import { TotalSelectedQuestions } from "@/components/shared/question/TotalSelectedQuestions";
+import { TotalMarks } from "@/components/shared/question/TotalMarks";
+import { TotalDuration } from "@/components/shared/question/TotalDuration";
 
 export default function AssignPaperPage() {
   const navigate = useNavigate();
@@ -605,33 +607,16 @@ export default function AssignPaperPage() {
           <div className="flex items-center gap-2">
             <BookOpen className="h-4.5 w-4.5 text-primary shrink-0" />
             <div>
-              <span className="text-xs font-bold text-foreground block">Active Test Paper Setup</span>
+              <span className="text-xs font-bold text-foreground block">Active Test Paper</span>
               <span className="text-[10px] text-muted-foreground block mt-0.5">
                 Dynamic configuration based on your selections and custom additions
               </span>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-1.5 bg-muted/50 px-2.5 py-1 rounded-lg border border-border/40">
-              <span className="text-xs text-muted-foreground font-medium">Selected Items:</span>
-              <span className="text-xs font-bold text-foreground">
-                {finalQuestions.length + finalMCQs.length + finalTasks.length}
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5 bg-muted/50 px-2.5 py-1 rounded-lg border border-border/40">
-              <span className="text-xs font-medium">Total Marks:</span>
-              <span className="text-xs font-bold">
-                {finalTotalMarks} Marks
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5 bg-muted/50 px-2.5 py-1 rounded-lg border border-border/40">
-              <span className="text-xs font-medium flex items-center gap-1">
-                <Clock className="h-3.5 w-3.5" /> Total Duration:
-              </span>
-              <span className="text-xs font-bold">
-                {formatDuration(finalTotalDuration)}
-              </span>
-            </div>
+            <TotalSelectedQuestions totalQuestions={finalQuestions.length + finalMCQs.length + finalTasks.length} />
+            <TotalMarks totalMarks={finalTotalMarks} />
+            <TotalDuration totalDuration={formatDuration(finalTotalDuration)} />
           </div>
         </div>
         {/*         
@@ -720,18 +705,14 @@ export default function AssignPaperPage() {
                 <Sparkles className="h-4 w-4 text-primary" />
                 Randomly Selected Questions
               </h3>
-              {(randomPoolQuestions.length > 0 || randomPoolMCQs.length > 0 || randomPoolTasks.length > 0) && (
+              {/* {(randomPoolQuestions.length > 0 || randomPoolMCQs.length > 0 || randomPoolTasks.length > 0) && (
                 <div className="flex gap-2">
-                  <span className="bg-muted/40 px-2.5 py-0.5 rounded-lg border border-border/40 flex items-center gap-1 text-xs font-bold">
-                    Total Marks: {finalTotalMarks}
-                  </span>
-                  <span className="bg-muted/40 px-2.5 py-0.5 rounded-lg border border-border/40 flex items-center gap-1 text-xs font-bold">
-                    <Clock className="h-3 w-3" /> Total Duration: {formatDuration(finalTotalDuration)}
-                  </span>
+                  <TotalMarks totalMarks={finalTotalMarks} />
+                  <TotalDuration totalDuration={formatDuration(finalTotalDuration)} />
                 </div>
-              )}
+              )} */}
             </div>
-            {/* Implement but do not display in UI as requested */}
+            {/* */}
             {/*
             <Button
               variant="outline"

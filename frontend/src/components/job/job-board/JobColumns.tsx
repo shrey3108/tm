@@ -12,7 +12,7 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import { PERMISSIONS } from "@/lib/permissions";
-import { JobStatus } from "@/components/job/JobStatus";
+import { JobStatus } from "@/components/shared/JobStatus";
 
 /**
  * Row-level action callbacks consumed by {@link getJobColumns}.

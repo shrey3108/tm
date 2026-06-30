@@ -28,12 +28,12 @@ export function ProjectTaskDisplay({
 
   if (variant === "simple") {
     return (
-      <div className="flex items-start justify-between gap-4 w-full">
-        <div className="flex-1 min-w-0">
+      <div className="grid grid-cols-[minmax(0,1fr)_180px] gap-4 w-full">
+        <div className="min-w-0">
           <p className={cn("text-foreground text-wrap wrap-break-word", titleClassName)}>{taskText}</p>
           {instructions && <p className="text-xs truncate mt-0.5">{instructions}</p>}
           {showTypeSuffix && (
-            <span className="text-xs block mt-0.5">
+            <span className="text-xs block mt-0.5 text-muted-foreground">
               Subtasks: {subTasks.length} (Project Task)
             </span>
           )}
@@ -47,16 +47,16 @@ export function ProjectTaskDisplay({
             ))}
           </ul>
         </div>
-        <div className="shrink-0 text-right whitespace-nowrap text-xs self-start pt-0.5">
-          {calculatedTotalMarks !== undefined && calculatedTotalMarks > 0 && `Marks: ${calculatedTotalMarks} • `}Duration: {tDuration || 30} mins
+        <div className="shrink-0 text-left whitespace-nowrap text-xs self-start pt-0.5">
+          Marks: {calculatedTotalMarks ?? "N/A"} • Duration: {tDuration || 30} mins
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex items-start justify-between gap-4 w-full">
-      <div className="flex-1 min-w-0 space-y-1">
+    <div className="grid grid-cols-[minmax(0,1fr)_180px] gap-4 w-full">
+      <div className="min-w-0 space-y-1">
         <div className={cn("font-medium text-foreground text-wrap wrap-break-word whitespace-pre-wrap", titleClassName)}>{taskText}</div>
         {instructions && (
           <div className="pl-2 space-y-0.5 border-l border-border/50">
@@ -83,20 +83,14 @@ export function ProjectTaskDisplay({
           </div>
         )}
       </div>
-      {((calculatedTotalMarks !== undefined && calculatedTotalMarks > 0) || (tDuration !== undefined && tDuration > 0)) && (
-        <div className="shrink-0 flex items-center gap-1.5 text-xs select-none whitespace-nowrap self-start">
-          {calculatedTotalMarks !== undefined && calculatedTotalMarks > 0 && (
-            <span className="inline-flex items-center gap-0.5 bg-primary/5 text-primary border border-primary/10 px-1.5 py-0.5 rounded-full">
-              <Award className="h-2.5 w-2.5" /> {calculatedTotalMarks} Marks
-            </span>
-          )}
-          {tDuration !== undefined && tDuration > 0 && (
-            <span className="inline-flex items-center gap-0.5 bg-primary/5 text-primary border border-primary/10 px-1.5 py-0.5 rounded-full">
-              <Clock className="h-2.5 w-2.5" /> Duration: {formatDuration(tDuration)}
-            </span>
-          )}
-        </div>
-      )}
+      <div className="shrink-0 flex flex-wrap items-center gap-1.5 text-xs select-none whitespace-nowrap self-start">
+        <span className="inline-flex items-center gap-0.5 bg-primary/5 text-primary border border-primary/10 px-1.5 py-0.5 rounded-full">
+          <Award className="h-2.5 w-2.5" /> {calculatedTotalMarks !== undefined ? `${calculatedTotalMarks} Marks` : "N/A Marks"}
+        </span>
+        <span className="inline-flex items-center gap-0.5 bg-primary/5 text-primary border border-primary/10 px-1.5 py-0.5 rounded-full">
+          <Clock className="h-2.5 w-2.5" /> {tDuration !== undefined && tDuration > 0 ? formatDuration(tDuration) : formatDuration(30)}
+        </span>
+      </div>
     </div>
   );
 }

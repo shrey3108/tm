@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { PERMISSIONS } from "@/lib/permissions";
 import { Button } from "@/components/ui/button";
 import { BarChart3, Upload, Users } from "lucide-react";
-import { JobStatus } from "@/components/job/JobStatus";
+import { JobStatus } from "@/components/shared/JobStatus";
 import { useJobAssignedTask } from "@/hooks/queries/jobs/useJobTask";
 
 interface JobCandidatesHeaderProps {

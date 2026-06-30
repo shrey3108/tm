@@ -81,9 +81,9 @@ export interface CandidateTestPaperRead {
   position_id: string;
   job_stage_config_id?: string | null;
   name: string;
-  questions: (QuestionItem | string)[];
+  questions: (QuestionItem)[];
   mcqs: MCQItem[];
-  project_task: (TaskItem | string)[];
+  project_task: (TaskItem)[];
   task_file_path: string | null;
   task_skills: string[] | null;
   email_sent_count?: number;

@@ -22,8 +22,8 @@ export function MCQQuestionDisplay({
 
   if (variant === "simple") {
     return (
-      <div className="flex items-start justify-between gap-4 w-full">
-        <div className="flex-1 min-w-0">
+      <div className="grid grid-cols-[minmax(0,1fr)_180px] gap-4 w-full">
+        <div className="min-w-0">
           <p className={cn("text-foreground text-wrap wrap-break-word", titleClassName)}>{mcq.question}</p>
           {options.length > 0 && (
             <p className="text-xs text-wrap wrap-break-word mt-0.5 flex">
@@ -35,7 +35,7 @@ export function MCQQuestionDisplay({
             </p>
           )}
           {showTypeSuffix && (
-            <span className="text-xs block mt-0.5">
+            <span className="text-xs block mt-0.5 text-muted-foreground">
               {mcq.answer && (() => {
                 const answerIdx = options.indexOf(mcq.answer);
                 const prefix = answerIdx !== -1 ? `${String.fromCharCode(65 + answerIdx)}. ` : "";
@@ -44,7 +44,7 @@ export function MCQQuestionDisplay({
             </span>
           )}
         </div>
-        <div className="shrink-0 text-right whitespace-nowrap text-xs self-start pt-0.5">
+        <div className="shrink-0 text-left whitespace-nowrap text-xs self-start pt-0.5">
           Marks: {mMarks ?? 5} • Duration: {mDuration ?? 3} mins
         </div>
       </div>
@@ -52,8 +52,8 @@ export function MCQQuestionDisplay({
   }
 
   return (
-    <div className="flex items-start justify-between gap-4 w-full">
-      <div className="flex-1 min-w-0 space-y-1">
+    <div className="grid grid-cols-[minmax(0,1fr)_180px] gap-4 w-full">
+      <div className="min-w-0 space-y-1">
         <span className={cn("text-foreground block text-wrap wrap-break-word", titleClassName)}>{mcq.question}</span>
         <div className="flex flex-wrap gap-1">
           {options.map((opt, optIdx) => (
@@ -71,20 +71,14 @@ export function MCQQuestionDisplay({
           ))}
         </div>
       </div>
-      {(mMarks !== undefined || (mDuration !== undefined && mDuration > 0)) && (
-        <div className="shrink-0 flex items-center gap-1.5 text-xs select-none whitespace-nowrap self-start">
-          {mMarks !== undefined && (
-            <span className="inline-flex items-center gap-0.5 bg-primary/5 text-primary border border-primary/10 px-1.5 py-0.5 rounded-full">
-              <Award className="h-2.5 w-2.5" /> {mMarks} Marks
-            </span>
-          )}
-          {mDuration !== undefined && mDuration > 0 && (
-            <span className="inline-flex items-center gap-0.5 bg-primary/5 text-primary border border-primary/10 px-1.5 py-0.5 rounded-full">
-              <Clock className="h-2.5 w-2.5" /> {formatDuration(mDuration)}
-            </span>
-          )}
-        </div>
-      )}
+      <div className="shrink-0 flex flex-wrap items-center gap-1.5 text-xs select-none whitespace-nowrap self-start">
+        <span className="inline-flex items-center gap-0.5 bg-primary/5 text-primary border border-primary/10 px-1.5 py-0.5 rounded-full">
+          <Award className="h-2.5 w-2.5" /> {mMarks !== undefined ? `${mMarks} Marks` : "5 Marks"}
+        </span>
+        <span className="inline-flex items-center gap-0.5 bg-primary/5 text-primary border border-primary/10 px-1.5 py-0.5 rounded-full">
+          <Clock className="h-2.5 w-2.5" /> {mDuration !== undefined && mDuration > 0 ? formatDuration(mDuration) : formatDuration(3)}
+        </span>
+      </div>
     </div>
   );
 }
