@@ -152,7 +152,7 @@ export function DashboardBreadcrumbs() {
 
   return (
     <Breadcrumb>
-      <BreadcrumbList className="flex-nowrap overflow-hidden text-[11px] text-muted-foreground sm:text-xs">
+      <BreadcrumbList className="flex-nowrap overflow-hidden text-[11px] text-muted-foreground sm:text-xs min-w-0">
         {crumbs.map(({ routeTo, label, Icon, isLast }) => (
           <React.Fragment key={routeTo}>
             <BreadcrumbItem

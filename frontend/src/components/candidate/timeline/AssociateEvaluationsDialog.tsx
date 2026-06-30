@@ -1,4 +1,3 @@
-import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -17,6 +16,8 @@ import {
 import { DateDisplay } from "@/components/shared/DateDisplay";
 import CandidateStatusBadge from "@/components/shared/CandidateStatusBadge";
 import type { AssociateResultsResponse } from "@/types/associateReview";
+import { resolveAssociateViewUrl } from "@/lib/utils";
+import { Link } from 'react-router-dom';
 
 interface AssociateEvaluationsDialogProps {
   isOpen: boolean;
@@ -57,7 +58,7 @@ export function AssociateEvaluationsDialog({
                 <TableBody className="text-xs">
                   {associateResults.reviews.map((r) => (
                     <TableRow key={r.id} className="border-b border-gray-200 dark:border-gray-800">
-                      <TableCell className="p-2 font-medium text-gray-900 dark:text-white">
+                      <TableCell className="p-2 text-gray-900 dark:text-white">
                         <div>{r.associate_name}</div>
                         {/* <div className="text-xs  font-normal">{r.associate_email}</div> */}
                       </TableCell>
@@ -68,7 +69,7 @@ export function AssociateEvaluationsDialog({
                         {r.submitted_at ? (
                           <DateDisplay date={r.submitted_at} showTime={true} className="text-xs" />
                         ) : (
-                          <span className="text-xs  font-medium">Pending</span>
+                          <span className="text-xs">Pending</span>
                         )}
                       </TableCell>
                       <TableCell className="p-2">
@@ -81,15 +82,14 @@ export function AssociateEvaluationsDialog({
                           ) : (
                             <span className="">-</span>
                           )}
-                          <span
-                            onClick={() => {
-                              toast.info(`Viewing placeholder marks for ${r.associate_name}`);
-                            }}
-                            className="text-xs text-gray-900 dark:text-white hover:underline font-semibold cursor-pointer"
+                          {r.review_token && r.submitted_at && <Link
+                            to={resolveAssociateViewUrl(r.review_token!)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-gray-900 dark:text-white underline font-semibold cursor-pointer"
                           >
                             View Marks
-                          </span>
-                          {/* TODO: replace with actutal link */}
+                          </Link>}
                         </div>
                       </TableCell>
                     </TableRow>

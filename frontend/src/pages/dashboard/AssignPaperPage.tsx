@@ -13,6 +13,7 @@ import {
   CheckSquare,
   Square,
   Clock,
+  Pencil,
 } from "lucide-react";
 import AppPageShell from "@/components/shared/AppPageShell";
 import AppPageHeader from "@/components/shared/AppPageHeader";
@@ -37,6 +38,7 @@ import { QuestionsBankSkillSelector } from "@/components/questions-bank/Question
 import { SingleQuestionFormFields } from "@/components/questions-bank/SingleQuestionFormFields";
 import { MCQFormFields } from "@/components/questions-bank/MCQFormFields";
 import { ProjectTaskFormFields } from "@/components/questions-bank/ProjectTaskFormFields";
+import { CustomPaperItemEditor } from "@/components/questions-bank/CustomPaperItemEditor";
 import LoadingSpinner from "@/components/shared/LoadingSpinner";
 import { MCQQuestionDisplay } from "@/components/shared/MCQQuestionDisplay";
 import { ProjectTaskDisplay } from "@/components/shared/ProjectTaskDisplay";
@@ -145,20 +147,11 @@ export default function AssignPaperPage() {
     q: debouncedSearch || undefined,
     options: { enabled: !!job?.id },
   });
-  console.log(allContent); // got data 
+
   // Selection Pools and Custom Added Pools
   const [randomPoolQuestions, setRandomPoolQuestions] = useState<QuestionItem[]>([]);
   const [randomPoolMCQs, setRandomPoolMCQs] = useState<MCQItem[]>([]);
   const [randomPoolTasks, setRandomPoolTasks] = useState<TaskItem[]>([]);
-
-  // Compute total duration of the randomly selected / active pool
-  const poolTotalDuration = useMemo(() => {
-    const qDur = randomPoolQuestions.reduce((sum, q) => sum + (q.duration || 3), 0);
-    const mDur = randomPoolMCQs.reduce((sum, m) => sum + (m.duration || 3), 0);
-    const tDur = randomPoolTasks.reduce((sum, t) => sum + (t.duration || t.total_duration || 30), 0);
-    return qDur + mDur + tDur;
-  }, [randomPoolQuestions, randomPoolMCQs, randomPoolTasks]);
-
 
   const [availablePoolQuestions, setAvailablePoolQuestions] = useState<QuestionItem[]>([]);
   const [availablePoolMCQs, setAvailablePoolMCQs] = useState<MCQItem[]>([]);
@@ -171,6 +164,69 @@ export default function AssignPaperPage() {
   const [customQuestions, setCustomQuestions] = useState<QuestionItem[]>([]);
   const [customMCQs, setCustomMCQs] = useState<MCQItem[]>([]);
   const [customTasks, setCustomTasks] = useState<TaskItem[]>([]);
+
+  const finalQuestions = useMemo(() => [...selectedQuestions, ...customQuestions], [selectedQuestions, customQuestions]);
+  const finalMCQs = useMemo(() => [...selectedMCQs, ...customMCQs], [selectedMCQs, customMCQs]);
+  const finalTasks = useMemo(() => [...selectedTasks, ...customTasks], [selectedTasks, customTasks]);
+
+  // Compute total duration of the currently configured paper (selected + custom)
+  const finalTotalDuration = useMemo(() => {
+    const qDur = finalQuestions.reduce((sum, q) => sum + (q.duration || 3), 0);
+    const mDur = finalMCQs.reduce((sum, m) => sum + (m.duration || 3), 0);
+    const tDur = finalTasks.reduce((sum, t) => sum + (t.duration || t.total_duration || 30), 0);
+    return qDur + mDur + tDur;
+  }, [finalQuestions, finalMCQs, finalTasks]);
+
+  // Compute total marks of the currently configured paper (selected + custom)
+  const finalTotalMarks = useMemo(() => {
+    const qMarks = finalQuestions.reduce((sum, q) => sum + (q.marks || 5), 0);
+    const mMarks = finalMCQs.reduce((sum, m) => sum + (m.marks || 5), 0);
+    const tMarks = finalTasks.reduce((sum, t) => {
+      if (typeof t === "string") return sum + 0;
+      const calculatedMarks = t.total_marks || t.tasks?.reduce((subSum, st) => subSum + (st.marks || 0), 0) || 0;
+      return sum + calculatedMarks;
+    }, 0);
+    return qMarks + mMarks + tMarks;
+  }, [finalQuestions, finalMCQs, finalTasks]);
+
+  // Helper to check if any inputs in the question creation draft are not empty
+  const hasActiveCreationDraft = () => {
+    return (
+      questionText.trim() !== "" ||
+      mcqQuestion.trim() !== "" ||
+      taskDescription.trim() !== ""
+    );
+  };
+
+  // State for inline editing of custom items
+  const [editingQuestionIdx, setEditingQuestionIdx] = useState<number | null>(null);
+  const [editingMCQIdx, setEditingMCQIdx] = useState<number | null>(null);
+  const [editingTaskIdx, setEditingTaskIdx] = useState<number | null>(null);
+
+  // Helper functions to manage editing states
+  const handleStartEditQuestion = (idx: number, _item: QuestionItem) => {
+    if (hasActiveCreationDraft()) {
+      toast.warning("Inputs are not empty!");
+      return;
+    }
+    setEditingQuestionIdx(idx);
+  };
+
+  const handleStartEditMCQ = (idx: number, _item: MCQItem) => {
+    if (hasActiveCreationDraft()) {
+      toast.warning("Inputs are not empty!");
+      return;
+    }
+    setEditingMCQIdx(idx);
+  };
+
+  const handleStartEditTask = (idx: number, _item: TaskItem) => {
+    if (hasActiveCreationDraft()) {
+      toast.warning("Inputs are not empty!");
+      return;
+    }
+    setEditingTaskIdx(idx);
+  };
 
   // Setup pools and default selections from assigned default test paper if one exists
   useEffect(() => {
@@ -335,6 +391,14 @@ export default function AssignPaperPage() {
   // Add Custom drafts with Zod validation
   const handleAddCustom = () => {
     setErrors({});
+    if (selectedSkillIds.length === 0) {
+      setErrors((prev) => ({
+        ...prev,
+        skill_ids: "At least one skill is required.",
+      }));
+      toast.error("Please select at least one skill/stack.");
+      return;
+    }
     if (contentType === "question") {
       const result = questionFormSchema.safeParse({
         question: questionText,
@@ -468,10 +532,6 @@ export default function AssignPaperPage() {
       return;
     }
 
-    const finalQuestions = [...selectedQuestions, ...customQuestions];
-    const finalMCQs = [...selectedMCQs, ...customMCQs];
-    const finalTasks = [...selectedTasks, ...customTasks];
-
     if (finalQuestions.length === 0 && finalMCQs.length === 0 && finalTasks.length === 0) {
       toast.error("Please select or add at least one question or task.");
       return;
@@ -540,6 +600,40 @@ export default function AssignPaperPage() {
       />
 
       <div className="space-y-2 pb-1">
+        {/* Paper Summary Panel */}
+        <div className="bg-linear-to-r from-card to-muted/20 border border-border/80 p-3 rounded-xl shadow-xs flex flex-wrap items-center justify-between gap-3 animate-in fade-in duration-300">
+          <div className="flex items-center gap-2">
+            <BookOpen className="h-4.5 w-4.5 text-primary shrink-0" />
+            <div>
+              <span className="text-xs font-bold text-foreground block">Active Test Paper Setup</span>
+              <span className="text-[10px] text-muted-foreground block mt-0.5">
+                Dynamic configuration based on your selections and custom additions
+              </span>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-1.5 bg-muted/50 px-2.5 py-1 rounded-lg border border-border/40">
+              <span className="text-xs text-muted-foreground font-medium">Selected Items:</span>
+              <span className="text-xs font-bold text-foreground">
+                {finalQuestions.length + finalMCQs.length + finalTasks.length}
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 bg-muted/50 px-2.5 py-1 rounded-lg border border-border/40">
+              <span className="text-xs font-medium">Total Marks:</span>
+              <span className="text-xs font-bold">
+                {finalTotalMarks} Marks
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 bg-muted/50 px-2.5 py-1 rounded-lg border border-border/40">
+              <span className="text-xs font-medium flex items-center gap-1">
+                <Clock className="h-3.5 w-3.5" /> Total Duration:
+              </span>
+              <span className="text-xs font-bold">
+                {formatDuration(finalTotalDuration)}
+              </span>
+            </div>
+          </div>
+        </div>
         {/*         
         <div className="rounded-xl border border-border bg-card p-2 shadow-xs space-y-2">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -627,9 +721,14 @@ export default function AssignPaperPage() {
                 Randomly Selected Questions
               </h3>
               {(randomPoolQuestions.length > 0 || randomPoolMCQs.length > 0 || randomPoolTasks.length > 0) && (
-                <span className="bg-primary/10 text-primary px-2.5 py-0.5 rounded-full border border-primary/20 flex items-center gap-1 text-[10px] font-bold">
-                  <Clock className="h-3 w-3" /> Total Duration: {formatDuration(poolTotalDuration)}
-                </span>
+                <div className="flex gap-2">
+                  <span className="bg-muted/40 px-2.5 py-0.5 rounded-lg border border-border/40 flex items-center gap-1 text-xs font-bold">
+                    Total Marks: {finalTotalMarks}
+                  </span>
+                  <span className="bg-muted/40 px-2.5 py-0.5 rounded-lg border border-border/40 flex items-center gap-1 text-xs font-bold">
+                    <Clock className="h-3 w-3" /> Total Duration: {formatDuration(finalTotalDuration)}
+                  </span>
+                </div>
               )}
             </div>
             {/* Implement but do not display in UI as requested */}
@@ -678,13 +777,13 @@ export default function AssignPaperPage() {
               {/* Normal questions in Pool */}
               {randomPoolQuestions.length > 0 && (
                 <div className="space-y-1">
-                  <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">Normal Questions</p>
+                  <p className="text-xs font-bold">Normal Questions</p>
                   {randomPoolQuestions.map((item, idx) => {
                     const isChecked = selectedQuestions.some((q) => q.question === item.question);
                     return (
                       <div
                         key={idx}
-                        className="flex items-start gap-2 p-1.5 rounded-lg border border-border/40 hover:bg-muted/10 cursor-pointer"
+                        className="flex items-start gap-2 p-1.5 rounded-lg border border-border/40 hover:bg-muted/10 cursor-pointer text-xs"
                         onClick={() => toggleQuestionSelection(item)}
                       >
                         <div className="mt-0.5">
@@ -704,13 +803,13 @@ export default function AssignPaperPage() {
               {/* MCQs in Pool */}
               {randomPoolMCQs.length > 0 && (
                 <div className="space-y-1">
-                  <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">Multiple Choice (MCQs)</p>
+                  <p className="text-xs font-bold">Multiple Choice (MCQs)</p>
                   {randomPoolMCQs.map((item, idx) => {
                     const isChecked = selectedMCQs.some((m) => m.question === item.question);
                     return (
                       <div
                         key={idx}
-                        className="flex items-start gap-2 p-1.5 rounded-lg border border-border/40 hover:bg-muted/10 cursor-pointer"
+                        className="flex items-start gap-2 p-1.5 rounded-lg border border-border/40 hover:bg-muted/10 cursor-pointer text-xs"
                         onClick={() => toggleMCQSelection(item)}
                       >
                         <div className="mt-0.5">
@@ -730,14 +829,14 @@ export default function AssignPaperPage() {
               {/* Tasks in Pool */}
               {randomPoolTasks.length > 0 && (
                 <div className="space-y-1">
-                  <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">Project Tasks</p>
+                  <p className="text-xs font-bold">Project Tasks</p>
                   {randomPoolTasks.map((item, idx) => {
                     const key = item.task || item.title || "";
                     const isChecked = selectedTasks.some((t) => (t.task || t.title) === key);
                     return (
                       <div
                         key={idx}
-                        className="flex items-start gap-2 p-1.5 rounded-lg border border-border/40 hover:bg-muted/10 cursor-pointer"
+                        className="flex items-start gap-2 p-1.5 rounded-lg border border-border/40 hover:bg-muted/10 cursor-pointer text-xs"
                         onClick={() => toggleTaskSelection(item)}
                       >
                         <div className="mt-0.5">
@@ -747,7 +846,7 @@ export default function AssignPaperPage() {
                             <Square className="h-4 w-4 text-muted-foreground shrink-0" />
                           )}
                         </div>
-                        <ProjectTaskDisplay task={item} variant="simple" />
+                        <ProjectTaskDisplay task={item} variant="simple" showTypeSuffix={false} />
                       </div>
                     );
                   })}
@@ -873,71 +972,160 @@ export default function AssignPaperPage() {
               Custom Added Questions
             </h3>
             <div className="space-y-2 pr-1">
-              {customQuestions.map((item, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-center justify-between p-1.5 rounded-lg border border-border/40 bg-emerald-500/5 gap-2"
-                >
-                  <SingleQuestionDisplay
-                    question={item}
-                    variant="simple"
-                    titleClassName="font-bold"
-                    showTypeSuffix={true}
-                  />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 w-7 text-destructive hover:bg-destructive/10"
-                    onClick={() => setCustomQuestions((prev) => prev.filter((_, i) => i !== idx))}
+              {customQuestions.map((item, idx) => {
+                if (editingQuestionIdx === idx) {
+                  return (
+                    <CustomPaperItemEditor
+                      key={idx}
+                      item={item}
+                      type="question"
+                      onSave={(updated) => {
+                        setCustomQuestions((prev) => {
+                          const next = [...prev];
+                          next[idx] = updated;
+                          return next;
+                        });
+                        setEditingQuestionIdx(null);
+                      }}
+                      onCancel={() => setEditingQuestionIdx(null)}
+                    />
+                  );
+                }
+                return (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between p-1.5 rounded-lg border border-border/40 gap-2"
                   >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              ))}
+                    <SingleQuestionDisplay
+                      question={item}
+                      variant="simple"
+                      titleClassName="font-bold"
+                      showTypeSuffix={true}
+                    />
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 text-primary hover:bg-primary/10"
+                        onClick={() => handleStartEditQuestion(idx, item)}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 text-destructive hover:bg-destructive/10"
+                        onClick={() => setCustomQuestions((prev) => prev.filter((_, i) => i !== idx))}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
 
-              {customMCQs.map((item, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-center justify-between p-1.5 rounded-lg border border-border/40 bg-emerald-500/5 gap-2"
-                >
-                  <MCQQuestionDisplay
-                    mcq={item}
-                    variant="simple"
-                    titleClassName="font-bold"
-                    showTypeSuffix={true}
-                  />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 w-7 text-destructive hover:bg-destructive/10"
-                    onClick={() => setCustomMCQs((prev) => prev.filter((_, i) => i !== idx))}
+              {customMCQs.map((item, idx) => {
+                if (editingMCQIdx === idx) {
+                  return (
+                    <CustomPaperItemEditor
+                      key={idx}
+                      item={item}
+                      type="mcq"
+                      onSave={(updated) => {
+                        setCustomMCQs((prev) => {
+                          const next = [...prev];
+                          next[idx] = updated;
+                          return next;
+                        });
+                        setEditingMCQIdx(null);
+                      }}
+                      onCancel={() => setEditingMCQIdx(null)}
+                    />
+                  );
+                }
+                return (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between p-1.5 rounded-lg border border-border/40 gap-2"
                   >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              ))}
+                    <MCQQuestionDisplay
+                      mcq={item}
+                      variant="simple"
+                      titleClassName="font-bold"
+                    />
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 text-primary hover:bg-primary/10"
+                        onClick={() => handleStartEditMCQ(idx, item)}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 text-destructive hover:bg-destructive/10"
+                        onClick={() => setCustomMCQs((prev) => prev.filter((_, i) => i !== idx))}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
 
-              {customTasks.map((item, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-center justify-between p-1.5 rounded-lg border border-border/40 bg-emerald-500/5 gap-2"
-                >
-                  <ProjectTaskDisplay
-                    task={item}
-                    variant="simple"
-                    titleClassName="font-bold"
-                    showTypeSuffix={true}
-                  />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 w-7 text-destructive hover:bg-destructive/10"
-                    onClick={() => setCustomTasks((prev) => prev.filter((_, i) => i !== idx))}
+              {customTasks.map((item, idx) => {
+                if (editingTaskIdx === idx) {
+                  return (
+                    <CustomPaperItemEditor
+                      key={idx}
+                      item={item}
+                      type="project_task"
+                      onSave={(updated) => {
+                        setCustomTasks((prev) => {
+                          const next = [...prev];
+                          next[idx] = updated;
+                          return next;
+                        });
+                        setEditingTaskIdx(null);
+                      }}
+                      onCancel={() => setEditingTaskIdx(null)}
+                    />
+                  );
+                }
+                return (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between p-1.5 rounded-lg border border-border/40 gap-2"
                   >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              ))}
+                    <ProjectTaskDisplay
+                      task={item}
+                      variant="simple"
+                      titleClassName="font-bold"
+                      showTypeSuffix={true}
+                    />
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 text-primary hover:bg-primary/10"
+                        onClick={() => handleStartEditTask(idx, item)}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 text-destructive hover:bg-destructive/10"
+                        onClick={() => setCustomTasks((prev) => prev.filter((_, i) => i !== idx))}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
@@ -1046,6 +1234,9 @@ export default function AssignPaperPage() {
                   placeholderMessage="Select stacks/skills to link to this question/task."
                 />
               </Form>
+              {errors.skill_ids && (
+                <p className="text-destructive text-xs font-semibold mt-1.5">{errors.skill_ids}</p>
+              )}
             </div>
 
             <div className="flex justify-end pt-3">

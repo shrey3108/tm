@@ -43,7 +43,7 @@ export default function AppPageHeader({
       >
         <div className={cn("px-1 py-2 flex flex-col gap-2", contentClassName)}>
           {/* Navbar Layer: Title and Actions */}
-          <div className="flex items-center justify-between gap-4 flex-col sm:flex-row">
+          <div className="flex items-start sm:items-center justify-between gap-2 sm:gap-4 flex-col sm:flex-row">
             <div className="flex items-center gap-2 overflow-hidden">
               <div className="flex flex-col min-w-0 overflow-hidden">
                 <h1
@@ -58,7 +58,7 @@ export default function AppPageHeader({
             </div>
 
             {actions && (
-              <div className="flex shrink-0 items-center gap-2">
+              <div className="flex shrink-0 items-center gap-2 flex-wrap">
                 {actions}
               </div>
             )}
@@ -66,7 +66,7 @@ export default function AppPageHeader({
 
           {/* Supplementary Layer: Subtitle and Meta */}
           {(subtitle || meta) && (
-            <div className="flex flex-col gap-2 items-center justify-center sm:items-start sm:justify-start">
+            <div className="flex flex-col gap-2 items-start justify-start">
               {subtitle && (
                 <p className="max-w-3xl text-sm text-muted-foreground leading-relaxed">
                   {subtitle}
@@ -84,12 +84,12 @@ export default function AppPageHeader({
 
       {/* Breadcrumbs Label Row */}
       {(breadcrumbs || breadcrumbActions) && (
-        <div className="px-1.5 py-2 sm:py-1 border-b border-border/40 bg-muted/5 mb-0.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 sm:gap-4 min-h-9 h-auto">
-          <div className="flex flex-row flex-1 max-w-fit items-center">
+        <div className="px-1.5 py-2 lg:py-1 border-b border-border/40 bg-muted/5 mb-0.5 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-2 lg:gap-4 min-h-9 h-auto">
+          <div className="flex flex-row flex-1 max-w-full lg:max-w-fit items-center min-w-0">
             {breadcrumbs}
           </div>
           {breadcrumbActions && (
-            <div className="flex flex-wrap items-center justify-end gap-2 w-full md:w-auto md:ml-auto">
+            <div className="flex flex-wrap items-center justify-start lg:justify-end gap-2 w-full lg:w-auto lg:ml-auto">
               {breadcrumbActions}
             </div>
           )}

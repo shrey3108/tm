@@ -37,6 +37,15 @@ export function ProjectTaskDisplay({
               Subtasks: {subTasks.length} (Project Task)
             </span>
           )}
+          <ul className="list-disc pl-3 text-xs  space-y-0.5">
+            {subTasks.map((st, sIdx) => (
+              <li key={sIdx}>
+                <span>{st.name}</span>
+                {st.marks !== undefined && ` (${st.marks} Marks)`}
+                {st.description && ` - ${st.description}`}
+              </li>
+            ))}
+          </ul>
         </div>
         <div className="shrink-0 text-right whitespace-nowrap text-xs self-start pt-0.5">
           {calculatedTotalMarks !== undefined && calculatedTotalMarks > 0 && `Marks: ${calculatedTotalMarks} • `}Duration: {tDuration || 30} mins

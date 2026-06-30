@@ -39,3 +39,7 @@ export function getCorrectCurrentStage(d: HiringTimelineResponse) {
   }
   return firstPendingDecisionStage?.title || d.current_stage
 }
+
+export function resolveAssociateViewUrl(review_token: string) {
+  return `${import.meta.env.VITE_API_URL}/associate-reviews/${review_token}`
+}

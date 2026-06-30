@@ -144,7 +144,7 @@ export const TimelineCard = React.memo(function TimelineCard({
 
             {/* Associate Row */}
             {associateResults && associateResults.total_associates > 0 && associateResults.reviews && associateResults.reviews.length > 0 && (
-              <div className="flex items-center justify-start gap-2">
+              <div className="flex items-center justify-start gap-1">
                 <span className="text-xs font-bold uppercase tracking-tight text-foreground/60">
                   Associate:
                 </span>

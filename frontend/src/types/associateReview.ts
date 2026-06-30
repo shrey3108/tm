@@ -47,6 +47,7 @@ export interface AssociateReviewResult {
   weighted_max: number | null;
   /** Weighted result converted to a scale of 5: (weighted_total / weighted_max) * 5 */
   weighted_result_out_of_5: number | null;
+  review_token?: string;
 }
 
 export interface AssociateResultsResponse {

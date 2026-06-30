@@ -2,7 +2,7 @@ import { Award, Clock } from "lucide-react";
 import type { MCQItem } from "@/types/taskPaper";
 import { formatDuration } from "@/utils/taskFormatter";
 import { cn } from "@/lib/utils";
-
+import React from "react";
 export interface MCQQuestionDisplayProps {
   mcq: MCQItem;
   variant?: "simple" | "detailed";
@@ -26,13 +26,21 @@ export function MCQQuestionDisplay({
         <div className="flex-1 min-w-0">
           <p className={cn("text-foreground text-wrap wrap-break-word", titleClassName)}>{mcq.question}</p>
           {options.length > 0 && (
-            <p className="text-xs text-wrap wrap-break-word mt-0.5">
-              Options: {options.join(" | ")}
+            <p className="text-xs text-wrap wrap-break-word mt-0.5 flex">
+              Options: {options.map((opt, idx) => <React.Fragment key={opt + idx}>
+                {idx > 0 && <span className="mx-0.5">|</span>}   <span className={cn('flex flex-row items-center gap-0.5', mcq.answer === opt ? 'text-emerald-600' : '')}>
+                  {String.fromCharCode(65 + idx)}. {opt}
+                </span>
+              </React.Fragment >)}
             </p>
           )}
           {showTypeSuffix && (
             <span className="text-xs block mt-0.5">
-              {mcq.answer && `Correct: ${mcq.answer} • `}(MCQ)
+              {mcq.answer && (() => {
+                const answerIdx = options.indexOf(mcq.answer);
+                const prefix = answerIdx !== -1 ? `${String.fromCharCode(65 + answerIdx)}. ` : "";
+                return `Correct: ${prefix}${mcq.answer} • `;
+              })()}(MCQ)
             </span>
           )}
         </div>
@@ -58,7 +66,7 @@ export function MCQQuestionDisplay({
                   : "bg-muted/30 border-border/30"
               )}
             >
-              {String.fromCharCode(65 + optIdx)}: {opt}
+              {String.fromCharCode(65 + optIdx)}. {opt}
             </span>
           ))}
         </div>
