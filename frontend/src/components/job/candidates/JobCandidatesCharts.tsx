@@ -82,7 +82,7 @@ export function JobCandidatesCharts({
 
   const passCount = jobStats?.result?.passed ?? 0;
   const failCount = jobStats?.result?.failed ?? 0;
-  console.log(jobStats);
+
 
   // Determine the HR decision stats and screening results based on selected stage
   const stageHrStats = selectedStage ? getStageHrStats(jobStats, selectedStage) : null;

@@ -174,7 +174,7 @@ export const TimelineCard = React.memo(function TimelineCard({
 
 
                 <Button
-                  type="button"
+                  type="button" className={"size-4"}
                   onClick={(e) => {
                     e.stopPropagation();
                     setIsDialogOpen(true);

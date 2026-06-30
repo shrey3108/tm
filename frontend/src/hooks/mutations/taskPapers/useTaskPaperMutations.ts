@@ -246,7 +246,6 @@ export function useUpdateQuestionInPaperMutation() {
       skillIds?: string[];
     }) => taskService.updateQuestionInPaper(paperId, index, question, skillIds),
     onSuccess: (_data, variables) => {
-      console.log("inaldjasdksjl")
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.TASK_PAPERS.LIST],
         refetchType: "all",

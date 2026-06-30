@@ -18,6 +18,7 @@ import CandidateStatusBadge from "@/components/shared/CandidateStatusBadge";
 import type { AssociateResultsResponse } from "@/types/associateReview";
 import { resolveAssociateViewUrl } from "@/lib/utils";
 import { Link } from 'react-router-dom';
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 interface AssociateEvaluationsDialogProps {
   isOpen: boolean;
@@ -42,9 +43,9 @@ export function AssociateEvaluationsDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 overflow-x-auto w-full max-w-full">
+        <ScrollArea className="flex-1 min-h-0 w-full">
           {associateResults && associateResults.reviews && (
-            <div className="border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden bg-gray-50 dark:bg-zinc-900/50 w-full max-w-full">
+            <div className="border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden bg-gray-50 dark:bg-zinc-900/50 w-full min-w-[600px]">
               <Table>
                 <TableHeader>
                   <TableRow className="bg-gray-100 dark:bg-zinc-900 text-xs font-bold uppercase tracking-wider border-b border-gray-200 dark:border-gray-800">
@@ -98,7 +99,8 @@ export function AssociateEvaluationsDialog({
               </Table>
             </div>
           )}
-        </div>
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );

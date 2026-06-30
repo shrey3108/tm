@@ -203,7 +203,12 @@ export const useAdminDashboardFilters = (
     }
 
     // 3. Filter pipeline stats (column-level/stage-level aggregations)
-    let pipeline = report.job_pipeline_stats as PipelineStatsItem[];
+    const originalPipeline = report.job_pipeline_stats || [];
+    const stageItems = originalPipeline.filter(item => item.stage) as PipelineStatsItem[];
+    const metadataItem = originalPipeline.find(item => !item.stage && item.job_names);
+    const originalJobNames = metadataItem ? (metadataItem.job_names || []) : [];
+
+    let pipeline = stageItems;
     if (selectedStages.length > 0) {
       const stageSet = new Set(selectedStages);
       pipeline = pipeline.filter(item => item.stage && stageSet.has(item.stage));
@@ -214,10 +219,19 @@ export const useAdminDashboardFilters = (
       pipeline = pipeline.map(item => filterPipelineStats(item, activeJobTitles));
     }
 
+    const filteredJobNames = activeJobTitles
+      ? originalJobNames.filter(name => activeJobTitles!.has(name))
+      : originalJobNames;
+
+    const finalPipeline = [
+      ...pipeline,
+      { job_names: filteredJobNames }
+    ];
+
     return {
       ...report,
       candidates_by_job: candidates,
-      job_pipeline_stats: pipeline as JobPipelineStats[]
+      job_pipeline_stats: finalPipeline as JobPipelineStats[]
     } as HiringReport;
   }, [report, filters, jobIdToTitle]);
 
