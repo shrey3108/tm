@@ -33,6 +33,7 @@ class AssociateReviewResult(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: uuid.UUID
+    review_token: uuid.UUID = Field(..., description="The unique token used to construct the frontend review link")
     associate_id: uuid.UUID
     associate_name: str
     associate_email: str

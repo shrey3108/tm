@@ -1052,6 +1052,7 @@ async def get_associate_results(
         reviews.append(
             AssociateReviewResult(
                 id=ev.id,
+                review_token=ev.review_token,
                 associate_id=ev.associate_id,
                 associate_name=associate.name if associate else "Unknown",
                 associate_email=associate.email if associate else "",
