@@ -134,7 +134,9 @@ export function useCandidatesStages() {
 
   // 3. Candidate data query
   const { data: candidateData } = useCandidateDetailsQuery(job?.id, candidate?.id);
-
+  // console.log(candidateData);
+  const { data: jobStages } = useJobStagesQuery(job?.id);
+  // console.log(jobStages);
   // 4. Candidate evaluation query (without redundant page-level polling interval)
   const {
     data: evaluationData,
@@ -248,10 +250,15 @@ export function useCandidatesStages() {
 
   const totalAssociates = associateResults?.total_associates ?? 0;
   const submittedCount = associateResults?.submitted_count ?? 0;
+
+  const isTechnicalPracticalRound =
+    candidate?.current_stage?.template_name === "Technical Practical Round" &&
+    currentStage === "Technical Practical Round";
+
   const hasPendingAssociates =
     currentStage !== "Resume Screening" &&
-    totalAssociates > 0 &&
-    submittedCount < totalAssociates;
+    ((isTechnicalPracticalRound && totalAssociates === 0) ||
+      (totalAssociates > 0 && submittedCount < totalAssociates));
 
   const form = useForm<CandidateDecisionFormValues>({
     resolver: zodResolver(candidateDecisionSchema),

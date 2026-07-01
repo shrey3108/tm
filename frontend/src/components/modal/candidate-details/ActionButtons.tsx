@@ -48,6 +48,16 @@ export function ActionButtons({
             )}
           </div>
         )}
+        {/* {!associateResults && (
+          <div className="w-full max-w-md mx-auto text-xs text-amber-600 dark:text-amber-400 font-medium text-center bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-xl py-2 px-3 shadow-sm flex flex-col items-center justify-center gap-1">
+            <div className="flex items-center justify-center gap-2">
+              <Clock className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
+              <span>
+                No associates assigned
+              </span>
+            </div>
+          </div>
+        )} */}
         <p className="text-md font-medium text-center">HR Decision</p>
         <div className="flex flex-col sm:flex-row gap-3 sm:flex-wrap sm:items-center sm:justify-center sm:gap-4">
           <Button

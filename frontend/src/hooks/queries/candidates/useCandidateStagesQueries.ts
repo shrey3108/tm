@@ -20,7 +20,8 @@ export function useResolvedJobAndCandidate(
   jobSlug: string | undefined,
   candidateNameSlug: string | undefined,
   stateJob?: Job | null,
-  stateCandidate?: CandidateAnalysis | null
+  stateCandidate?: CandidateAnalysis | null,
+  stateCandidateId?: string | null
 ) {
   const searchJobTitle = jobSlug ? unSlugify(jobSlug) : "";
 
@@ -39,9 +40,12 @@ export function useResolvedJobAndCandidate(
 
   const resolvedJob = jobDetailsQuery.data || stateJob || undefined;
 
+  // Use the candidate ID from the full object if available, otherwise from the explicit ID parameter
+  const effectiveCandidateId = stateCandidate?.id || stateCandidateId || undefined;
+
   // 2. Fetch candidate search matching the unslugified name if candidate is not in state
   const candidateSearchQuery = useQuery({
-    queryKey: [QUERY_KEYS.CANDIDATES.SEARCH, resolvedJob?.id, stateCandidate?.id],
+    queryKey: [QUERY_KEYS.CANDIDATES.SEARCH, resolvedJob?.id, effectiveCandidateId],
     queryFn: async () => {
       const response = await jobService.getJobCandidates(
         resolvedJob!.id,
@@ -50,7 +54,7 @@ export function useResolvedJobAndCandidate(
         100, // Fetch first 100 candidates to find the exact match
         undefined,
         undefined,
-        { candidate_id: stateCandidate?.id }
+        { candidate_id: effectiveCandidateId }
       );
       const found = response.data.find(
         (c) => slugify(`${c.first_name} ${c.last_name}`) === candidateNameSlug
@@ -218,6 +222,7 @@ export function useCandidateAssociateResultsQuery(id: string | null | undefined)
     queryFn: () => candidateStageService.getAssociateResults(id!),
     enabled: !!id,
     staleTime: QUERY_CONFIG.CANDIDATE_STAGES.staleTime,
+    retry: false,
   });
 }
 

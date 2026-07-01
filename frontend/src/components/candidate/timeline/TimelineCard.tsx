@@ -170,7 +170,7 @@ export const TimelineCard = React.memo(function TimelineCard({
                 })()} */}
 
                 {/*  we want to display submitted/total count for multiple associates: */}
-                <span>({associateResults.submitted_count}/{associateResults.total_associates})</span>
+                <span className="text-xs">({associateResults.submitted_count}/{associateResults.total_associates})</span>
 
 
                 <Button

@@ -40,8 +40,10 @@ export default function SendPaperPage() {
     jobSlug: string;
     candidateName?: string;
     stageSlug?: string;
+    candidateId?: string;
   }>();
   const location = useLocation();
+  // console.log(location)
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -53,9 +55,10 @@ export default function SendPaperPage() {
     params.jobSlug,
     params.candidateName,
     location.state?.job,
-    location.state?.candidate
+    undefined,
+    location.state?.candidateId
   );
-
+  // console.log(resolvedCandidate)
   const job = resolvedJob || location.state?.job || null;
 
   // Single candidate context resolution
@@ -156,26 +159,9 @@ export default function SendPaperPage() {
       });
     }
 
-    const candidate = stateSelectedCandidates && stateSelectedCandidates.length === 1
-      ? stateSelectedCandidates[0]
-      : candidateDetails;
-
-    if (!candidate) return false;
-
-    const isTechnicalRound =
-      candidate.current_stage?.template_name?.toLowerCase().includes("technical") ||
-      candidate.current_stage?.template_name?.toLowerCase().includes("practical") ||
-      candidate.current_stage?.template_name?.toLowerCase().includes("coding") ||
-      candidate.current_stage?.template_name?.toLowerCase().includes("test") ||
-      false;
-    const isPendingStatus =
-      candidate.current_stage?.status === "pending" ||
-      candidate.hr_decision === "pending" ||
-      candidate.current_stage?.hr_decision === "pending" ||
-      false;
-
-    return isTechnicalRound && isPendingStatus;
-  }, [isBulkMode, stateSelectedCandidates, candidateDetails]);
+    // Single candidate mode: allow sending when a candidate context exists
+    return !!candidateId;
+  }, [isBulkMode, stateSelectedCandidates, candidateId]);
 
   const executeSendEmail = async (force: boolean) => {
     if (!finalAssignedPaper?.id) {
@@ -228,7 +214,7 @@ export default function SendPaperPage() {
 
     const email = stateSelectedCandidates && stateSelectedCandidates.length === 1
       ? stateSelectedCandidates[0].email
-      : candidateDetails?.email;
+      : (candidateDetails?.email || singleCandidate?.email);
 
     if (!email) {
       toast.error("Candidate email is missing.");
@@ -363,7 +349,7 @@ export default function SendPaperPage() {
         }
       />
 
-      <div className="p-4 space-y-4">
+      <div className="space-y-4">
         {isLoading ? (
           <LoadingSpinner message="Checking assigned paper details..." />
         ) : (
