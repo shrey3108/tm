@@ -206,7 +206,7 @@ export default function AdminSkills() {
       header: () => {
         return (
           <div className="flex items-center justify-center gap-2">
-            <span>Default Weightage</span>
+            <span>Weightage</span>
           </div>
         )
       },

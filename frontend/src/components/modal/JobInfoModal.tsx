@@ -62,7 +62,7 @@ const InfoSection = ({
     )}
   >
     <CardHeader>
-      <CardTitle className={cn("text-sm font-black text-muted-foreground ", titleClassName)}>
+      <CardTitle className={cn("text-sm font-black", titleClassName)}>
         {title}
       </CardTitle>
       {action ? <CardAction>{action}</CardAction> : null}
@@ -262,7 +262,11 @@ export function JobInfoModal({ isOpen, onClose, job }: JobInfoModalProps) {
                 <InfoLabel
                   label="Passing Threshold"
                   value={`${job.passing_threshold}%`}
-                  valueClassName="text-base"
+                />
+                <InfoLabel
+                  label="Question Passing Threshold"
+                  value={`${job.question_bank_passing_threshold}%`}
+
                 />
                 <Separator orientation="vertical" className="h-12 bg-gray-300" />
                 <InfoLabel label="Vacancy" value={job.vacancy} valueClassName="text-base" />
@@ -270,7 +274,7 @@ export function JobInfoModal({ isOpen, onClose, job }: JobInfoModalProps) {
                 <InfoLabel
                   label="Position Level"
                   value={job.position?.name || "N/A"}
-                  valueClassName="text-base"
+
                 />
                 <Separator orientation="vertical" className="h-12 bg-gray-300" />
               </div>

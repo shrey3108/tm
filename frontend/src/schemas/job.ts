@@ -18,6 +18,8 @@ const jobBaseSchema = z.object({
   is_active: z.boolean(),
   /** Threshold score (0-100) for considering a candidate as 'pass' */
   passing_threshold: z.number().int({ error: "Enter a valid passing threshold" }).positive({ error: "Enter a valid passing threshold" }).max(100, "Enter a valid passing threshold").default(DEFAULT_PASSING_THRESHOLD),
+  question_bank_passing_threshold: z.number().int({ error: "Enter a valid passing threshold" }).positive({ error: "Enter a valid passing threshold" }).max(100, "Enter a valid passing threshold").default(DEFAULT_PASSING_THRESHOLD),
+
   /** Array of skill UUIDs required for this job */
   skill_ids: z.array(uuidSchema("Invalid skill ID")).min(1, "Please select at least one skill"),
   /** Mapping of skill ID to its weightage */
@@ -56,7 +58,6 @@ const jobBaseSchema = z.object({
  */
 export const jobCreateSchema = jobBaseSchema.extend({
   is_active: z.boolean().default(true),
-  passing_threshold: z.number().int({ error: "Enter a valid passing threshold" }).positive({ error: "Enter a valid passing threshold" }).max(100, "Enter a valid passing threshold").default(DEFAULT_PASSING_THRESHOLD),
   custom_extraction_fields: z.array(z.string().trim()).optional().default([]),
   stages: z.array(z.object({
     template_id: uuidSchema("Invalid template ID"),

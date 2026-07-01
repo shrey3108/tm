@@ -23,7 +23,7 @@ export const InfoLabel = ({
     <div className={cn("flex items-center gap-2 group", className)}>
       <span
         className={cn(
-          "text-sm font-black text-muted-foreground",
+          "text-sm font-black",
           labelClassName
         )}
       >

@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+// import { Button } from "@/components/ui/button";
 import type { CandidateTestPaperRead } from "@/types/taskPaper";
 import { PaperContentDisplay } from "@/components/shared/PaperContentDisplay";
 import { useMemo } from "react";
@@ -14,8 +14,8 @@ interface AssignedPaperViewProps {
 
 export function AssignedPaperView({
   assignedPaper,
-  onUnassign,
-  isUnassigning,
+  // onUnassign,
+  // isUnassigning,
 }: AssignedPaperViewProps) {
   const finalQuestions = useMemo(() => [...(assignedPaper?.questions ?? [])], [assignedPaper?.questions]);
   const finalMCQs = useMemo(() => [...(assignedPaper?.mcqs ?? [])], [assignedPaper?.mcqs]);
@@ -51,7 +51,7 @@ export function AssignedPaperView({
             {assignedPaper.name}
           </h3>
         </div>
-        <Button
+        {/* <Button
           variant="outline"
           size="sm"
           onClick={onUnassign}
@@ -59,7 +59,7 @@ export function AssignedPaperView({
           className="rounded-xl border-destructive/20 text-destructive hover:bg-destructive/10 hover:text-destructive shrink-0 transition-all font-semibold"
         >
           Change Existing Paper
-        </Button>
+        </Button> */}
       </div>
       <div className="flex items-center justify-end">
         <div className="flex flex-wrap items-center gap-3">

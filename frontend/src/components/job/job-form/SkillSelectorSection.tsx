@@ -10,6 +10,12 @@ import { Required } from "@/components/shared/Required";
 import CreateSkillModal from "@/components/modal/CreateSkillModal";
 import { useDebouncedValue } from "@/hooks/useDebounced";
 import { useSkill } from "@/hooks/queries/admin/useSkill";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
 
 interface SkillSelectorSectionProps {
   initialSelectedSkills?: SkillRead[];
@@ -117,160 +123,184 @@ export const SkillSelectorSection = ({
   };
   return (
     <div className="app-surface-card space-y-6 p-4 sm:p-5">
-      <div className="space-y-1">
-        <div className="flex items-center justify-between">
-          <div className="w-full mr-4">
-
-            <h2 className="text-lg font-bold tracking-tight">Required Skills <Required /></h2>
-            <p className="text-muted-foreground text-base font-medium">
-              <div className="flex items-center justify-between">
-                <span>{placeholderMessage}</span>
-                {selectedSkillIds.length > 0 ? <span className="text-primary text-sm font-bold">
-                  Selected ({selectedSkillIds.length})
-                </span> : null}
-              </div>
-            </p>
-          </div>
-
-          <Button
-            onClick={() => setShowModal(true)}
-            variant="secondary"
-            size="sm"
-            type="button"
-          >
-            <Plus />
-            Add Skill
-          </Button>
-        </div>
-        <FormField
-          control={control}
-          name="skill_ids"
-          render={() => (
-            <FormItem>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      </div>
-
-      {/* Skill Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search skills by name..."
-          value={skillSearch}
-          onChange={(e) => setSkillSearch(e.target.value)}
-          className="pl-10 h-10 text-base rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium"
-        />
-        {isLoading && (
-          <div className="absolute right-3 top-1/2 -translate-y-1/2">
-            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-          </div>
-        )}
-      </div>
-
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 max-h-100 overflow-y-auto p-2 pr-4 custom-scrollbar">
-        {filteredSkills.length > 0 ? (
-          filteredSkills.map((skill) => {
-            const isSelected = selectedSkillIds.includes(skill.id);
-            return (
-              <button
-                key={skill.id}
-                type="button"
-                onClick={() => toggleSkill(skill.id)}
-                className={cn(
-                  "flex items-center justify-between px-2 py-1.5 rounded-xl border-2 transition-all duration-300 text-left group",
-                  isSelected
-                    ? "bg-primary/10 border-primary text-primary shadow-lg shadow-primary/5"
-                    : "bg-background/50 border-muted-foreground/10 text-muted-foreground hover:border-primary/50 hover:bg-primary/5",
-                )}
-              >
-                <span className="font-bold text-xs lg:text-sm mr-2 whitespace-normal leading-tight">
-                  {skill.name}
-                </span>
-
-                <div
-                  className={cn(
-                    "shrink-0 w-5 h-5 rounded-full flex items-center justify-center border-2 transition-all duration-300",
-                    isSelected
-                      ? "bg-primary border-primary text-primary-foreground scale-110"
-                      : "border-muted-foreground/20 group-hover:border-primary/50",
-                  )}
-                >
-                  {isSelected ? (
-                    <Check className="h-3.5 w-3.5 stroke-[3px]" />
-                  ) : (
-                    <Plus className="h-3.5 w-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+      <Accordion defaultValue={["skill-selector"]} className="border-none bg-transparent">
+        <AccordionItem value="skill-selector" className="border-none bg-transparent">
+          <div className="flex items-center justify-between pb-4">
+            <AccordionTrigger className="hover:no-underline p-0 border-none bg-transparent hover:bg-transparent flex-1 flex items-center justify-between">
+              <div className="space-y-1 text-left">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-lg font-bold tracking-tight">Required Skills <Required /></h2>
+                  {selectedSkillIds.length > 0 && (
+                    <span className="text-primary text-sm font-bold bg-primary/10 px-2.5 py-0.5 rounded-full">
+                      Selected ({selectedSkillIds.length})
+                    </span>
                   )}
                 </div>
-              </button>
-            );
-          })
-        ) : (
-          <div className="col-span-full py-10 text-center bg-muted/20 rounded-2xl border-2 border-dashed border-muted-foreground/10">
-            <p className="text-muted-foreground font-medium italic">
-              {initialSelectedSkills.length === 0
-                ? "No skills found in database."
-                : "No skills match your search."}
-            </p>
-          </div>
-        )}
-      </div>
+                <p className="text-muted-foreground text-sm font-medium">
+                  {placeholderMessage}
+                </p>
+              </div>
+            </AccordionTrigger>
 
-      {selectedSkillIds.length > 0 && (
-        <div className="pt-6 border-t border-muted-foreground/10 space-y-4 animate-in fade-in duration-300">
-          <p className="text-sm font-bold text-muted-foreground uppercase tracking-wider">
-            Selected Skills & Custom Weightages ({selectedSkillIds.length})
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {selectedSkills.map((skill) => {
-              const weightageValue = skillWeightages[skill.id] ?? skill.default_weightage ?? 10;
-              return (
-                <div
-                  key={skill.id}
-                  className="flex items-center justify-between p-3 rounded-xl border border-muted-foreground/20 bg-background/50 hover:bg-background/80 transition-colors"
-                >
-                  <div className="flex flex-col min-w-0 mr-2">
-                    <span className="font-bold text-sm truncate">{skill.name}</span>
-                    <span className="text-xs text-muted-foreground italic">
-                      Default: {skill.default_weightage ?? 10}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-semibold text-muted-foreground">Weight:</span>
-                      <Input
-                        type="number"
-                        min="0"
-                        step="any"
-                        value={weightageValue}
-                        onChange={(e) => {
-                          const val = parseFloat(e.target.value) || 0;
-                          const currentWeightages = { ...skillWeightages };
-                          currentWeightages[skill.id] = val;
-                          setValue("skill_weightages", currentWeightages, {
-                            shouldValidate: true,
-                            shouldDirty: true,
-                            shouldTouch: true,
-                          });
-                        }}
-                        className="w-20 h-8 text-center text-sm font-bold p-1 rounded-lg border-muted-foreground/20"
-                      />
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
+            <div className="flex items-center gap-3 ml-4 shrink-0">
+              <Button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowModal(true);
+                }}
+                variant="secondary"
+                size="sm"
+                type="button"
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Add Skill
+              </Button>
+            </div>
+          </div>
+
+          <FormField
+            control={control}
+            name="skill_ids"
+            render={() => (
+              <FormItem>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <AccordionContent className="space-y-6 px-0 pb-0">
+            {/* Skill Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search skills by name..."
+                value={skillSearch}
+                onChange={(e) => setSkillSearch(e.target.value)}
+                className="pl-10 h-10 text-base rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium"
+              />
+              {isLoading && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                </div>
+              )}
+            </div>
+
+            {/* Skill Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 max-h-100 overflow-y-auto p-2 pr-4 custom-scrollbar">
+              {filteredSkills.length > 0 ? (
+                filteredSkills.map((skill) => {
+                  const isSelected = selectedSkillIds.includes(skill.id);
+                  return (
+                    <button
+                      key={skill.id}
                       type="button"
                       onClick={() => toggleSkill(skill.id)}
-                      className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg"
+                      className={cn(
+                        "flex items-center justify-between px-2 py-1.5 rounded-xl border-2 transition-all duration-300 text-left group",
+                        isSelected
+                          ? "bg-primary/10 border-primary text-primary shadow-lg shadow-primary/5"
+                          : "bg-background/50 border-muted-foreground/10 text-muted-foreground hover:border-primary/50 hover:bg-primary/5",
+                      )}
                     >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
+                      <span className="font-bold text-xs lg:text-sm mr-2 whitespace-normal leading-tight">
+                        {skill.name}
+                      </span>
+
+                      <div
+                        className={cn(
+                          "shrink-0 w-5 h-5 rounded-full flex items-center justify-center border-2 transition-all duration-300",
+                          isSelected
+                            ? "bg-primary border-primary text-primary-foreground scale-110"
+                            : "border-muted-foreground/20 group-hover:border-primary/50",
+                        )}
+                      >
+                        {isSelected ? (
+                          <Check className="h-3.5 w-3.5 stroke-[3px]" />
+                        ) : (
+                          <Plus className="h-3.5 w-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        )}
+                      </div>
+                    </button>
+                  );
+                })
+              ) : (
+                <div className="col-span-full py-10 text-center bg-muted/20 rounded-2xl border-2 border-dashed border-muted-foreground/10">
+                  <p className="text-muted-foreground font-medium italic">
+                    {initialSelectedSkills.length === 0
+                      ? "No skills found in database."
+                      : "No skills match your search."}
+                  </p>
                 </div>
-              );
-            })}
-          </div>
+              )}
+            </div>
+
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
+
+      {/* Selected Skills & Custom Weightages (Separate Accordion) */}
+      {selectedSkillIds.length > 0 && (
+        <div className="pt-6 border-t border-muted-foreground/10 animate-in fade-in duration-300">
+          <Accordion defaultValue={["weightages"]} className="border-none bg-transparent px-1">
+            <AccordionItem value="weightages" className="border-none bg-transparent ">
+              <AccordionTrigger className="hover:no-underline p-0 border-none bg-transparent hover:bg-transparent flex justify-between items-center pb-4">
+                <span className="text-sm font-bold text-left">
+                  Selected Skills & Custom Weightages ({selectedSkillIds.length})
+                </span>
+              </AccordionTrigger>
+              <AccordionContent className="px-0 pb-0 pt-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                  {selectedSkills.map((skill) => {
+                    const weightageValue = skillWeightages[skill.id] ?? skill.default_weightage ?? 10;
+                    return (
+                      <div
+                        key={skill.id}
+                        className="flex items-center justify-between p-1.5 rounded-xl border border-muted-foreground/20 bg-background/50 hover:bg-background/80 transition-colors"
+                      >
+                        <div className="flex flex-col min-w-0 mr-2">
+                          <span className="font-bold text-xs">{skill.name}</span>
+                          <span className="text-xs text-muted-foreground">
+                            Default: {skill.default_weightage ?? 10}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-xs font-semibold ">Weight:</span>
+                            <Input
+                              type="number"
+                              min="0"
+                              step="any"
+                              value={weightageValue}
+                              onChange={(e) => {
+                                const val = parseFloat(e.target.value) || 0;
+                                const currentWeightages = { ...skillWeightages };
+                                currentWeightages[skill.id] = val;
+                                setValue("skill_weightages", currentWeightages, {
+                                  shouldValidate: true,
+                                  shouldDirty: true,
+                                  shouldTouch: true,
+                                });
+                              }}
+                              className="w-15 h-8 text-center text-sm font-bold p-1 rounded-lg border-muted-foreground/20"
+                            />
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            type="button"
+                            onClick={() => toggleSkill(skill.id)}
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </div>
       )}
       <CreateSkillModal show={showModal} handleClose={handleCloseModal}
