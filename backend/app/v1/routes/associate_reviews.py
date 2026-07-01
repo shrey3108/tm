@@ -433,7 +433,7 @@ def _render_form_html(
         result_label = "PASS" if result == "pass" else "FAIL"
         result_color = "#10b981" if result == "pass" else "#ef4444"
         score_box_html = f"""
-        <div class="score-box" style="margin-top:20px; border-left: 4px solid #3b82f6; background: #f9fafb; border-radius: 8px; padding: 20px;">
+        <div class="score-box" style="margin:20px auto; border: 3px solid #bac7de; background: #f9fafb; border-radius: 8px; padding: 10px;">
           <div style="font-size:18px; font-weight:700; color:#111827; margin-bottom:12px;">Final Result</div>
           <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
             <span style="font-weight:600; color:#1f2937;">Total Marks Awarded:</span>
@@ -485,20 +485,20 @@ def _render_form_html(
     .subtext {{ font-size: 14px; color: #6b7280; margin-bottom: 24px; }}
     .info-box {{
       border-radius: 8px;
-      padding: 18px;
+      padding: 10px;
       margin-bottom: 20px;
     }}
     .candidate-box {{
       background: #f9fafb;
-      border-left: 4px solid #3b82f6;
+      border: 3px solid #bac7de;
     }}
     .github-box {{
       background: #eff6ff;
-      border-left: 4px solid #2563eb;
+      border: 3px solid #bac7de;
     }}
     .work-drive-box {{
       background: #ecfdf5;
-      border-left: 4px solid #10b981;
+      border: 3px solid #bac7de;
     }}
     .box-title {{ font-weight: 600; color: #1f2937; margin-bottom: 8px; font-size: 14px; }}
     .info-row {{ display: flex; margin-bottom: 8px; font-size: 14px; }}
