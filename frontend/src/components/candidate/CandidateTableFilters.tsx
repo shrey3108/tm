@@ -241,18 +241,15 @@ export const CandidateTableFilters = ({
 
           {/* Sheet Trigger */}
           <Sheet>
-            <SheetTrigger>
-              <Button
-                variant="outline"
-                className="rounded-xl gap-2 px-3 border border-muted-foreground/20 hover:bg-muted/10 bg-background transition-all cursor-pointer"
-              >
-                <Filter className="h-4 w-4 text-muted-foreground" />
-                {activeFilterCount > 0 && (
-                  <span className="flex items-center justify-center bg-primary text-primary-foreground text-xs font-bold rounded-full min-w-5 h-5 px-1 ml-1 animate-in zoom-in duration-200">
-                    {activeFilterCount}
-                  </span>
-                )}
-              </Button>
+            <SheetTrigger type="button">
+
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              {activeFilterCount > 0 && (
+                <span className="flex items-center justify-center bg-primary text-primary-foreground text-xs font-bold rounded-full min-w-5 h-5 px-1 ml-1 animate-in zoom-in duration-200">
+                  {activeFilterCount}
+                </span>
+              )}
+
             </SheetTrigger>
 
             <SheetContent className="w-full sm:max-w-md flex flex-col h-full p-0 bg-background border-l shadow-2xl" showCloseButton={false}>
