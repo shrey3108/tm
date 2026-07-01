@@ -128,6 +128,7 @@ class ReportResponse(BaseModel):
     project_alignment_report: Optional[str] = None
     jd_alignment: Optional[AlignmentReportResponse] = None
     project_alignment: Optional[AlignmentReportResponse] = None
+    scores: Dict[str, float] = {}
     
     # Root qualitative reviews restored
     security_risks: List[str] = []

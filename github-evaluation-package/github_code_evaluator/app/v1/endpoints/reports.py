@@ -176,6 +176,7 @@ async def get_evaluation_report(
         project_alignment_report=project_alignment_report,
         jd_alignment=jd_alignment,
         project_alignment=project_alignment,
+        scores={k: float(v.score) for k, v in scores_dict.items()},
         security_risks=security_risks,
         architecture_review=arch_review,
         code_quality_review=code_review,

@@ -434,9 +434,10 @@ async def evaluate_candidate_github_repo(
             test_paper = res_paper.scalar_one_or_none()
 
         # Fallback to job-level default test paper
-        if not test_paper and candidate.applied_job_id:
+        target_job_id = stage.job_stage.job_id if stage.job_stage else candidate.applied_job_id
+        if not test_paper and target_job_id:
             stmt_job = select(CandidateTestPaper).where(
-                CandidateTestPaper.job_id == candidate.applied_job_id,
+                CandidateTestPaper.job_id == target_job_id,
                 CandidateTestPaper.candidate_id.is_(None)
             )
             if stage.job_stage_id:
@@ -706,22 +707,18 @@ async def send_paper_to_associates(
         raise HTTPException(status_code=400, detail="Candidate association missing.")
 
     # 2. Resolve GitHub URL from the saved stage evaluation_data
-    #    (saved automatically when evaluate-github endpoint runs)
+    #    (saved automatically when evaluate-github endpoint runs, if applicable)
     github_url = None
     if stage.evaluation_data and isinstance(stage.evaluation_data, dict):
         github_url = stage.evaluation_data.get("github_url")
-    if not github_url:
-        raise HTTPException(
-            status_code=400,
-            detail="GitHub URL not found. Please run the GitHub evaluation for this stage first to save the repository URL.",
-        )
 
     # 3. Fetch the default test paper for this job stage
     #    (CandidateTestPaper where candidate_id IS NULL = job-level default)
     test_paper = None
-    if candidate.applied_job_id:
+    target_job_id = stage.job_stage.job_id if stage.job_stage else candidate.applied_job_id
+    if target_job_id:
         stmt_job = select(CandidateTestPaper).where(
-            CandidateTestPaper.job_id == candidate.applied_job_id,
+            CandidateTestPaper.job_id == target_job_id,
             CandidateTestPaper.candidate_id.is_(None),
         )
         if stage.job_stage_id:
@@ -770,7 +767,7 @@ async def send_paper_to_associates(
                 associate_id=associate.id,
                 test_paper_id=test_paper.id,
                 candidate_id=candidate.id,
-                job_id=candidate.applied_job_id,
+                job_id=stage.job_stage.job_id if stage.job_stage else candidate.applied_job_id,
             )
             db.add(evaluation)
             await db.flush()  # populate review_token + id
@@ -783,6 +780,7 @@ async def send_paper_to_associates(
                 github_url=github_url,
                 review_token=evaluation.review_token,
                 db=db,
+                stage_job_id=stage.job_stage.job_id if stage.job_stage else None,
             )
             sent_results.append(
                 AssociateEmailResult(

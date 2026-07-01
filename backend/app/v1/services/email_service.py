@@ -8,6 +8,7 @@ from email.mime.base import MIMEBase
 from email import encoders
 import asyncio
 import logging
+from typing import Optional, Any
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -418,9 +419,10 @@ async def send_associate_notification_email(
     associate_email: str,
     candidate: Candidate,
     test_paper: CandidateTestPaper,
-    github_url: str,
-    review_token: uuid.UUID,
-    db: AsyncSession,
+    github_url: Optional[str] = None,
+    review_token: uuid.UUID = None,
+    db: AsyncSession = None,
+    stage_job_id: Optional[uuid.UUID] = None,
 ) -> None:
     """Send test paper + candidate GitHub URL to an associate for the GitHub+Question round.
 
@@ -438,15 +440,20 @@ async def send_associate_notification_email(
     job_title = ""
     job_position = "Position"
     job_department = "Department"
-    if candidate.applied_job_id:
+    
+    job = None
+    if stage_job_id:
+        job = await db.get(Job, stage_job_id)
+    if job is None and candidate.applied_job_id:
         job = await db.get(Job, candidate.applied_job_id)
-        if job:
-            job_title = job.title or ""
-            # department and position are lazy="joined" relationships
-            if job.department:
-                job_department = job.department.name or "Department"
-            if job.position:
-                job_position = job.position.name or "Position"
+        
+    if job:
+        job_title = job.title or ""
+        # department and position are lazy="joined" relationships
+        if job.department:
+            job_department = job.department.name or "Department"
+        if job.position:
+            job_position = job.position.name or "Position"
 
     job_info_str = f" for the <strong>{job_title}</strong> position" if job_title else ""
     candidate_full_name = f"{candidate.first_name or 'Candidate'} {candidate.last_name or ''}".strip()
@@ -650,12 +657,14 @@ async def send_associate_notification_email(
               </div>
             </div>
 
+            {f'''
             <div class="github-box">
               <div class="github-title">Candidate GitHub Repository:</div>
               <div class="github-link">
                 <a href="{html.escape(github_url)}" target="_blank" style="color: #2563eb; text-decoration: underline;">{html.escape(github_url)}</a>
               </div>
             </div>
+            ''' if github_url else ""}
 
             <div class="work-drive-box">
               <div class="work-drive-title">Work Drive Link:</div>
@@ -677,7 +686,7 @@ async def send_associate_notification_email(
             </div>
 
             <div class="message">
-              Please review the candidate's GitHub repository using the link above.
+              {f"Please review the candidate's GitHub repository using the link above." if github_url else ""}
               The attached PDF contains the full details of the test paper (questions and project tasks).
             </div>
           </div>

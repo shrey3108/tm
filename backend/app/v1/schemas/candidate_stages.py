@@ -75,7 +75,7 @@ class SendToAssociatesResponse(BaseModel):
     message: str
     candidate_stage_id: uuid.UUID
     candidate_name: str
-    github_url: str
+    github_url: Optional[str] = None
     paper_id: Optional[uuid.UUID] = None
     paper_name: Optional[str] = None
     sent_to: list[AssociateEmailResult] = []

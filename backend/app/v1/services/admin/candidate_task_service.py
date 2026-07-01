@@ -453,7 +453,7 @@ Output Format Example (JSON ONLY):
                     res_job = await db.execute(stmt_job)
                     test_paper = res_job.scalar_one_or_none()
             
-            if test_paper and test_paper.task_file_path:
+            if test_paper:
                 task_file_path = test_paper.task_file_path
                 task_skills = test_paper.task_skills
                 is_custom_task = True
@@ -534,7 +534,7 @@ Output Format Example (JSON ONLY):
                     res_job = await db.execute(stmt_job)
                     test_paper = res_job.scalar_one_or_none()
                 
-            if test_paper and test_paper.task_file_path:
+            if test_paper:
                 task_skills = test_paper.task_skills or []
             else:
                 # Fallback to job default task skills

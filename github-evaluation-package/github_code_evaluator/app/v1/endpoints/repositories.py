@@ -101,9 +101,14 @@ async def submit_repository(
         result = await db.execute(stmt)
         existing_eval = result.scalar_one_or_none()
         if existing_eval and existing_eval.status not in ["cloning_error", "expired", "failed"]:
-            raise HTTPException(
+            from fastapi.responses import JSONResponse
+            return JSONResponse(
                 status_code=status.HTTP_409_CONFLICT,
-                detail="Repository has already been submitted for evaluation.",
+                content={
+                    "detail": "Repository has already been submitted for evaluation.",
+                    "evaluation_id": str(existing_eval.evaluation_id),
+                    "status": existing_eval.status
+                }
             )
 
         # Check if the repository record with identical URL already exists to avoid duplicates

@@ -296,10 +296,10 @@ def evaluate_candidate_practical_task(
             result = "pass" if overall_score >= 3.5 else "fail"
 
             jd_align = report.get("jd_alignment") or {}
-            jd_scores = jd_align.get("scores", {}) if isinstance(jd_align, dict) else {}
+            jd_scores = report.get("scores", {})
 
             proj_align = report.get("project_alignment") or {}
-            proj_scores = proj_align.get("scores", {}) if isinstance(proj_align, dict) else {}
+            proj_scores = report.get("scores", {})
 
             def get_scaled(scores_dict, cat_name):
                 if not scores_dict or cat_name not in scores_dict:
