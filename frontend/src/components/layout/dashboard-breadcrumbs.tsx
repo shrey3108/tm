@@ -141,7 +141,11 @@ export function DashboardBreadcrumbs() {
     .filter(({ index }) => !shouldHideSegment(pathnames, index));
 
   const crumbs = visibleSegments.map(({ index }, crumbIndex) => {
-    const routeTo = `/${pathnames.slice(0, index + 1).join("/")}`;
+    let routeTo = `/${pathnames.slice(0, index + 1).join("/")}`;
+    const segment = pathnames[index];
+    if (segment === "stages" && index >= 2 && pathnames[index - 2] === "candidates" && pathnames[index + 1]) {
+      routeTo += `/${pathnames[index + 1]}`;
+    }
     const meta = resolveMeta(pathnames, index);
     const label = meta?.label ?? "Details";
     const Icon = meta?.icon ?? FileText;

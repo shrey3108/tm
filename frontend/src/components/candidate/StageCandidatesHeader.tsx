@@ -18,6 +18,7 @@ import { History } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { slugify } from "@/utils/slug";
 import { isQuestionStage } from "@/utils/stage";
+
 interface StageCandidatesHeaderProps {
   /** Associated job for the candidate stage view */
   job: Job | null;
@@ -258,7 +259,8 @@ export const StageCandidatesHeader = ({
                     }
                   });
                 }}
-                disabled={!job?.is_active || !isGithubUploaded || allAssociatesSubmitted}
+                // disabled={!job?.is_active || !isGithubUploaded || allAssociatesSubmitted}
+                disabled={!job?.is_active || allAssociatesSubmitted || !!associateResults}
               >
                 Assign Associate
               </Button>
