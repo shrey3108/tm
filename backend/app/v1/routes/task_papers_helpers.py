@@ -57,9 +57,10 @@ async def get_candidate_active_stage_config_id(db: AsyncSession, candidate_id: u
         .join(StageTemplate, JobStageConfig.template_id == StageTemplate.id)
         .where(
             CandidateStage.candidate_id == candidate_id,
-            CandidateStage.status == "active",
+            CandidateStage.status.in_(["active", "processing", "queued", "submitted", "completed"]),
             get_question_round_filter(JobStageConfig, StageTemplate)
         )
+        .order_by(JobStageConfig.stage_order.desc())
         .limit(1)
     )
     res = await db.execute(stmt)
