@@ -228,7 +228,7 @@ export default function AdminJobStages() {
         </div>
       },
       cell: ({ row }) => (
-        <div className="flex items-center justify-center gap-2">
+        <div className="flex items-center justify-center gap-0.5">
           <HoverCard>
             <HoverCardTrigger
               render={(props) => (

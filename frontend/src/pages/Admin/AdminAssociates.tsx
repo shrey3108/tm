@@ -173,12 +173,12 @@ export default function AdminAssociates() {
         {
           id: "actions",
           header: () => (
-            <div className="flex items-center justify-center gap-2">
-              <span>Actions</span>
+            <div className="flex items-center justify-center gap-0.5">
+              <span className="text-base">Actions</span>
             </div>
           ),
           cell: ({ row }) => (
-            <div className="gap-2 flex items-center justify-center">
+            <div className="gap-0.5 flex items-center justify-center">
               <HoverCard>
                 <HoverCardTrigger
                   render={(props) => (

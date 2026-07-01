@@ -307,7 +307,7 @@ export const getJobColumns = ({
         )
       },
       cell: ({ row }) => (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-center gap-0.5">
           <PermissionGuard permissions={PERMISSIONS.JOBS_MANAGE} hideWhenDenied>
             <HoverCard>
               <HoverCardTrigger

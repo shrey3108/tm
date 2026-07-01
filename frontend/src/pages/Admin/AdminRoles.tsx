@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import PermissionGuard from "@/components/auth/PermissionGuard";
 import { PERMISSIONS } from "@/lib/permissions";
 import { useAuth } from "@/store/hooks";
-import { Plus } from "lucide-react";
+import { Edit2, Plus, Trash2 } from "lucide-react";
 import { useAdminRoles } from "@/hooks/queries/admin/useAdminRoles";
 import { usePageFilters } from "@/hooks/usePageFilters";
 import CreatePermissionModal from "@/components/modal/CreatePermissionModal";
@@ -28,6 +28,7 @@ import DeleteModal from "@/components/modal/DeleteModal";
 import RoleModal from "@/components/modal/RoleModal";
 import { useDebouncedValue } from "@/hooks/useDebounced";
 import { useDeleteConfirmation } from "@/hooks/useDeleteConfirmation";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 
 export default function AdminRoles() {
   const { user: currentUser } = useAuth();
@@ -138,29 +139,44 @@ export default function AdminRoles() {
         const role = row.original;
         return (
 
-          <div className="flex items-center justify-center">
+          <div className="flex items-center justify-center gap-0.5">
             {currentUser && role.name.toLocaleLowerCase() !== "superadmin" && (
               <>
                 <PermissionGuard permissions={PERMISSIONS.ROLES_MANAGE} hideWhenDenied>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="me-2"
-                    onClick={() => handleEditRole(role.id)}
-                    disabled={currentUser.role_id === role.id}
-                  >
-                    Edit
-                  </Button>
+                  <HoverCard>
+                    <HoverCardTrigger render={(props) => <Button
+                      {...props}
+                      variant="outline"
+                      size="sm"
+                      className="h-9 w-9 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
+                      onClick={() => handleEditRole(role.id)}
+                      disabled={currentUser.role_id === role.id}
+                    >
+                      <Edit2 className="h-4 w-4 shrink-0" />
+                      <span className="sr-only">Edit</span>
+                    </Button>} />
+                    <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
+                      Edit Role
+                    </HoverCardContent>
+                  </HoverCard>
                 </PermissionGuard>
                 <PermissionGuard permissions={PERMISSIONS.ROLES_MANAGE} hideWhenDenied>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => roleDelete.handleDeleteClick(role)}
-                    disabled={currentUser.role_id === role.id || role?.user_count > 0}
-                  >
-                    Delete
-                  </Button>
+                  <HoverCard>
+                    <HoverCardTrigger render={(props) => <Button
+                      {...props}
+                      variant="destructive"
+                      size="sm"
+                      className="h-9 w-9 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
+                      onClick={() => roleDelete.handleDeleteClick(role)}
+                      disabled={currentUser.role_id === role.id || role?.user_count > 0}
+                    >
+                      <Trash2 className="h-4 w-4 shrink-0" />
+                      <span className="sr-only">Delete</span>
+                    </Button>} />
+                    <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
+                      Delete Role
+                    </HoverCardContent>
+                  </HoverCard>
                 </PermissionGuard>
               </>
             )}

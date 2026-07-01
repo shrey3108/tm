@@ -226,7 +226,7 @@ export default function AdminSkills() {
             </div>
           ),
           cell: ({ row }) => (
-            <div className="gap-2 flex items-center justify-center">
+            <div className="flex items-center justify-center gap-0.5">
               <HoverCard>
                 <HoverCardTrigger
                   render={(props) => (

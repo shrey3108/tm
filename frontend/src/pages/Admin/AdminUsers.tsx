@@ -21,7 +21,7 @@ import { UserTableFilters } from "@/components/admin/UserTableFilters";
 import { useUserTableFilters } from "@/hooks/useUserTableFilters";
 
 import type { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown } from "lucide-react";
+import { ArrowUpDown, Edit2, Trash2 } from "lucide-react";
 
 import { useAuth } from "@/store/hooks";
 import { useAdminUsers } from "@/hooks/queries/admin/useAdminUsers";
@@ -31,6 +31,11 @@ import DeleteModal from "@/components/modal/DeleteModal";
 import { useDebouncedValue } from "@/hooks/useDebounced";
 import { useDeleteConfirmation } from "@/hooks/useDeleteConfirmation";
 import { Button } from "@/components/ui/button";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card"
 
 export default function AdminUsers() {
   const toast = useToast();
@@ -188,30 +193,45 @@ export default function AdminUsers() {
       cell: ({ row }) => {
         const user = row.original;
         return (
-          (currentUser && < div className="flex items-center justify-center gap-2 flex-nowrap" >
+          (currentUser && < div className="flex items-center justify-center gap-0.5 flex-nowrap" >
             {user.full_name !== "System Admin" && user.role_name.toLowerCase() !== "super admin" && <PermissionGuard permissions={PERMISSIONS.USERS_MANAGE} hideWhenDenied>
-              <Button
-                variant="outline"
-                size="sm"
-                className="shrink-0"
-                onClick={() => handleEditClick(user)}
-                disabled={currentUser && currentUser.id === user.id}
-              >
-                Edit
-              </Button>
+              <HoverCard>
+                <HoverCardTrigger render={(props) => <Button
+                  {...props}
+                  variant="outline"
+                  size="sm"
+                  className="h-9 w-9 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
+                  onClick={() => handleEditClick(user)}
+                  disabled={currentUser && currentUser.id === user.id}
+                >
+                  <Edit2 className="h-4 w-4 shrink-0" />
+                  <span className="sr-only">Edit</span>
+                </Button>} />
+                <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
+                  Edit User
+                </HoverCardContent>
+              </HoverCard>
             </PermissionGuard>}
             {
               user.full_name !== "System Admin" && user.role_name.toLowerCase() !== "super admin" && (
                 <PermissionGuard permissions={PERMISSIONS.USERS_MANAGE} hideWhenDenied>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    className="shrink-0"
-                    onClick={() => handleDeleteClick(user)}
-                    disabled={currentUser && currentUser.id === user.id || row.original.is_active}
-                  >
-                    Delete
-                  </Button>
+                  <HoverCard>
+                    <HoverCardTrigger render={(props) => <Button
+                      {...props}
+                      variant="destructive"
+                      size="sm"
+                      className="h-9 w-9 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
+                      onClick={() => handleDeleteClick(user)}
+                      disabled={currentUser && currentUser.id === user.id || row.original.is_active}
+                    >
+                      <Trash2 className="h-4 w-4 shrink-0" />
+                      <span className="sr-only">Delete</span>
+                    </Button>} />
+                    <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
+                      Delete User
+                    </HoverCardContent>
+                  </HoverCard>
+
                 </PermissionGuard>
               )
             }
