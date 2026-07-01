@@ -26,7 +26,8 @@ interface CandidateSearchTableProps {
   nameFilter?: string;
   onNameFilterChange?: (value: string) => void;
   showJobContext?: boolean;
-  onFiltersChange?: (filters: CandidateActiveFilters) => void;
+  filters: CandidateActiveFilters;
+  setFilters: (filters: Partial<CandidateActiveFilters>) => void;
   // onShowAnalysisDetails: (candidate: CandidateResponse) => void;
   onDelete: (candidate: CandidateResponse) => void;
 }
@@ -40,7 +41,8 @@ const CandidateSearchTable = ({
   nameFilter,
   onNameFilterChange,
   showJobContext = false,
-  onFiltersChange,
+  filters,
+  setFilters
   // onDelete
 }: CandidateSearchTableProps): ReactElement => {
   return (
@@ -54,7 +56,8 @@ const CandidateSearchTable = ({
       nameFilter={nameFilter}
       onNameFilterChange={onNameFilterChange}
       showJobContext={showJobContext}
-      onFiltersChange={onFiltersChange}
+      filters={filters}
+      setFilters={setFilters}
       renderActions={(candidate) => (
         <div className="flex items-center gap-2">
           <HoverCard>

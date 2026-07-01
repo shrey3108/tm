@@ -76,13 +76,12 @@ export default function AdminCandidateSearch() {
   const [selectedCandidate, setSelectedCandidate] =
     useState<CandidateResponse | null>(null);
 
-  const handleFiltersChange = useCallback((newFilters: React.SetStateAction<CandidateActiveFilters>) => {
-    const updatedFilters = typeof newFilters === "function" ? newFilters(filters) : newFilters;
+  const handleSetFilters = useCallback((partial: Partial<CandidateActiveFilters>) => {
     setFilters({
-      ...updatedFilters,
+      ...partial,
       pageIndex: 0,
     });
-  }, [filters, setFilters]);
+  }, [setFilters]);
 
   const {
     data: candidates,
@@ -192,7 +191,8 @@ export default function AdminCandidateSearch() {
           onPaginationChange={setPagination}
           onShowMore={handleShowMore}
           showJobContext={!jobId}
-          onFiltersChange={handleFiltersChange}
+          filters={filters}
+          setFilters={handleSetFilters}
           // onShowAnalysisDetails={handleShowAnalysisDetails}
           onDelete={handleDeleteClick}
         />

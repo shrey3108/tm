@@ -4,7 +4,7 @@
  *
  * Detailed view listing candidates applied to a specific job, with stage details.
  */
-import { useState, useRef, useMemo, useEffect, lazy, Suspense } from "react";
+import { useState, useRef, useMemo, useEffect, lazy, Suspense, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { RotateCw, Layers } from "lucide-react";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
@@ -250,12 +250,12 @@ export default function JobCandidates() {
   }, [emailFilterState, selectedCandidates, selectedCandidatesTestPapers, loadingTestPapers]);
 
   const [modalInitialTab, _setModalInitialTab] = useState<"analysis" | "jd" | "cross-job-match">("analysis");
-  const handleFiltersChange = (newFilters: CandidateActiveFilters) => {
+  const handleSetFilters = useCallback((partial: Partial<CandidateActiveFilters>) => {
     setFilters({
-      ...newFilters,
+      ...partial,
       pageIndex: 0,
     });
-  };
+  }, [setFilters]);
 
   const handleUploadClick = () => {
     if (!job?.is_active) return;
@@ -352,8 +352,8 @@ export default function JobCandidates() {
                       pageCount={Math.ceil(totalCandidates / pageSize)}
                       total={totalCandidates}
                       activitySessions={activitySession}
-                      onFiltersChange={handleFiltersChange}
-                      initialDateRange={filters.dateRange as DateRange | undefined}
+                      filters={filters}
+                      setFilters={handleSetFilters}
                       rowSelection={rowSelection}
                       onRowSelectionChange={setRowSelection}
                       showCheckboxes={showCheckboxes}

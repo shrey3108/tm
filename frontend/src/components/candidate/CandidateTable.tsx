@@ -42,7 +42,9 @@ export interface CandidateTableProps<T extends UnifiedCandidate> {
   rowSelection?: Record<string, boolean>;
   onRowSelectionChange?: OnChangeFn<Record<string, boolean>>;
   showCheckboxes?: boolean;
-  job?: Job | null
+  job?: Job | null;
+  filters: CandidateActiveFilters;
+  setFilters: (filters: Partial<CandidateActiveFilters>) => void;
 }
 
 export function CandidateTable<T extends UnifiedCandidate>({
@@ -61,10 +63,10 @@ export function CandidateTable<T extends UnifiedCandidate>({
   showJobContext = false,
   showLocationFilter = true,
   showStatusFilter = true,
-  onFiltersChange,
   stageOptions: stageOptionsProp,
   activitySessions,
-  initialDateRange,
+  filters,
+  setFilters,
   rowSelection,
   onRowSelectionChange,
   showCheckboxes = false,
@@ -111,7 +113,18 @@ export function CandidateTable<T extends UnifiedCandidate>({
     testEmailSentFilter,
     setTestEmailSentFilter,
     isTestPaperFilterEnabled,
-  } = useCandidateTableFilters(candidates, externalNameFilter, onNameFilterChange, showJobContext, isServerSide, onFiltersChange, passing_threshold, stageOptionsProp, activitySessions, initialDateRange);
+  } = useCandidateTableFilters(
+    candidates,
+    filters,
+    setFilters,
+    showJobContext,
+    isServerSide,
+    passing_threshold,
+    stageOptionsProp,
+    activitySessions,
+    externalNameFilter,
+    onNameFilterChange
+  );
 
   const columns = useCandidateTableColumns({
     renderActions,

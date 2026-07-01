@@ -35,50 +35,73 @@ const normalizeHrDecision = (val: string | null | undefined): string => {
 
 export const useCandidateTableFilters = <T extends UnifiedCandidate>(
   candidates: T[],
-  externalNameFilter?: string,
-  onNameFilterChange?: (val: string) => void,
+  filters: CandidateActiveFilters,
+  setFilters: (filters: Partial<CandidateActiveFilters>) => void,
   /** Pass false on pages where the job-title filter column is not shown (e.g. per-job
    *  candidates view) to skip the getJobTitles() network request entirely. */
   fetchJobTitles = true,
   isServerSide = false,
-  onFiltersChange?: (filters: CandidateActiveFilters) => void,
   passingThreshold = DEFAULT_PASSING_THRESHOLD,
   stageOptionsProp?: { id: string; name: string }[],
   activitySessionsData?: [number, { start_date: string; end_date: string }][],
-  initialDateRange?: DateRange
+  externalNameFilter?: string,
+  onNameFilterChange?: (val: string) => void
 ) => {
-  const [internalNameFilter, setInternalNameFilter] = useState("");
+  const statusFilter = filters.status || [];
+  const locationFilter = filters.city || [];
+  const hrDecisionFilter = filters.hr_decision || [];
+  const hrScoreFilter = filters.hr_score || [];
+  const jobFilter = filters.job || [];
+  const dateRange = filters.dateRange || undefined;
+  const resultFilter = filters.result || [];
+  const stageFilter = filters.stage_id || [];
+  const activitySessionFilter = filters.activity_session || [];
 
-  const nameFilter = externalNameFilter !== undefined ? externalNameFilter : internalNameFilter;
-  const setNameFilter = onNameFilterChange !== undefined ? onNameFilterChange : setInternalNameFilter;
+  const testEmailSentFilter = filters.test_email_sent === true
+    ? "sent"
+    : filters.test_email_sent === false
+    ? "not_sent"
+    : undefined;
 
-  const [statusFilter, setStatusFilter] = useState<string[]>([]);
-  const [locationFilter, setLocationFilter] = useState<string[]>([]);
-  const [hrDecisionFilter, setHrDecisionFilter] = useState<string[]>([]);
-  const [hrScoreFilter, setHrScoreFilter] = useState<number[]>([]);
+  const nameFilter = externalNameFilter !== undefined ? externalNameFilter : (filters.q || "");
 
-  // jobFilter stores IDs internally for filtering and API calls
-  const [jobFilter, setJobFilter] = useState<string[]>([]);
+  const setNameFilter = (val: string) => {
+    if (onNameFilterChange) {
+      onNameFilterChange(val);
+    } else {
+      setFilters({ q: val });
+    }
+  };
 
-  const [dateRange, setDateRange] = useState<DateRange | undefined>(initialDateRange);
+  const setStatusFilter = (val: string[]) => setFilters({ status: val });
+  const setLocationFilter = (val: string[]) => setFilters({ city: val });
+  const setHrDecisionFilter = (val: string[]) => setFilters({ hr_decision: val });
+  const setHrScoreFilter = (val: number[]) => setFilters({ hr_score: val });
+  const setJobFilter = (val: string[]) => setFilters({ job: val });
+  const setDateRange = (val: DateRange | undefined) => setFilters({ dateRange: val });
+  const setResultFilter = (val: string[]) => setFilters({ result: val });
+  const setStageFilter = (val: string[]) => setFilters({ stage_id: val });
+  const setTestEmailSentFilter = (val: string | undefined) => {
+    setFilters({
+      test_email_sent: val === "sent" ? true : val === "not_sent" ? false : undefined
+    });
+  };
+
   const [fetchedLocations, setFetchedLocations] = useState<string[]>([]);
   const [locationSearch, setLocationSearch] = useState("");
   const [availableJobs, setAvailableJobs] = useState<{ id: string; title: string; slug: string }[]>([]);
   const [jobSearch, setJobSearch] = useState("");
-  const [resultFilter, setResultFilter] = useState<string[]>([]);
-  const [stageFilter, setStageFilter] = useState<string[]>([]);
-  const [activitySessionFilter, setActivitySessionFilter] = useState<string[]>([]);
   const [activitySearch, setActivitySearch] = useState("");
-  const [testEmailSentFilter, setTestEmailSentFilter] = useState<string | undefined>(undefined);
 
   const debouncedNameFilter = useDebouncedValue(nameFilter);
   const debouncedJobSearch = useDebouncedValue(jobSearch);
   const debouncedLocationSearch = useDebouncedValue(locationSearch);
 
-
   // Handler to update activity session and sync date range in one batch
   const handleActivitySessionChange = (ids: string[]) => {
-    setActivitySessionFilter(ids);
+    const updates: Partial<CandidateActiveFilters> = {
+      activity_session: ids,
+    };
 
     if (ids.length > 0 && activitySessionsData) {
       let minStart: Date | null = null;
@@ -96,9 +119,11 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
       });
 
       if (minStart) {
-        setDateRange({ from: minStart, to: maxEnd || undefined });
+        updates.dateRange = { from: minStart, to: maxEnd || undefined };
       }
     }
+
+    setFilters(updates);
   };
 
   const { data: jobs } = useJobTitle(debouncedJobSearch, fetchJobTitles);
@@ -113,7 +138,7 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
         }))
       );
     }
-  }, [jobs])
+  }, [jobs]);
 
   const { data: locations } = useAdminLocations(0, 500, debouncedLocationSearch);
   useEffect(() => {
@@ -122,27 +147,6 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
       setFetchedLocations(names);
     }
   }, [locations]);
-
-
-
-  // Call onFiltersChange when internal filter states update
-  useEffect(() => {
-    if (onFiltersChange) {
-      onFiltersChange({
-        status: statusFilter,
-        city: locationFilter,
-        job: jobFilter,
-        hr_decision: hrDecisionFilter,
-        dateRange: dateRange,
-        result: resultFilter,
-        stage_id: stageFilter,
-        activity_session: activitySessionFilter,
-        q: debouncedNameFilter,
-        hr_score: hrScoreFilter,
-        test_email_sent: testEmailSentFilter === "sent" ? true : testEmailSentFilter === "not_sent" ? false : undefined
-      });
-    }
-  }, [statusFilter, locationFilter, jobFilter, hrDecisionFilter, dateRange, resultFilter, stageFilter, activitySessionFilter, debouncedNameFilter, hrScoreFilter, testEmailSentFilter, onFiltersChange]);
 
   const isAnyFilterActive =
     !!debouncedNameFilter ||
@@ -600,18 +604,20 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
   const hasActiveFilters = isAnyFilterActive;
 
   const clearFilters = () => {
-    setNameFilter("");
-    setStatusFilter([]);
-    setLocationFilter([]);
-    setHrDecisionFilter([]);
-    setJobFilter([]);
     setJobSearch("");
-    setDateRange({ from: undefined, to: undefined });
-    setResultFilter([]);
-    setStageFilter([]);
-    setActivitySessionFilter([]);
-    setHrScoreFilter([]);
-    setTestEmailSentFilter(undefined);
+    setFilters({
+      q: "",
+      status: [],
+      city: [],
+      hr_decision: [],
+      job: [],
+      dateRange: undefined,
+      result: [],
+      stage_id: [],
+      activity_session: [],
+      hr_score: [],
+      test_email_sent: undefined,
+    });
   };
 
   return {
