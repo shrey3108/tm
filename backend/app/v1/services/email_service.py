@@ -707,10 +707,10 @@ async def send_associate_notification_email(
     smtp_password = settings.SMTP_PASSWORD
     smtp_from = settings.SMTP_FROM_EMAIL
 
-    # Always route emails to the override address for safety.
-    target_recipient = settings.SMTP_TARGET_EMAIL_OVERRIDE
+    # Use the actual associate's email directly, bypassing the candidate override
+    target_recipient = associate_email
     if not target_recipient:
-        raise ValueError("SMTP_TARGET_EMAIL_OVERRIDE is not configured in .env. Cannot send emails.")
+        raise ValueError("Associate email is missing. Cannot send email.")
 
     # 6. Build MIME message
     msg = MIMEMultipart()

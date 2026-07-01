@@ -34,7 +34,6 @@ router = APIRouter(prefix="/associate-reviews", tags=["associate-reviews"])
 
 # Passing threshold: an associate's review is considered "pass" if the total
 # awarded marks are at least this fraction of the max total marks.
-PASSING_THRESHOLD = 0.7
 
 
 # ---------------------------------------------------------------------------
@@ -322,7 +321,9 @@ async def submit_review_form(
     # Determine pass/fail result (only if we have a meaningful max total).
     result: Optional[str] = None
     if total_max > 0:
-        result = "pass" if (total_awarded / total_max) >= PASSING_THRESHOLD else "fail"
+        # Use job-specific question bank passing threshold if available (stored as percentage like 70.0), default to 70%
+        threshold = float(evaluation.job.question_bank_passing_threshold) / 100.0 if evaluation.job and evaluation.job.question_bank_passing_threshold else 0.70
+        result = "pass" if (total_awarded / total_max) >= threshold else "fail"
 
     # Persist the submission.
     evaluation.marks = marks_list
@@ -432,12 +433,13 @@ def _render_form_html(
     if is_submitted:
         result_label = "PASS" if result == "pass" else "FAIL"
         result_color = "#10b981" if result == "pass" else "#ef4444"
+        percentage = (total_awarded / total_max) * 100 if total_max > 0 else 0
         score_box_html = f"""
         <div class="score-box" style="margin:20px auto; border: 3px solid #bac7de; background: #f9fafb; border-radius: 8px; padding: 10px;">
           <div style="font-size:18px; font-weight:700; color:#111827; margin-bottom:12px;">Final Result</div>
           <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
             <span style="font-weight:600; color:#1f2937;">Total Marks Awarded:</span>
-            <span style="color:#4b5563;">{total_awarded:g} / {total_max:g}</span>
+            <span style="color:#4b5563;">{total_awarded:g} / {total_max:g} ({percentage:.1f}%)</span>
           </div>
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <span style="font-weight:600; color:#1f2937;">Status:</span>

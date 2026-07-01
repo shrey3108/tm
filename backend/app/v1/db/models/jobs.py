@@ -124,6 +124,12 @@ class Job(Base):
         nullable=False,
     )
 
+    question_bank_passing_threshold: Mapped[float] = mapped_column(
+        Numeric(10, 2),
+        default=70.0,
+        nullable=False,
+    )
+
     # CUSTOM EXTRACTION
     custom_extraction_fields: Mapped[list[str] | None] = mapped_column(
         JSONB,

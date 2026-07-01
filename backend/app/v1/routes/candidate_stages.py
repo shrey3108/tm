@@ -1047,6 +1047,10 @@ async def get_associate_results(
         if ev.status == "submitted":
             submitted_count += 1
 
+        percentage: Optional[float] = None
+        if ev.total_marks is not None and ev.max_total_marks and ev.max_total_marks > 0:
+            percentage = round((ev.total_marks / ev.max_total_marks) * 100, 2)
+
         reviews.append(
             AssociateReviewResult(
                 id=ev.id,
@@ -1060,6 +1064,7 @@ async def get_associate_results(
                 marks=question_marks,
                 total_marks=ev.total_marks,
                 max_total_marks=ev.max_total_marks,
+                percentage=percentage,
                 result=ev.result,
                 weighted_total=weighted_total,
                 weighted_max=weighted_max_total,

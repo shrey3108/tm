@@ -29,6 +29,7 @@ class JobBase(BaseModel):
     jd_json: dict | None = None
     is_active: bool = True
     passing_threshold: float = 70.0
+    question_bank_passing_threshold: float = 70.0
     custom_extraction_fields: list[str] | None = None
     priority_id: uuid.UUID | None = None
     position_id: uuid.UUID | None = None
@@ -93,6 +94,7 @@ class JobUpdate(BaseModel):
     skill_weightages: dict[uuid.UUID, float] | None = Field(None, description="Mapping of skill ID to its weightage")
 
     passing_threshold: float | None = None
+    question_bank_passing_threshold: float | None = None
     custom_extraction_fields: list[str] | None = None
     priority_id: uuid.UUID | None = None
     position_id: uuid.UUID | None = None

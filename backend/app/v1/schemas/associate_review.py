@@ -43,6 +43,7 @@ class AssociateReviewResult(BaseModel):
     marks: Optional[list[QuestionMark]] = Field(None, description="Marks per question")
     total_marks: Optional[float] = Field(None, description="Sum of awarded marks")
     max_total_marks: Optional[float] = Field(None, description="Sum of max marks")
+    percentage: Optional[float] = Field(None, description="Percentage score")
     result: Optional[str] = Field(None, description="'pass' / 'fail' / null")
     weighted_total: Optional[float] = Field(None, description="Skill-weighted total awarded marks (0-100 scale)")
     weighted_max: Optional[float] = Field(None, description="Skill-weighted max marks (100 when computable)")
