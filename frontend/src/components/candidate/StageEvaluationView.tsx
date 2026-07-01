@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { History, ExternalLink, Loader2 } from "lucide-react";
+import { History, ExternalLink, Loader2, AreaChart } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { EvaluationGrid } from "@/components/candidate/EvaluationGrid";
 import { StageOverallSummary, type OverallSummaryData } from "@/components/candidate/StageOverallSummary";
@@ -16,6 +17,8 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card"
+import { Switch } from "@/components/ui/switch";
+import JobCandidatesAreaChart from "@/components/job/candidates/JobCandidatesAreaChart";
 
 interface StageEvaluationViewProps {
   /** The current evaluation data to display. */
@@ -41,6 +44,89 @@ interface StageEvaluationViewProps {
   requiredInputs?: string[];
 }
 
+interface ChartDataPoint {
+  name: string;
+  jd: number;
+  project: number;
+}
+
+function getChartData(evaluationData: any): ChartDataPoint[] {
+  if (!evaluationData || typeof evaluationData !== "object") return [];
+
+  const skillsMap: Record<string, { jd: number; project: number }> = {};
+
+  // Helper to extract criteria entries
+  const extractSkills = (skillsList: any[], field: "jd" | "project") => {
+    if (!Array.isArray(skillsList)) return;
+    skillsList.forEach((itemObj) => {
+      if (itemObj && typeof itemObj === "object") {
+        Object.entries(itemObj).forEach(([key, criteriaVal]: [string, any]) => {
+          // Ignore structural properties like strengths, weaknesses, followups, summary
+          if (
+            key !== "strengths" &&
+            key !== "weaknesses" &&
+            key !== "suggested_followups" &&
+            key !== "alignment_review" &&
+            criteriaVal &&
+            typeof criteriaVal === "object" &&
+            typeof criteriaVal.score === "number"
+          ) {
+            const normalizedKey = key.replace(/_/g, " ").toUpperCase();
+            if (!skillsMap[normalizedKey]) {
+              skillsMap[normalizedKey] = { jd: 0, project: 0 };
+            }
+            skillsMap[normalizedKey][field] = criteriaVal.score;
+          }
+        });
+      }
+    });
+  };
+
+  extractSkills(evaluationData["JD Skills"], "jd");
+  extractSkills(evaluationData["Project requirements skills"], "project");
+
+  // Fallback: If evaluationData is flat (like standard structure) instead of grouped under "JD Skills"
+  if (Object.keys(skillsMap).length === 0) {
+    Object.entries(evaluationData).forEach(([key, criteriaVal]: [string, any]) => {
+      if (
+        key !== "strengths" &&
+        key !== "weaknesses" &&
+        key !== "suggested_followups" &&
+        key !== "alignment_review" &&
+        criteriaVal &&
+        typeof criteriaVal === "object" &&
+        typeof criteriaVal.score === "number"
+      ) {
+        let normalizedKey = key;
+        let field: "jd" | "project" = "jd";
+
+        if (key.includes("(JD Skills)")) {
+          normalizedKey = key.replace(" (JD Skills)", "");
+          field = "jd";
+        } else if (key.includes("(Task Skills)")) {
+          normalizedKey = key.replace(" (Task Skills)", "");
+          field = "project";
+        } else {
+          normalizedKey = key;
+          field = "jd";
+        }
+
+        normalizedKey = normalizedKey.replace(/_/g, " ").toUpperCase();
+        if (!skillsMap[normalizedKey]) {
+          skillsMap[normalizedKey] = { jd: 0, project: 0 };
+        }
+        skillsMap[normalizedKey][field] = criteriaVal.score;
+      }
+    });
+  }
+
+  return Object.entries(skillsMap).map(([name, scores]) => ({
+    name,
+    jd: scores.jd,
+    project: scores.project,
+  })).sort((a, b) => a.name.localeCompare(b.name));
+}
+
 /**
  * Component that displays the full evaluation details for a specific interview stage.
  * Includes score grids, overall summaries, and history of decisions/transcripts.
@@ -58,6 +144,7 @@ export function StageEvaluationView({
   stageName,
   requiredInputs,
 }: StageEvaluationViewProps) {
+  const [showChart, setShowChart] = useState(false);
   const { data: assignedPaper } = useCandidateTestPaper(candidateId);
   const { refetch: downloadFile, loading: isDownloading } = useDownloadCandidateAssignedTaskFile(
     assignedPaper ? candidateId : null,
@@ -91,6 +178,8 @@ export function StageEvaluationView({
   const latestHrDecision = hrDecisionHistory[0]?.decision.toLowerCase();
   const canTakeDecision = !latestHrDecision || latestHrDecision.includes("may be") || latestHrDecision === "maybe";
 
+  const chartData = getChartData(evaluation.evaluation_data);
+
   return (
     <>
       <div className="flex items-center justify-end px-4 mb-2 gap-3">
@@ -104,6 +193,18 @@ export function StageEvaluationView({
               )))
         ) && (
             <>
+              <div className="flex items-center gap-2 mr-2 bg-muted/20 px-3 py-1 rounded-xl border border-border/50 shadow-sm transition-all duration-200">
+                <span className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground select-none">
+                  <AreaChart className="h-3.5 w-3.5 text-primary animate-in fade-in" />
+                  Show Chart
+                </span>
+                <Switch
+                  checked={showChart}
+                  onCheckedChange={setShowChart}
+                  size="sm"
+                />
+              </div>
+
               {isGithubUploaded && githubUrl && (
                 <HoverCard>
                   <HoverCardTrigger delay={10} closeDelay={10}
@@ -184,7 +285,16 @@ export function StageEvaluationView({
           </Badge>
         </Button>
       </div>
-      <EvaluationGrid data={evaluation.evaluation_data} />
+
+      {showChart ? (
+        <div className="w-full flex justify-center bg-card/30 p-6 rounded-2xl border border-border/50 animate-in fade-in duration-300">
+          <div className="w-full max-w-[800px] h-[350px]">
+            <JobCandidatesAreaChart data={chartData.length > 0 ? chartData : undefined} />
+          </div>
+        </div>
+      ) : (
+        <EvaluationGrid data={evaluation.evaluation_data} />
+      )}
 
       <div className="mx-auto space-y-1">
         {/* Section 1: Overall Summary */}
