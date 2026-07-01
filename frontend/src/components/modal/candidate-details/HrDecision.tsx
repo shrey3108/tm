@@ -34,11 +34,11 @@ export function HrDecision({ decision }: HrDecisionProps) {
       </div>
       {decision.notes ? (
         <div className="flex items-end gap-2">
-          <p className="text-sm text-muted-foreground ">
+          <p className="text-sm text-muted-foreground flex-1 break-all">
             &ldquo;{decision.notes}&rdquo;
           </p>
-          <div className="text-[10px] font-medium ">
-            Decided on <DateDisplay date={decision.decided_at} className="text-[10px]" />
+          <div className="text-xs font-medium shrink-0">
+            Decided on <DateDisplay date={decision.decided_at} className="text-xs" />
           </div>
         </div>
       ) : (

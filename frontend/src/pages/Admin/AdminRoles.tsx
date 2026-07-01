@@ -146,8 +146,8 @@ export default function AdminRoles() {
                   <HoverCard>
                     <HoverCardTrigger render={(props) => <Button
                       {...props}
-                      variant="outline"
-                      size="sm"
+                      variant="ghost"
+                      size="icon"
                       className="h-9 w-9 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
                       onClick={() => handleEditRole(role.id)}
                       disabled={currentUser.role_id === role.id}
@@ -164,8 +164,8 @@ export default function AdminRoles() {
                   <HoverCard>
                     <HoverCardTrigger render={(props) => <Button
                       {...props}
-                      variant="destructive"
-                      size="sm"
+                      variant="ghost"
+                      size="icon"
                       className="h-9 w-9 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
                       onClick={() => roleDelete.handleDeleteClick(role)}
                       disabled={currentUser.role_id === role.id || role?.user_count > 0}

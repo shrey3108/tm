@@ -397,11 +397,6 @@ export default function JobCandidates() {
                                       reanalyzingCandidateIds.includes(candidate.id) ||
                                       !candidate.is_parsed
                                     }
-                                    title={
-                                      !needsReanalysis(candidate)
-                                        ? "Already analyzed with the latest JD version"
-                                        : "Re-analyze with the latest JD version"
-                                    }
                                   >
                                     <RotateCw className="h-4 w-4 text-amber-600 shrink-0" />
                                   </Button>

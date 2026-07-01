@@ -198,8 +198,8 @@ export default function AdminUsers() {
               <HoverCard>
                 <HoverCardTrigger render={(props) => <Button
                   {...props}
-                  variant="outline"
-                  size="sm"
+                  variant="ghost"
+                  size="icon"
                   className="h-9 w-9 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
                   onClick={() => handleEditClick(user)}
                   disabled={currentUser && currentUser.id === user.id}
@@ -218,8 +218,8 @@ export default function AdminUsers() {
                   <HoverCard>
                     <HoverCardTrigger render={(props) => <Button
                       {...props}
-                      variant="destructive"
-                      size="sm"
+                      variant="ghost"
+                      size="icon"
                       className="h-9 w-9 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
                       onClick={() => handleDeleteClick(user)}
                       disabled={currentUser && currentUser.id === user.id || row.original.is_active}
