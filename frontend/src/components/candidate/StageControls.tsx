@@ -53,7 +53,7 @@ export function StageControls({
 							id="stages"
 							modal={false}
 						>
-							<SelectTrigger className="w-[400px] h-12 rounded-2xl border-primary/20 bg-background font-bold text-sm">
+							<SelectTrigger className="w-100 h-12 rounded-2xl border-primary/20 bg-background font-bold text-sm">
 								<SelectValue placeholder={isLoadingStages ? "Loading stages..." : "Select Stage"} />
 							</SelectTrigger>
 							<SelectContent className="rounded-xl border-primary/10" alignItemWithTrigger={false}>

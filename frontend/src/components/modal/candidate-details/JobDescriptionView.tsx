@@ -76,7 +76,7 @@ export function JobDescriptionView({
                     onValueChange={onVersionChange}
                     modal={false}
                   >
-                    <SelectTrigger className="h-8.5 rounded-xl border-border/60 bg-muted/30 px-3 text-[11px] font-bold hover:bg-muted/50 transition-colors w-[180px]">
+                    <SelectTrigger className="h-8.5 rounded-xl border-border/60 bg-muted/30 px-3 text-[11px] font-bold hover:bg-muted/50 transition-colors w-45">
                       <div className="flex items-center gap-2">
                         <History className="h-3.5 w-3.5 text-muted-foreground" />
                         <SelectValue placeholder="Version">

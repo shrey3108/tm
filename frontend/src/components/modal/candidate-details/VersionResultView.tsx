@@ -112,8 +112,8 @@ export function VersionResultView({
             onValueChange={(val) => val && setSelectedVersion(val)}
             modal={false}
           >
-            <SelectTrigger className="w-fit min-w-[100px] rounded-lg border-muted-foreground/5 h-8 text-xs font-bold shadow-none bg-background gap-2">
-              <SelectValue placeholder="Version" className={"min-w-[100px]"} />
+            <SelectTrigger className="w-fit min-w-25 rounded-lg border-muted-foreground/5 h-8 text-xs font-bold shadow-none bg-background gap-2">
+              <SelectValue placeholder="Version" className={"min-w-25"} />
             </SelectTrigger>
             <SelectContent className="rounded-xl border-muted-foreground/10 " side="bottom" alignItemWithTrigger={false}>
               {results.map((r) => (

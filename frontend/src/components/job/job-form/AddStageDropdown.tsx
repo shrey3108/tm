@@ -1,5 +1,5 @@
 import { Loader2, ChevronDown, Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,19 +39,18 @@ export const AddStageDropdown = ({
   return (
     <div className="flex items-center gap-3">
       <DropdownMenu>
-        <DropdownMenuTrigger>
-          <Button
-            variant="outline"
-            className="flex-1 h-10 rounded-xl border-muted-foreground/20 font-medium justify-between px-3"
-            disabled={availableTemplates.length === 0}
-          >
-            <span className="truncate">
-              {selectedTemplateIds.length === 0
-                ? "Select stage templates..."
-                : `${selectedTemplateIds.length} template(s) selected`}
-            </span>
-            <ChevronDown className="h-4 w-4 " />
-          </Button>
+        <DropdownMenuTrigger
+          type="button"
+          className={cn(
+            buttonVariants({ variant: "outline" }),
+            "flex-1 h-10 rounded-xl border-muted-foreground/20 font-medium justify-between px-3 max-w-fit")}
+          disabled={availableTemplates.length === 0} >
+          <span className="">
+            {selectedTemplateIds.length === 0
+              ? "Select stage templates..."
+              : `${selectedTemplateIds.length} template(s) selected`}
+          </span>
+          <ChevronDown className="h-4 w-4 " />
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-80 rounded-xl border-primary/10 max-h-80 overflow-y-auto">
           <DropdownMenuGroup>
