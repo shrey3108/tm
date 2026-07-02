@@ -135,8 +135,7 @@ export function useCandidatesStages() {
   // 3. Candidate data query
   const { data: candidateData } = useCandidateDetailsQuery(job?.id, candidate?.id);
   // console.log(candidateData);
-  const { data: jobStages } = useJobStagesQuery(job?.id);
-  // console.log(jobStages);
+
   // 4. Candidate evaluation query (without redundant page-level polling interval)
   const {
     data: evaluationData,
@@ -515,6 +514,7 @@ export function useCandidatesStages() {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CANDIDATES.TIMELINE, candidate?.id] });
     },
     setRefetchTimeline,
+    requiredInputs: candidateStage?.required_inputs,
   };
 }
 

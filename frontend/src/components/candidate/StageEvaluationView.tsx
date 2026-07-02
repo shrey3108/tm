@@ -38,6 +38,7 @@ interface StageEvaluationViewProps {
   onPaperChange?: () => void;
   stageName?: string;
   candidateName?: string;
+  requiredInputs?: string[];
 }
 
 /**
@@ -55,6 +56,7 @@ export function StageEvaluationView({
   candidateId,
   githubUrl,
   stageName,
+  requiredInputs,
 }: StageEvaluationViewProps) {
   const { data: assignedPaper } = useCandidateTestPaper(candidateId);
   const { refetch: downloadFile, loading: isDownloading } = useDownloadCandidateAssignedTaskFile(
@@ -92,11 +94,14 @@ export function StageEvaluationView({
   return (
     <>
       <div className="flex items-center justify-end px-4 mb-2 gap-3">
-        {stageName && (
-          stageName.toLowerCase().includes("technical") ||
-          stageName.toLowerCase().includes("practical") ||
-          stageName.toLowerCase().includes("coding") ||
-          stageName.toLowerCase().includes("test")
+        {((requiredInputs
+            ? (requiredInputs.includes("question") || requiredInputs.includes("github"))
+            : (stageName && (
+                stageName.toLowerCase().includes("technical") ||
+                stageName.toLowerCase().includes("practical") ||
+                stageName.toLowerCase().includes("coding") ||
+                stageName.toLowerCase().includes("test")
+              )))
         ) && (
             <>
               {isGithubUploaded && githubUrl && (

@@ -145,10 +145,8 @@ export default function SendPaperPage() {
     if (isBulkMode && stateSelectedCandidates) {
       return stateSelectedCandidates.some((candidate) => {
         const isTechnicalRound =
-          candidate.current_stage?.template_name?.toLowerCase().includes("technical") ||
-          candidate.current_stage?.template_name?.toLowerCase().includes("practical") ||
-          candidate.current_stage?.template_name?.toLowerCase().includes("coding") ||
-          candidate.current_stage?.template_name?.toLowerCase().includes("test") ||
+          candidate.current_stage?.required_inputs?.includes("question") ||
+          candidate.current_stage?.required_inputs?.includes("github") ||
           false;
         const isPendingStatus =
           candidate.current_stage?.status === "pending" ||
@@ -177,10 +175,8 @@ export default function SendPaperPage() {
 
       const filteredSelected = stateSelectedCandidates.filter((candidate) => {
         const isTechnicalRound =
-          candidate.current_stage?.template_name?.toLowerCase().includes("technical") ||
-          candidate.current_stage?.template_name?.toLowerCase().includes("practical") ||
-          candidate.current_stage?.template_name?.toLowerCase().includes("coding") ||
-          candidate.current_stage?.template_name?.toLowerCase().includes("test") ||
+          candidate.current_stage?.required_inputs?.includes("question") ||
+          candidate.current_stage?.required_inputs?.includes("github") ||
           false;
         const isPendingStatus =
           candidate.current_stage?.status === "pending" ||

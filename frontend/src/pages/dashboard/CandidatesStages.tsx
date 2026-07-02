@@ -76,6 +76,7 @@ export default function CandidatesStages() {
     associateResults,
     isLoadingAssociateResults,
     hasPendingAssociates,
+    requiredInputs,
   } = useCandidatesStages();
 
   const isResumeScreening = currentStage === "Resume Screening";
@@ -158,6 +159,7 @@ export default function CandidatesStages() {
                 onPaperChange={handlePaperChange}
                 stageName={currentStage}
                 candidateName={candidateName}
+                requiredInputs={requiredInputs}
               />
             ) : (
               <EmptyState

@@ -7,6 +7,8 @@
  */
 export type StageStatus = "pending" | "processing" | "completed" | "failed";
 
+export type StagesRequiredInputs = "transcript" | "resume" | "question" | "github";
+
 /**
  * evaluation criteria for a stage
  */
@@ -33,7 +35,7 @@ export interface DefaultConfig {
    * evaluation criteria for the stage
    */
   evaluation_criteria: (EvaluationCriterionConfig | string)[];
-  required_inputs?: ("transcript" | "resume" | "question" | "github")[];
+  required_inputs?: StagesRequiredInputs[];
   is_panel_interview?: boolean | null;
   [key: string]: any;
 }
@@ -108,6 +110,7 @@ export interface CandidateStageSummary {
   template_name: string;
   status: StageStatus | string;
   order: number;
+  required_inputs: StagesRequiredInputs[];
   job_id?: string | null;
   job_name?: string | null;
   completed_at?: string | null;
