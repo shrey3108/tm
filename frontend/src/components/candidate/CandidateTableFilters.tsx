@@ -70,7 +70,9 @@ interface CandidateTableFiltersProps {
   testEmailSentFilter?: string;
   setTestEmailSentFilter?: (value: string | undefined) => void;
   isTestPaperFilterEnabled?: boolean;
-  job?: Job | null
+  job?: Job | null;
+  /** Optional action buttons rendered right-aligned inside the filter bar */
+  actions?: React.ReactNode;
 }
 
 export const CandidateTableFilters = ({
@@ -110,6 +112,7 @@ export const CandidateTableFilters = ({
   setTestEmailSentFilter = () => { },
   isTestPaperFilterEnabled = false,
   // job
+  actions,
 }: CandidateTableFiltersProps) => {
 
   const [hoverValue, setHoverValue] = useState<number | null>(0);
@@ -222,7 +225,7 @@ export const CandidateTableFilters = ({
     testEmailSentFilter,
     dateRange,
   ]);
-
+  console.log(actions);
   return (
     <div className="flex flex-col gap-4 p-2 bg-muted/20 rounded-2xl border border-muted-foreground/10 overflow-hidden">
       <div className="flex flex-col lg:flex-row items-center gap-4 w-full">
@@ -526,6 +529,13 @@ export const CandidateTableFilters = ({
 
           </div> : null} */}
         </div>
+
+        {/* Actions slot (e.g. Reanalyze All button) */}
+        {actions && (
+          <div className="shrink-0 flex items-center">
+            {actions}
+          </div>
+        )}
 
         {/* Result Count Area (Anchored Right) */}
         <div className="shrink-0 lg:ml-auto text-xs font-medium flex items-center gap-2 p-2 border rounded-xl bg-background/50 h-10 self-start">

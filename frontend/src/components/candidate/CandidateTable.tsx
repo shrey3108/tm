@@ -162,7 +162,6 @@ export function CandidateTable<T extends UnifiedCandidate>({
 
     return [selectColumn, ...columns];
   }, [columns, showCheckboxes]);
-
   return (
     <div className="w-full space-y-3">
       <CandidateTableFilters
@@ -212,6 +211,7 @@ export function CandidateTable<T extends UnifiedCandidate>({
         setTestEmailSentFilter={setTestEmailSentFilter}
         isTestPaperFilterEnabled={isTestPaperFilterEnabled}
         job={job}
+        actions={headerActions}
       />
 
       <DataTable

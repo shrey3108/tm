@@ -71,7 +71,6 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
           const fullName =
             `${c.first_name || ""} ${c.last_name || ""}`.trim() ||
             "Unknown Candidate";
-          console.log(c.current_stage)
           return (
             <div className="flex flex-col gap-0.5 ">
               <span
