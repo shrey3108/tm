@@ -322,20 +322,18 @@ export default function SendPaperPage() {
   return (
     <AppPageShell width="wide" className="animate-in fade-in duration-500">
       <AppPageHeader
-        title={titleContent.text}
-        headingClassName="text-lg sm:text-xl capitalize"
-        meta={
-          <div className="flex items-center gap-2">
+        title={
+          <span className="flex items-center gap-2 flex-wrap">
+            <span>{titleContent.text}</span>
             {titleContent.suffix && (
-              <>
-                <span className="font-semibold text-foreground capitalize text-base">
-                  {titleContent.suffix}
-                </span>
-                {titleContent.hoverCard}
-              </>
+              <span className="font-bold text-foreground capitalize">
+                {titleContent.suffix}
+              </span>
             )}
-          </div>
+            {titleContent.hoverCard}
+          </span>
         }
+        headingClassName="text-lg sm:text-xl capitalize"
         breadcrumbActions={
           <Button
             variant="ghost"
