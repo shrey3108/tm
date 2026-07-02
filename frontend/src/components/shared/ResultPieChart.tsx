@@ -5,16 +5,16 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
-import { RESUME_SCREENING_RESULT } from "@/constants";
+import { RESUME_SCREENING_RESULT, CHART_COLORS } from "@/constants";
 
 const chartConfig = {
   pass: {
     label: RESUME_SCREENING_RESULT.PASS,
-    color: "#4ade80"
+    color: CHART_COLORS.screening[RESUME_SCREENING_RESULT.PASS]
   },
   fail: {
     label: RESUME_SCREENING_RESULT.FAIL,
-    color: "#fca5a5"
+    color: CHART_COLORS.screening[RESUME_SCREENING_RESULT.FAIL]
   },
 } satisfies ChartConfig;
 
@@ -25,8 +25,8 @@ interface ResultPieChartProps {
 
 export function ResultPieChart({ passCount, failCount }: ResultPieChartProps) {
   const data = [
-    { name: "Pass", value: passCount, fill: "#4ade80" },
-    { name: "Fail", value: failCount, fill: "#fca5a5" },
+    { name: "Pass", value: passCount, fill: CHART_COLORS.screening[RESUME_SCREENING_RESULT.PASS] },
+    { name: "Fail", value: failCount, fill: CHART_COLORS.screening[RESUME_SCREENING_RESULT.FAIL] },
   ].filter((item) => item.value > 0);
 
   const total = passCount + failCount;
@@ -89,14 +89,14 @@ export function ResultPieChart({ passCount, failCount }: ResultPieChartProps) {
           <div className="flex items-center gap-2">
             <div
               className="h-3 w-3 rounded-full shadow-[0_0_8px_rgba(74,222,128,0.3)]"
-              style={{ background: "#4ade80" }}
+              style={{ background: CHART_COLORS.screening[RESUME_SCREENING_RESULT.PASS] }}
             />
             <span className="text-[11px] sm:text-xs font-semibold text-muted-foreground"> <span className="capitalize">{RESUME_SCREENING_RESULT.PASS}</span>: {passCount}</span>
           </div>
           <div className="flex items-center gap-2">
             <div
               className="h-3 w-3 rounded-full shadow-[0_0_8px_rgba(252,165,165,0.3)]"
-              style={{ background: "#fca5a5" }}
+              style={{ background: CHART_COLORS.screening[RESUME_SCREENING_RESULT.FAIL] }}
             />
             <span className="text-[11px] sm:text-xs font-semibold text-muted-foreground">
               <span className="capitalize">{RESUME_SCREENING_RESULT.FAIL}</span>: {failCount}</span>

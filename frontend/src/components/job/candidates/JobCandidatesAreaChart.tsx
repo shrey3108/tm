@@ -1,5 +1,6 @@
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Label } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
+import { CHART_COLORS } from "@/constants";
 
 
 interface ChartDataPoint {
@@ -16,17 +17,17 @@ interface JobCandidatesAreaChartProps {
 const chartConfig = {
     jd: {
         label: "JD Skills",
-        color: "#4ade80", // soft green
+        color: CHART_COLORS.criteria.jd.solid,
     },
     project: {
         label: "Project Skills",
-        color: "#fcd34d", // soft amber
+        color: CHART_COLORS.criteria.project.solid,
     },
 } satisfies ChartConfig;
 
 const colors = {
-    jd: ["#86efac", "#4ade80"],      // soft green
-    project: ["#fde68a", "#fcd34d"], // soft amber
+    jd: CHART_COLORS.criteria.jd.gradient,
+    project: CHART_COLORS.criteria.project.gradient,
 };
 
 export default function JobCandidatesAreaChart({ isAnimationActive = true, data: chartData }: JobCandidatesAreaChartProps) {
@@ -111,7 +112,7 @@ export default function JobCandidatesAreaChart({ isAnimationActive = true, data:
                             type="monotone"
                             dataKey="jd"
                             name="JD Skills"
-                            stroke="#4ade80"
+                            stroke={CHART_COLORS.criteria.jd.solid}
                             strokeWidth={2}
                             fillOpacity={1}
                             fill="url(#gradientJd)"
@@ -123,7 +124,7 @@ export default function JobCandidatesAreaChart({ isAnimationActive = true, data:
                             type="monotone"
                             dataKey="project"
                             name="Project Skills"
-                            stroke="#fcd34d"
+                            stroke={CHART_COLORS.criteria.project.solid}
                             strokeWidth={2}
                             fillOpacity={1}
                             fill="url(#gradientProject)"
