@@ -247,6 +247,31 @@ async def send_candidate_task_email_via_smtp(
             details_html += f'<div style="font-size: 14px;"><a href="{external_url}" target="_blank" style="color: #3b82f6; text-decoration: underline;">{external_url}</a></div>'
         details_html += '</div>'
 
+    guidelines_content = None
+    if test_paper and test_paper.guideline_content:
+        guidelines_content = test_paper.guideline_content
+    elif db:
+        try:
+            from app.v1.db.models.guidelines import Guideline
+            res_all = await db.execute(select(Guideline.content).order_by(Guideline.created_at.asc()))
+            guideline_contents = res_all.scalars().all()
+            if guideline_contents:
+                guidelines_content = "\n\n".join(guideline_contents)
+        except Exception as e:
+            logger.error(f"Failed to fetch fallback guidelines for email: {e}")
+
+    guidelines_html = ""
+    if guidelines_content:
+        guidelines_clean = markdown_to_html(guidelines_content)
+        guidelines_html = f"""
+            <div class="details-box" style="border-left-color: #10b981; background-color: #ecfdf5;">
+                <div class="details-title" style="color: #065f46;">Guidelines for this Round:</div>
+                <div style="font-size: 14px; line-height: 1.5; color: #065f46;">
+                    {guidelines_clean}
+                </div>
+            </div>
+        """
+
     html_body = f"""
     <html>
       <head>
@@ -338,6 +363,7 @@ async def send_candidate_task_email_via_smtp(
             </div>
             
             {details_html}
+            {guidelines_html}
 
             <div class="message">
               Please review the questions and tasks above. If a PDF is attached, it contains the full details of your test paper.
@@ -484,6 +510,30 @@ async def send_associate_notification_email(
             attachment_name = f"Test_Paper_{candidate.first_name or 'Candidate'}.pdf"
         except Exception as e:
             logger.error(f"Failed to generate task PDF for associate email: {e}")
+
+    # Fetch AI evaluation overall score if available
+    ai_score = None
+    if candidate.github_evaluation_id and db:
+        try:
+            from sqlalchemy import text
+            res_eval = await db.execute(
+                text("SELECT overall_score FROM evaluations WHERE evaluation_id = :eval_id"),
+                {"eval_id": candidate.github_evaluation_id}
+            )
+            row = res_eval.first()
+            if row:
+                ai_score = row[0]
+        except Exception as e:
+            logger.error(f"Failed to query AI score for associate email: {e}")
+
+    ai_score_row = ""
+    if ai_score is not None:
+        ai_score_row = f"""
+              <div class="info-row">
+                <div class="info-label">AI Code Score:</div>
+                <div class="info-value"><strong>{ai_score}/5.0</strong></div>
+              </div>
+        """
 
     # 3. Build HTML body (questions/tasks are in the attached PDF, not in the email body)
     html_body = f"""
@@ -655,6 +705,7 @@ async def send_associate_notification_email(
                 <div class="info-label">Position:</div>
                 <div class="info-value">{html.escape(job_position)}</div>
               </div>
+              {ai_score_row}
             </div>
 
             {f'''

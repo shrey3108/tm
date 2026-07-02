@@ -111,27 +111,24 @@ class EmailService:
         recommendation: str,
         interview_questions: list[str] = None,
     ) -> None:
-        """Notify recruiter (HR) only if the candidate proceeds."""
-        is_proceed = not (overall_score < 3.5 or recommendation.lower() == "reject")
-        if is_proceed:
-            subject = f"Technical Evaluation Complete: {recommendation} ({overall_score}/5.0)"
-            
-            questions_text = ""
-            if interview_questions:
-                questions_text = "\n\nSuggested Interview Questions:\n" + "\n".join(
-                    f"- {q}" for q in interview_questions
-                )
-
-            hr_body = (
-                f"Hello HR / Hiring Team,\n\n"
-                f"The candidate technical evaluation for repository {github_url} has completed successfully.\n"
-                f"Overall Score: {overall_score}/5.0.\n"
-                f"Recommendation: {recommendation}{questions_text}\n\n"
-                f"Best regards,\nHR Evaluation System"
+        """Notify recruiter (HR) of the candidate evaluation results."""
+        subject = f"Technical Evaluation Complete: {recommendation} ({overall_score}/5.0)"
+        
+        questions_text = ""
+        if interview_questions:
+            questions_text = "\n\nSuggested Interview Questions:\n" + "\n".join(
+                f"- {q}" for q in interview_questions
             )
-            await EmailService.send_email(recruiter_email, subject, hr_body)
-        else:
-            logger.info(f"Evaluation result email suppressed: candidate did not proceed ({recommendation}, {overall_score}/5.0)")
+
+        hr_body = (
+            f"Hello HR / Hiring Team,\n\n"
+            f"The candidate technical evaluation for repository {github_url} has completed successfully.\n"
+            f"Overall Score: {overall_score}/5.0.\n"
+            f"Recommendation: {recommendation}{questions_text}\n\n"
+            f"Best regards,\nHR Evaluation System"
+        )
+        await EmailService.send_email(recruiter_email, subject, hr_body)
+
 
 
 email_service = EmailService()

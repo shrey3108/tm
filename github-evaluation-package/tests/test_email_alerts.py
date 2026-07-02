@@ -188,11 +188,11 @@ def test_api_accessibility_failure_triggers_email(mock_send_access_email, mock_c
     app.dependency_overrides.clear()
 @pytest.mark.anyio
 @patch("github_code_evaluator.app.v1.services.email.EmailService.send_email", new_callable=AsyncMock)
-async def test_notify_evaluation_result_sends_email_to_hr_only_on_proceed(mock_send_email):
+async def test_notify_evaluation_result_sends_email_to_hr(mock_send_email):
     from github_code_evaluator.app.v1.services.email import email_service
     from unittest.mock import ANY
     
-    # Case 1: Reject (score 2.2) -> No emails should be sent at all (0 calls)
+    # Case 1: Reject (score 2.2) -> Recruiter should receive the email (1 call)
     await email_service.notify_evaluation_result(
         candidate_email="candidate@example.com",
         recruiter_email="recruiter@example.com",
@@ -200,9 +200,13 @@ async def test_notify_evaluation_result_sends_email_to_hr_only_on_proceed(mock_s
         overall_score=2.2,
         recommendation="Reject"
     )
-    assert mock_send_email.call_count == 0
+    assert mock_send_email.call_count == 1
+    args, kwargs = mock_send_email.call_args
+    assert args[0] == "recruiter@example.com"
+    assert args[1] == "Technical Evaluation Complete: Reject (2.2/5.0)"
     
     mock_send_email.reset_mock()
+
     
     # Case 2: Proceed (score 4.0) -> Only recruiter receives the email (1 call) with questions
     questions = ["What is the GIL?", "Explain React Virtual DOM."]

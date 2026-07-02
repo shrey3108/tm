@@ -21,7 +21,9 @@ if TYPE_CHECKING:
     from app.v1.db.models.user import User
     from app.v1.db.models.job_priorities import JobPriority
     from app.v1.db.models.job_positions import JobPosition
+    from app.v1.db.models.associates import Associate
 from app.v1.db.models.job_skills import job_skills
+from app.v1.db.models.job_associates import job_associates
 from app.v1.utils.uuid import UUIDHelper
 
 
@@ -196,6 +198,11 @@ class Job(Base):
     skills: Mapped[list["Skill"]] = relationship(
         "Skill",
         secondary=job_skills,
+        back_populates="jobs",
+    )
+    associates: Mapped[list["Associate"]] = relationship(
+        "Associate",
+        secondary=job_associates,
         back_populates="jobs",
     )
 

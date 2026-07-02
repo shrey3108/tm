@@ -251,6 +251,8 @@ class CandidateTestPaperRead(BaseModel):
     job_default_paper_changed: bool = False
     job_default_paper_name: Optional[str] = None
     job_default_paper_id: Optional[uuid.UUID] = None
+    guideline_id: Optional[uuid.UUID] = None
+    guideline_content: Optional[str] = None
 
     @field_validator("questions", mode="before")
     @classmethod
@@ -361,6 +363,9 @@ class CandidateTestPaperAssign(BaseModel):
     )
     paper_id: Optional[uuid.UUID] = Field(
         None, description="The ID of the predefined QuestionSetPaper (required if mode is 'predefined')"
+    )
+    guideline_id: Optional[uuid.UUID] = Field(
+        None, description="The ID of the custom Guideline template to send in email"
     )
     source_paper_ids: Optional[list[uuid.UUID]] = Field(
         None, description="List of paper IDs to randomly pick questions from (used in 'random' mode)"

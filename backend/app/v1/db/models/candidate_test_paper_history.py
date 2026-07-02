@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from app.v1.db.models.jobs import Job
     from app.v1.db.models.user import User
     from app.v1.db.models.job_stage_configs import JobStageConfig
+    from app.v1.db.models.guidelines import Guideline
 
 
 class CandidateTestPaperHistory(Base):
@@ -96,6 +97,17 @@ class CandidateTestPaperHistory(Base):
         nullable=True,
     )
 
+    guideline_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("guidelines.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
+    guideline_content: Mapped[Optional[str]] = mapped_column(
+        Text,
+        nullable=True,
+    )
+
     # RELATIONSHIPS
     candidate: Mapped["Candidate"] = relationship(
         "Candidate", foreign_keys=[candidate_id]
@@ -107,4 +119,8 @@ class CandidateTestPaperHistory(Base):
 
     user: Mapped[Optional["User"]] = relationship(
         "User", foreign_keys=[user_id]
+    )
+
+    guideline: Mapped[Optional["Guideline"]] = relationship(
+        "Guideline", foreign_keys=[guideline_id]
     )

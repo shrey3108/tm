@@ -6,13 +6,18 @@ in the hiring platform.
 """
 
 import uuid
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Text
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.v1.db.base_class import Base
 from app.v1.utils.uuid import UUIDHelper
+
+if TYPE_CHECKING:
+    from app.v1.db.models.jobs import Job
+from app.v1.db.models.job_associates import job_associates
 
 
 class Associate(Base):
@@ -46,3 +51,10 @@ class Associate(Base):
         unique=True,
         nullable=False,
     )
+
+    jobs: Mapped[list["Job"]] = relationship(
+        "Job",
+        secondary=job_associates,
+        back_populates="associates",
+    )
+

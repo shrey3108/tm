@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import DateTime, ForeignKey, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from app.v1.db.models.jobs import Job
     from app.v1.db.models.job_positions import JobPosition
     from app.v1.db.models.job_stage_configs import JobStageConfig
+    from app.v1.db.models.guidelines import Guideline
 
 
 class CandidateTestPaper(Base):
@@ -94,6 +95,17 @@ class CandidateTestPaper(Base):
         nullable=False,
     )
 
+    guideline_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("guidelines.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
+    guideline_content: Mapped[Optional[str]] = mapped_column(
+        Text,
+        nullable=True,
+    )
+
     # TIMESTAMPS
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -115,4 +127,8 @@ class CandidateTestPaper(Base):
 
     job_stage: Mapped["JobStageConfig"] = relationship(
         "JobStageConfig", foreign_keys=[job_stage_config_id]
+    )
+
+    guideline: Mapped[Optional["Guideline"]] = relationship(
+        "Guideline", foreign_keys=[guideline_id]
     )

@@ -91,6 +91,7 @@ class JobRepository:
                 selectinload(Job.stages).selectinload(JobStageConfig.template),
                 selectinload(Job.department),
                 selectinload(Job.versions),
+                selectinload(Job.associates),
             )
         )
         if filters:
@@ -113,6 +114,7 @@ class JobRepository:
                 selectinload(Job.stages).selectinload(JobStageConfig.template),
                 selectinload(Job.department),
                 selectinload(Job.versions),
+                selectinload(Job.associates),
             )
             .where(Job.id == id)
         )
@@ -125,6 +127,7 @@ class JobRepository:
         """Create a job and persist its skill associations."""
         payload = object.model_dump()
         skill_ids = payload.pop("skill_ids", [])
+        associate_ids = payload.pop("associate_ids", [])
         payload.pop("stages", None)  # handled separately in job_service, not an ORM field
         payload.pop("skill_weightages", None)  # handled separately in job_service, not an ORM field
 
@@ -142,6 +145,7 @@ class JobRepository:
         await self._sync_job_chunks(db=db, job=job)
 
         await self._sync_skills(db=db, job_id=job.id, skill_ids=skill_ids)
+        await self._sync_associates(db=db, job_id=job.id, associate_ids=associate_ids)
 
         from app.v1.db.models.job_versions import JobVersion
 
@@ -173,6 +177,7 @@ class JobRepository:
 
         payload = object.model_dump(exclude_unset=True)
         skill_ids = payload.pop("skill_ids", None)
+        associate_ids = payload.pop("associate_ids", None)
         payload.pop("stages", None)  # handled separately in job_service, not an ORM field
         payload.pop("skill_weightages", None)  # handled separately in job_service, not an ORM field
 
@@ -226,6 +231,9 @@ class JobRepository:
 
         if skill_ids is not None:
             await self._sync_skills(db=db, job_id=id, skill_ids=skill_ids)
+
+        if associate_ids is not None:
+            await self._sync_associates(db=db, job_id=id, associate_ids=associate_ids)
 
         if version_worthy_change:
             # Increment version to record an update
@@ -339,6 +347,7 @@ class JobRepository:
                 selectinload(Job.stages).selectinload(JobStageConfig.template),
                 selectinload(Job.department),
                 selectinload(Job.versions),
+                selectinload(Job.associates),
             )
             .where(search_filter)
             .order_by(Job.created_at.desc())
@@ -384,6 +393,23 @@ class JobRepository:
                     "weightage": skill_weights.get(skill_id, 10.0)
                 } 
                 for skill_id in skill_ids
+            ],
+        )
+
+    async def _sync_associates(
+        self, db: AsyncSession, job_id: uuid.UUID, associate_ids: list[uuid.UUID]
+    ) -> None:
+        """Replace a job's associate links with the provided associate ids."""
+        from app.v1.db.models.job_associates import job_associates
+        await db.execute(delete(job_associates).where(job_associates.c.job_id == job_id))
+        if not associate_ids:
+            return
+
+        await db.execute(
+            insert(job_associates),
+            [
+                {"job_id": job_id, "associate_id": associate_id}
+                for associate_id in associate_ids
             ],
         )
 

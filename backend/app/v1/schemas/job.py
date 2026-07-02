@@ -12,6 +12,7 @@ from app.v1.schemas.job_stage import JobStageConfigRead
 from app.v1.schemas.skill import SkillRead
 from app.v1.schemas.job_priority import JobPriorityRead
 from app.v1.schemas.job_position import JobPositionRead
+from app.v1.schemas.associate import AssociateRead
 from pydantic import BaseModel, ConfigDict, Field
 from typing import Any
 
@@ -61,6 +62,7 @@ class JobCreate(JobBase):
 
     position_id: uuid.UUID = Field(..., description="Position is required to create a job")
     skill_ids: list[uuid.UUID] = []
+    associate_ids: list[uuid.UUID] = []
     skill_weightages: dict[uuid.UUID, float] | None = Field(None, description="Mapping of skill ID to its weightage")
     processing_version: int | None = Field(None, description="Pin to a specific job version for matching")
     stages: list[StageInput] | None = Field(
@@ -91,6 +93,7 @@ class JobUpdate(BaseModel):
     jd_json: dict | None = None
     is_active: bool | None = None
     skill_ids: list[uuid.UUID] | None = None
+    associate_ids: list[uuid.UUID] | None = None
     skill_weightages: dict[uuid.UUID, float] | None = Field(None, description="Mapping of skill ID to its weightage")
 
     passing_threshold: float | None = None
@@ -153,6 +156,7 @@ class JobRead(JobBase):
     department_name: str | None = None
     department: DepartmentRead | None = None
     skills: list[SkillRead] = []
+    associates: list[AssociateRead] = []
     job_skill_weightages: dict[uuid.UUID, float] | None = Field(default=None, description="Mapping of skill ID to its weightage for this job")
     stages: list[JobStageConfigRead] = []
     priority: JobPriorityRead | None = None

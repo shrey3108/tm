@@ -140,6 +140,8 @@ async def send_test_paper_email(
             existing_paper.task_file_path = paper.task_file_path
             existing_paper.task_skills = paper.task_skills
             existing_paper.job_stage_config_id = paper.job_stage_config_id
+            existing_paper.guideline_id = paper.guideline_id
+            existing_paper.guideline_content = paper.guideline_content
             paper = existing_paper
         else:
             paper = CandidateTestPaper(
@@ -153,6 +155,8 @@ async def send_test_paper_email(
                 project_task=paper.project_task,
                 task_file_path=paper.task_file_path,
                 task_skills=paper.task_skills,
+                guideline_id=paper.guideline_id,
+                guideline_content=paper.guideline_content,
                 email_sent_count=0
             )
             db.add(paper)
@@ -176,6 +180,8 @@ async def send_test_paper_email(
         task_file_path=paper.task_file_path,
         task_skills=paper.task_skills,
         user_id=user.id,
+        guideline_id=paper.guideline_id,
+        guideline_content=paper.guideline_content,
     )
     db.add(history_entry)
 
@@ -301,6 +307,8 @@ async def send_bulk_test_paper_email(
                     existing_paper.task_file_path = paper.task_file_path
                     existing_paper.task_skills = paper.task_skills
                     existing_paper.job_stage_config_id = paper.job_stage_config_id
+                    existing_paper.guideline_id = paper.guideline_id
+                    existing_paper.guideline_content = paper.guideline_content
                     current_paper = existing_paper
                 else:
                     # Create a cloned candidate-specific test paper
@@ -315,6 +323,8 @@ async def send_bulk_test_paper_email(
                         project_task=paper.project_task,
                         task_file_path=paper.task_file_path,
                         task_skills=paper.task_skills,
+                        guideline_id=paper.guideline_id,
+                        guideline_content=paper.guideline_content,
                         email_sent_count=0
                     )
                     db.add(current_paper)
@@ -332,6 +342,8 @@ async def send_bulk_test_paper_email(
                 task_file_path=current_paper.task_file_path,
                 task_skills=current_paper.task_skills,
                 user_id=user.id,
+                guideline_id=current_paper.guideline_id,
+                guideline_content=current_paper.guideline_content,
             )
             db.add(history_entry)
 

@@ -456,7 +456,7 @@ Output Format Example (JSON ONLY):
             if test_paper:
                 task_file_path = test_paper.task_file_path
                 task_skills = test_paper.task_skills
-                is_custom_task = True
+                is_custom_task = True if task_file_path else False
             elif candidate.applied_job:
                 task_file_path = candidate.applied_job.task_file_path
                 task_skills = candidate.applied_job.task_skills

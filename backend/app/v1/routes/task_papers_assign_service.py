@@ -93,6 +93,20 @@ class TaskPaperAssignService:
         # Normalize project_task into a list of dicts/strings and restore instructions
         assigned_task_list = await self._normalize_project_tasks(db, assigned_task)
 
+        # Resolve guideline template content if guideline_id is provided, otherwise fall back to all guidelines
+        guideline_content = None
+        if assign_data.guideline_id:
+            from app.v1.db.models.guidelines import Guideline
+            guideline = await db.get(Guideline, assign_data.guideline_id)
+            if guideline:
+                guideline_content = guideline.content
+        else:
+            from app.v1.db.models.guidelines import Guideline
+            res_all = await db.execute(select(Guideline.content).order_by(Guideline.created_at.asc()))
+            guideline_contents = res_all.scalars().all()
+            if guideline_contents:
+                guideline_content = "\n\n".join(guideline_contents)
+
         # Persist the assigned test paper
         new_paper = await self._persist_paper(
             db,
@@ -107,6 +121,8 @@ class TaskPaperAssignService:
             assigned_file_path=assigned_file_path,
             assigned_skills=assigned_skills,
             user=user,
+            guideline_id=assign_data.guideline_id,
+            guideline_content=guideline_content,
         )
 
         # Invalidate job cache immediately after assignment
@@ -581,6 +597,8 @@ class TaskPaperAssignService:
         assigned_file_path,
         assigned_skills,
         user: UserRead,
+        guideline_id=None,
+        guideline_content=None,
     ) -> CandidateTestPaper:
         """Persist the assigned test paper (and history entry for candidate-level)."""
         new_paper = CandidateTestPaper(
@@ -594,6 +612,8 @@ class TaskPaperAssignService:
             project_task=assigned_task_list,
             task_file_path=assigned_file_path,
             task_skills=assigned_skills,
+            guideline_id=guideline_id,
+            guideline_content=guideline_content,
         )
         db.add(new_paper)
 
@@ -609,6 +629,8 @@ class TaskPaperAssignService:
                 task_file_path=assigned_file_path,
                 task_skills=assigned_skills,
                 user_id=user.id,
+                guideline_id=guideline_id,
+                guideline_content=guideline_content,
             )
             db.add(history_entry)
 
