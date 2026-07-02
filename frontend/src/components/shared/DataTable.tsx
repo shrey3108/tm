@@ -268,14 +268,14 @@ export function DataTable<TData, TValue>({
             <DropdownMenu>
               <DropdownMenuTrigger
                 className={cn(
-                  "inline-flex items-center gap-2 h-9 w-[75px] justify-between px-3 rounded-xl border border-input bg-background text-sm font-medium cursor-pointer transition-colors hover:bg-muted/50 disabled:opacity-50 "
+                  "inline-flex items-center gap-2 h-9 w-18.75 justify-between px-3 rounded-xl border border-input bg-background text-sm font-medium cursor-pointer transition-colors hover:bg-muted/50 disabled:opacity-50 "
                 )}
                 disabled={!data.length}
               >
                 {table.getState().pagination.pageSize}
                 <ChevronDown className="h-3.5 w-3.5 opacity-60" />
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="center" className="min-w-[75px]">
+              <DropdownMenuContent align="center" className="min-w-18.75">
                 {[10, 20, 30, 40, 50].map((pageSize) => (
                   <DropdownMenuItem
                     key={pageSize}

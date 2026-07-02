@@ -193,7 +193,7 @@ export function CrossMatchView({ resumeId, onClose }: CrossMatchViewProps) {
             onValueChange={(value) => value && setStatusFilter(value)}
             modal={false}
           >
-            <SelectTrigger className="w-[110px] h-10 rounded-xl" size="sm">
+            <SelectTrigger className="w-27.5 h-10 rounded-xl" size="sm">
               <SelectValue placeholder="Filter">
                 {capitalize(statusFilter)}
               </SelectValue>

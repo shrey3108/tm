@@ -1,5 +1,5 @@
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Filter, Star } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
@@ -70,7 +70,9 @@ interface CandidateTableFiltersProps {
   testEmailSentFilter?: string;
   setTestEmailSentFilter?: (value: string | undefined) => void;
   isTestPaperFilterEnabled?: boolean;
-  job?: Job | null
+  job?: Job | null;
+  /** Optional action buttons rendered right-aligned inside the filter bar */
+  actions?: React.ReactNode;
 }
 
 export const CandidateTableFilters = ({
@@ -110,6 +112,7 @@ export const CandidateTableFilters = ({
   setTestEmailSentFilter = () => { },
   isTestPaperFilterEnabled = false,
   // job
+  actions,
 }: CandidateTableFiltersProps) => {
 
   const [hoverValue, setHoverValue] = useState<number | null>(0);
@@ -241,7 +244,7 @@ export const CandidateTableFilters = ({
 
           {/* Sheet Trigger */}
           <Sheet>
-            <SheetTrigger type="button">
+            <SheetTrigger type="button" className={cn(buttonVariants({ variant: "outline" }), "rounded-xl gap-2 px-3 border border-muted-foreground/20 hover:bg-muted/10 bg-background transition-all cursor-pointer")}>
 
               <Filter className="h-4 w-4 text-muted-foreground" />
               {activeFilterCount > 0 && (
@@ -392,9 +395,9 @@ export const CandidateTableFilters = ({
                         );
                       })}
                     </div>
-                    <div className="min-w-[28px]">
+                    <div className="min-w-7">
                       {(hrScoreFilter.length > 0 || hoverValue !== null) && (
-                        <span className="px-1.5 py-0.5 rounded-md bg-[#F9EBE1] text-[#E17100] text-xs font-bold min-w-[28px] text-center">
+                        <span className="px-1.5 py-0.5 rounded-md bg-[#F9EBE1] text-[#E17100] text-xs font-bold min-w-7 text-center">
                           {(hoverValue !== null ? hoverValue : hrScoreFilter[0]).toFixed(1)}
                         </span>
                       )}
@@ -526,6 +529,13 @@ export const CandidateTableFilters = ({
 
           </div> : null} */}
         </div>
+
+        {/* Actions slot (e.g. Reanalyze All button) */}
+        {actions && (
+          <div className="shrink-0 flex items-center">
+            {actions}
+          </div>
+        )}
 
         {/* Result Count Area (Anchored Right) */}
         <div className="shrink-0 lg:ml-auto text-xs font-medium flex items-center gap-2 p-2 border rounded-xl bg-background/50 h-10 self-start">

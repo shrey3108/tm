@@ -8,6 +8,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 import { cn } from "@/lib/utils";
+import { CHART_COLORS } from "@/constants";
 import {
   HoverCard,
   HoverCardContent,
@@ -126,14 +127,7 @@ export function StageCentricChart({ data }: StageCentricChartProps) {
 
   const chartConfig = useMemo(() => {
     const config: ChartConfig = {};
-    const colors = [
-      "hsl(210, 80%, 85%)", // Soft Blue
-      "hsl(150, 60%, 85%)", // Soft Green
-      "hsl(280, 65%, 88%)", // Soft Purple
-      "hsl(340, 70%, 90%)", // Soft Rose
-      "hsl(40, 80%, 85%)",  // Soft Amber
-      "hsl(180, 50%, 85%)", // Soft Teal
-    ];
+    const colors = CHART_COLORS.pipeline;
 
     jobNames.forEach((name, index) => {
       const safeKey = name.replace(/[^a-zA-Z0-9]/g, "_");

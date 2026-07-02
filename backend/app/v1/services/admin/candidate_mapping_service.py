@@ -279,6 +279,17 @@ def map_candidate_to_response(
         # Result is primarily HR decision if it exists, otherwise AI result
         result_val = hr_decision_val or ai_result_val
 
+        # Extract required_inputs from job stage config or template config
+        req_inputs = []
+        if cs.job_stage:
+            config = cs.job_stage.config or {}
+            template_config = (cs.job_stage.template.default_config if cs.job_stage.template else {}) or {}
+            
+            if "required_inputs" in config:
+                req_inputs = config.get("required_inputs", [])
+            elif "required_inputs" in template_config:
+                req_inputs = template_config.get("required_inputs", [])
+
         return CandidateStageSummary(
             stage_id=cs.id,
             job_stage_id=cs.job_stage_id,
@@ -292,7 +303,8 @@ def map_candidate_to_response(
             result=result_val,
             ai_result=ai_result_val,
             hr_decision=hr_decision_val or "pending",
-            evaluation_data=cs.evaluation_data
+            evaluation_data=cs.evaluation_data,
+            required_inputs=req_inputs
         )
 
     sorted_stages = sorted(candidate_stages, key=lambda x: x.job_stage.stage_order if x.job_stage else 1)

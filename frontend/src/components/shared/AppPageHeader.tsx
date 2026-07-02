@@ -8,7 +8,7 @@ interface AppPageHeaderAction {
 }
 
 interface AppPageHeaderProps {
-  title: string;
+  title: ReactNode;
   subtitle?: string;
   breadcrumbs?: ReactNode;
   meta?: ReactNode;

@@ -359,21 +359,27 @@ export default function JobCandidates() {
                       showCheckboxes={showCheckboxes}
                       headerActions={
                         <PermissionGuard permissions={PERMISSIONS.JOBS_MANAGE} hideWhenDenied>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="border-amber-300 hover:bg-amber-500/10 text-amber-600 hover:text-amber-700 font-semibold transition-all flex items-center gap-2 h-10 rounded-xl"
-                            onClick={handleReanalyzeAll}
-                            disabled={candidates.filter(needsReanalysis).length === 0}
-                            title={
-                              candidates.filter(needsReanalysis).length === 0
+                          <HoverCard>
+                            <HoverCardTrigger
+                              render={(props) => (
+                                <Button
+                                  {...props}
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-9 px-3 rounded-xl border border-amber-300 hover:bg-gray-200/60 flex items-center justify-center gap-2 shrink-0 text-amber-600 font-semibold transition-all"
+                                  onClick={handleReanalyzeAll}
+                                  disabled={candidates.filter(needsReanalysis).length === 0}
+                                >
+                                  <RotateCw className="h-4 w-4 text-amber-600 shrink-0" />
+                                </Button>
+                              )}
+                            />
+                            <HoverCardContent className="w-fit px-3 py-1.5 text-xs font-normal" side="top">
+                              {candidates.filter(needsReanalysis).length === 0
                                 ? "All candidates are analyzed with the latest JD version"
-                                : `Re-analyze ${candidates.filter(needsReanalysis).length} candidate(s) that need it`
-                            }
-                          >
-                            <RotateCw className="h-4 w-4" />
-                            Reanalyze All
-                          </Button>
+                                : `Re-analyze ${candidates.filter(needsReanalysis).length} candidate(s) that need it`}
+                            </HoverCardContent>
+                          </HoverCard>
                         </PermissionGuard>
                       }
                       renderActions={(candidate) => (

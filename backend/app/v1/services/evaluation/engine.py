@@ -76,7 +76,7 @@ class EvaluationEngine:
         self, 
         transcript_text: str, 
         criterion_query: str, 
-        top_k: int = 3, 
+        top_k: int = 10, 
         precalculated_sentences: List[str] = None,
         precalculated_vectors: List[List[float]] = None
     ) -> List[str]:

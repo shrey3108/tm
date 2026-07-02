@@ -91,11 +91,9 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
                 <span className="text-muted-foreground text-wrap">
                   {c.phone || "N/A"}
                 </span>
-                {c.current_stage?.template_name && (
-                  c.current_stage.template_name.toLowerCase().includes("technical") ||
-                  c.current_stage.template_name.toLowerCase().includes("practical") ||
-                  c.current_stage.template_name.toLowerCase().includes("coding") ||
-                  c.current_stage.template_name.toLowerCase().includes("test")
+                {c.current_stage?.required_inputs && (
+                  c.current_stage.required_inputs.includes("question") ||
+                  c.current_stage.required_inputs.includes("github")
                 ) && <HoverCard>
                     <HoverCardTrigger delay={10} closeDelay={10}>
                       <CandidateEmailBadge email_sent_count={c.email_sent_count} />

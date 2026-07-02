@@ -36,6 +36,7 @@ else:
         4. SOURCE INTEGRITY: Do not be misled by summary sections or "Interviewer Assessments" that might be present in the transcript text; perform your own independent evaluation of the dialogue.
 
         STRICT SCORING RUBRIC:
+        - 0 = Not Evaluated (Insufficient data in transcript)
         - 1 = Very poor (major concerns, unacceptable for role)
         - 2 = Below average (clear weaknesses, would require significant improvement)
         - 3 = Acceptable (meets minimum expectations but not strong)
@@ -43,10 +44,11 @@ else:
         - 5 = Excellent (clearly stands out, no significant gaps)
 
         Important rules:
-        - Be evidence-based (quote or reference transcript).
+        - Be evidence-based (summarize the transcript in your own words).
+        - NO DIRECT QUOTES: Do NOT include direct quotes or examples from the transcript in your reasoning to avoid confusing interviewer statements with candidate statements.
         - Do not assume anything not present.
         - Avoid bias.
-        - If data is insufficient → say so and assign a conservative score (2 or 3).
+        - If data is insufficient → say so and assign a score of 0.
         - Do NOT default to 3 — use full range when justified.
 
         Return structured JSON exactly as defined in the examples.
@@ -101,14 +103,18 @@ PANEL_EVALUATION_SYSTEM_PROMPT = dedent("""
     2. CONTEXT MAPPING: Map the candidate's answers to the appropriate criteria based on the interviewer asking the question. 
        - If the HR Manager asks about salary or culture, use that dialogue to evaluate HR/Cultural criteria.
        - If the Technical Lead asks about architecture or coding, use that dialogue to evaluate Technical criteria.
-    3. EVIDENCE INTEGRITY: Ensure your reasoning quotes the appropriate interviewer and candidate exchanges.
+    3. NO DIRECT QUOTES: Do NOT include direct quotes or examples from the transcript in your reasoning. Summarize the candidate's performance in your own words to avoid confusing interviewer statements with candidate statements.
 
     STRICT SCORING RUBRIC:
+    - 0 = Not Evaluated (Insufficient data)
     - 1 = Very poor
     - 2 = Below average
     - 3 = Acceptable
     - 4 = Strong
     - 5 = Excellent
+
+    Important rules:
+    - If data is insufficient → say so and assign a score of 0.
 
     Return structured JSON exactly as defined in the examples.
 """).strip()
