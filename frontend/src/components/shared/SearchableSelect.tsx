@@ -268,10 +268,15 @@ export function SearchableSelect({
             </div>
           ) : (
             <>
-              {filteredOptions.slice(0, displayLimit).map((opt) => {
-                const isSelected = multiple
-                  ? ((value as string[]) || []).includes(opt.id)
-                  : opt.id === value;
+              {(() => {
+                const slicedOptions = filteredOptions.slice(0, displayLimit);
+                const slicedIds = new Set(slicedOptions.map(o => o.id));
+                return (
+                  <>
+                    {slicedOptions.map((opt) => {
+                      const isSelected = multiple
+                        ? ((value as string[]) || []).includes(opt.id)
+                        : opt.id === value;
 
                 const itemContent = (
                   <div className="flex items-center justify-between w-full">
@@ -318,6 +323,15 @@ export function SearchableSelect({
                   And {filteredOptions.length - displayLimit} more {moreText}...
                 </div>
               )}
+              {/* Hidden items for selected values not in the current slice to prevent Radix UI state loss */}
+              {selectedOptions.filter(opt => !slicedIds.has(opt.id)).map(opt => (
+                <SelectItem key={`hidden-${opt.id}`} value={opt.id} className="hidden" aria-hidden="true" disabled>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </>
+          );
+        })()}
             </>
           )}
         </div>
