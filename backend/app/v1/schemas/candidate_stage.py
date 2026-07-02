@@ -21,5 +21,6 @@ class CandidateStageSummary(BaseModel):
     ai_result: Optional[str] = None
     hr_decision: Optional[str] = None
     evaluation_data: dict[str, Any] | None = None
+    required_inputs: list[str] | None = None
 
     model_config = ConfigDict(from_attributes=True)
