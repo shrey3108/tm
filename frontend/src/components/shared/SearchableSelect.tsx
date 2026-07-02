@@ -278,60 +278,60 @@ export function SearchableSelect({
                         ? ((value as string[]) || []).includes(opt.id)
                         : opt.id === value;
 
-                const itemContent = (
-                  <div className="flex items-center justify-between w-full">
-                    <span className="truncate capitalize">{capitalize(opt.label)}</span>
-                    {opt.badgeCount !== undefined && (
-                      <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-bold ml-2 shrink-0">
-                        {opt.badgeCount}
-                      </span>
-                    )}
-                  </div>
-                );
+                      const itemContent = (
+                        <div className="flex items-center justify-between w-full">
+                          <span className="truncate capitalize">{capitalize(opt.label)}</span>
+                          {opt.badgeCount !== undefined && (
+                            <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-bold ml-2 shrink-0">
+                              {opt.badgeCount}
+                            </span>
+                          )}
+                        </div>
+                      );
 
-                const renderOptionContent = () => {
-                  if (opt.hoverContent) {
-                    return (
-                      <HoverCard>
-                        <HoverCardTrigger delay={10} closeDelay={10} className="w-full truncate">
-                          {itemContent}
-                        </HoverCardTrigger>
-                        <HoverCardContent className="w-fit px-3 py-1 text-xs" side="right" sideOffset={40}>
-                          {opt.hoverContent}
-                        </HoverCardContent>
-                      </HoverCard>
-                    );
-                  }
-                  return itemContent;
-                };
+                      const renderOptionContent = () => {
+                        if (opt.hoverContent) {
+                          return (
+                            <HoverCard>
+                              <HoverCardTrigger delay={10} closeDelay={10} className="w-full truncate">
+                                {itemContent}
+                              </HoverCardTrigger>
+                              <HoverCardContent className="w-fit px-3 py-1 text-xs" side="right" sideOffset={40}>
+                                {opt.hoverContent}
+                              </HoverCardContent>
+                            </HoverCard>
+                          );
+                        }
+                        return itemContent;
+                      };
 
-                return (
-                  <SelectItem
-                    key={opt.id}
-                    value={opt.id}
-                    className={cn(
-                      "rounded-lg my-0.5 cursor-pointer text-sm pl-2 pr-6 py-1 focus:bg-accent focus:text-accent-foreground",
-                      isSelected && "bg-accent/50 font-semibold"
+                      return (
+                        <SelectItem
+                          key={opt.id}
+                          value={opt.id}
+                          className={cn(
+                            "rounded-lg my-0.5 cursor-pointer text-sm pl-2 pr-6 py-1 focus:bg-accent focus:text-accent-foreground",
+                            isSelected && "bg-accent/50 font-semibold"
+                          )}
+                        >
+                          {renderOptionContent()}
+                        </SelectItem>
+                      );
+                    })}
+                    {filteredOptions.length > displayLimit && (
+                      <div className="px-2 py-2 text-xs text-muted-foreground italic text-center border-t border-muted/50 mt-1">
+                        And {filteredOptions.length - displayLimit} more {moreText}...
+                      </div>
                     )}
-                  >
-                    {renderOptionContent()}
-                  </SelectItem>
+                    {/* Hidden items for selected values not in the current slice to prevent Base UI state loss */}
+                    {selectedOptions.filter(opt => !slicedIds.has(opt.id)).map(opt => (
+                      <SelectItem key={`hidden-${opt.id}`} value={opt.id} className="hidden" aria-hidden="true" disabled>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </>
                 );
-              })}
-              {filteredOptions.length > displayLimit && (
-                <div className="px-2 py-2 text-xs text-muted-foreground italic text-center border-t border-muted/50 mt-1">
-                  And {filteredOptions.length - displayLimit} more {moreText}...
-                </div>
-              )}
-              {/* Hidden items for selected values not in the current slice to prevent Radix UI state loss */}
-              {selectedOptions.filter(opt => !slicedIds.has(opt.id)).map(opt => (
-                <SelectItem key={`hidden-${opt.id}`} value={opt.id} className="hidden" aria-hidden="true" disabled>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </>
-          );
-        })()}
+              })()}
             </>
           )}
         </div>
