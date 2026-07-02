@@ -4,6 +4,7 @@
  *
  * Dashboard view mapping candidate progression across different pipeline stages.
  */
+import { useState, useEffect, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import AppPageShell from "@/components/shared/AppPageShell";
 import { ActionButtons } from "@/components/modal/candidate-details/ActionButtons";
@@ -15,11 +16,13 @@ import PermissionGuard from "@/components/auth/PermissionGuard";
 import { PERMISSIONS } from "@/lib/permissions";
 import { CandidateDetailsModal } from "@/components/modal/CandidateDetailsModal";
 import { ResumeScreeningView } from "@/components/candidate/ResumeScreeningView";
-import { StageEvaluationView } from "@/components/candidate/StageEvaluationView";
+import { StageEvaluationView, getChartData } from "@/components/candidate/StageEvaluationView";
 import { PollingState, EmptyState } from "@/components/candidate/StageStateViews";
 import { useCandidatesStages } from "@/hooks/useCandidatesStages";
 import LoadingSpinner from "@/components/shared/LoadingSpinner";
 import { JobInfoModal } from "@/components/modal/JobInfoModal";
+
+const JobCandidatesAreaChart = lazy(() => import("@/components/job/candidates/JobCandidatesAreaChart"))
 
 /** 
  * The main page component for viewing and managing a candidate's progress through interview stages.
@@ -79,7 +82,15 @@ export default function CandidatesStages() {
     requiredInputs,
   } = useCandidatesStages();
 
+  const [showChart, setShowChart] = useState(false);
+
+  useEffect(() => {
+    setShowChart(false);
+  }, [currentStage, candidate?.id]);
+
   const isResumeScreening = currentStage === "Resume Screening";
+
+  const chartData = evaluation?.evaluation_data ? getChartData(evaluation.evaluation_data) : [];
 
   return (
     <AppPageShell width="full" className="p-0 overflow-hidden bg-background">
@@ -140,27 +151,40 @@ export default function CandidatesStages() {
             ) : isPolling ? (
               <PollingState />
             ) : evaluation ? (
-              <StageEvaluationView
-                evaluation={evaluation}
-                evaluationHistory={evaluationHistory}
-                onOpenHistory={() => setIsHistoryModalOpen(true)}
-                transformedOverall={transformedOverall}
-                hrDecisionHistory={hrDecisionHistory}
-                transcriptHistory={transcriptHistory}
-                onTranscriptClick={(id) =>
-                  navigate(`./transcript`, {
-                    state: { transcriptId: id, candidateName },
-                    relative: "path",
-                  })
-                }
-                candidateId={candidate?.id}
-                githubUrl={candidateData?.task_file_path || candidate?.task_file_path}
-                job={job || null}
-                onPaperChange={handlePaperChange}
-                stageName={currentStage}
-                candidateName={candidateName}
-                requiredInputs={requiredInputs}
-              />
+              <>
+                <StageEvaluationView
+                  evaluation={evaluation}
+                  evaluationHistory={evaluationHistory}
+                  onOpenHistory={() => setIsHistoryModalOpen(true)}
+                  transformedOverall={transformedOverall}
+                  hrDecisionHistory={hrDecisionHistory}
+                  transcriptHistory={transcriptHistory}
+                  onTranscriptClick={(id) =>
+                    navigate(`./transcript`, {
+                      state: { transcriptId: id, candidateName },
+                      relative: "path",
+                    })
+                  }
+                  candidateId={candidate?.id}
+                  githubUrl={candidateData?.task_file_path || candidate?.task_file_path}
+                  job={job || null}
+                  onPaperChange={handlePaperChange}
+                  stageName={currentStage}
+                  candidateName={candidateName}
+                  requiredInputs={requiredInputs}
+                  showChart={showChart}
+                  onShowChartChange={setShowChart}
+                />
+                {showChart && (
+                  <Suspense fallback={<LoadingSpinner message="Loading charts..." />}>
+                    <div className="w-full flex justify-center bg-card/30 p-6 rounded-2xl border border-border/50 animate-in fade-in duration-300">
+                      <div className="w-full min-h-[100px] max-h-[300px]">
+                        <JobCandidatesAreaChart data={chartData.length > 0 ? chartData : undefined} />
+                      </div>
+                    </div>
+                  </Suspense>
+                )}
+              </>
             ) : (
               <EmptyState
                 error={error}
@@ -178,6 +202,7 @@ export default function CandidatesStages() {
             !isPolling &&
             !isLoadingHistory &&
             canTakeDecision &&
+            !showChart &&
             (isResumeScreening ? !!candidateData : !!evaluation) && (
               <PermissionGuard permissions={PERMISSIONS.CANDIDATES_DECIDE} hideWhenDenied>
                 <ActionButtons

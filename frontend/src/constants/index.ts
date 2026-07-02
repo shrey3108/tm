@@ -62,3 +62,5 @@ export const PRIORITY_TIMELINE_COLOR = [
 
 
 export const UPLOAD_TASK_FILE_TYPES = [".docx", ".pdf"]
+
+export * from "./colors";
