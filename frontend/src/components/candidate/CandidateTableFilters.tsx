@@ -225,7 +225,7 @@ export const CandidateTableFilters = ({
     testEmailSentFilter,
     dateRange,
   ]);
-  console.log(actions);
+
   return (
     <div className="flex flex-col gap-4 p-2 bg-muted/20 rounded-2xl border border-muted-foreground/10 overflow-hidden">
       <div className="flex flex-col lg:flex-row items-center gap-4 w-full">

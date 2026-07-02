@@ -1,4 +1,4 @@
-import { Area, AreaChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Label } from 'recharts';
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Label, Legend } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 import { CHART_COLORS } from "@/constants";
 
@@ -41,6 +41,11 @@ export default function JobCandidatesAreaChart({ isAnimationActive = true, data:
                         margin={{ top: 20, right: 20, left: 30, bottom: 50 }}
                         className='[&_.recharts-cartesian-grid-horizontal>line]:[stroke-dasharray:0]'
                     >
+                        <Legend
+                            verticalAlign="top"
+                            align="center"
+                            wrapperStyle={{ paddingBottom: '5px' }}
+                        />
                         <defs>
                             <linearGradient id="gradientJd" x1="0" y1="0" x2="0" y2="1">
                                 <stop
