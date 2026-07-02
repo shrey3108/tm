@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { History, ExternalLink, Loader2, AreaChart } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -18,7 +17,6 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card"
 import { Switch } from "@/components/ui/switch";
-import JobCandidatesAreaChart from "@/components/job/candidates/JobCandidatesAreaChart";
 
 interface StageEvaluationViewProps {
   /** The current evaluation data to display. */
@@ -42,15 +40,17 @@ interface StageEvaluationViewProps {
   stageName?: string;
   candidateName?: string;
   requiredInputs?: string[];
+  showChart: boolean;
+  onShowChartChange: (show: boolean) => void;
 }
 
-interface ChartDataPoint {
+export interface ChartDataPoint {
   name: string;
   jd: number;
   project: number;
 }
 
-function getChartData(evaluationData: any): ChartDataPoint[] {
+export function getChartData(evaluationData: any): ChartDataPoint[] {
   if (!evaluationData || typeof evaluationData !== "object") return [];
 
   const skillsMap: Record<string, { jd: number; project: number }> = {};
@@ -143,8 +143,9 @@ export function StageEvaluationView({
   githubUrl,
   stageName,
   requiredInputs,
+  showChart,
+  onShowChartChange,
 }: StageEvaluationViewProps) {
-  const [showChart, setShowChart] = useState(false);
   const { data: assignedPaper } = useCandidateTestPaper(candidateId);
   const { refetch: downloadFile, loading: isDownloading } = useDownloadCandidateAssignedTaskFile(
     assignedPaper ? candidateId : null,
@@ -178,19 +179,17 @@ export function StageEvaluationView({
   const latestHrDecision = hrDecisionHistory[0]?.decision.toLowerCase();
   const canTakeDecision = !latestHrDecision || latestHrDecision.includes("may be") || latestHrDecision === "maybe";
 
-  const chartData = getChartData(evaluation.evaluation_data);
-
   return (
     <>
       <div className="flex items-center justify-end px-4 mb-2 gap-3">
         {((requiredInputs
-            ? (requiredInputs.includes("question") || requiredInputs.includes("github"))
-            : (stageName && (
-                stageName.toLowerCase().includes("technical") ||
-                stageName.toLowerCase().includes("practical") ||
-                stageName.toLowerCase().includes("coding") ||
-                stageName.toLowerCase().includes("test")
-              )))
+          ? (requiredInputs.includes("question") || requiredInputs.includes("github"))
+          : (stageName && (
+            stageName.toLowerCase().includes("technical") ||
+            stageName.toLowerCase().includes("practical") ||
+            stageName.toLowerCase().includes("coding") ||
+            stageName.toLowerCase().includes("test")
+          )))
         ) && (
             <>
               <div className="flex items-center gap-2 mr-2 bg-muted/20 px-3 py-1 rounded-xl border border-border/50 shadow-sm transition-all duration-200">
@@ -200,7 +199,7 @@ export function StageEvaluationView({
                 </span>
                 <Switch
                   checked={showChart}
-                  onCheckedChange={setShowChart}
+                  onCheckedChange={onShowChartChange}
                   size="sm"
                 />
               </div>
@@ -286,28 +285,23 @@ export function StageEvaluationView({
         </Button>
       </div>
 
-      {showChart ? (
-        <div className="w-full flex justify-center bg-card/30 p-6 rounded-2xl border border-border/50 animate-in fade-in duration-300">
-          <div className="w-full max-w-[800px] h-[350px]">
-            <JobCandidatesAreaChart data={chartData.length > 0 ? chartData : undefined} />
+      {!showChart && (
+        <>
+          <EvaluationGrid data={evaluation.evaluation_data} />
+          <div className="mx-auto space-y-1">
+            {/* Section 1: Overall Summary */}
+            {transformedOverall && <StageOverallSummary data={transformedOverall} />}
+
+            {/* Section 2: Histories Grid */}
+            <CandidateHistoryGrid
+              hrDecisionHistory={hrDecisionHistory}
+              transcriptHistory={transcriptHistory}
+              onTranscriptClick={onTranscriptClick}
+              transcript_id={evaluation.transcript_id}
+            />
           </div>
-        </div>
-      ) : (
-        <EvaluationGrid data={evaluation.evaluation_data} />
+        </>
       )}
-
-      <div className="mx-auto space-y-1">
-        {/* Section 1: Overall Summary */}
-        {transformedOverall && <StageOverallSummary data={transformedOverall} />}
-
-        {/* Section 2: Histories Grid */}
-        <CandidateHistoryGrid
-          hrDecisionHistory={hrDecisionHistory}
-          transcriptHistory={transcriptHistory}
-          onTranscriptClick={onTranscriptClick}
-          transcript_id={evaluation.transcript_id}
-        />
-      </div>
     </>
   );
 }
