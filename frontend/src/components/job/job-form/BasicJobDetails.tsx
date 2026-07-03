@@ -9,13 +9,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { SearchableSelect } from "@/components/shared/SearchableSelect";
 import type { JobPositionRead } from "@/types/jobPosition";
 import type { JobPriorityRead } from "@/types/jobPriority";
 import type { DepartmentRead } from "@/types/department"
@@ -65,30 +59,16 @@ export const BasicJobDetails = ({ departments, priorities = [], positions }: Bas
               <FormLabel className="text-lg font-semibold text-foreground">
                 Job Position <Required />
               </FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
-                <FormControl>
-                  <SelectTrigger className="h-12 text-base rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium w-full">
-                    <SelectValue placeholder="Select job position" className="w-full capitalize">
-                      {
-                        positions.find(
-                          (pos) => pos.id === field.value,
-                        )?.name
-                      }
-                    </SelectValue>
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent className="rounded-xl shadow-xl border-muted-foreground/10">
-                  {positions.map((pos) => (
-                    <SelectItem
-                      key={pos.id}
-                      value={pos.id}
-                      className="py-3 text-base font-medium w-full capitalize"
-                    >
-                      {pos.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <FormControl>
+                <SearchableSelect
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  options={positions.map((pos) => ({ id: pos.id, label: pos.name }))}
+                  placeholder="Select job position"
+                  searchPlaceholder="Search job position..."
+                  triggerClassName="h-12 text-base rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium w-full capitalize"
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
@@ -103,36 +83,25 @@ export const BasicJobDetails = ({ departments, priorities = [], positions }: Bas
               <FormLabel className="text-lg font-semibold text-foreground">
                 Job Priority <Required />
               </FormLabel>
-              <Select onValueChange={field.onChange} value={field.value || ""} >
-                <FormControl>
-                  <SelectTrigger className="h-12 text-base rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium w-full ">
-                    <SelectValue placeholder="Select priority" className="w-full">
-                      {(() => {
-                        const priority = priorities.find((p) => p.id === field.value);
-                        return priority ? `${priority.name} (${priority.duration_days} days)` : null;
-                      })()}
-                    </SelectValue>
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent className="rounded-xl shadow-xl border-muted-foreground/10">
-                  {priorities.map((p) => (
-                    <SelectItem
-                      key={p.id}
-                      value={p.id}
-                      className="py-3 text-base font-medium w-full capitalize"
-                    >
-                      {p.name} ({p.duration_days} days)
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <FormControl>
+                <SearchableSelect
+                  value={field.value || ""}
+                  onValueChange={field.onChange}
+                  options={priorities.map((p) => ({
+                    id: p.id,
+                    label: `${p.name} (${p.duration_days} days)`,
+                  }))}
+                  placeholder="Select priority"
+                  searchPlaceholder="Search priority..."
+                  triggerClassName="h-12 text-base rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium w-full capitalize"
+                />
+              </FormControl>
               <FormDescription className="flex flex-col gap-2">
                 {field.value && <span className="gap-2">
                   <span className="">Due Date:</span>{" "}
                   <DateDisplay
                     date={field.value ? addDays(new Date(), Number(priorities.find((p) => p.id === field.value)?.duration_days)) : null}
                     className="font-bold"
-
                   />
                 </span>}
               </FormDescription>
@@ -150,30 +119,16 @@ export const BasicJobDetails = ({ departments, priorities = [], positions }: Bas
               <FormLabel className="text-lg font-semibold text-foreground">
                 Department <Required />
               </FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
-                <FormControl>
-                  <SelectTrigger className="h-12 text-base rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium w-full capitalize">
-                    <SelectValue placeholder="Select department" className="w-full capitalize">
-                      {
-                        departments.find(
-                          (dept) => dept.id === field.value,
-                        )?.name
-                      }
-                    </SelectValue>
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent className="rounded-xl shadow-xl border-muted-foreground/10">
-                  {departments.map((dept) => (
-                    <SelectItem
-                      key={dept.id}
-                      value={dept.id}
-                      className="py-3 text-base font-medium w-full capitalize"
-                    >
-                      {dept.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <FormControl>
+                <SearchableSelect
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  options={departments.map((dept) => ({ id: dept.id, label: dept.name }))}
+                  placeholder="Select department"
+                  searchPlaceholder="Search department..."
+                  triggerClassName="h-12 text-base rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium w-full capitalize"
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}

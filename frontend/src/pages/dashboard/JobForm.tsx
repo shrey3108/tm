@@ -32,6 +32,8 @@ import { extractErrorMessage } from "@/utils/error";
 import { DEFAULT_PASSING_THRESHOLD } from "@/constants";
 import { MoreJobSetting } from "@/components/job/job-form/MoreJobSetting";
 import type { JobVersionMinimal } from "@/types/job";
+import type { AssociateRead } from "@/types/associate";
+import { AssociateSelectorSection } from "@/components/job/job-form/AssociateSelectorSection";
 
 // TanStack Query Hooks
 import { useDepartment } from "@/hooks/queries/admin/useDepartment";
@@ -61,6 +63,7 @@ export default function CreateJob() {
   const job = jobQuery.data;
   const jobId = job?.id || null;
   const jobSkills = (job?.skills as SkillBase[]) || [];
+  const jobAssociates = (job?.associates as AssociateRead[]) || [];
 
   const jobTaskQuery = useJobTask(jobId);
   const taskData = jobTaskQuery.data;
@@ -92,6 +95,7 @@ export default function CreateJob() {
       is_active: true,
       skill_ids: [],
       skill_weightages: {},
+      associate_ids: [],
       passing_threshold: DEFAULT_PASSING_THRESHOLD,
       question_bank_passing_threshold: DEFAULT_PASSING_THRESHOLD,
       custom_extraction_fields: [],
@@ -120,8 +124,9 @@ export default function CreateJob() {
         department_id: job.department_id || "",
         jd_text: job.jd_text || "",
         is_active: job.is_active ?? true,
-        skill_ids: job.skills?.map((s: any) => s.id) || [],
+        skill_ids: job.skills?.map((s) => s.id) || [],
         skill_weightages: job.job_skill_weightages || {},
+        associate_ids: job.associates?.map((a) => a.id) || [],
         passing_threshold: job.passing_threshold ?? DEFAULT_PASSING_THRESHOLD,
         question_bank_passing_threshold: job.question_bank_passing_threshold ?? DEFAULT_PASSING_THRESHOLD,
         custom_extraction_fields: job.custom_extraction_fields || [],
@@ -235,6 +240,7 @@ export default function CreateJob() {
               <JobSettingsSection />
               <CustomFieldsSection />
               <SkillSelectorSection initialSelectedSkills={jobSkills} />
+              <AssociateSelectorSection initialSelectedAssociates={jobAssociates} />
               <StagePipelineSection
                 jobId={jobId}
                 onChange={(stages) => form.setValue("stages" as any, stages)}
