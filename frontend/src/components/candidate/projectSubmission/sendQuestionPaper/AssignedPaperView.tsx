@@ -10,6 +10,7 @@ interface AssignedPaperViewProps {
   assignedPaper: CandidateTestPaperRead;
   onUnassign: () => Promise<void> | void;
   isUnassigning: boolean;
+  readOnly?: boolean;
 }
 
 export function AssignedPaperView({

@@ -19,6 +19,7 @@ export * from "./jobPosition";
 export * from "./prompt";
 export * from "./criteria";
 export * from "./associate";
+export * from "./guideline";
 
 
 

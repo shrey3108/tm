@@ -203,6 +203,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           url: "/dashboard/admin/settings/prompts",
           permission: [PERMISSIONS.ADMIN_ACCESS, PERMISSIONS.ANALYTICS_READ], // TODO: adjust as per backend API
         },
+        {
+          title: "Guidelines",
+          url: "/dashboard/admin/settings/guidelines",
+          permission: PERMISSIONS.ADMIN_ACCESS,
+        },
         // {
         //   title: "Extraction Path",
         //   onClick: () => setIsDefaultPathDialogOpen(true),

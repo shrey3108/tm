@@ -18,6 +18,8 @@ export const QUERY_KEYS = {
     PERMISSIONS: "permissions",
     ASSOCIATES: "associates",
     ASSOCIATE_DETAIL: "associate",
+    GUIDELINES: "guidelines",
+    GUIDELINE_DETAIL: "guideline",
     DASHBOARD_DATA: "adminDashboardData",
     CLEAR_CACHE: "adminCache",
   },

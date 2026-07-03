@@ -32,6 +32,7 @@ import { JobInfoModal } from "@/components/modal/JobInfoModal";
 import { Input } from "@/components/ui/input";
 import DeleteModal from "@/components/modal/DeleteModal";
 import LoadingSpinner from "@/components/shared/LoadingSpinner";
+import { CandidateAssignPaperButton } from "@/components/shared/candidate/CandidateAssignPaperButton";
 
 const JobCandidatesCharts = lazy(() =>
   import("@/components/job/candidates/JobCandidatesCharts").then((m) => ({ default: m.JobCandidatesCharts }))
@@ -43,15 +44,9 @@ interface CandidateStagesButtonProps {
 }
 
 function CandidateStagesButton({ candidate, jobSlug, job }: CandidateStagesButtonProps) {
-  // const { data: timeline, isLoading } = useCandidateTimelineQuery(
-  //   candidate.id,
-  //   job?.id
-  // );
   const navigate = useNavigate();
-
   const handleNavigate = () => {
     const candidateFullName = slugify(`${candidate.first_name || ""} ${candidate.last_name || ""}`);
-    // const currentStageName = timeline?.current_stage || candidate.current_stage?.template_name || "Resume Screening";
     const currentStageName = candidate.current_stage?.template_name || "Resume Screening";
     const stageSlug = slugify(currentStageName);
 
@@ -80,7 +75,7 @@ function CandidateStagesButton({ candidate, jobSlug, job }: CandidateStagesButto
             {/* {isLoading ? (
               <div className="h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin shrink-0" />
             ) : ( */}
-            <Layers className="h-4 w-4 shrink-0 text-blue-600" />
+            <Layers className="h-4 w-4 shrink-0" />
             {/* )} */}
           </Button>
         )}
@@ -91,7 +86,6 @@ function CandidateStagesButton({ candidate, jobSlug, job }: CandidateStagesButto
     </HoverCard>
   );
 }
-
 
 /**
  * Page component for managing job candidates with toggle between candidates list and analytics views.
@@ -366,11 +360,11 @@ export default function JobCandidates() {
                                   {...props}
                                   variant="ghost"
                                   size="sm"
-                                  className="h-9 px-3 rounded-xl border border-amber-300 hover:bg-gray-200/60 flex items-center justify-center gap-2 shrink-0 text-amber-600 font-semibold transition-all"
+                                  className="h-9 px-3 rounded-xl border hover:bg-gray-200/60 flex items-center justify-center gap-2 shrink-0 font-semibold transition-all"
                                   onClick={handleReanalyzeAll}
                                   disabled={candidates.filter(needsReanalysis).length === 0}
                                 >
-                                  <RotateCw className="h-4 w-4 text-amber-600 shrink-0" />
+                                  <RotateCw className="h-4 w-4 shrink-0" />
                                 </Button>
                               )}
                             />
@@ -383,7 +377,7 @@ export default function JobCandidates() {
                         </PermissionGuard>
                       }
                       renderActions={(candidate) => (
-                        <div className="flex items-center gap-2 justify-end">
+                        <div className="flex items-center gap-0.5 justify-end">
                           <PermissionGuard permissions={PERMISSIONS.JOBS_MANAGE} hideWhenDenied>
                             <HoverCard>
                               <HoverCardTrigger
@@ -392,7 +386,7 @@ export default function JobCandidates() {
                                     {...props}
                                     variant="ghost"
                                     size="sm"
-                                    className="h-9 w-9 p-0 rounded-xl border border-amber-300 hover:bg-gray-200/60 flex items-center justify-center shrink-0"
+                                    className="h-9 w-9 p-0 rounded-xl border hover:bg-gray-200/60 flex items-center justify-center shrink-0"
                                     onClick={(e) => {
                                       if (props.onClick) props.onClick(e);
                                       handleReanalyzeCandidate(candidate.id);
@@ -404,7 +398,7 @@ export default function JobCandidates() {
                                       !candidate.is_parsed
                                     }
                                   >
-                                    <RotateCw className="h-4 w-4 text-amber-600 shrink-0" />
+                                    <RotateCw className="h-4 w-4  shrink-0" />
                                   </Button>
                                 )}
                               />
@@ -440,6 +434,11 @@ export default function JobCandidates() {
                             candidate={candidate}
                             jobSlug={jobSlug}
                             job={job}
+                          />
+                          <CandidateAssignPaperButton candidate={candidate}
+                            jobSlug={jobSlug}
+                            job={job}
+                            buttonClassName="h-9 w-9 p-0 rounded-xl bg-muted/50 hover:bg-gray-200/60 text-foreground border border-muted-foreground/10 flex items-center justify-center shrink-0"
                           />
                           {/* <HoverCard>
                             <HoverCardTrigger

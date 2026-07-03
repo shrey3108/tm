@@ -2,6 +2,7 @@ import type { JobStageConfig } from "@/types/stage";
 import type { JobPositionRead } from "@/types/jobPosition";
 import type { JobCreateFormValues, JobUpdateFormValues } from "@/schemas/job";
 import type { JobPriorityRead } from "@/types/jobPriority";
+import type { AssociateRead } from "@/types/associate";
 
 /**
  * Represents a job posting in the hiring platform.
@@ -47,6 +48,8 @@ export interface Job {
   created_at: string;
   /** Skills linked to the job */
   skills: { id: string; name: string; description?: string; default_weightage?: number }[];
+  /** Associates linked to the job */
+  associates?: AssociateRead[];
   job_skill_weightages?: Record<string, number> | null;
 
   total_candidates: number;

@@ -6,8 +6,6 @@ import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { candidateDecisionSchema, type CandidateDecisionFormValues } from "@/schemas/candidate";
 import { extractErrorMessage } from "@/utils/error";
-import type { Job } from "@/types/job";
-import type { CandidateAnalysis } from "@/types/admin";
 import type { EvaluationRead, EvaluationHistoryRead } from "@/types/candidateStage";
 import { slugify } from "@/utils/slug";
 import type { HrDecisionHistoryItem } from "@/apis/candidateDecision";
@@ -56,10 +54,7 @@ export function useCandidatesStages() {
 
   // 1. Resolve Job and Candidate (supports robust refresh via TanStack Query fallback)
   const { job, candidate } = useResolvedJobAndCandidate(
-    params.jobSlug,
-    params.candidateName,
-    location.state?.job as Job | null,
-    location.state?.candidate as CandidateAnalysis | null
+    { jobSlug: params.jobSlug, candidateNameSlug: params.candidateName, stateJob: location.state?.job, stateCandidate: location.state?.candidate }
   );
 
 

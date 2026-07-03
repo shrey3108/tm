@@ -12,17 +12,25 @@ import { useJob, useJobTitle } from "@/hooks/queries/jobs/useJob";
 import type { Job } from "@/types/job";
 import type { CandidateAnalysis } from "@/types/admin";
 
-/**
- * Hook to resolve Job and Candidate from URL slugs if state is not available.
- * Supports fallback to location.state if provided.
- */
-export function useResolvedJobAndCandidate(
+
+interface UseResolvedJobAndCandidate {
   jobSlug: string | undefined,
   candidateNameSlug: string | undefined,
   stateJob?: Job | null,
   stateCandidate?: CandidateAnalysis | null,
   stateCandidateId?: string | null
-) {
+}
+
+/**
+ * Hook to resolve Job and Candidate from URL slugs if state is not available.
+ * Supports fallback to location.state if provided.
+ */
+export function useResolvedJobAndCandidate(
+  { jobSlug,
+    candidateNameSlug,
+    stateJob,
+    stateCandidate,
+    stateCandidateId }: UseResolvedJobAndCandidate) {
   const searchJobTitle = jobSlug ? unSlugify(jobSlug) : "";
 
   // 1. Fetch job list matching the unslugified name if job is not in state

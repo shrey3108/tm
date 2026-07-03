@@ -91,6 +91,8 @@ export interface CandidateTestPaperRead {
   job_default_paper_changed: boolean;
   job_default_paper_name: string | null;
   job_default_paper_id: string | null;
+  guideline_id: string | null;
+  guideline_content: string | null;
 }
 
 export interface SourceMixItem {
@@ -108,6 +110,7 @@ export interface CandidateTestPaperAssign {
   paper_id?: string;
   source_paper_ids?: string[];
   base_paper_id?: string;
+  guideline_id?: string;
   questions?: (QuestionItem | string)[];
   mcqs?: MCQItem[];
   project_task?: (TaskItem | string)[];

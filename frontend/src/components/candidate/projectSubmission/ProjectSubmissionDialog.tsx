@@ -19,14 +19,16 @@ import {
   FormControl,
   FormMessage,
 } from "@/components/ui/form";
-import { ExternalLink, FileIcon, Loader2 } from "lucide-react";
+import { FileIcon, Loader2 } from "lucide-react";
 import { ProjectSubmissionSchema, type ProjectSubmissionFormValues } from "@/schemas/candidate";
 import {
   useEvaluateGithubMutation,
 } from "@/hooks/mutations/candidates/useCandidateStages";
 import { extractErrorMessage } from "@/utils/error";
 import type { Job } from "@/types/job";
-import { useDownloadCandidateAssignedTaskFile } from "@/hooks/queries/taskPapers/useTaskPaperQueries";
+import { CandidateAssignPaperButton } from "@/components/shared/candidate/CandidateAssignPaperButton";
+import { slugify } from "@/utils/slug";
+import { useResolvedJobAndCandidate } from "@/hooks/queries/candidates";
 
 interface ProjectSubmissionDialogProps {
   isOpen: boolean;
@@ -45,18 +47,23 @@ export function ProjectSubmissionDialog({
   candidateId,
   stageId,
   onSuccess,
+  job,
 }: ProjectSubmissionDialogProps) {
 
   const { mutateAsync: evaluateGithub, isPending: isEvaluating } = useEvaluateGithubMutation();
 
   // Fetch candidate's assigned task paper
-  const { data: candidateAssignedTaskBlob } = useDownloadCandidateAssignedTaskFile(candidateId);
+  const jobSlug = slugify(job?.title);
+  const { candidate: resolvedCandidate } = useResolvedJobAndCandidate({ jobSlug, candidateNameSlug: candidateName, stateJob: job, stateCandidateId: candidateId });
 
+  /*
+  const { data: candidateAssignedTaskBlob } = useDownloadCandidateAssignedTaskFile(candidateId);
   const handleViewCandidateAssignedTask = () => {
     if (!candidateAssignedTaskBlob) return;
     const url = URL.createObjectURL(candidateAssignedTaskBlob);
     window.open(url, "_blank");
   };
+  */
 
   const form = useForm<ProjectSubmissionFormValues>({
     resolver: zodResolver(ProjectSubmissionSchema),
@@ -146,17 +153,12 @@ export function ProjectSubmissionDialog({
                             Click to view the candidate's assigned task paper.
                           </p>
                         </div>
-                        <Button
-                          type="button"
-                          variant="outline"
+                        <CandidateAssignPaperButton candidate={resolvedCandidate} job={job} jobSlug={jobSlug}
+                          variant="ghost"
                           size="sm"
                           className="rounded-lg gap-1.5 text-xs"
-                          onClick={handleViewCandidateAssignedTask}
-                          disabled={!candidateAssignedTaskBlob}
-                        >
-                          <ExternalLink className="h-3.5 w-3.5" />
-                          View
-                        </Button>
+                          iconClassName="h-3.5 w-3.5"
+                        />
                       </div>
                     </FormControl>
                     <FormMessage />

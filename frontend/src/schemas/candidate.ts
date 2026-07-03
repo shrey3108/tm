@@ -62,7 +62,7 @@ export type ProjectSubmissionFormValues = z.infer<typeof ProjectSubmissionSchema
 
 export const assignAssociateSchema = z.object({
   associates: z.array(uuidSchema("Invalid associate ID.")).min(1, "Please select at least one associate."),
-  // workdriveLink: z.url("Please enter a valid Workdrive URL."),
+  workdriveLink: z.url("Please enter a valid Workdrive URL."),
   stageId: uuidSchema("Invalid stage ID. Candidate stage could not be resolved."),
 });
 
