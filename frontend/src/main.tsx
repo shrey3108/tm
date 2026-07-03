@@ -14,7 +14,7 @@ import App from "@/App.tsx";
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <Provider store={store}>
-      <ThemeProvider defaultTheme="dark" >
+      <ThemeProvider defaultTheme="light">
         <App />
       </ThemeProvider>
     </Provider>

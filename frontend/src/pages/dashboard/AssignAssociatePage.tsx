@@ -9,7 +9,7 @@ import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { UserPlus, ArrowLeft, Loader2, UserCheck } from "lucide-react";
+import { UserPlus, ArrowLeft, Loader2, UserCheck, Globe } from "lucide-react";
 import AppPageShell from "@/components/shared/AppPageShell";
 import AppPageHeader from "@/components/shared/AppPageHeader";
 import { Button } from "@/components/ui/button";
@@ -32,6 +32,8 @@ import { useDebouncedValue } from "@/hooks/useDebounced";
 import { useSendToAssociatesMutation } from "@/hooks/mutations/candidates/useCandidateStages";
 import type { AssociateRead } from "@/types/associate";
 import { extractErrorMessage } from "@/utils/error";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
+import { Required } from "@/components/shared/Required";
 
 export default function AssignAssociatePage() {
   const params = useParams<{
@@ -74,7 +76,7 @@ export default function AssignAssociatePage() {
     resolver: zodResolver(assignAssociateSchema),
     defaultValues: {
       associates: [],
-      // workdriveLink: "",
+      workdriveLink: "",
       stageId: "",
     },
     mode: "onChange",
@@ -90,12 +92,6 @@ export default function AssignAssociatePage() {
 
   const onSubmit = async (data: AssignAssociateFormValues) => {
     try {
-      // 1. Submit/save the workdrive link (saves link as github_url)
-      // await evaluateGithubMutation.mutateAsync({
-      //   stageId: data.stageId,
-      //   // githubUrl: data.workdriveLink,
-      // });
-
       // 2. Send the paper to the selected associates
       await sendToAssociatesMutation.mutateAsync({
         stageId: data.stageId,
@@ -166,7 +162,7 @@ export default function AssignAssociatePage() {
           {/* Multi-select Dropdown for Associates */}
           <div className="space-y-2">
             <Label htmlFor="associates-select" className="text-sm font-semibold text-foreground">
-              Associates
+              Associates <Required />
             </Label>
 
             <Controller
@@ -248,9 +244,9 @@ export default function AssignAssociatePage() {
           </div>
 
           {/* Workdrive Link Input */}
-          {/* <div className="space-y-2">
+          <div className="space-y-2">
             <Label htmlFor="workdrive-input" className="text-sm font-semibold text-foreground">
-              Workdrive Link
+              Workdrive Link <Required />
             </Label>
             <InputGroup className="h-10 rounded-xl border border-input bg-input/30 focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/25">
               <InputGroupAddon align="inline-start" className="pl-3 pr-1 text-muted-foreground">
@@ -272,30 +268,39 @@ export default function AssignAssociatePage() {
             {errors.workdriveLink && (
               <p className="text-xs text-destructive font-medium mt-1">{errors.workdriveLink.message}</p>
             )}
-          </div> */}
+          </div>
 
           {errors.stageId && (
             <p className="text-xs text-destructive font-medium">{errors.stageId.message}</p>
           )}
 
           {/* Form Action Button */}
-          <Button
-            type="submit"
-            className="w-full h-10 rounded-xl font-semibold gap-2 mt-2"
-            disabled={!isValid || isSubmitting}
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Assigning...
-              </>
-            ) : (
-              <>
-                <UserPlus className="w-4 h-4" />
-                Assign Associate
-              </>
-            )}
-          </Button>
+          <div className="flex items-center justify-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="h-10 rounded-xl font-semibold gap-2 mt-2"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              className="h-10 rounded-xl font-semibold gap-2 mt-2"
+              disabled={!isValid || isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Assigning...
+                </>
+              ) : (
+                <>
+                  <UserPlus className="w-4 h-4" />
+                  Assign Associate
+                </>
+              )}
+            </Button>
+          </div>
         </form>
       </div>
     </AppPageShell>

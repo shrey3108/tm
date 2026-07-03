@@ -43,7 +43,7 @@ export default function JobCandidatesAreaChart({ isAnimationActive = true, data:
                     >
                         <Legend
                             verticalAlign="top"
-                            align="center"
+                            align="right"
                             wrapperStyle={{ paddingBottom: '5px' }}
                         />
                         <defs>

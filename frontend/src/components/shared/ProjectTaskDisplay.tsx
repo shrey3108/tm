@@ -30,19 +30,22 @@ export function ProjectTaskDisplay({
     return (
       <div className="grid grid-cols-[minmax(0,1fr)_180px] gap-4 w-full">
         <div className="min-w-0">
-          <p className={cn("text-foreground text-wrap wrap-break-word", titleClassName)}>{taskText}</p>
-          {instructions && <p className="text-xs truncate mt-0.5">{instructions}</p>}
+          <p className={cn("text-foreground text-wrap wrap-break-word text-sm", titleClassName)}>{taskText}</p>
+          {instructions && <p className="text-xs text-wrap wrap-break-word mt-0.5">{instructions}</p>}
           {showTypeSuffix && (
             <span className="text-xs block mt-0.5 text-muted-foreground">
               Subtasks: {subTasks.length} (Project Task)
             </span>
           )}
-          <ul className="list-disc pl-3 text-xs  space-y-0.5">
+          <span className="text-xs mt-0.5">Tasks</span>
+          <ul className="list-disc pl-3 text-xs space-y-0.5">
             {subTasks.map((st, sIdx) => (
               <li key={sIdx}>
-                <span>{st.name}</span>
-                {st.marks !== undefined && ` (${st.marks} Marks)`}
-                {st.description && ` - ${st.description}`}
+                <div className="flex items-center justify-between">
+                  <span>{st.name}</span>
+                  <span>{st.marks !== undefined && ` ${st.marks} Marks`}</span>
+                </div>
+                {/* {st.description && ` - ${st.description}`} */}
               </li>
             ))}
           </ul>

@@ -136,7 +136,7 @@ export default function AdminGuidelines() {
       accessorKey: "content",
       header: () => <span className="text-base">Guideline Content</span>,
       cell: ({ row }) => (
-        <div className="max-w-[400px] truncate text-xs">
+        <div className="max-w-[400px] truncate capitalize">
           {row.original.content}
         </div>
       ),

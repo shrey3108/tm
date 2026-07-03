@@ -190,6 +190,10 @@ export const router = createBrowserRouter([
                         path: "send-paper",
                         element: <SendPaperPage />,
                       },
+                      {
+                        path: "assign-paper",
+                        element: <AssignPaperPage />,
+                      },
                     ],
                   },
                 ],

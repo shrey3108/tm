@@ -396,7 +396,16 @@ export default function SendPaperPage() {
                         variant="secondary"
                         className="rounded-xl font-semibold px-4"
                         onClick={() => {
-                          navigate(`/dashboard/jobs/${slugify(job?.title || "")}/assign-paper`);
+                          if (candidateId && params.candidateName && params.stageSlug) {
+                            const jobSlug = slugify(job?.title || "");
+                            const candSlug = params.candidateName;
+                            const stgSlug = params.stageSlug;
+                            navigate(`/dashboard/jobs/${jobSlug}/candidates/${candSlug}/stages/${stgSlug}/assign-paper`, {
+                              state: { job, candidateId, candidateName, stageId: jobStageId },
+                            });
+                          } else {
+                            navigate(`/dashboard/jobs/${slugify(job?.title || "")}/assign-paper`);
+                          }
                         }}
                       >
                         Change Paper
@@ -429,7 +438,16 @@ export default function SendPaperPage() {
                       type="button"
                       className="rounded-xl font-semibold"
                       onClick={() => {
-                        navigate(`/dashboard/jobs/${slugify(job?.title || "")}/assign-paper`);
+                        if (candidateId && params.candidateName && params.stageSlug) {
+                          const jobSlug = slugify(job?.title || "");
+                          const candSlug = params.candidateName;
+                          const stgSlug = params.stageSlug;
+                          navigate(`/dashboard/jobs/${jobSlug}/candidates/${candSlug}/stages/${stgSlug}/assign-paper`, {
+                            state: { job, candidateId, candidateName, stageId: jobStageId },
+                          });
+                        } else {
+                          navigate(`/dashboard/jobs/${slugify(job?.title || "")}/assign-paper`);
+                        }
                       }}
                     >
                       Assign Question Paper

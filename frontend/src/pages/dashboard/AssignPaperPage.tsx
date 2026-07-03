@@ -5,7 +5,8 @@
  * Evaluation setup page for selecting, assigning, and customizing test papers for candidates.
  */
 import { useState, useEffect, useMemo } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { useResolvedJobAndCandidate } from "@/hooks/queries/candidates/useCandidateStagesQueries";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -16,10 +17,13 @@ import {
   Save,
   BookOpen,
   UserCheck,
+  User,
   CheckSquare,
   Square,
   Pencil,
 } from "lucide-react";
+import { SearchableSelect } from "@/components/shared/SearchableSelect";
+import { useGuidelines } from "@/hooks/queries/admin/useGuideline";
 import AppPageShell from "@/components/shared/AppPageShell";
 import AppPageHeader from "@/components/shared/AppPageHeader";
 import { Button } from "@/components/ui/button";
@@ -51,10 +55,35 @@ import { SingleQuestionDisplay } from "@/components/shared/SingleQuestionDisplay
 import { TotalSelectedQuestions } from "@/components/shared/question/TotalSelectedQuestions";
 import { TotalMarks } from "@/components/shared/question/TotalMarks";
 import { TotalDuration } from "@/components/shared/question/TotalDuration";
+import { extractErrorMessage } from "@/utils/error";
+import { Required } from "@/components/shared/Required";
 
 export default function AssignPaperPage() {
   const navigate = useNavigate();
-  const { jobSlug } = useParams<{ jobSlug: string }>();
+  const location = useLocation();
+  const { jobSlug, candidateName: candidateNameSlug, stageSlug } = useParams<{
+    jobSlug: string;
+    candidateName?: string;
+    stageSlug?: string;
+  }>();
+
+  // Candidate-specific mode: resolve candidate from URL params or location.state
+  const stateCandidateId = location.state?.candidateId as string | undefined;
+  const stateCandidateName = location.state?.candidateName as string | undefined;
+  const stateStageId = location.state?.stageId as string | undefined;
+
+  const { candidate: resolvedCandidate } = useResolvedJobAndCandidate({
+    jobSlug,
+    candidateNameSlug,
+    stateJob: location.state?.job,
+    stateCandidateId,
+  });
+
+  const candidateId = resolvedCandidate?.id || stateCandidateId;
+  const isCandidateMode = !!candidateId;
+  const candidateDisplayName = resolvedCandidate
+    ? `${resolvedCandidate.first_name || ""} ${resolvedCandidate.last_name || ""}`.trim()
+    : (stateCandidateName || candidateNameSlug?.replace(/-/g, " ") || "Candidate");
 
   // Setup React Hook Form for custom skill selections
   const form = useForm({
@@ -90,6 +119,10 @@ export default function AssignPaperPage() {
 
   // Selected stage configuration state
   const [selectedStageId, setSelectedStageId] = useState<string>("");
+
+  // Fetch guidelines
+  const { data: guidelines, loading: loadingGuidelines } = useGuidelines(0, 100);
+  const [selectedGuidelineId, setSelectedGuidelineId] = useState<string>("");
 
   // Default to the first technical stage once loaded
   useEffect(() => {
@@ -266,6 +299,10 @@ export default function AssignPaperPage() {
     setSelectedQuestions(normQs);
     setSelectedMCQs(normMcqs);
     setSelectedTasks(normTasks);
+
+    if (assignedPaper.guideline_id) {
+      setSelectedGuidelineId(assignedPaper.guideline_id);
+    }
   }, [assignedPaper, useRandomPool]);
 
   // Setup pools and default selections from random pool when fallback is triggered
@@ -545,25 +582,65 @@ export default function AssignPaperPage() {
       return;
     }
 
+    if (!selectedGuidelineId) {
+      toast.error("Please select a guideline template.");
+      return;
+    }
+
     try {
-      await assignMutation.mutateAsync({
-        job_id: job.id,
-        job_stage_id: selectedStageId,
-        mode: "custom",
-        questions: finalQuestions,
-        mcqs: finalMCQs,
-        project_task: finalTasks,
-        custom_skills: job.skills?.map((s: any) => s.name) || [],
-      });
-      toast.success("Successfully assigned default test paper to job!");
-      refetchAssignedPaper();
-      if (jobSlug) {
-        navigate(`/dashboard/jobs/${jobSlug}/candidates`);
+      if (isCandidateMode && candidateId) {
+        // Candidate-specific assignment
+        await assignMutation.mutateAsync({
+          candidate_id: candidateId,
+          // job_stage_id: stateStageId || selectedStageId, // not working when job_stage_id passed
+          mode: "custom",
+          questions: finalQuestions,
+          mcqs: finalMCQs,
+          project_task: finalTasks,
+          custom_skills: job.skills?.map((s: any) => s.name) || [],
+          guideline_id: selectedGuidelineId,
+        });
+        toast.success(`Successfully assigned test paper to ${candidateDisplayName}!`);
+        refetchAssignedPaper();
+        // Navigate to SendPaperPage for immediate email sending
+        if (jobSlug && candidateNameSlug && stageSlug) {
+          navigate(
+            `/dashboard/jobs/${jobSlug}/candidates/${candidateNameSlug}/stages/${stageSlug}/send-paper`,
+            // `/dashboard/jobs/${jobSlug}/candidates/${candidateNameSlug}/stages/${stageSlug}`, // just back
+            {
+              state: {
+                job,
+                candidateId,
+                candidateName: candidateDisplayName,
+                stageId: stateStageId || selectedStageId,
+              },
+            }
+          );
+        } else {
+          navigate(-1);
+        }
       } else {
-        navigate(-1);
+        // Job-level default assignment
+        await assignMutation.mutateAsync({
+          job_id: job.id,
+          job_stage_id: selectedStageId,
+          mode: "custom",
+          questions: finalQuestions,
+          mcqs: finalMCQs,
+          project_task: finalTasks,
+          custom_skills: job.skills?.map((s) => s.name) || [],
+          guideline_id: selectedGuidelineId,
+        });
+        toast.success("Successfully assigned default test paper to job!");
+        refetchAssignedPaper();
+        if (jobSlug) {
+          navigate(`/dashboard/jobs/${jobSlug}/candidates`);
+        } else {
+          navigate(-1);
+        }
       }
-    } catch (err: any) {
-      toast.error("Failed to assign test paper.");
+    } catch (err: unknown) {
+      toast.error(extractErrorMessage(err, "Failed to assign test paper."));
     }
   };
 
@@ -592,7 +669,17 @@ export default function AssignPaperPage() {
   return (
     <AppPageShell width="wide" className="animate-in fade-in duration-500">
       <AppPageHeader
-        title={`Assign Question Paper - ${formattedJobTitle}`}
+        title={
+          <span className="flex items-center gap-2 flex-wrap">
+            <span>Assign Question Paper - {formattedJobTitle}</span>
+            {isCandidateMode && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold">
+                <User className="h-3 w-3" />
+                <span className="capitalize">{candidateDisplayName}</span>
+              </span>
+            )}
+          </span>
+        }
         headingClassName="text-xl sm:text-2xl"
         breadcrumbActions={
           <Button
@@ -623,6 +710,30 @@ export default function AssignPaperPage() {
             <TotalSelectedQuestions totalQuestions={finalQuestions.length + finalMCQs.length + finalTasks.length} />
             <TotalMarks totalMarks={finalTotalMarks} />
             <TotalDuration totalDuration={formatDuration(finalTotalDuration)} />
+          </div>
+        </div>
+
+        {/* Guideline Template Selection Section */}
+        <div className="bg-card border border-border/80 p-4 rounded-xl shadow-xs space-y-2 animate-in fade-in duration-300">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-bold text-foreground flex items-center gap-1">
+              Select Guideline Template <Required />
+            </label>
+            <p className="text-xs text-muted-foreground">
+              Select a custom guideline template to attach and send along with candidate test papers.
+            </p>
+            <SearchableSelect
+              value={selectedGuidelineId}
+              onValueChange={setSelectedGuidelineId}
+              options={guidelines.map((g) => ({
+                id: g.id,
+                label: g.content.length > 120 ? `${g.content.substring(0, 120)}...` : g.content
+              }))}
+              placeholder="Choose a guideline template..."
+              searchPlaceholder="Search guidelines..."
+              emptyMessage="No guidelines found"
+              loading={loadingGuidelines}
+            />
           </div>
         </div>
         {/*         
@@ -872,7 +983,7 @@ export default function AssignPaperPage() {
               {/* Normal questions in Available Bank */}
               {availablePoolQuestions.length > 0 && (
                 <div className="space-y-1">
-                  <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">Normal Questions</p>
+                  <p className="text-xs font-bold">Normal Questions</p>
                   {availablePoolQuestions.map((item, idx) => {
                     const isChecked = selectedQuestions.some((q) => q.question === item.question);
                     return (
@@ -898,7 +1009,7 @@ export default function AssignPaperPage() {
               {/* MCQs in Available Bank */}
               {availablePoolMCQs.length > 0 && (
                 <div className="space-y-1">
-                  <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">Multiple Choice (MCQs)</p>
+                  <p className="text-xs font-bold">Multiple Choice (MCQs)</p>
                   {availablePoolMCQs.map((item, idx) => {
                     const isChecked = selectedMCQs.some((m) => m.question === item.question);
                     return (
@@ -924,7 +1035,7 @@ export default function AssignPaperPage() {
               {/* Tasks in Available Bank */}
               {availablePoolTasks.length > 0 && (
                 <div className="space-y-1">
-                  <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">Project Tasks</p>
+                  <p className="text-xs font-bold">Project Tasks</p>
                   {availablePoolTasks.map((item, idx) => {
                     const key = item.task || item.title || "";
                     const isChecked = selectedTasks.some((t) => (t.task || t.title) === key);
@@ -941,7 +1052,7 @@ export default function AssignPaperPage() {
                             <Square className="h-4 w-4 text-muted-foreground shrink-0" />
                           )}
                         </div>
-                        <ProjectTaskDisplay task={item} variant="simple" />
+                        <ProjectTaskDisplay task={item} variant="simple" showTypeSuffix={false} />
                       </div>
                     );
                   })}

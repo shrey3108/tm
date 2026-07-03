@@ -8,6 +8,7 @@ import { useDebouncedValue } from "@/hooks/useDebounced";
 import { cn } from "@/lib/utils";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Card, CardContent } from "@/components/ui/card";
+import { Required } from "@/components/shared/Required";
 
 interface AssociateSelectorSectionProps {
   initialSelectedAssociates?: AssociateRead[];
@@ -33,13 +34,13 @@ export const AssociateSelectorSection = ({
 
   return (
     <Card className="border-muted/40 shadow-sm overflow-hidden bg-card/50 backdrop-blur-sm">
-      <CardContent className="p-6 space-y-6">
+      <CardContent className="p-3 space-y-3">
         <div className="flex items-center gap-2 mb-2">
           <div className="p-2 rounded-lg bg-primary/10 text-primary">
             <Users className="h-5 w-5" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold tracking-tight text-foreground">Assigned Associates</h2>
+            <h2 className="text-lg font-semibold tracking-tight text-foreground">Assigned Associates <Required /></h2>
             <p className="text-xs text-muted-foreground">Select the associates who will be responsible for reviewing candidate submissions for this job.</p>
           </div>
         </div>

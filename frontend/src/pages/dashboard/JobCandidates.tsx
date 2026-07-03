@@ -75,7 +75,7 @@ function CandidateStagesButton({ candidate, jobSlug, job }: CandidateStagesButto
             {/* {isLoading ? (
               <div className="h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin shrink-0" />
             ) : ( */}
-            <Layers className="h-4 w-4 shrink-0 text-blue-600" />
+            <Layers className="h-4 w-4 shrink-0" />
             {/* )} */}
           </Button>
         )}
@@ -360,11 +360,11 @@ export default function JobCandidates() {
                                   {...props}
                                   variant="ghost"
                                   size="sm"
-                                  className="h-9 px-3 rounded-xl border border-amber-300 hover:bg-gray-200/60 flex items-center justify-center gap-2 shrink-0 text-amber-600 font-semibold transition-all"
+                                  className="h-9 px-3 rounded-xl border hover:bg-gray-200/60 flex items-center justify-center gap-2 shrink-0 font-semibold transition-all"
                                   onClick={handleReanalyzeAll}
                                   disabled={candidates.filter(needsReanalysis).length === 0}
                                 >
-                                  <RotateCw className="h-4 w-4 text-amber-600 shrink-0" />
+                                  <RotateCw className="h-4 w-4 shrink-0" />
                                 </Button>
                               )}
                             />
@@ -386,7 +386,7 @@ export default function JobCandidates() {
                                     {...props}
                                     variant="ghost"
                                     size="sm"
-                                    className="h-9 w-9 p-0 rounded-xl border border-amber-300 hover:bg-gray-200/60 flex items-center justify-center shrink-0"
+                                    className="h-9 w-9 p-0 rounded-xl border hover:bg-gray-200/60 flex items-center justify-center shrink-0"
                                     onClick={(e) => {
                                       if (props.onClick) props.onClick(e);
                                       handleReanalyzeCandidate(candidate.id);
@@ -398,7 +398,7 @@ export default function JobCandidates() {
                                       !candidate.is_parsed
                                     }
                                   >
-                                    <RotateCw className="h-4 w-4 text-amber-600 shrink-0" />
+                                    <RotateCw className="h-4 w-4  shrink-0" />
                                   </Button>
                                 )}
                               />
