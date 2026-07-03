@@ -5,6 +5,7 @@ from pydantic import BaseModel, ConfigDict
 
 class JobPriorityBase(BaseModel):
     duration_days: int
+    associate_reminder_hours: int = 24
 
 
 class JobPriorityCreate(JobPriorityBase):
@@ -13,6 +14,7 @@ class JobPriorityCreate(JobPriorityBase):
 
 class JobPriorityUpdate(BaseModel):
     duration_days: int | None = None
+    associate_reminder_hours: int | None = None
 
 
 class JobPriorityRead(JobPriorityBase):

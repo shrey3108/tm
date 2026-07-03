@@ -229,6 +229,21 @@ async def serve_review_form(token: uuid.UUID, db: AsyncSession = Depends(get_db)
     stage = evaluation.candidate_stage
     if stage and stage.evaluation_data:
         github_url = stage.evaluation_data.get("github_url") or ""
+        
+    # Fetch AI evaluation overall score if available
+    ai_score = None
+    if stage and stage.id and db:
+        try:
+            from sqlalchemy import text
+            res_eval = await db.execute(
+                text("SELECT overall_score FROM evaluations WHERE candidate_stage_id = :stage_id ORDER BY created_at DESC LIMIT 1"),
+                {"stage_id": str(stage.id)}
+            )
+            row = res_eval.first()
+            if row:
+                ai_score = row[0]
+        except Exception:
+            pass
 
     work_drive_link = "https://www.augustinfotech.com/"
     # The router is mounted under /api/v1, so the submit URL must include it.
@@ -241,6 +256,7 @@ async def serve_review_form(token: uuid.UUID, db: AsyncSession = Depends(get_db)
         department_name=department_name,
         position_name=position_name,
         github_url=github_url,
+        ai_score=ai_score,
         work_drive_link=work_drive_link,
         items=items,
         submit_url=submit_url,
@@ -349,6 +365,7 @@ def _render_form_html(
     department_name: str,
     position_name: str,
     github_url: str,
+    ai_score: Optional[float],
     work_drive_link: str,
     items: list[dict],
     submit_url: str,
@@ -427,6 +444,14 @@ def _render_form_html(
               <a href="{html.escape(github_url)}" target="_blank" class="link">{html.escape(github_url)}</a>
             </div>"""
 
+    ai_score_box = ""
+    if ai_score is not None:
+        ai_score_box = f"""
+            <div class="info-box ai-box">
+              <div class="box-title" style="color: #166534;">AI Code Evaluation Score:</div>
+              <div style="font-size: 15px; font-weight: 700; color: #15803d;">{ai_score}/5.0</div>
+            </div>"""
+
     # If submitted, show the score box instead of the submit button.
     submit_section_html = ""
     score_box_html = ""
@@ -496,6 +521,10 @@ def _render_form_html(
     }}
     .github-box {{
       background: #eff6ff;
+      border: 3px solid #bac7de;
+    }}
+    .ai-box {{
+      background: #f0fdf4;
       border: 3px solid #bac7de;
     }}
     .work-drive-box {{
@@ -577,6 +606,8 @@ def _render_form_html(
       </div>
 
       {github_box}
+
+      {ai_score_box}
 
       <div class="info-box work-drive-box">
         <div class="box-title">Work Drive Link:</div>

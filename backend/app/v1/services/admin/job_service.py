@@ -405,14 +405,21 @@ Output Format Example (JSON ONLY):
             )
 
         # Handle priority dates calculation
+        priority = None
         if job_in.priority_id:
             if not job_in.priority_start_date:
                 job_in.priority_start_date = datetime.now()
             
-            if not job_in.priority_end_date:
-                priority = await job_priority_service.get_priority_by_id(db, job_in.priority_id)
-                if priority:
-                    job_in.priority_end_date = job_in.priority_start_date + timedelta(days=priority.duration_days)
+            priority = await job_priority_service.get_priority_by_id(db, job_in.priority_id)
+            if not job_in.priority_end_date and priority:
+                job_in.priority_end_date = job_in.priority_start_date + timedelta(days=priority.duration_days)
+
+        # Handle associate reminder hours default
+        if job_in.associate_reminder_hours is None:
+            if priority and priority.associate_reminder_hours:
+                job_in.associate_reminder_hours = priority.associate_reminder_hours
+            else:
+                job_in.associate_reminder_hours = 24
 
         job = await job_repository.create(
             db=db, object=job_in, created_by=admin_user_id

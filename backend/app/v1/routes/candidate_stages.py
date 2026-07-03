@@ -334,6 +334,55 @@ def is_practical_evaluation(stage: CandidateStage) -> bool:
 class GitHubEvaluationRequest(BaseModel):
     github_url: str | None = None
 
+@router.post("/{id}/submit-github")
+async def submit_candidate_github_repo(
+    id: uuid.UUID,
+    payload: GitHubEvaluationRequest,
+    db: AsyncSession = Depends(get_db),
+    # Candidates might submit this, but assuming existing permission for now or anonymous if no auth.
+    # Leaving same permission for backward compatibility if HR submits on their behalf.
+    user: UserRead = Depends(check_permission("candidates:decide")),
+) -> Any:
+    """Submit a GitHub repository URL for the Technical Practical Round without triggering evaluation."""
+    stmt = select(CandidateStage).options(
+        selectinload(CandidateStage.job_stage).options(
+            selectinload(JobStageConfig.job),
+            selectinload(JobStageConfig.template),
+        ),
+        selectinload(CandidateStage.candidate)
+    ).where(CandidateStage.id == id)
+    
+    res = await db.execute(stmt)
+    stage = res.scalars().first()
+
+    if not stage:
+        raise HTTPException(status_code=404, detail="Candidate stage not found")
+
+    if not is_practical_evaluation(stage):
+        raise HTTPException(status_code=400, detail="This stage is not configured for Technical Practical Round evaluation.")
+
+    github_url = payload.github_url
+    if not github_url:
+        raise HTTPException(status_code=400, detail="GitHub URL not found.")
+
+    candidate = stage.candidate
+    candidate.task_file_path = github_url
+
+    stage.status = "submitted"
+    
+    eval_data = stage.evaluation_data if isinstance(stage.evaluation_data, dict) else {}
+    eval_data["github_url"] = github_url
+    eval_data["submitted_at"] = datetime.now(timezone.utc).isoformat()
+    stage.evaluation_data = eval_data
+
+    await db.commit()
+
+    return {
+        "message": "GitHub repository successfully submitted.",
+        "candidate_stage_id": id,
+        "status": "submitted"
+    }
+
 @router.post("/{id}/evaluate-github")
 async def evaluate_candidate_github_repo(
     id: uuid.UUID,
@@ -378,194 +427,28 @@ async def evaluate_candidate_github_repo(
     if not candidate or not job:
         raise HTTPException(status_code=400, detail="Candidate or Job association missing.")
 
-    # 3. Resolve GitHub URL from payload only
+    # 3. Resolve GitHub URL from payload or evaluation_data
     github_url = payload.github_url
+    if not github_url and stage.evaluation_data and isinstance(stage.evaluation_data, dict):
+        github_url = stage.evaluation_data.get("github_url")
+        
     if not github_url:
         raise HTTPException(
             status_code=400,
-            detail="GitHub URL not found. Please provide a valid GitHub repository URL in the request body.",
+            detail="GitHub URL not found. Please provide a valid GitHub repository URL in the request body or submit it first.",
         )
 
-    # 4. Save/update candidate task_file_path with the solution repo URL
-    candidate.task_file_path = github_url
+    # 4. Save/update candidate task_file_path with the solution repo URL if not already saved
+    if candidate.task_file_path != github_url:
+        candidate.task_file_path = github_url
+        await db.commit()
+
+    from app.v1.services.github_eval_service import trigger_github_evaluation
+    recruiter_email = user.email if user else None
+    return await trigger_github_evaluation(db, stage, github_url, recruiter_email)
 
     # 5. Fetch all papers in CandidateTestPaperHistory for this candidate and stage
-    stmt_history = select(CandidateTestPaperHistory).where(
-        CandidateTestPaperHistory.candidate_id == candidate.id
-    )
-    if stage.job_stage_id:
-        stmt_history_stage = stmt_history.where(CandidateTestPaperHistory.job_stage_config_id == stage.job_stage_id)
-        res_history = await db.execute(stmt_history_stage)
-        history_records = res_history.scalars().all()
-        if not history_records:
-            stmt_history_none = stmt_history.where(CandidateTestPaperHistory.job_stage_config_id.is_(None))
-            res_history = await db.execute(stmt_history_none)
-            history_records = res_history.scalars().all()
-    else:
-        stmt_history = stmt_history.where(CandidateTestPaperHistory.job_stage_config_id.is_(None))
-        res_history = await db.execute(stmt_history)
-        history_records = res_history.scalars().all()
 
-    has_assigned_paper = False
-    task_skills = []
-    if history_records:
-        has_assigned_paper = True
-        # Combine and deduplicate skills from all history records
-        for hr in history_records:
-            if hr.task_skills:
-                task_skills.extend(hr.task_skills)
-        task_skills = list(set(task_skills))
-    else:
-        # Fallback to active CandidateTestPaper (if assigned but not emailed yet)
-        stmt_paper = select(CandidateTestPaper).where(
-            CandidateTestPaper.candidate_id == candidate.id
-        )
-        if stage.job_stage_id:
-            stmt_paper_stage = stmt_paper.where(CandidateTestPaper.job_stage_config_id == stage.job_stage_id)
-            res_paper = await db.execute(stmt_paper_stage)
-            test_paper = res_paper.scalar_one_or_none()
-            if not test_paper:
-                stmt_paper_none = stmt_paper.where(CandidateTestPaper.job_stage_config_id.is_(None))
-                res_paper = await db.execute(stmt_paper_none)
-                test_paper = res_paper.scalar_one_or_none()
-        else:
-            stmt_paper = stmt_paper.where(CandidateTestPaper.job_stage_config_id.is_(None))
-            res_paper = await db.execute(stmt_paper)
-            test_paper = res_paper.scalar_one_or_none()
-
-        # Fallback to job-level default test paper
-        target_job_id = stage.job_stage.job_id if stage.job_stage else candidate.applied_job_id
-        if not test_paper and target_job_id:
-            stmt_job = select(CandidateTestPaper).where(
-                CandidateTestPaper.job_id == target_job_id,
-                CandidateTestPaper.candidate_id.is_(None)
-            )
-            if stage.job_stage_id:
-                stmt_job_stage = stmt_job.where(CandidateTestPaper.job_stage_config_id == stage.job_stage_id)
-                res_job = await db.execute(stmt_job_stage)
-                test_paper = res_job.scalar_one_or_none()
-                if not test_paper:
-                    stmt_job_none = stmt_job.where(CandidateTestPaper.job_stage_config_id.is_(None))
-                    res_job = await db.execute(stmt_job_none)
-                    test_paper = res_job.scalar_one_or_none()
-            else:
-                stmt_job = stmt_job.where(CandidateTestPaper.job_stage_config_id.is_(None))
-                res_job = await db.execute(stmt_job)
-                test_paper = res_job.scalar_one_or_none()
-
-        if test_paper:
-            has_assigned_paper = True
-            if test_paper.task_skills:
-                task_skills = test_paper.task_skills
-
-    if not has_assigned_paper:
-        raise HTTPException(
-            status_code=400,
-            detail="Please assign a test paper to the candidate first before running the repository evaluation.",
-        )
-
-    # 6. Get Job standard skills
-    jd_skills = [skill.name for skill in job.skills] if job.skills else []
-
-    # 7. Trigger microservice evaluation submit synchronously to detect duplicate/cloning errors immediately
-    evaluator_url = settings.GITHUB_EVALUATOR_URL
-    submit_url = f"{evaluator_url.rstrip('/')}/api/v1/repositories"
-    # Prioritize settings.DEFAULT_RECRUITER_EMAIL from .env over user.email
-    recruiter_email = settings.DEFAULT_RECRUITER_EMAIL or (user.email if user else None)
-
-    # Prioritize settings.DEFAULT_CANDIDATE_EMAIL from .env over candidate.email
-    candidate_email = settings.DEFAULT_CANDIDATE_EMAIL or (candidate.email if (candidate and candidate.email) else None)
-
-    payload = {
-        "github_url": github_url,
-        "job_title": job.title if job else "Software Engineer",
-        "job_position": job.position.name if (job and job.position) else None,
-        "jd_skills": jd_skills,
-        "project_required_skills": task_skills,
-        "repo_id": str(candidate.id) if candidate else None,
-        "candidate_email": candidate_email,
-        "recruiter_email": recruiter_email,
-    }
-
-    eval_id = None
-    try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.post(submit_url, json=payload)
-            
-            if response.status_code not in (200, 201):
-                error_msg = "Failed to submit repository to evaluator."
-                try:
-                    error_data = response.json()
-                    error_msg = error_data.get("error_message") or error_data.get("detail") or error_data.get("message") or error_data.get("error") or response.text
-                    eval_id = error_data.get("evaluation_id")
-                except Exception:
-                    error_msg = response.text or error_msg
-                    eval_id = None
-                
-                if response.status_code == 409:
-                    if eval_id:
-                        get_logger(__name__).info(f"Repository already submitted. Re-using evaluation ID: {eval_id}")
-                    else:
-                        raise HTTPException(status_code=409, detail=error_msg)
-                else:
-                    stage.status = "failed"
-                    stage.evaluation_data = {
-                        "error": error_msg,
-                        "status": "submission_error",
-                        "github_url": github_url
-                    }
-                    await db.commit()
-                    raise HTTPException(status_code=response.status_code, detail=error_msg)
-
-            submit_data = response.json()
-            eval_id = submit_data.get("evaluation_id")
-            submit_status = submit_data.get("status")
-
-            # Check if there is an immediate cloning_error or other failure in submission response
-            if not eval_id or submit_status in ("cloning_error", "failed"):
-                error_msg = submit_data.get("error_message") or submit_data.get("message") or submit_data.get("detail") or "Failed to initiate evaluation on evaluator service."
-                stage.status = "failed"
-                stage.evaluation_data = {
-                    "error": error_msg,
-                    "status": submit_status or "submission_error",
-                    "github_url": github_url
-                }
-                await db.commit()
-                raise HTTPException(status_code=400, detail=error_msg)
-
-    except httpx.HTTPError as he:
-        error_msg = f"Communication with evaluator microservice failed: {str(he)}"
-        stage.status = "failed"
-        stage.evaluation_data = {
-            "error": error_msg,
-            "status": "communication_error",
-            "github_url": github_url
-        }
-        await db.commit()
-        raise HTTPException(status_code=502, detail=error_msg)
-
-    # 8. Set stage status to processing since submission succeeded
-    stage.status = "processing"
-    stage.evaluation_data = {"github_url": github_url}  # Save URL for retry
-    await db.commit()
-
-    # 9. Dispatch async Celery task
-    evaluate_candidate_practical_task.delay(
-        str(id),
-        github_url,
-        jd_skills,
-        task_skills,
-        recruiter_email=recruiter_email,
-        eval_id=eval_id,
-    )
-
-    return {
-        "message": "GitHub repository evaluation task has been triggered successfully in the background.",
-        "candidate_stage_id": id,
-        "github_url": github_url,
-        "status": "processing",
-        "evaluation_id": eval_id,
-    }
 
 @router.post("/{id}/retry")
 async def retry_candidate_stage_evaluation(
@@ -778,9 +661,11 @@ async def send_paper_to_associates(
                 candidate=candidate,
                 test_paper=test_paper,
                 github_url=github_url,
+                workdrive_url=payload.workdrive_url,
                 review_token=evaluation.review_token,
                 db=db,
                 stage_job_id=stage.job_stage.job_id if stage.job_stage else None,
+                stage_name=stage.job_stage.template.name if stage.job_stage and stage.job_stage.template else None,
             )
             sent_results.append(
                 AssociateEmailResult(
@@ -815,6 +700,7 @@ async def send_paper_to_associates(
             details={
                 "candidate_name": candidate_full_name,
                 "github_url": github_url,
+                "workdrive_url": payload.workdrive_url,
                 "paper_id": str(test_paper.id),
                 "paper_name": test_paper.name,
                 "associate_count": len(associates),

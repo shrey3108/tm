@@ -44,6 +44,12 @@ class JobPriority(Base):
         nullable=False,
     )
 
+    associate_reminder_hours: Mapped[int] = mapped_column(
+        Integer,
+        default=24,
+        nullable=False,
+    )
+
     # TIMESTAMPS
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

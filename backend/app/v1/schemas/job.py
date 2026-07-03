@@ -33,6 +33,7 @@ class JobBase(BaseModel):
     question_bank_passing_threshold: float = 70.0
     custom_extraction_fields: list[str] | None = None
     priority_id: uuid.UUID | None = None
+    associate_reminder_hours: int | None = Field(None, description="Hours between reminders for associates")
     position_id: uuid.UUID | None = None
     priority_start_date: datetime | None = None
     priority_end_date: datetime | None = None

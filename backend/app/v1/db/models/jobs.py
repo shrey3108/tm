@@ -182,6 +182,12 @@ class Job(Base):
         nullable=True,
     )
 
+    associate_reminder_hours: Mapped[int] = mapped_column(
+        Integer,
+        default=24,
+        nullable=False,
+    )
+
     # RELATIONSHIPS
     creator: Mapped["User"] = relationship(
         "User", back_populates="jobs", foreign_keys=[created_by]

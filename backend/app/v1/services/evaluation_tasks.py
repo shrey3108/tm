@@ -128,7 +128,8 @@ def evaluate_candidate_practical_task(
                     selectinload(CandidateStage.job_stage).options(
                         selectinload(JobStageConfig.job).options(
                             selectinload(Job.position)
-                        )
+                        ),
+                        selectinload(JobStageConfig.template)
                     ),
                 )
                 .where(CandidateStage.id == candidate_stage_id)
@@ -592,7 +593,69 @@ def evaluate_candidate_practical_task(
 
             await db.commit()
 
-            # 8. Clear candidate cache
+            # 8. Auto-send to assigned associates
+            try:
+                from app.v1.db.models.associates import Associate
+                from app.v1.db.models.job_associates import job_associates
+                from app.v1.db.models.candidate_test_paper import CandidateTestPaper
+                from app.v1.db.models.associate_evaluations import AssociateEvaluation
+                from app.v1.services.email_service import send_associate_notification_email
+                
+                # Fetch default test paper
+                stmt_job = select(CandidateTestPaper).where(
+                    CandidateTestPaper.job_id == job.id,
+                    CandidateTestPaper.candidate_id.is_(None),
+                )
+                if stage.job_stage_id:
+                    stmt_job_stage = stmt_job.where(CandidateTestPaper.job_stage_config_id == stage.job_stage_id)
+                    res_job = await db.execute(stmt_job_stage)
+                    test_paper = res_job.scalar_one_or_none()
+                    if not test_paper:
+                        stmt_job_none = stmt_job.where(CandidateTestPaper.job_stage_config_id.is_(None))
+                        res_job = await db.execute(stmt_job_none)
+                        test_paper = res_job.scalar_one_or_none()
+                else:
+                    stmt_job_none = stmt_job.where(CandidateTestPaper.job_stage_config_id.is_(None))
+                    res_job = await db.execute(stmt_job_none)
+                    test_paper = res_job.scalar_one_or_none()
+
+                # Fetch assigned associates
+                stmt_assoc = select(Associate).join(job_associates).where(job_associates.c.job_id == job.id)
+                associates_res = await db.execute(stmt_assoc)
+                assigned_associates = associates_res.scalars().all()
+
+                if test_paper and assigned_associates:
+                    for associate in assigned_associates:
+                        try:
+                            evaluation_record = AssociateEvaluation(
+                                candidate_stage_id=stage.id,
+                                associate_id=associate.id,
+                                test_paper_id=test_paper.id,
+                                candidate_id=candidate.id,
+                                job_id=job.id,
+                            )
+                            db.add(evaluation_record)
+                            await db.flush()
+                            
+                            await send_associate_notification_email(
+                                associate_name=associate.name,
+                                associate_email=associate.email,
+                                candidate=candidate,
+                                test_paper=test_paper,
+                                github_url=github_url,
+                                workdrive_url="",
+                                review_token=evaluation_record.review_token,
+                                db=db,
+                                stage_job_id=job.id,
+                                stage_name=stage.job_stage.template.name if stage.job_stage and stage.job_stage.template else None,
+                            )
+                        except Exception as email_ex:
+                            logger.error(f"Failed to auto-send email to associate {associate.email}: {email_ex}")
+                    await db.commit()
+            except Exception as auto_ex:
+                logger.error(f"Failed during auto-send to associates: {auto_ex}")
+
+            # 9. Clear candidate cache
             try:
                 from app.v1.services.admin.system_service import system_service
                 await system_service.invalidate_job_cache(job.id)
@@ -621,4 +684,81 @@ def evaluate_candidate_practical_task(
             raise
 
     loop.run_until_complete(run_with_cleanup(safe_run_practical_eval()))
+
+@celery_app.task(name="auto_trigger_github_evaluations_task")
+def auto_trigger_github_evaluations_task():
+    """
+    Periodic task to check for CandidateStages that have been in 'submitted' status
+    for more than 24 hours and trigger the evaluation automatically.
+    """
+    logger.info("Starting auto_trigger_github_evaluations_task...")
+    
+    import asyncio
+    from datetime import datetime, timezone
+    from sqlalchemy import select
+    from sqlalchemy.orm import selectinload
+    from app.v1.db.session import async_session_maker
+    from app.v1.db.models.candidate_stages import CandidateStage
+    from app.v1.db.models.job_stage_configs import JobStageConfig
+    from app.v1.db.models.jobs import Job
+    from app.v1.services.github_eval_service import trigger_github_evaluation
+
+    async def run_auto_trigger():
+        now = datetime.now(timezone.utc)
+        triggered_count = 0
+        
+        async with async_session_maker() as db:
+            stmt = select(CandidateStage).options(
+                selectinload(CandidateStage.candidate),
+                selectinload(CandidateStage.job_stage).options(
+                    selectinload(JobStageConfig.job).options(
+                        selectinload(Job.skills),
+                        selectinload(Job.position)
+                    ),
+                    selectinload(JobStageConfig.template)
+                )
+            ).where(CandidateStage.status == "submitted")
+            
+            result = await db.execute(stmt)
+            stages = result.scalars().all()
+            
+            for stage in stages:
+                eval_data = stage.evaluation_data
+                if not isinstance(eval_data, dict):
+                    continue
+                    
+                submitted_at_str = eval_data.get("submitted_at")
+                github_url = eval_data.get("github_url")
+                
+                if not submitted_at_str or not github_url:
+                    continue
+                    
+                try:
+                    submitted_at = datetime.fromisoformat(submitted_at_str)
+                    if submitted_at.tzinfo is None:
+                        submitted_at = submitted_at.replace(tzinfo=timezone.utc)
+                        
+                    elapsed_minutes = (now - submitted_at).total_seconds() / 60.0
+                    if elapsed_minutes >= (24 * 60):
+                        logger.info(f"Auto-triggering GitHub evaluation for CandidateStage {stage.id}")
+                        await trigger_github_evaluation(
+                            db=db,
+                            stage=stage,
+                            github_url=github_url,
+                        )
+                        triggered_count += 1
+                except Exception as e:
+                    logger.error(f"Failed to auto-trigger evaluation for CandidateStage {stage.id}: {e}")
+                    
+        return triggered_count
+
+    try:
+        loop = asyncio.get_event_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        
+    count = loop.run_until_complete(run_auto_trigger())
+    logger.info(f"Finished auto_trigger_github_evaluations_task. Triggered {count} evaluations.")
+
 

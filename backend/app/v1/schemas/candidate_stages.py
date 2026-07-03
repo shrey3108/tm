@@ -58,6 +58,7 @@ class SendToAssociatesRequest(BaseModel):
     associate_ids: list[uuid.UUID] = Field(
         ..., min_length=1, description="List of associate IDs to notify via email"
     )
+    workdrive_url: Optional[str] = Field(None, description="Optional workdrive link to share with associates")
 
 
 class AssociateEmailResult(BaseModel):

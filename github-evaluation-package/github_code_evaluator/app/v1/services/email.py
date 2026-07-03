@@ -76,7 +76,7 @@ class EmailService:
             f"Our system could not access or clone your repository: {github_url}.\n"
             f"Please verify that the repository is public and accessible, or grant access permissions.\n"
             f"You have {grace_period_hours} hours to resolve this issue before this evaluation link expires.\n\n"
-            f"Best regards,\nHR Evaluation System"
+            f"Best regards,\nAIRA Talent"
         )
         
         recruiter_subject = f"Alert: Repository Access Failure - Candidate Repo {github_url}"
@@ -84,7 +84,7 @@ class EmailService:
             f"Hello HR/Recruiter,\n\n"
             f"The evaluation process for candidate repository {github_url} failed because the repository is inaccessible.\n"
             f"The candidate has been notified and granted a {grace_period_hours}-hour grace period to resolve the issue.\n\n"
-            f"Best regards,\nHR Evaluation System"
+            f"Best regards,\nAIRA Talent"
         )
 
         await EmailService.send_email(candidate_email, candidate_subject, candidate_body)
@@ -125,7 +125,7 @@ class EmailService:
             f"The candidate technical evaluation for repository {github_url} has completed successfully.\n"
             f"Overall Score: {overall_score}/5.0.\n"
             f"Recommendation: {recommendation}{questions_text}\n\n"
-            f"Best regards,\nHR Evaluation System"
+            f"Best regards,\nAIRA Talent"
         )
         await EmailService.send_email(recruiter_email, subject, hr_body)
 

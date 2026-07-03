@@ -75,7 +75,7 @@ class GuidelineService:
             except Exception:
                 pass
 
-        guideline = await guideline_repository.crud.get(db=db, id=guideline_id)
+        guideline = await db.scalar(select(Guideline).where(Guideline.id == guideline_id))
         if not guideline:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -94,17 +94,21 @@ class GuidelineService:
     ) -> GuidelineRead:
         """Create a new guideline template."""
         # Uniqueness check on content
-        existing = await guideline_repository.crud.get(db=db, content=guideline_in.content)
+        existing = await db.scalar(select(Guideline).where(Guideline.content == guideline_in.content))
         if existing:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Guideline with this content already exists.",
             )
 
-        guideline_db = await guideline_repository.crud.create(
-            db=db, object=guideline_in
-        )
+        guideline_db = Guideline(content=guideline_in.content)
+        db.add(guideline_db)
         await db.commit()
+        await db.refresh(guideline_db)
+        
+        # Extract fields needed for audit log before committing again
+        target_id = guideline_db.id
+        content = guideline_db.content
 
         await cache.clear(pattern="guidelines:list:*")
 
@@ -113,12 +117,13 @@ class GuidelineService:
             user_id=admin_user_id,
             action="create_guideline",
             target_type="guideline",
-            target_id=guideline_db.id,
+            target_id=target_id,
             details={
-                "content": guideline_db.content,
+                "content": content,
             },
         )
 
+        await db.refresh(guideline_db)
         return GuidelineRead.model_validate(guideline_db)
 
     async def update_guideline(
@@ -129,7 +134,7 @@ class GuidelineService:
         guideline_update: GuidelineUpdate,
     ) -> GuidelineRead:
         """Update an existing guideline template."""
-        guideline = await guideline_repository.crud.get(db=db, id=guideline_id)
+        guideline = await db.scalar(select(Guideline).where(Guideline.id == guideline_id))
         if not guideline:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -138,19 +143,18 @@ class GuidelineService:
 
         # Uniqueness check on content if updated
         if guideline_update.content and guideline_update.content != guideline.content:
-            existing = await guideline_repository.crud.get(
-                db=db, content=guideline_update.content
-            )
+            existing = await db.scalar(select(Guideline).where(Guideline.content == guideline_update.content))
             if existing:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Guideline with this content already exists.",
                 )
 
-        updated_db = await guideline_repository.crud.update(
-            db=db, id=guideline_id, object=guideline_update
-        )
+        if guideline_update.content is not None:
+            guideline.content = guideline_update.content
+
         await db.commit()
+        await db.refresh(guideline)
 
         await cache.delete(f"guideline:{guideline_id}")
         await cache.clear(pattern="guidelines:list:*")
@@ -164,20 +168,23 @@ class GuidelineService:
             details=guideline_update.model_dump(exclude_unset=True),
         )
 
-        return GuidelineRead.model_validate(updated_db)
+        await db.refresh(guideline)
+        return GuidelineRead.model_validate(guideline)
 
     async def delete_guideline(
         self, db: AsyncSession, admin_user_id: uuid.UUID, guideline_id: uuid.UUID
     ) -> None:
         """Delete a guideline template."""
-        guideline = await guideline_repository.crud.get(db=db, id=guideline_id)
+        guideline = await db.scalar(select(Guideline).where(Guideline.id == guideline_id))
         if not guideline:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Guideline template not found.",
             )
 
-        await guideline_repository.crud.delete(db=db, id=guideline_id)
+        content = guideline.content
+        
+        await db.delete(guideline)
         await db.commit()
 
         await cache.delete(f"guideline:{guideline_id}")
@@ -189,7 +196,7 @@ class GuidelineService:
             action="delete_guideline",
             target_type="guideline",
             target_id=guideline_id,
-            details={"content": guideline.content},
+            details={"content": content},
         )
 
 

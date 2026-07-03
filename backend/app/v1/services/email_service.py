@@ -6,6 +6,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
+from email.utils import formataddr
 import asyncio
 import logging
 from typing import Optional, Any
@@ -15,6 +16,7 @@ from sqlalchemy import select
 from app.v1.db.models.candidates import Candidate
 from app.v1.db.models.candidate_test_paper import CandidateTestPaper
 from app.v1.db.models.question_set_paper import QuestionSetPaper
+from app.v1.db.models.jobs import Job
 from app.v1.core.config import settings
 from app.v1.core.storage import resolve_storage_path
 from app.v1.utils.pdf_generator import generate_candidate_task_pdf_file
@@ -253,10 +255,10 @@ async def send_candidate_task_email_via_smtp(
     elif db:
         try:
             from app.v1.db.models.guidelines import Guideline
-            res_all = await db.execute(select(Guideline.content).order_by(Guideline.created_at.asc()))
-            guideline_contents = res_all.scalars().all()
-            if guideline_contents:
-                guidelines_content = "\n\n".join(guideline_contents)
+            res = await db.execute(select(Guideline.content).where(Guideline.is_default == True))
+            default_guideline = res.scalars().first()
+            if default_guideline:
+                guidelines_content = default_guideline
         except Exception as e:
             logger.error(f"Failed to fetch fallback guidelines for email: {e}")
 
@@ -446,9 +448,11 @@ async def send_associate_notification_email(
     candidate: Candidate,
     test_paper: CandidateTestPaper,
     github_url: Optional[str] = None,
+    workdrive_url: Optional[str] = None,
     review_token: uuid.UUID = None,
     db: AsyncSession = None,
     stage_job_id: Optional[uuid.UUID] = None,
+    stage_name: Optional[str] = None,
 ) -> None:
     """Send test paper + candidate GitHub URL to an associate for the GitHub+Question round.
 
@@ -459,6 +463,15 @@ async def send_associate_notification_email(
     temp_file_to_delete = None
     attachment_path = None
     attachment_name = None
+
+    import re
+    def slugify(text: str) -> str:
+        if not text:
+            return ""
+        text = text.lower().strip()
+        text = re.sub(r'[^a-z0-9]+', '-', text)
+        text = re.sub(r'--+', '-', text)
+        return text.strip('-')
 
     # 1. Resolve job/position/department details for the email subject and body
     from app.v1.db.models.jobs import Job
@@ -483,14 +496,28 @@ async def send_associate_notification_email(
 
     job_info_str = f" for the <strong>{job_title}</strong> position" if job_title else ""
     candidate_full_name = f"{candidate.first_name or 'Candidate'} {candidate.last_name or ''}".strip()
-    work_drive_link = "https://www.augustinfotech.com/"
+    
+    # Use provided workdrive link or fallback to default
+    work_drive_link = workdrive_url if workdrive_url else "https://www.augustinfotech.com/"
 
     # Build the review form link using the unique review token (no auth required).
     # The associate clicks this link to open a backend-served HTML form where they
     # enter marks per question and submit.
     review_form_url = f"{settings.APP_BASE_URL.rstrip('/')}/api/v1/associate-reviews/{review_token}"
 
-    # 2. Determine attachment (reuse same logic as candidate email)
+    # Build the GitHub Evaluation URL for the hiring platform dashboard
+    dashboard_url = ""
+    if candidate_full_name and job_title and stage_name:
+        base_url = settings.APP_BASE_URL.rstrip('/')
+        # Usually frontend runs on a different port like 5173, but we use the APP_BASE_URL which points to the frontend in standard setups.
+        # If APP_BASE_URL is pointing to backend API, we fallback to frontend port for localhost.
+        if "localhost:8000" in base_url or "127.0.0.1:8000" in base_url:
+            base_url = base_url.replace("8000", "5173")
+        
+        j_slug = slugify(job_title)
+        c_slug = slugify(candidate_full_name)
+        s_slug = slugify(stage_name)
+        dashboard_url = f"{base_url}/dashboard/jobs/{j_slug}/candidates/{c_slug}/stages/{s_slug}"
     task_file_path = test_paper.task_file_path if test_paper else None
     external_url = None
     if task_file_path and task_file_path.startswith(("http://", "https://")):
@@ -513,12 +540,17 @@ async def send_associate_notification_email(
 
     # Fetch AI evaluation overall score if available
     ai_score = None
-    if candidate.github_evaluation_id and db:
+    if candidate and db:
         try:
             from sqlalchemy import text
             res_eval = await db.execute(
-                text("SELECT overall_score FROM evaluations WHERE evaluation_id = :eval_id"),
-                {"eval_id": candidate.github_evaluation_id}
+                text(
+                    "SELECT e.overall_score FROM evaluations e "
+                    "JOIN candidate_stages cs ON e.candidate_stage_id = cs.id "
+                    "WHERE cs.candidate_id = :candidate_id "
+                    "ORDER BY e.created_at DESC LIMIT 1"
+                ),
+                {"candidate_id": str(candidate.id)}
             )
             row = res_eval.first()
             if row:
@@ -717,12 +749,14 @@ async def send_associate_notification_email(
             </div>
             ''' if github_url else ""}
 
+            {f'''
             <div class="work-drive-box">
               <div class="work-drive-title">Work Drive Link:</div>
               <div class="work-drive-link">
                 <a href="{html.escape(work_drive_link)}" target="_blank" style="color: #10b981; text-decoration: underline;">{html.escape(work_drive_link)}</a>
               </div>
             </div>
+            ''' if work_drive_link else ""}
 
             <div class="review-form-box">
               <div class="review-form-title">📝 Submit Your Evaluation</div>
@@ -734,6 +768,17 @@ async def send_associate_notification_email(
               <a href="{html.escape(review_form_url)}" class="review-form-button" target="_blank">
                 Open Review Form
               </a>
+              
+              {f'''
+              <div style="margin-top: 20px; border-top: 1px solid #fcd34d; padding-top: 15px;">
+                <div class="review-form-text" style="font-weight: 600;">
+                  Want to see the detailed AI Code Evaluation criteria?
+                </div>
+                <a href="{html.escape(dashboard_url)}" class="review-form-button" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); margin-top: 10px;" target="_blank">
+                  View Detailed AI Score
+                </a>
+              </div>
+              ''' if dashboard_url else ""}
             </div>
 
             <div class="message">
@@ -804,3 +849,155 @@ async def send_associate_notification_email(
                 os.unlink(temp_file_to_delete)
             except Exception:
                 pass
+
+
+async def send_associate_reminder_email(
+    associate_name: str,
+    associate_email: str,
+    candidate: Candidate,
+    test_paper: CandidateTestPaper,
+    review_token: uuid.UUID,
+    job: Optional[Job] = None,
+    stage_name: Optional[str] = None,
+    db: Optional[Any] = None,
+) -> None:
+    """Send a reminder email to an associate for a pending evaluation."""
+    candidate_full_name = f"{candidate.first_name} {candidate.last_name}".strip()
+    job_title = job.title if job else "the assigned job"
+    
+    subject = f"ACTION REQUIRED: Pending Evaluation for {candidate_full_name} - {job_title}"
+    
+    review_form_url = f"{settings.APP_BASE_URL.rstrip('/')}/api/v1/associate-reviews/{review_token}"
+    
+    import re
+    def slugify(text: str) -> str:
+        if not text: return ""
+        text = text.lower().strip()
+        text = re.sub(r'[^a-z0-9]+', '-', text)
+        return re.sub(r'--+', '-', text).strip('-')
+
+    dashboard_url = ""
+    if candidate_full_name and job_title and stage_name:
+        base_url = settings.APP_BASE_URL.rstrip('/')
+        if "localhost:8000" in base_url or "127.0.0.1:8000" in base_url:
+            base_url = "http://localhost:5173"
+        dashboard_url = f"{base_url}/dashboard/jobs/{slugify(job_title)}/candidates/{slugify(candidate_full_name)}/stages/{slugify(stage_name)}"
+        
+    # Fetch AI evaluation overall score if available
+    ai_score = None
+    if candidate and db:
+        try:
+            from sqlalchemy import text
+            res_eval = await db.execute(
+                text(
+                    "SELECT e.overall_score FROM evaluations e "
+                    "JOIN candidate_stages cs ON e.candidate_stage_id = cs.id "
+                    "WHERE cs.candidate_id = :candidate_id "
+                    "ORDER BY e.created_at DESC LIMIT 1"
+                ),
+                {"candidate_id": str(candidate.id)}
+            )
+            row = res_eval.first()
+            if row:
+                ai_score = row[0]
+        except Exception as e:
+            logger.error(f"Failed to query AI score for reminder email: {e}")
+
+    ai_score_row = ""
+    if ai_score is not None:
+        ai_score_row = f"""
+        <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px; border-radius: 6px; margin: 20px 0; display: flex; justify-content: space-between; align-items: center;">
+            <span style="color: #166534; font-weight: 600;">AI Code Evaluation Score:</span>
+            <span style="color: #15803d; font-weight: 700; font-size: 15px;">{ai_score}/5.0</span>
+        </div>
+        """
+
+    html_content = f'''
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <title>{html.escape(subject)}</title>
+        <style>
+          body {{
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f3f4f6;
+            margin: 0;
+            padding: 40px 20px;
+            color: #1f2937;
+          }}
+          .container {{
+            max-width: 600px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+          }}
+          .header {{
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            padding: 30px 40px;
+            color: white;
+            text-align: center;
+          }}
+          .content {{
+            padding: 40px;
+          }}
+          .btn {{
+            display: inline-block;
+            background: #2563eb;
+            color: white !important;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            margin-top: 15px;
+          }}
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1 style="margin:0; font-size:24px;">Reminder: Pending Evaluation</h1>
+          </div>
+          <div class="content">
+            <p>Hi {html.escape(associate_name)},</p>
+            <p>This is a friendly reminder that you have a pending evaluation for <strong>{html.escape(candidate_full_name)}</strong> for the <strong>{html.escape(job_title)}</strong> position.
+              The deadline for submitting this evaluation is approaching. Your timely feedback is critical.
+            </p>
+            {ai_score_row}
+            <div class="button-container" style="text-align: center; margin: 30px 0;">
+              <a href="{html.escape(review_form_url)}" class="btn">Open Review Form</a>
+            </div>
+            {f"""
+            <div style="text-align: center; margin-top: 20px;">
+                <p>Need to review the AI evaluation score?</p>
+                <a href="{html.escape(dashboard_url)}" class="btn" style="background: #10b981;">View Detailed AI Score</a>
+            </div>
+            """ if dashboard_url else ""}
+          </div>
+        </div>
+      </body>
+    </html>
+    '''
+    
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"] = formataddr(("Hiring Platform", settings.SMTP_FROM_EMAIL))
+    msg["To"] = associate_email
+    
+    msg.attach(MIMEText(html_content, "html"))
+    
+    smtp_from = settings.SMTP_FROM_EMAIL
+    
+    def send_sync():
+        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
+            server.ehlo()
+            if server.has_extn('STARTTLS'):
+                server.starttls()
+                server.ehlo()
+            if settings.SMTP_USER and settings.SMTP_PASSWORD:
+                server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
+            server.sendmail(smtp_from, [associate_email], msg.as_string())
+
+    await asyncio.to_thread(send_sync)

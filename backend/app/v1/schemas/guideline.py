@@ -14,6 +14,7 @@ class GuidelineBase(BaseModel):
     Base schema for Guideline data with shared attributes.
     """
     content: str
+    is_default: bool = False
 
 
 class GuidelineCreate(GuidelineBase):
@@ -28,6 +29,7 @@ class GuidelineUpdate(BaseModel):
     Schema for updating an existing Guideline.
     """
     content: str | None = None
+    is_default: bool | None = None
 
 
 class GuidelineRead(GuidelineBase):

@@ -317,7 +317,7 @@ async def get_evaluation_report_html(
                     Action Required: Please verify that the repository is public, or grant necessary access permissions to allow cloning.
                 </div>
                 <p style="color: #64748b; font-size: 0.8rem; margin: 0;">
-                    HR Evaluation System • Status: CLONING_ERROR
+                    AIRA Talent • Status: CLONING_ERROR
                 </p>
             </div>
         </body>

@@ -114,6 +114,11 @@ class AssociateEvaluation(Base):
         nullable=False,
     )
 
+    last_reminder_sent_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
     marks: Mapped[Optional[list[dict]]] = mapped_column(
         JSONB,
         nullable=True,

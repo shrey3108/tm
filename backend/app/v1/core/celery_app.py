@@ -15,7 +15,8 @@ celery_includes = [
     "app.v1.services.resume_upload.tasks",
     "app.v1.services.admin.job_tasks",
     "app.v1.services.evaluation_tasks",
-    "app.v1.services.transcript_tasks"
+    "app.v1.services.transcript_tasks",
+    "app.v1.services.reminder_tasks"
 ]
 
 try:
@@ -57,5 +58,13 @@ celery_app.conf.beat_schedule = {
     "deactivate-expired-jobs-every-hour": {
         "task": "deactivate_expired_jobs_task",
         "schedule": 3600.0,  # Run every hour (3600 seconds)
+    },
+    "send-associate-reminders-every-hour": {
+        "task": "send_associate_reminders_task",
+        "schedule": 3600.0,
+    },
+    "auto-trigger-github-evaluations-every-hour": {
+        "task": "auto_trigger_github_evaluations_task",
+        "schedule": 3600.0,
     },
 }

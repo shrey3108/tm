@@ -331,6 +331,7 @@ class CandidateQueryService:
             selectinload(Candidate.hr_decisions),
             selectinload(Candidate.applied_job),
             selectinload(Candidate.stages).selectinload(CandidateStage.job_stage).selectinload(JobStageConfig.template),
+            selectinload(Candidate.stages).selectinload(CandidateStage.job_stage).selectinload(JobStageConfig.job),
             selectinload(Candidate.location_rel),
         )
         dir_result = await db.execute(dir_stmt)
@@ -410,6 +411,7 @@ class CandidateQueryService:
                 selectinload(CrossJobMatch.candidate).selectinload(Candidate.resumes).selectinload(Resume.version_results).selectinload(ResumeVersionResult.job),
                 selectinload(CrossJobMatch.candidate).selectinload(Candidate.hr_decisions),
                 selectinload(CrossJobMatch.candidate).selectinload(Candidate.stages).selectinload(CandidateStage.job_stage).selectinload(JobStageConfig.template),
+                selectinload(CrossJobMatch.candidate).selectinload(Candidate.stages).selectinload(CandidateStage.job_stage).selectinload(JobStageConfig.job),
                 selectinload(CrossJobMatch.candidate).selectinload(Candidate.location_rel),
                 selectinload(CrossJobMatch.matched_job),
             )
