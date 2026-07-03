@@ -1,0 +1,272 @@
+/**
+ * @module AdminGuidelines
+ * @component AdminGuidelines
+ *
+ * Admin page for managing guidelines.
+ * Displays all guidelines with ability to create, edit, and delete.
+ */
+
+import { useState, useEffect } from "react";
+import type { GuidelineRead } from "@/types/guideline";
+import AppPageShell from "@/components/shared/AppPageShell";
+import PageHeader from "@/components/shared/PageHeader";
+import { useToast } from "@/components/shared/ToastProvider";
+import { DataTable } from "@/components/shared/DataTable";
+import ErrorDisplay from "@/components/shared/ErrorDisplay";
+
+import { useDebouncedValue } from "@/hooks/useDebounced";
+import { Edit2, Trash2Icon, ArrowUpDown, AlertCircle, Plus, } from "lucide-react";
+import { extractErrorMessage } from "@/utils/error";
+import type { ColumnDef, PaginationState } from "@tanstack/react-table";
+import { Button } from "@/components/ui/button";
+import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card";
+import PermissionGuard from "@/components/auth/PermissionGuard";
+import { PERMISSIONS, hasPermissions } from "@/lib/permissions";
+import { useAppSelector } from "@/store/hooks";
+import { selectCurrentUser } from "@/store/slices/authSlice";
+import { useGuidelines } from "@/hooks/queries/admin/useGuideline";
+import { useDeleteGuidelineMutation } from "@/hooks/mutations/admin/useGuideline";
+import { usePageFilters } from "@/hooks/usePageFilters";
+import CreateGuidelineModal from "@/components/modal/GuidelineModal";
+import DeleteModal from "@/components/modal/DeleteModal";
+import DateDisplay from "@/components/shared/DateDisplay";
+
+export default function AdminGuidelines() {
+  const toast = useToast();
+  const user = useAppSelector(selectCurrentUser);
+  const hasManagePermission = hasPermissions(user?.permissions, PERMISSIONS.ADMIN_ACCESS);
+  const deleteGuidelineMutation = useDeleteGuidelineMutation();
+  const [showModal, setShowModal] = useState(false);
+  const [selectedGuideline, setSelectedGuideline] = useState<GuidelineRead | null>(null);
+
+  const { filters, setFilters } = usePageFilters("adminGuidelines", {
+    pageIndex: 0,
+    pageSize: 10,
+    search: "",
+  });
+  const { pageIndex, pageSize, search } = filters;
+
+  const setPagination = (val: PaginationState | ((prev: PaginationState) => PaginationState)) => {
+    const currentPagination = { pageIndex: filters.pageIndex, pageSize: filters.pageSize };
+    const nextPagination = typeof val === "function" ? val(currentPagination) : val;
+    setFilters({
+      pageIndex: nextPagination.pageIndex,
+      pageSize: nextPagination.pageSize,
+    });
+  };
+
+  const [, setDeletingId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<GuidelineRead | null>(null);
+  const [overallTotal, setOverallTotal] = useState(0);
+
+  const debouncedSearch = useDebouncedValue(search);
+
+  const { data: guidelines, total, loading, error, refetch } = useGuidelines(
+    pageIndex * pageSize,
+    pageSize,
+    debouncedSearch,
+  );
+
+  const handleSearchChange = (value: string) => {
+    setFilters({
+      search: value,
+      pageIndex: 0,
+    });
+  };
+
+  useEffect(() => {
+    if (!debouncedSearch && total !== overallTotal) {
+      queueMicrotask(() => {
+        setOverallTotal(total);
+      });
+    }
+  }, [total, debouncedSearch, overallTotal]);
+
+  /**
+   * Performs immediate deletion of a guideline.
+   * If failure occurs, displays reason in a modal.
+   */
+  const handleDeleteClick = async (guideline: GuidelineRead) => {
+    try {
+      setDeletingId(guideline.id);
+      setDeleteError(null);
+      await deleteGuidelineMutation.mutateAsync(guideline.id);
+      toast.success("Guideline deleted successfully");
+    } catch (err) {
+      const errMsg = extractErrorMessage(err);
+      setDeleteError(errMsg);
+      setItemToDelete(guideline);
+      setShowDeleteModal(true);
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const handleCreateClick = () => {
+    setSelectedGuideline(null);
+    setShowModal(true);
+  };
+
+  const renderFormattedError = (error: string | null) => {
+    if (!error) return null;
+    return (
+      <div className="space-y-4 font-medium">
+        <div className="flex items-start gap-2 text-destructive">
+          <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+          <p className="text-sm font-semibold">{error}</p>
+        </div>
+      </div>
+    );
+  };
+
+  const handleEditClick = (guideline: GuidelineRead) => {
+    setSelectedGuideline(guideline);
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setSelectedGuideline(null);
+  };
+
+  const columns: ColumnDef<GuidelineRead>[] = [
+    {
+      accessorKey: "content",
+      header: () => <span className="text-base">Guideline Content</span>,
+      cell: ({ row }) => (
+        <div className="max-w-[400px] truncate text-xs">
+          {row.original.content}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "created_at",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="hover:bg-transparent p-0 font-semibold text-base"
+        >
+          Created At
+          <ArrowUpDown className="h-4 w-4 ml-1" />
+        </Button>
+      ),
+      cell: ({ row }) => <DateDisplay date={row.original.created_at} />,
+    },
+    ...(hasManagePermission
+      ? [
+        {
+          id: "actions",
+          header: () => (
+            <div className="flex items-center justify-center gap-0.5">
+              <span className="text-base">Actions</span>
+            </div>
+          ),
+          cell: ({ row }) => (
+            <div className="flex items-center justify-center gap-0.5">
+              <HoverCard>
+                <HoverCardTrigger
+                  render={(props) => (
+                    <Button
+                      {...props}
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleEditClick(row.original)}
+                      className="h-9 w-9 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
+                    >
+                      <Edit2 className="h-4 w-4 shrink-0" />
+                      <span className="sr-only">Edit</span>
+                    </Button>
+                  )}
+                />
+                <HoverCardContent className="w-fit px-3 py-1 text-xs" side="top">
+                  Edit Guideline
+                </HoverCardContent>
+              </HoverCard>
+
+              <HoverCard>
+                <HoverCardTrigger
+                  render={(props) => (
+                    <Button
+                      {...props}
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDeleteClick(row.original)}
+                      className="h-9 w-9 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
+                    >
+                      <Trash2Icon className="h-4 w-4 shrink-0" />
+                      <span className="sr-only">Delete</span>
+                    </Button>
+                  )}
+                />
+                <HoverCardContent className="w-fit px-3 py-1 text-xs" side="top">
+                  Delete Guideline
+                </HoverCardContent>
+              </HoverCard>
+            </div>
+          ),
+        } as ColumnDef<GuidelineRead>,
+      ]
+      : []),
+  ];
+
+  return (
+    <AppPageShell width="wide">
+      <PageHeader
+        title="Guideline Management"
+        breadcrumbActions={
+          <PermissionGuard permissions={PERMISSIONS.ADMIN_ACCESS} hideWhenDenied>
+            <Button onClick={handleCreateClick} size={"sm"} className="gap-2">
+              <Plus className="h-4 w-4" />
+              Create Guideline
+            </Button>
+          </PermissionGuard>
+        }
+      />
+
+      {error && !guidelines.length ? (
+        <ErrorDisplay message={error.message} onRetry={refetch} />
+      ) : (
+        <DataTable
+          columns={columns}
+          data={guidelines}
+          loading={loading}
+          searchKey="content"
+          searchValue={search}
+          onSearchChange={handleSearchChange}
+          searchPlaceholder="Filter guidelines by content..."
+          initialSorting={[{ id: "created_at", desc: true }]}
+          isServerSide={true}
+          pageIndex={pageIndex}
+          pageSize={pageSize}
+          pageCount={Math.ceil(total / pageSize)}
+          onPaginationChange={setPagination}
+          totalRecords={total}
+          totalCount={overallTotal}
+          resultCount={guidelines.length}
+          entityName="Guidelines"
+        />
+      )}
+
+      <CreateGuidelineModal
+        show={showModal}
+        handleClose={handleCloseModal}
+        onGuidelineSaved={refetch}
+        guideline={selectedGuideline}
+      />
+
+      <DeleteModal
+        show={showDeleteModal}
+        handleClose={() => setShowDeleteModal(false)}
+        handleConfirm={() => { }}
+        title="Delete Guideline Error"
+        message={itemToDelete ? `Unable to delete guideline` : ""}
+        isLoading={false}
+        error={renderFormattedError(deleteError)}
+        showFooterButtons={false}
+      />
+    </AppPageShell>
+  );
+}

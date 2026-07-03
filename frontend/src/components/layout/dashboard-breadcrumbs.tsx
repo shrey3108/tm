@@ -57,6 +57,7 @@ const ROUTE_META: Record<string, { label: string; icon?: LucideIcon }> = {
   settings: { label: "Settings", icon: Settings },
   priorities: { label: "Priorities", icon: ListTodo },
   prompts: { label: "Prompts", icon: ReceiptText },
+  guidelines: { label: "Guidelines", icon: ScrollText },
   "criteria-stages": { label: "Job Config", icon: Settings },
   criteria: { label: "Job Criteria", icon: ListChecks },
   stages: { label: "Job Stages", icon: Layers },

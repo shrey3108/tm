@@ -33,6 +33,7 @@ import { adminJobCriteriaLoader } from "@/loaders/adminJobCriteria";
 import { adminJobCriteriaFormLoader } from "@/loaders/adminJobCriteriaForm";
 import { adminJobStagesLoader } from "@/loaders/adminJobStages";
 import { adminJobStageFormLoader, } from "@/loaders/adminJobStageForm";
+import { adminGuidelinesLoader } from "@/loaders/adminGuidelines";
 
 // Lazy-loaded route pages
 const LoginPage = lazy(() => import("@/pages/Auth/LoginPage"));
@@ -69,6 +70,7 @@ const AdminJobCriteriaForm = lazy(() => import("@/pages/Admin/AdminJobCriteriaFo
 const AdminJobStageForm = lazy(() => import("@/pages/Admin/AdminJobStageForm"));
 const AdminJobPriorities = lazy(() => import("@/pages/Admin/settings/AdminJobPriorities"));
 const AdminPrompts = lazy(() => import("@/pages/Admin/settings/AdminPrompts"));
+const AdminGuidelines = lazy(() => import("@/pages/Admin/settings/AdminGuidelines"));
 const AdminJobPositions = lazy(() => import("@/pages/Admin/AdminJobPositions"));
 
 
@@ -417,6 +419,15 @@ export const router = createBrowserRouter([
                     <AdminPrompts />
                   </RoleRoute>
                 ),
+              },
+              {
+                path: "settings/guidelines",
+                element: (
+                  <RoleRoute requiredPermissions={PERMISSIONS.ADMIN_ACCESS}>
+                    <AdminGuidelines />
+                  </RoleRoute>
+                ),
+                loader: adminGuidelinesLoader,
               },
             ],
           },
