@@ -154,6 +154,7 @@ export default function CandidatesStages() {
               <>
                 <StageEvaluationView
                   evaluation={evaluation}
+                  candidate={candidate}
                   evaluationHistory={evaluationHistory}
                   onOpenHistory={() => setIsHistoryModalOpen(true)}
                   transformedOverall={transformedOverall}

@@ -46,17 +46,14 @@ export default function SendPaperPage() {
   // console.log(location)
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const isReadOnly = !!location.state?.readOnly;
 
   const stateSelectedCandidates = location.state?.selectedCandidates as any[] | undefined;
   const isBulkMode = !!(stateSelectedCandidates && stateSelectedCandidates.length > 1);
 
   // Resolved job and candidate from the route params/state
   const { job: resolvedJob, candidate: resolvedCandidate, isLoading: loadingResolution } = useResolvedJobAndCandidate(
-    params.jobSlug,
-    params.candidateName,
-    location.state?.job,
-    undefined,
-    location.state?.candidateId
+    { jobSlug: params.jobSlug, candidateNameSlug: params.candidateName, stateJob: location.state?.job, stateCandidateId: location.state?.candidateId }
   );
   // console.log(resolvedCandidate)
   const job = resolvedJob || location.state?.job || null;
@@ -277,6 +274,15 @@ export default function SendPaperPage() {
   const titleContent = useMemo(() => {
     const hasPaper = !!finalAssignedPaper;
 
+    if (isReadOnly) {
+      return {
+        icon: <FileQuestion className="h-4 w-4 text-primary" />,
+        text: "Assigned Question Paper for",
+        suffix: candidateName || "Candidate",
+        hoverCard: null
+      };
+    }
+
     if (isBulkMode) {
       return {
         icon: hasPaper ? <MailIcon className="h-4 w-4 text-primary" /> : <FileQuestion className="h-4 w-4 text-primary" />,
@@ -311,7 +317,7 @@ export default function SendPaperPage() {
       suffix: "",
       hoverCard: null
     };
-  }, [isBulkMode, finalAssignedPaper, stateSelectedCandidates, candidateId, candidateName]);
+  }, [isBulkMode, finalAssignedPaper, stateSelectedCandidates, candidateId, candidateName, isReadOnly]);
 
   const isLoading = loadingResolution || loadingAssigned;
 
@@ -354,6 +360,7 @@ export default function SendPaperPage() {
                   assignedPaper={finalAssignedPaper}
                   onUnassign={handleUnassign}
                   isUnassigning={deleteMutation.isPending}
+                  readOnly={isReadOnly}
                 />
               </div>
             ) : (
@@ -361,7 +368,9 @@ export default function SendPaperPage() {
                 <AlertTriangle className="h-10 w-10 text-amber-500 mb-4" />
                 <h3 className="text-base font-bold text-foreground">No Question Paper Assigned</h3>
                 <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-                  No question paper has been assigned for this job stage yet. You need to assign a paper before you can send it to candidates.
+                  {isReadOnly
+                    ? "No question paper has been assigned to this candidate yet."
+                    : "No question paper has been assigned for this job stage yet. You need to assign a paper before you can send it to candidates."}
                 </p>
               </div>
             )}
@@ -378,52 +387,54 @@ export default function SendPaperPage() {
                 Close
               </Button>
 
-              {finalAssignedPaper ? (
-                <>
-                  {hasManagePermission && (
+              {!isReadOnly && (
+                finalAssignedPaper ? (
+                  <>
+                    {hasManagePermission && (
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        className="rounded-xl font-semibold px-4"
+                        onClick={() => {
+                          navigate(`/dashboard/jobs/${slugify(job?.title || "")}/assign-paper`);
+                        }}
+                      >
+                        Change Paper
+                      </Button>
+                    )}
+                    {canSendEmail && (
+                      <Button
+                        type="button"
+                        className="rounded-xl font-semibold"
+                        onClick={handleSendEmail}
+                        disabled={sendEmailMutation.isPending || sendBulkEmailMutation.isPending}
+                      >
+                        {sendEmailMutation.isPending || sendBulkEmailMutation.isPending ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            Sending...
+                          </>
+                        ) : (
+                          <>
+                            <MailIcon className="h-4 w-4 mr-2" />
+                            {isEmailAlreadySent ? "Re-Send" : "Send"} to Candidate
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </>
+                ) : (
+                  hasManagePermission && (
                     <Button
                       type="button"
-                      variant="secondary"
-                      className="rounded-xl font-semibold px-4"
+                      className="rounded-xl font-semibold"
                       onClick={() => {
                         navigate(`/dashboard/jobs/${slugify(job?.title || "")}/assign-paper`);
                       }}
                     >
-                      Change Paper
+                      Assign Question Paper
                     </Button>
-                  )}
-                  {canSendEmail && (
-                    <Button
-                      type="button"
-                      className="rounded-xl font-semibold"
-                      onClick={handleSendEmail}
-                      disabled={sendEmailMutation.isPending || sendBulkEmailMutation.isPending}
-                    >
-                      {sendEmailMutation.isPending || sendBulkEmailMutation.isPending ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                          Sending...
-                        </>
-                      ) : (
-                        <>
-                          <MailIcon className="h-4 w-4 mr-2" />
-                          {isEmailAlreadySent ? "Re-Send" : "Send"} to Candidate
-                        </>
-                      )}
-                    </Button>
-                  )}
-                </>
-              ) : (
-                hasManagePermission && (
-                  <Button
-                    type="button"
-                    className="rounded-xl font-semibold"
-                    onClick={() => {
-                      navigate(`/dashboard/jobs/${slugify(job?.title || "")}/assign-paper`);
-                    }}
-                  >
-                    Assign Question Paper
-                  </Button>
+                  )
                 )
               )}
             </div>

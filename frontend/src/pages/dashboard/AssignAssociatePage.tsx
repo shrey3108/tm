@@ -46,10 +46,7 @@ export default function AssignAssociatePage() {
   const debouncedQuery = useDebouncedValue(searchQuery);
 
   const { job, candidate, isLoading } = useResolvedJobAndCandidate(
-    params.jobSlug,
-    params.candidateName,
-    location.state?.job,
-    location.state?.candidate
+    { jobSlug: params.jobSlug, candidateNameSlug: params.candidateName, stateJob: location.state?.job, stateCandidate: location.state?.candidate }
   );
 
   const candidateStage = candidate?.pipeline?.find(

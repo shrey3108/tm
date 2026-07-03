@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { History, ExternalLink, Loader2, AreaChart } from "lucide-react";
+import { History, AreaChart } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { EvaluationGrid } from "@/components/candidate/EvaluationGrid";
 import { StageOverallSummary, type OverallSummaryData } from "@/components/candidate/StageOverallSummary";
@@ -9,14 +9,16 @@ import type { HrDecisionHistoryItem } from "@/apis/candidateDecision";
 import type { Transcript } from "@/types/transcript";
 import type { Job } from "@/types/job";
 import { GithubLogo } from "@/components/logo";
-import { useCandidateTestPaper, useDownloadCandidateAssignedTaskFile } from "@/hooks/queries/taskPapers/useTaskPaperQueries";
-import { toast } from "sonner";
+import { useCandidateTestPaper } from "@/hooks/queries/taskPapers/useTaskPaperQueries";
 import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card"
 import { Switch } from "@/components/ui/switch";
+import { CandidateAssignPaperButton } from "@/components/shared/candidate/CandidateAssignPaperButton";
+import type { CandidateAnalysis } from "@/types/admin";
+import { slugify } from "@/utils/slug";
 
 interface StageEvaluationViewProps {
   /** The current evaluation data to display. */
@@ -42,6 +44,7 @@ interface StageEvaluationViewProps {
   requiredInputs?: string[];
   showChart: boolean;
   onShowChartChange: (show: boolean) => void;
+  candidate: CandidateAnalysis | null | undefined
 }
 
 export interface ChartDataPoint {
@@ -145,30 +148,33 @@ export function StageEvaluationView({
   requiredInputs,
   showChart,
   onShowChartChange,
+  job,
+  candidate
 }: StageEvaluationViewProps) {
   const { data: assignedPaper } = useCandidateTestPaper(candidateId);
-  const { refetch: downloadFile, loading: isDownloading } = useDownloadCandidateAssignedTaskFile(
-    assignedPaper ? candidateId : null,
-    { enabled: false }
-  );
-
-  const handleViewTaskPaper = async () => {
-    if (!assignedPaper) return;
-    try {
-      toast.info("Downloading task file...");
-      const { data: blob } = await downloadFile();
-      if (blob) {
-        const url = URL.createObjectURL(blob);
-        window.open(url, "_blank");
-      } else {
-        toast.error("Failed to download the task file.");
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to download the task file.");
-    }
-  };
-
+  /*
+   const { refetch: downloadFile, loading: isDownloading } = useDownloadCandidateAssignedTaskFile(
+     assignedPaper ? candidateId : null,
+     { enabled: false }
+   );
+ 
+   const handleViewTaskPaper = async () => {
+     if (!assignedPaper) return;
+     try {
+       toast.info("Downloading task file...");
+       const { data: blob } = await downloadFile();
+       if (blob) {
+         const url = URL.createObjectURL(blob);
+         window.open(url, "_blank");
+       } else {
+         toast.error("Failed to download the task file.");
+       }
+     } catch (err) {
+       console.error(err);
+       toast.error("Failed to download the task file.");
+     }
+   };
+ */
   const isGithubUploaded = !!githubUrl &&
     githubUrl.toLowerCase().startsWith("http") &&
     (githubUrl.toLowerCase().includes("github.com") || githubUrl.toLowerCase().includes("gitlab.com"));
@@ -178,7 +184,7 @@ export function StageEvaluationView({
     Math.max(0, evaluationHistory.findIndex((h) => h.id === evaluation.id));
   const latestHrDecision = hrDecisionHistory[0]?.decision.toLowerCase();
   const canTakeDecision = !latestHrDecision || latestHrDecision.includes("may be") || latestHrDecision === "maybe";
-
+  const jobSlug = slugify(job?.title);
   return (
     <>
       <div className="flex items-center justify-end px-4 mb-2 gap-3">
@@ -228,32 +234,9 @@ export function StageEvaluationView({
                 </HoverCard>
               )}
               {assignedPaper && (
-                <HoverCard>
-                  <HoverCardTrigger delay={10} closeDelay={10}
-                    render={(props) => (
-                      <Button
-                        {...props}
-                        variant="ghost"
-                        size="icon-sm"
-                        className="rounded-lg"
-                        onClick={(e) => {
-                          if (props.onClick) props.onClick(e);
-                          handleViewTaskPaper();
-                        }}
-                        disabled={isDownloading}
-                      >
-                        {isDownloading ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <ExternalLink className="h-4 w-4" />
-                        )}
-                      </Button>
-                    )}
-                  />
-                  <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
-                    View Task file
-                  </HoverCardContent>
-                </HoverCard>
+                <CandidateAssignPaperButton candidate={candidate} job={job} jobSlug={jobSlug} variant="ghost"
+                  size="icon-sm"
+                  className="rounded-lg" iconClassName="h-4 w-4" />
               )}
             </>
           )}

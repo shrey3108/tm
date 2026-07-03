@@ -46,7 +46,7 @@ export const JobCandidatesHeader = ({
   const buttonLabel = useMemo(() => {
     if (emailFilterState === "sent") return "Re-Send Question Paper";
     if (emailFilterState === "not_sent") return "Send Question Paper";
-    return jobAssignedPaper ? "View Assign Paper" : "Assign Question";
+    return jobAssignedPaper ? "View Question Paper" : "Question Question";
   }, [emailFilterState, jobAssignedPaper]);
 
   const disabledTooltip = useMemo(() => {
