@@ -32,6 +32,9 @@ const jobBaseSchema = z.object({
   position_id: uuidSchema("Please select a valid job position"),
   /** UUID of the job priority */
   priority_id: uuidSchema("Please select a valid Priority"),
+  associate_reminder_hours: z.coerce.number({
+    error: "reminder hours is required",
+  }).int().positive().min(24, "Reminder hours is required").multipleOf(24, { error: "Hours must be a multiple of 24 (e.g., 24, 48, 72)" }),
   /** Priority start date */
   priority_start_date: z.string().optional().nullable(),
   /** Priority end date */

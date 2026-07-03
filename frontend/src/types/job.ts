@@ -57,6 +57,7 @@ export interface Job {
   activity_sessions?: JobActivitySession[] | null;
   vacancy: number | null;
   priority_id: string | null;
+  associate_reminder_hours: number | null;
   priority_start_date: string | null;
   priority_end_date: string | null;
   priority?: JobPriorityRead | null;

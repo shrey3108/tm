@@ -6,6 +6,7 @@ import * as z from "zod";
  */
 export const guidelineCreateSchema = z.object({
   content: z.string().trim().min(1, "Guideline content cannot be empty"),
+  is_default: z.boolean().default(false),
 });
 
 /**
@@ -14,6 +15,7 @@ export const guidelineCreateSchema = z.object({
  */
 export const guidelineUpdateSchema = z.object({
   content: z.string().trim().min(1, "Guideline content cannot be empty").optional(),
+  is_default: z.boolean().optional(),
 });
 
 export type GuidelineCreateFormValues = z.infer<typeof guidelineCreateSchema>;

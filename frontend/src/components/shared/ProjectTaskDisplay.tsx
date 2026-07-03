@@ -41,9 +41,9 @@ export function ProjectTaskDisplay({
           <ul className="list-disc pl-3 text-xs space-y-0.5">
             {subTasks.map((st, sIdx) => (
               <li key={sIdx}>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center">
                   <span>{st.name}</span>
-                  <span>{st.marks !== undefined && ` ${st.marks} Marks`}</span>
+                  <span>{st.marks !== undefined && ` (${st.marks} Marks)`}</span>
                 </div>
                 {/* {st.description && ` - ${st.description}`} */}
               </li>

@@ -249,6 +249,26 @@ export default function AdminJobPriorities() {
       ),
     },
     {
+      accessorKey: "associate_reminder_hours",
+      header: ({ column }) => (
+        <div className="flex justify-center">
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="hover:bg-transparent p-0 font-semibold text-base"
+          >
+            Assigned Jobs Count
+            <ArrowUpDown className="h-4 w-4" />
+          </Button>
+        </div>
+      ),
+      cell: ({ row }) => (
+        <div className="text-center ">
+          {row.original.associate_reminder_hours}
+        </div>
+      ),
+    },
+    {
       id: "actions",
       header: () => (
         <div className="flex items-center justify-center gap-2">

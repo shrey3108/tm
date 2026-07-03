@@ -66,7 +66,7 @@ export function PaperContentDisplay({
           <ol className="pl-4 list-decimal space-y-2">
             {project_task.map((task, idx) => (
               <li key={idx} className="space-y-1 text-xs text-foreground/80 leading-relaxed">
-                <ProjectTaskDisplay task={task} variant="simple" />
+                <ProjectTaskDisplay task={task} variant="simple" showTypeSuffix={false} />
               </li>
             ))}
           </ol>

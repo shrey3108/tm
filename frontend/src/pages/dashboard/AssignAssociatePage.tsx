@@ -76,7 +76,7 @@ export default function AssignAssociatePage() {
     resolver: zodResolver(assignAssociateSchema),
     defaultValues: {
       associates: [],
-      workdriveLink: "",
+      workdriveLink: "https://www.augustinfotech.com/",
       stageId: "",
     },
     mode: "onChange",
@@ -260,7 +260,7 @@ export default function AssignAssociatePage() {
                     {...field}
                     id="workdrive-input"
                     className="placeholder:text-muted-foreground/60 h-6 text-sm"
-                    placeholder="https://workdrive.zoho.com/..."
+                    placeholder="https://www.augustinfotech.com/"
                   />
                 )}
               />

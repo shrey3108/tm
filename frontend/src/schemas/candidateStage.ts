@@ -26,6 +26,7 @@ export const stageDecisionCreateSchema = z.object({
  */
 export const sendToAssociatesRequestSchema = z.object({
   associate_ids: z.array(uuidSchema("Invalid associate ID")).min(1, "At least one associate ID must be selected"),
+  workdrive_url: z.string().trim().url("Invalid workdrive URL").or(z.literal("")).nullable().optional(),
 });
 
 export type StageOverrideCreate = z.infer<typeof stageOverrideCreateSchema>;

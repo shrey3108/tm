@@ -37,6 +37,7 @@ interface CreateJobPriorityModalProps {
 const DEFAULT_PRIORITY_VALUES: JobPriorityCreateFormValues = {
   // name: "",
   duration_days: 7,
+  associate_reminder_hours: 24
 };
 
 const CreateJobPriorityModal = ({
@@ -53,6 +54,7 @@ const CreateJobPriorityModal = ({
     (p: JobPriorityRead): JobPriorityCreateFormValues => ({
       // name: p.name,
       duration_days: p.duration_days,
+      associate_reminder_hours: p.associate_reminder_hours
     }),
     [],
   );
@@ -113,6 +115,23 @@ const CreateJobPriorityModal = ({
                     <Input
                       type="number"
                       placeholder="Number of days"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={control}
+              name="associate_reminder_hours"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Reminder Hours</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      placeholder="Hours"
                       {...field}
                     />
                   </FormControl>

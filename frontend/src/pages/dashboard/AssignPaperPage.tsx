@@ -1201,7 +1201,7 @@ export default function AssignPaperPage() {
                       task={item}
                       variant="simple"
                       titleClassName="font-bold"
-                      showTypeSuffix={true}
+                      showTypeSuffix={false}
                     />
                     <div className="flex items-center gap-1 shrink-0">
                       <Button

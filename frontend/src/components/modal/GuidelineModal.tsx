@@ -36,6 +36,7 @@ interface CreateGuidelineModalProps {
 
 const DEFAULT_GUIDELINE_VALUES: GuidelineCreateFormValues = {
   content: "",
+  is_default: false,
 };
 
 const CreateGuidelineModal = ({
@@ -51,6 +52,7 @@ const CreateGuidelineModal = ({
   const mapItemToValues = useCallback(
     (g: GuidelineRead): GuidelineCreateFormValues => ({
       content: g.content,
+      is_default: g.is_default,
     }),
     [],
   );
