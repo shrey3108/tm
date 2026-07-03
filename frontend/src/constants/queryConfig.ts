@@ -32,6 +32,9 @@ export const QUERY_CONFIG = {
     ASSOCIATE: {
         staleTime: minutes(5),
     },
+    GUIDELINE: {
+        staleTime: minutes(5),
+    },
     LOCATION: {
         staleTime: minutes(5),
     },

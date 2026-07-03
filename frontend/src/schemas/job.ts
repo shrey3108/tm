@@ -24,6 +24,8 @@ const jobBaseSchema = z.object({
   skill_ids: z.array(uuidSchema("Invalid skill ID")).min(1, "Please select at least one skill"),
   /** Mapping of skill ID to its weightage */
   skill_weightages: z.record(z.string(), z.coerce.number().min(0, "Weightage must be at least 0")).optional().nullable(),
+  /** Array of associate UUIDs assigned to this job */
+  associate_ids: z.array(uuidSchema("Invalid associate ID")).optional().default([]),
   /** Optional custom extraction fields used during resume parsing */
   custom_extraction_fields: z.array(z.string()).optional(),
   /** UUID of the job position */
