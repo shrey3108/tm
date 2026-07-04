@@ -101,6 +101,7 @@ export default function CreateJob() {
       custom_extraction_fields: [],
       priority_id: "",
       position_id: "",
+      associate_reminder_hours: undefined,
       stages: null,
       processing_version: undefined,
       project_document: undefined,
@@ -132,6 +133,7 @@ export default function CreateJob() {
         custom_extraction_fields: job.custom_extraction_fields || [],
         priority_id: job.priority_id || "",
         position_id: job.position_id || "",
+        associate_reminder_hours: job.associate_reminder_hours || undefined,
         processing_version: job.version || undefined,
         project_document: taskData?.task_file_path || undefined,
       });
@@ -142,8 +144,8 @@ export default function CreateJob() {
     const { project_document, ...formValues } = values as any;
 
     if (isEditMode && jobId) {
-      // Omit stages from update payload as they are managed via specialized endpoints
-      const { stages, ...updatePayload } = formValues;
+      // Omit stages and associate_reminder_hours from update payload
+      const { stages, associate_reminder_hours, ...updatePayload } = formValues;
       updateJobMutation.mutate(
         { jobId, data: updatePayload },
         {
@@ -236,7 +238,7 @@ export default function CreateJob() {
         ) : (
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <BasicJobDetails departments={departments} priorities={priorities} positions={positions} />
+              <BasicJobDetails departments={departments} priorities={priorities} positions={positions} isEditMode={isEditMode} />
               <JobSettingsSection />
               <CustomFieldsSection />
               <SkillSelectorSection initialSelectedSkills={jobSkills} />

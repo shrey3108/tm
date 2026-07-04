@@ -20,10 +20,11 @@ interface BasicJobDetailsProps {
   departments: DepartmentRead[];
   priorities?: JobPriorityRead[];
   positions: JobPositionRead[];
+  isEditMode?: boolean;
 }
 
-export const BasicJobDetails = ({ departments, priorities = [], positions }: BasicJobDetailsProps) => {
-  const { control } = useFormContext();
+export const BasicJobDetails = ({ departments, priorities = [], positions, isEditMode = false }: BasicJobDetailsProps) => {
+  const { control, setValue } = useFormContext();
 
   return (
     <div className="grid gap-6">
@@ -48,8 +49,8 @@ export const BasicJobDetails = ({ departments, priorities = [], positions }: Bas
         )}
       />
 
-      {/* Job Position, Priority, Department, Vacancy Row */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      {/* Job Position, Priority, Reminder Hours, Department, Vacancy Row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         {/* Job Position */}
         <FormField
           control={control}
@@ -86,7 +87,13 @@ export const BasicJobDetails = ({ departments, priorities = [], positions }: Bas
               <FormControl>
                 <SearchableSelect
                   value={field.value || ""}
-                  onValueChange={field.onChange}
+                  onValueChange={(val) => {
+                    field.onChange(val);
+                    const selectedPriority = priorities.find((p) => p.id === val);
+                    if (selectedPriority && selectedPriority.associate_reminder_hours !== undefined && !isEditMode) {
+                      setValue("associate_reminder_hours", selectedPriority.associate_reminder_hours);
+                    }
+                  }}
                   options={priorities.map((p) => ({
                     id: p.id,
                     label: `${p.name} (${p.duration_days} days)`,
@@ -101,9 +108,41 @@ export const BasicJobDetails = ({ departments, priorities = [], positions }: Bas
                   <span className="">Due Date:</span>{" "}
                   <DateDisplay
                     date={field.value ? addDays(new Date(), Number(priorities.find((p) => p.id === field.value)?.duration_days)) : null}
-                    className="font-bold"
+                    className="font-bold text-black"
                   />
                 </span>}
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Associate Reminder Hours */}
+        <FormField
+          control={control}
+          name="associate_reminder_hours"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-lg font-semibold text-foreground">
+                Reminder (Hours) <Required />
+              </FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  min={24}
+                  step={24}
+                  disabled={isEditMode}
+                  placeholder="e.g. 24"
+                  className="text-base rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium disabled:opacity-50"
+                  value={field.value !== null && field.value !== undefined ? field.value : ""}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    field.onChange(val ? parseInt(val, 10) : null);
+                  }}
+                />
+              </FormControl>
+              <FormDescription>
+                Frequency of reminder emails
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -148,7 +187,7 @@ export const BasicJobDetails = ({ departments, priorities = [], positions }: Bas
                   type="number"
                   min={1}
                   placeholder="e.g. 5"
-                  className=" text-base rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium"
+                  className="text-base rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium"
                   value={field.value !== null && field.value !== undefined ? field.value : ""}
                   onChange={(e) => {
                     const val = e.target.value;

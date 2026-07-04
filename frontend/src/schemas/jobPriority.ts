@@ -9,9 +9,7 @@ const jobPriorityBaseSchema = z.object({
     error: "Duration is required",
   }).int().positive().min(1, "Duration must be at least 1 day"),
 
-  associate_reminder_hours: z.coerce.number({
-    error: "reminder hours is required",
-  }).int().positive().min(24, "Reminder hours is required").multipleOf(24, { error: "Hours must be a multiple of 24 (e.g., 24, 48, 72)" })
+  associate_reminder_hours: z.coerce.number().int().positive().min(24, "Reminder hours must be at least 24").multipleOf(24, { error: "Hours must be a multiple of 24 (e.g., 24, 48, 72)" }),
 });
 
 /**
