@@ -106,6 +106,146 @@ async def get_candidate_stage_evaluation(
         
     return evaluation
 
+from fastapi.responses import HTMLResponse
+
+@router.get("/{id}/evaluation/report", response_class=HTMLResponse)
+async def get_candidate_stage_evaluation_report(
+    id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    """Retrieve the AI evaluation report as a standalone HTML page (publicly accessible via unguessable UUID)."""
+    stage = await db.get(CandidateStage, id)
+    if not stage:
+        raise HTTPException(status_code=404, detail="Candidate stage not found")
+        
+    res = await db.execute(
+        select(Evaluation)
+        .where(Evaluation.candidate_stage_id == id)
+        .order_by(Evaluation.attempt_number.desc())
+    )
+    evaluation = res.scalars().first()
+    
+    if not evaluation:
+        return HTMLResponse("<html><body><h2>Evaluation not found or still processing</h2></body></html>", status_code=404)
+
+    eval_data = evaluation.structured_evaluation_data
+    if not isinstance(eval_data, dict):
+        return HTMLResponse("<html><body><h2>Invalid evaluation data format</h2></body></html>", status_code=400)
+        
+    jd_skills = eval_data.get("JD Skills", [])
+    project_skills = eval_data.get("Project requirements skills", [])
+    
+    def render_column(items):
+        html_output = ""
+        for item in items:
+            for category, details in item.items():
+                if category in ["alignment_review", "strengths", "weaknesses", "suggested_followups"]:
+                    continue
+                score = details.get("score", 0)
+                reasoning = details.get("reasoning", "No reasoning provided.")
+                display_cat = category.replace("_", " ").title()
+                
+                html_output += f'''
+                <div style="background-color: #ffffff; border: 1px solid #e5e7eb; padding: 16px; border-radius: 8px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid #f3f4f6; padding-bottom: 8px;">
+                        <span style="font-weight: 600; color: #1f2937; font-size: 16px;">{display_cat}</span>
+                        <span style="background-color: #d1fae5; color: #065f46; padding: 4px 10px; border-radius: 9999px; font-weight: 700; font-size: 14px;">{score}/5.0</span>
+                    </div>
+                    <div style="font-size: 14px; color: #4b5563; line-height: 1.6;">
+                        {reasoning}
+                    </div>
+                </div>
+                '''
+        return html_output
+
+    html_content = f"""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Detailed AI Code Evaluation</title>
+        <style>
+            body {{
+                font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                background-color: #f9fafb;
+                color: #111827;
+                margin: 0;
+                padding: 40px 20px;
+            }}
+            .container {{
+                max-width: 1000px;
+                margin: 0 auto;
+            }}
+            .header-banner {{
+                background-color: #16a34a;
+                color: white;
+                padding: 20px 30px;
+                border-radius: 12px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 30px;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            }}
+            .header-title {{
+                font-size: 24px;
+                font-weight: 700;
+                margin: 0;
+            }}
+            .score-badge {{
+                background-color: white;
+                color: #16a34a;
+                padding: 8px 16px;
+                border-radius: 8px;
+                font-size: 18px;
+                font-weight: 700;
+            }}
+            .columns {{
+                display: flex;
+                gap: 30px;
+            }}
+            .column {{
+                flex: 1;
+            }}
+            .column-header {{
+                font-size: 20px;
+                font-weight: 600;
+                color: #374151;
+                margin-bottom: 20px;
+                padding-bottom: 10px;
+                border-bottom: 2px solid #e5e7eb;
+            }}
+            @media (max-width: 768px) {{
+                .columns {{
+                    flex-direction: column;
+                }}
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header-banner">
+                <h1 class="header-title">AI Code Evaluation Report</h1>
+                <div class="score-badge">Overall Score: {evaluation.overall_score}/5.0</div>
+            </div>
+            
+            <div class="columns">
+                <div class="column">
+                    <h2 class="column-header">Job Description Alignment</h2>
+                    {render_column(jd_skills)}
+                </div>
+                <div class="column">
+                    <h2 class="column-header">Project Task Alignment</h2>
+                    {render_column(project_skills)}
+                </div>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    
+    return HTMLResponse(content=html_content)
 
 @router.get("/{id}/evaluation/history")
 async def get_candidate_stage_evaluation_history(

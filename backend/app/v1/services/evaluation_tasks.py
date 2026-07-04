@@ -707,6 +707,12 @@ def auto_trigger_github_evaluations_task():
         now = datetime.now(timezone.utc)
         triggered_count = 0
         
+        try:
+            from app.v1.db.session import engine
+            await engine.dispose()
+        except Exception:
+            pass
+            
         async with async_session_maker() as db:
             stmt = select(CandidateStage).options(
                 selectinload(CandidateStage.candidate),
@@ -758,7 +764,7 @@ def auto_trigger_github_evaluations_task():
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         
-    count = loop.run_until_complete(run_auto_trigger())
+    count = loop.run_until_complete(run_with_cleanup(run_auto_trigger()))
     logger.info(f"Finished auto_trigger_github_evaluations_task. Triggered {count} evaluations.")
 
 

@@ -156,6 +156,47 @@ def markdown_to_html(text: str) -> str:
             
     return output
 
+async def get_ai_evaluation_html(candidate: Candidate, db: AsyncSession) -> str:
+    """Fetch AI evaluation overall score and return a summary block with a link to the detailed report."""
+    if not candidate or not db:
+        return ""
+        
+    ai_score_html = ""
+    try:
+        from app.v1.db.models.evaluations import Evaluation
+        from app.v1.db.models.candidate_stages import CandidateStage
+        from sqlalchemy import select
+        
+        stmt_eval = select(Evaluation).join(CandidateStage).where(
+            CandidateStage.candidate_id == candidate.id
+        ).order_by(Evaluation.created_at.desc()).limit(1)
+        
+        res_eval = await db.execute(stmt_eval)
+        evaluation = res_eval.scalar_one_or_none()
+        
+        if evaluation:
+            base_url = settings.APP_BASE_URL.rstrip('/')
+            report_url = f"{base_url}/api/v1/candidate-stages/{evaluation.candidate_stage_id}/evaluation/report"
+            
+            ai_score_html = "<div style='margin-top: 25px; margin-bottom: 25px; text-align: left;'>"
+            ai_score_html += f"""
+            <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px; border-radius: 6px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+                <span style="color: #166534; font-weight: 600;">Overall AI Score:</span>
+                <span style="color: #15803d; font-weight: 700; font-size: 15px;">{evaluation.overall_score}/5.0</span>
+            </div>
+            """
+            
+            ai_score_html += f"""
+            <div style="text-align: center; margin-top: 20px; margin-bottom: 20px;">
+              <a href="{report_url}" style="background-color: #3b82f6; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: 600; display: inline-block;">View Detailed AI Report</a>
+            </div>
+            """
+            ai_score_html += "</div>"
+    except Exception as e:
+        logger.error(f"Failed to fetch AI evaluation score HTML: {e}")
+        
+    return ai_score_html
+
 
 async def send_candidate_task_email_via_smtp(
     candidate: Candidate,
@@ -267,7 +308,7 @@ async def send_candidate_task_email_via_smtp(
         guidelines_clean = markdown_to_html(guidelines_content)
         guidelines_html = f"""
             <div class="details-box" style="border-left-color: #10b981; background-color: #ecfdf5;">
-                <div class="details-title" style="color: #065f46;">Guidelines for this Round:</div>
+                <div class="details-title" style="color: #065f46;">Terms & Conditions for this Round:</div>
                 <div style="font-size: 14px; line-height: 1.5; color: #065f46;">
                     {guidelines_clean}
                 </div>
@@ -539,33 +580,10 @@ async def send_associate_notification_email(
             logger.error(f"Failed to generate task PDF for associate email: {e}")
 
     # Fetch AI evaluation overall score if available
-    ai_score = None
-    if candidate and db:
-        try:
-            from sqlalchemy import text
-            res_eval = await db.execute(
-                text(
-                    "SELECT e.overall_score FROM evaluations e "
-                    "JOIN candidate_stages cs ON e.candidate_stage_id = cs.id "
-                    "WHERE cs.candidate_id = :candidate_id "
-                    "ORDER BY e.created_at DESC LIMIT 1"
-                ),
-                {"candidate_id": str(candidate.id)}
-            )
-            row = res_eval.first()
-            if row:
-                ai_score = row[0]
-        except Exception as e:
-            logger.error(f"Failed to query AI score for associate email: {e}")
-
+    ai_score_html = await get_ai_evaluation_html(candidate, db)
     ai_score_row = ""
-    if ai_score is not None:
-        ai_score_row = f"""
-              <div class="info-row">
-                <div class="info-label">AI Code Score:</div>
-                <div class="info-value"><strong>{ai_score}/5.0</strong></div>
-              </div>
-        """
+    # Since we are using detailed html, we don't need the summary row in the notification email header.
+
 
     # 3. Build HTML body (questions/tasks are in the attached PDF, not in the email body)
     html_body = f"""
@@ -769,16 +787,7 @@ async def send_associate_notification_email(
                 Open Review Form
               </a>
               
-              {f'''
-              <div style="margin-top: 20px; border-top: 1px solid #fcd34d; padding-top: 15px;">
-                <div class="review-form-text" style="font-weight: 600;">
-                  Want to see the detailed AI Code Evaluation criteria?
-                </div>
-                <a href="{html.escape(dashboard_url)}" class="review-form-button" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); margin-top: 10px;" target="_blank">
-                  View Detailed AI Score
-                </a>
-              </div>
-              ''' if dashboard_url else ""}
+              {ai_score_html}
             </div>
 
             <div class="message">
@@ -869,48 +878,8 @@ async def send_associate_reminder_email(
     
     review_form_url = f"{settings.APP_BASE_URL.rstrip('/')}/api/v1/associate-reviews/{review_token}"
     
-    import re
-    def slugify(text: str) -> str:
-        if not text: return ""
-        text = text.lower().strip()
-        text = re.sub(r'[^a-z0-9]+', '-', text)
-        return re.sub(r'--+', '-', text).strip('-')
-
-    dashboard_url = ""
-    if candidate_full_name and job_title and stage_name:
-        base_url = settings.APP_BASE_URL.rstrip('/')
-        if "localhost:8000" in base_url or "127.0.0.1:8000" in base_url:
-            base_url = "http://localhost:5173"
-        dashboard_url = f"{base_url}/dashboard/jobs/{slugify(job_title)}/candidates/{slugify(candidate_full_name)}/stages/{slugify(stage_name)}"
-        
-    # Fetch AI evaluation overall score if available
-    ai_score = None
-    if candidate and db:
-        try:
-            from sqlalchemy import text
-            res_eval = await db.execute(
-                text(
-                    "SELECT e.overall_score FROM evaluations e "
-                    "JOIN candidate_stages cs ON e.candidate_stage_id = cs.id "
-                    "WHERE cs.candidate_id = :candidate_id "
-                    "ORDER BY e.created_at DESC LIMIT 1"
-                ),
-                {"candidate_id": str(candidate.id)}
-            )
-            row = res_eval.first()
-            if row:
-                ai_score = row[0]
-        except Exception as e:
-            logger.error(f"Failed to query AI score for reminder email: {e}")
-
-    ai_score_row = ""
-    if ai_score is not None:
-        ai_score_row = f"""
-        <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px; border-radius: 6px; margin: 20px 0; display: flex; justify-content: space-between; align-items: center;">
-            <span style="color: #166534; font-weight: 600;">AI Code Evaluation Score:</span>
-            <span style="color: #15803d; font-weight: 700; font-size: 15px;">{ai_score}/5.0</span>
-        </div>
-        """
+    # AI Score/Criteria Logic
+    ai_score_html = await get_ai_evaluation_html(candidate, db)
 
     html_content = f'''
     <!DOCTYPE html>
@@ -965,16 +934,10 @@ async def send_associate_reminder_email(
             <p>This is a friendly reminder that you have a pending evaluation for <strong>{html.escape(candidate_full_name)}</strong> for the <strong>{html.escape(job_title)}</strong> position.
               The deadline for submitting this evaluation is approaching. Your timely feedback is critical.
             </p>
-            {ai_score_row}
             <div class="button-container" style="text-align: center; margin: 30px 0;">
               <a href="{html.escape(review_form_url)}" class="btn">Open Review Form</a>
             </div>
-            {f"""
-            <div style="text-align: center; margin-top: 20px;">
-                <p>Need to review the AI evaluation score?</p>
-                <a href="{html.escape(dashboard_url)}" class="btn" style="background: #10b981;">View Detailed AI Score</a>
-            </div>
-            """ if dashboard_url else ""}
+            {ai_score_html}
           </div>
         </div>
       </body>
