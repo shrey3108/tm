@@ -24,7 +24,46 @@ export function useUpdateGuidelineMutation() {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: GuidelineUpdate }) =>
       adminGuidelineService.updateGuideline(id, data),
-    onSuccess: (_, variables) => {
+    onMutate: async ({ id, data }) => {
+      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+      await queryClient.cancelQueries({ queryKey: [QUERY_KEYS.ADMIN.GUIDELINES] });
+
+      // Snapshot the previous value
+      const previousGuidelinesQueries = queryClient.getQueriesData({ queryKey: [QUERY_KEYS.ADMIN.GUIDELINES] });
+
+      // Optimistically update to the new value
+      queryClient.setQueriesData(
+        { queryKey: [QUERY_KEYS.ADMIN.GUIDELINES] },
+        (old: any) => {
+          if (!old) return old;
+          if (old.data && Array.isArray(old.data)) {
+            return {
+              ...old,
+              data: old.data.map((guideline: any) =>
+                guideline.id === id ? { ...guideline, ...data } : guideline
+              ),
+            };
+          }
+          if (Array.isArray(old)) {
+            return old.map((guideline: any) =>
+              guideline.id === id ? { ...guideline, ...data } : guideline
+            );
+          }
+          return old;
+        }
+      );
+
+      // Return a context object with the snapshotted value
+      return { previousGuidelinesQueries };
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previousGuidelinesQueries) {
+        context.previousGuidelinesQueries.forEach(([queryKey, queryData]) => {
+          queryClient.setQueryData(queryKey, queryData);
+        });
+      }
+    },
+    onSettled: (_, __, variables) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ADMIN.GUIDELINES] });
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ADMIN.GUIDELINE_DETAIL, variables.id] });
     },

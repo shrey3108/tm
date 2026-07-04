@@ -7,7 +7,7 @@
  */
 
 import { useState, useEffect } from "react";
-import type { GuidelineRead } from "@/types/guideline";
+import type { Guideline, GuidelineRead } from "@/types/guideline";
 import AppPageShell from "@/components/shared/AppPageShell";
 import PageHeader from "@/components/shared/PageHeader";
 import { useToast } from "@/components/shared/ToastProvider";
@@ -25,11 +25,12 @@ import { PERMISSIONS, hasPermissions } from "@/lib/permissions";
 import { useAppSelector } from "@/store/hooks";
 import { selectCurrentUser } from "@/store/slices/authSlice";
 import { useGuidelines } from "@/hooks/queries/admin/useGuideline";
-import { useDeleteGuidelineMutation } from "@/hooks/mutations/admin/useGuideline";
+import { useDeleteGuidelineMutation, useUpdateGuidelineMutation } from "@/hooks/mutations/admin/useGuideline";
 import { usePageFilters } from "@/hooks/usePageFilters";
 import CreateGuidelineModal from "@/components/modal/GuidelineModal";
 import DeleteModal from "@/components/modal/DeleteModal";
 import DateDisplay from "@/components/shared/DateDisplay";
+import { Switch } from "@/components/ui/switch";
 
 export default function AdminGuidelines() {
   const toast = useToast();
@@ -130,6 +131,16 @@ export default function AdminGuidelines() {
     setShowModal(false);
     setSelectedGuideline(null);
   };
+  const updateGuidelineMutation = useUpdateGuidelineMutation();
+  const handleDefaultToggle = async (guideline: Guideline, isChecked: boolean) => {
+    try {
+      await updateGuidelineMutation.mutateAsync({ id: guideline.id, data: { is_default: isChecked } });
+      toast.success("Guideline updated successfully");
+    } catch (error) {
+      const errorMessage = extractErrorMessage(error);
+      toast.error(errorMessage || "Failed to update guideline");
+    }
+  };
 
   const columns: ColumnDef<GuidelineRead>[] = [
     {
@@ -138,6 +149,30 @@ export default function AdminGuidelines() {
       cell: ({ row }) => (
         <div className="max-w-[400px] truncate capitalize">
           {row.original.content}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "is_default",
+      header: ({ column }) => (
+        <div className="flex justify-center">
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="hover:bg-transparent p-0 font-semibold text-base"
+          >
+            Default Stage
+            <ArrowUpDown className="h-4 w-4" />
+          </Button>
+        </div>
+      ),
+      cell: ({ row }) => (
+        <div className="flex items-center justify-center gap-2">
+          <Switch
+            checked={row.original.is_default ?? false}
+            onCheckedChange={(isChecked) => handleDefaultToggle(row.original, isChecked)}
+            size="default"
+          />
         </div>
       ),
     },
