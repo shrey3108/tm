@@ -91,6 +91,31 @@ export function useEvaluateGithubMutation() {
 }
 
 /**
+ * Mutation hook to submit GitHub repository URL without triggering evaluation.
+ */
+export function useSubmitGithubMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ stageId, githubUrl }: { stageId: string; githubUrl: string }) =>
+      candidateStageService.submitGithub(stageId, githubUrl),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.CANDIDATES.EVALUATION],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.CANDIDATES.EVALUATION_HISTORY],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.CANDIDATES.TIMELINE],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.JOBS.CANDIDATES],
+      });
+    },
+  });
+}
+
+/**
  * Mutation hook to retry failed candidate stage evaluation.
  */
 export function useRetryEvaluationMutation() {

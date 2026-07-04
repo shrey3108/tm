@@ -105,7 +105,7 @@ export const candidateStageService = {
    */
   evaluateGithub: async (
     id: string,
-    githubUrl: string
+    githubUrl?: string
   ): Promise<{
     message: string;
     candidate_stage_id: string;
@@ -120,6 +120,25 @@ export const candidateStageService = {
       status: string;
       evaluation_id: string;
     }>(`/candidate-stages/${id}/evaluate-github`, { github_url: githubUrl });
+    return response.data;
+  },
+
+  /**
+   * Submit a GitHub repository URL without triggering evaluation.
+   */
+  submitGithub: async (
+    id: string,
+    githubUrl: string
+  ): Promise<{
+    message: string;
+    candidate_stage_id: string;
+    status: string;
+  }> => {
+    const response = await apiClient.post<{
+      message: string;
+      candidate_stage_id: string;
+      status: string;
+    }>(`/candidate-stages/${id}/submit-github`, { github_url: githubUrl });
     return response.data;
   },
 

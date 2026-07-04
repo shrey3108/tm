@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -19,10 +20,12 @@ import {
   FormControl,
   FormMessage,
 } from "@/components/ui/form";
+import { Checkbox } from "@/components/ui/checkbox";
 import { FileIcon, Loader2 } from "lucide-react";
 import { ProjectSubmissionSchema, type ProjectSubmissionFormValues } from "@/schemas/candidate";
 import {
   useEvaluateGithubMutation,
+  useSubmitGithubMutation,
 } from "@/hooks/mutations/candidates/useCandidateStages";
 import { extractErrorMessage } from "@/utils/error";
 import type { Job } from "@/types/job";
@@ -51,19 +54,18 @@ export function ProjectSubmissionDialog({
 }: ProjectSubmissionDialogProps) {
 
   const { mutateAsync: evaluateGithub, isPending: isEvaluating } = useEvaluateGithubMutation();
+  const { mutateAsync: submitGithub, isPending: isSubmitting } = useSubmitGithubMutation();
+
+  const [evaluateImmediately, setEvaluateImmediately] = useState(true);
 
   // Fetch candidate's assigned task paper
   const jobSlug = slugify(job?.title);
   const { candidate: resolvedCandidate } = useResolvedJobAndCandidate({ jobSlug, candidateNameSlug: candidateName, stateJob: job, stateCandidateId: candidateId });
 
-  /*
-  const { data: candidateAssignedTaskBlob } = useDownloadCandidateAssignedTaskFile(candidateId);
-  const handleViewCandidateAssignedTask = () => {
-    if (!candidateAssignedTaskBlob) return;
-    const url = URL.createObjectURL(candidateAssignedTaskBlob);
-    window.open(url, "_blank");
-  };
-  */
+  const currentStage = resolvedCandidate?.pipeline?.find(
+    (s) => s.stage_id === stageId || (s as any).id === stageId || s.job_stage_id === stageId
+  );
+  const isAlreadySubmitted = currentStage?.status === "submitted" || currentStage?.status === "processing";
 
   const form = useForm<ProjectSubmissionFormValues>({
     resolver: zodResolver(ProjectSubmissionSchema),
@@ -72,6 +74,12 @@ export function ProjectSubmissionDialog({
       pdfFile: undefined,
     },
   });
+
+  useEffect(() => {
+    if (resolvedCandidate?.task_file_path) {
+      form.setValue("repoUrl", resolvedCandidate.task_file_path);
+    }
+  }, [resolvedCandidate?.task_file_path, form]);
 
   const onSubmit = async (data: ProjectSubmissionFormValues) => {
     if (!candidateId) {
@@ -84,10 +92,13 @@ export function ProjectSubmissionDialog({
     }
 
     try {
-
-
-      const response = await evaluateGithub({ stageId, githubUrl: data.repoUrl });
-      toast.success(response.message || "GitHub repository evaluation triggered successfully!");
+      if (evaluateImmediately) {
+        const response = await evaluateGithub({ stageId, githubUrl: data.repoUrl });
+        toast.success(response.message || "GitHub repository evaluation triggered successfully!");
+      } else {
+        const response = await submitGithub({ stageId, githubUrl: data.repoUrl });
+        toast.success(response.message || "GitHub repository successfully submitted.");
+      }
       form.reset();
       onOpenChange(false);
       if (onSuccess) {
@@ -133,11 +144,43 @@ export function ProjectSubmissionDialog({
                 )}
               />
 
+              <div className="flex items-start gap-2 px-1 py-1.5">
+                <Checkbox
+                  id="evaluateImmediately"
+                  checked={evaluateImmediately}
+                  onCheckedChange={(checked) => setEvaluateImmediately(!!checked)}
+                  className="mt-1"
+                />
+                <div className="grid gap-1.5 leading-none">
+                  <label
+                    htmlFor="evaluateImmediately"
+                    className="text-sm font-semibold cursor-pointer"
+                  >
+                    Evaluate repository immediately using AI
+                  </label>
+                  <p className="text-xs text-muted-foreground">
+                    {evaluateImmediately
+                      ? "Submit repository for AI evaluation immediately"
+                      : "Saves the repository URL without running evaluation. The AI will evaluate it automatically in 24 hours."}
+                  </p>
+                </div>
+              </div>
+
+              {isAlreadySubmitted && (
+                <div className="p-3.5 rounded-xl border border-amber-500/20 bg-amber-500/5 text-amber-600 dark:text-amber-400 space-y-1.5 animate-in fade-in slide-in-from-top-2">
+                  <p className="text-xs font-semibold">Repository Already Submitted</p>
+                  <p className="text-xs text-muted-foreground leading-normal">
+                    This candidate stage is currently in the <span className="font-semibold text-amber-600 dark:text-amber-400">"{currentStage?.status}"</span> status.
+                    Checking the box above will re-trigger the AI evaluation task immediately.
+                  </p>
+                </div>
+              )}
+
               <FormField
                 control={form.control}
                 name="pdfFile"
                 render={() => (
-                  <FormItem className="space-y-3">
+                  <FormItem className="space-y-3 pt-1">
                     <FormLabel className="text-base font-semibold">Project Requirement Document</FormLabel>
 
                     <FormControl>
@@ -176,22 +219,24 @@ export function ProjectSubmissionDialog({
                   form.reset();
                   onOpenChange(false);
                 }}
-                disabled={isEvaluating}
+                disabled={isEvaluating || isSubmitting}
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
                 className="rounded-xl px-6 font-semibold"
-                disabled={isEvaluating || !form.formState.isValid}
+                disabled={isEvaluating || isSubmitting || !form.formState.isValid}
               >
-                {isEvaluating ? (
+                {isEvaluating || isSubmitting ? (
                   <span className="flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Submitting...
+                    {isEvaluating ? "Evaluating..." : "Submitting..."}
                   </span>
+                ) : evaluateImmediately ? (
+                  isAlreadySubmitted ? "Start Evaluation Now" : "Evaluate Now"
                 ) : (
-                  "Submit details"
+                  "Submit & Schedule"
                 )}
               </Button>
             </DialogFooter>

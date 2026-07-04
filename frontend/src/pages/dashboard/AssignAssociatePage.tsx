@@ -45,6 +45,7 @@ export default function AssignAssociatePage() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedAssociates, setSelectedAssociates] = useState<AssociateRead[]>([]);
+  const [initializedStageId, setInitializedStageId] = useState<string | null>(null);
   const debouncedQuery = useDebouncedValue(searchQuery);
 
   const { job, candidate, isLoading } = useResolvedJobAndCandidate(
@@ -55,7 +56,7 @@ export default function AssignAssociatePage() {
     (s) => slugify(s.template_name) === params.stageSlug
   );
   const stageId = candidateStage?.stage_id;
-  const { data: existingAssociateResults } = useCandidateAssociateResultsQuery(stageId);
+  const { data: existingAssociateResults, isFetched: isExistingLoaded } = useCandidateAssociateResultsQuery(stageId);
   const sendToAssociatesMutation = useSendToAssociatesMutation();
 
   const candidateName = candidate
@@ -71,6 +72,7 @@ export default function AssignAssociatePage() {
     control,
     handleSubmit,
     setValue,
+    watch,
     formState: { errors, isValid, isSubmitting },
   } = useForm<AssignAssociateFormValues>({
     resolver: zodResolver(assignAssociateSchema),
@@ -82,6 +84,10 @@ export default function AssignAssociatePage() {
     mode: "onChange",
   });
 
+  const watchedAssociates = watch("associates") || [];
+  const existingIds = existingAssociateResults?.reviews?.map((r) => r.associate_id) || [];
+  const hasNewAssociates = watchedAssociates.some((id) => !existingIds.includes(id));
+
   useEffect(() => {
     if (stageId) {
       setValue("stageId", stageId, { shouldValidate: true });
@@ -90,13 +96,38 @@ export default function AssignAssociatePage() {
     }
   }, [stageId, setValue]);
 
+  // Pre-populate with existing associates
+  useEffect(() => {
+    if (isExistingLoaded && stageId && initializedStageId !== stageId) {
+      const reviews = existingAssociateResults?.reviews || [];
+      const existingAssociateIds = reviews.map((r) => r.associate_id);
+      setValue("associates", existingAssociateIds, { shouldValidate: true });
+
+      const existingAssocs = reviews.map((r) => ({
+        id: r.associate_id,
+        name: r.associate_name,
+        email: r.associate_email,
+      } as AssociateRead));
+      setSelectedAssociates(existingAssocs);
+      setInitializedStageId(stageId);
+    }
+  }, [isExistingLoaded, existingAssociateResults, stageId, initializedStageId, setValue]);
+
   const onSubmit = async (data: AssignAssociateFormValues) => {
     try {
-      // 2. Send the paper to the selected associates
+      const newAssociateIds = data.associates.filter((id) => !existingIds.includes(id));
+
+      if (newAssociateIds.length === 0) {
+        toast.error("No new associates selected to assign.");
+        return;
+      }
+
+      // Send the paper to the selected associates
       await sendToAssociatesMutation.mutateAsync({
         stageId: data.stageId,
         payload: {
-          associate_ids: data.associates,
+          associate_ids: newAssociateIds,
+          workdrive_url: data.workdriveLink,
         },
       });
 
@@ -175,9 +206,10 @@ export default function AssignAssociatePage() {
                     loading={loadingAssociates}
                     value={value}
                     onValueChange={(nextValues) => {
-                      onChange(nextValues);
+                      const safeValues = Array.from(new Set([...existingIds, ...nextValues]));
+                      onChange(safeValues);
                       setSelectedAssociates((prev) => {
-                        const newSelection = nextValues.map((id) => {
+                        const newSelection = safeValues.map((id) => {
                           const existing = prev.find((a) => a.id === id);
                           if (existing) return existing;
                           const found = associates.find((a) => a.id === id);
@@ -186,12 +218,18 @@ export default function AssignAssociatePage() {
                         return newSelection;
                       });
                     }}
-                    options={associates.map((r) => ({ id: r.id, label: r.name }))}
+                    options={associates.map((r) => {
+                      const isExisting = existingIds.includes(r.id);
+                      return {
+                        id: r.id,
+                        label: isExisting ? `${r.name} (Assigned)` : r.name,
+                      };
+                    })}
                     placeholder="Associates"
                     pluralLabel="associates"
                     onClear={() => {
-                      onChange([]);
-                      setSelectedAssociates([]);
+                      onChange(existingIds);
+                      setSelectedAssociates((prev) => prev.filter((a) => existingIds.includes(a.id)));
                     }}
                     clearLabel="Clear associates"
                     icon={<UserCheck className="h-3.5 w-3.5 opacity-60" />}
@@ -207,24 +245,32 @@ export default function AssignAssociatePage() {
                     <div className="flex flex-wrap gap-2 mt-2">
                       {value.map((id: string) => {
                         const assoc = selectedAssociates.find((a) => a.id === id);
+                        const isExisting = existingIds.includes(id);
                         return (
                           <div
                             key={id}
-                            className="inline-flex items-center gap-1.5 bg-muted/40 border border-border/40 px-2.5 py-1 rounded-xl text-sm font-medium"
+                            className={cn(
+                              "inline-flex items-center gap-1.5 border px-2.5 py-1 rounded-xl text-sm font-medium transition-colors",
+                              isExisting
+                                ? "bg-muted/65 border-muted text-muted-foreground"
+                                : "bg-muted/40 border-border/40 text-foreground"
+                            )}
                           >
-                            <UserCheck className="w-3.5 h-3.5 text-primary" />
-                            <span>{assoc ? assoc.name : id}</span>
-                            <button
-                              type="button"
-                              className="text-muted-foreground hover:text-destructive transition-colors text-xs font-bold ml-1 cursor-pointer"
-                              onClick={() => {
-                                const nextValues = value.filter((val) => val !== id);
-                                onChange(nextValues);
-                                setSelectedAssociates((prev) => prev.filter((a) => a.id !== id));
-                              }}
-                            >
-                              ✕
-                            </button>
+                            <UserCheck className={cn("w-3.5 h-3.5", isExisting ? "text-muted-foreground/60" : "text-primary")} />
+                            <span>{assoc ? assoc.name : id} {isExisting && "(Assigned)"}</span>
+                            {!isExisting && (
+                              <button
+                                type="button"
+                                className="text-muted-foreground hover:text-destructive transition-colors text-xs font-bold ml-1 cursor-pointer"
+                                onClick={() => {
+                                  const nextValues = value.filter((val) => val !== id);
+                                  onChange(nextValues);
+                                  setSelectedAssociates((prev) => prev.filter((a) => a.id !== id));
+                                }}
+                              >
+                                ✕
+                              </button>
+                            )}
                           </div>
                         );
                       })}
@@ -286,7 +332,7 @@ export default function AssignAssociatePage() {
             <Button
               type="submit"
               className="h-10 rounded-xl font-semibold gap-2 mt-2"
-              disabled={!isValid || isSubmitting}
+              disabled={!isValid || isSubmitting || !hasNewAssociates}
             >
               {isSubmitting ? (
                 <>

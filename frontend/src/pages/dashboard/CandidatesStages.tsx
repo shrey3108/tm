@@ -17,7 +17,7 @@ import { PERMISSIONS } from "@/lib/permissions";
 import { CandidateDetailsModal } from "@/components/modal/CandidateDetailsModal";
 import { ResumeScreeningView } from "@/components/candidate/ResumeScreeningView";
 import { StageEvaluationView, getChartData } from "@/components/candidate/StageEvaluationView";
-import { PollingState, EmptyState } from "@/components/candidate/StageStateViews";
+import { PollingState, EmptyState, SubmittedState } from "@/components/candidate/StageStateViews";
 import { useCandidatesStages } from "@/hooks/useCandidatesStages";
 import LoadingSpinner from "@/components/shared/LoadingSpinner";
 import { JobInfoModal } from "@/components/modal/JobInfoModal";
@@ -74,8 +74,11 @@ export default function CandidatesStages() {
     handlePaperChange,
     setRefetchTimeline,
     isFailedEvaluation,
+    isSubmittedEvaluation,
     handleRetry,
     isRetrying,
+    handleEvaluateGithub,
+    isEvaluatingGithub,
     associateResults,
     isLoadingAssociateResults,
     hasPendingAssociates,
@@ -150,6 +153,12 @@ export default function CandidatesStages() {
               <LoadingSpinner message="Fetching evaluation data..." />
             ) : isPolling ? (
               <PollingState />
+            ) : isSubmittedEvaluation ? (
+              <SubmittedState
+                githubUrl={candidateData?.task_file_path || candidate?.task_file_path}
+                onEvaluate={handleEvaluateGithub}
+                isEvaluating={isEvaluatingGithub}
+              />
             ) : evaluation ? (
               <>
                 <StageEvaluationView
@@ -177,7 +186,7 @@ export default function CandidatesStages() {
                   onShowChartChange={setShowChart}
                 />
                 {showChart && (
-                  <Suspense fallback={<LoadingSpinner message="Loading charts..." />}>
+                  <Suspense fallback={<LoadingSpinner message="Loading charts..." fullPage={true} />}>
                     <div className="w-full flex justify-center bg-card/30 p-6 rounded-2xl border border-border/50 animate-in fade-in duration-300">
                       <div className="w-full min-h-[100px] max-h-[300px]">
                         <JobCandidatesAreaChart data={chartData.length > 0 ? chartData : undefined} />

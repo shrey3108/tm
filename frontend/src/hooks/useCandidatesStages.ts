@@ -23,6 +23,7 @@ import {
 import {
   useSubmitDecisionMutation,
   useRetryEvaluationMutation,
+  useEvaluateGithubMutation,
 } from "./mutations/candidates/useCandidateStages";
 import { QUERY_KEYS } from "@/constants/queryKeys";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
@@ -148,12 +149,12 @@ export function useCandidatesStages() {
 
   // Check if response indicates the evaluation is processing
   const isResponseProcessing = useMemo(() => {
-    if (evaluationData && (evaluationData as any).status === "processing") {
+    if (evaluationData && ((evaluationData as any).status === "processing" || (evaluationData as any).status === "queued")) {
       return true;
     }
     if (evaluationError && typeof evaluationError === "object" && "response" in evaluationError) {
       const responseData = (evaluationError as any).response?.data;
-      if (responseData && responseData.status === "processing") {
+      if (responseData && (responseData.status === "processing" || responseData.status === "queued")) {
         return true;
       }
     }
@@ -179,8 +180,14 @@ export function useCandidatesStages() {
     }
   }, [isResponseProcessing, instanceId, activePollings, candidateName, currentStage, candidate?.id, job?.id, dispatch]);
 
+  const isSubmittedEvaluation = useMemo(() => {
+    return evaluationData && evaluationData.status === "submitted";
+  }, [evaluationData]);
+
   const hasValidEvaluationData = evaluationData &&
     (evaluationData as any).status !== "processing" &&
+    (evaluationData as any).status !== "queued" &&
+    (evaluationData as any).status !== "submitted" &&
     (evaluationData as any).status !== "failed";
   let evaluation = selectedEvaluationVersion || (hasValidEvaluationData ? evaluationData : null);
   const error = (evaluationError && !isResponseProcessing)
@@ -359,6 +366,25 @@ export function useCandidatesStages() {
     }
   };
 
+  const evaluateGithubMutation = useEvaluateGithubMutation();
+  const isEvaluatingGithub = evaluateGithubMutation.isPending;
+
+  const handleEvaluateGithub = async () => {
+    if (!instanceId) return;
+    try {
+      await evaluateGithubMutation.mutateAsync({ stageId: instanceId, githubUrl: "" });
+      // Reset the cache to processing state
+      queryClient.setQueryData(
+        [QUERY_KEYS.CANDIDATES.EVALUATION, instanceId],
+        { status: "processing" }
+      );
+      toast.success("GitHub evaluation triggered successfully");
+      setIsPolling(true);
+    } catch (err) {
+      toast.error(extractErrorMessage(err) || "Failed to trigger GitHub evaluation");
+    }
+  };
+
   const transformedOverall = useMemo(() => {
     if (!evaluation) return null;
 
@@ -485,8 +511,11 @@ export function useCandidatesStages() {
     submitFeedback,
     handleSelectHistoryVersion,
     isFailedEvaluation,
+    isSubmittedEvaluation,
     handleRetry,
     isRetrying,
+    handleEvaluateGithub,
+    isEvaluatingGithub,
     fetchHistory: () => {
       refetchHistory();
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CANDIDATES.DETAILS, job?.id, candidate?.id] });
@@ -519,4 +548,3 @@ export function useCandidatesStages() {
     requiredInputs: candidateStage?.required_inputs,
   };
 }
-

@@ -1,5 +1,6 @@
-import { FileText, AlertCircle, RefreshCw } from "lucide-react";
+import { FileText, AlertCircle, RefreshCw, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { GithubLogo } from "../logo";
 
 /**
  * Displays a specialized polling state for AI analysis.
@@ -77,6 +78,43 @@ export function EmptyState({ error, isFailed, onRetry, isRetrying }: EmptyStateP
         <h3 className="text-xl font-black uppercase tracking-tight">No Evaluation Data</h3>
 
       </div>
+    </div>
+  );
+}
+
+interface SubmittedStateProps {
+  githubUrl?: string | null;
+  onEvaluate: () => void;
+  isEvaluating: boolean;
+}
+
+export function SubmittedState({ githubUrl, onEvaluate, isEvaluating }: SubmittedStateProps) {
+  return (
+    <div className="flex flex-col items-center justify-center py-2 px-2 gap-3 text-center max-w-md mx-auto rounded-2xl border border-primary/20">
+      <div className="relative flex items-center justify-center h-10 w-10 rounded-full bg-primary/10 text-primary">
+        <GithubLogo className="h-10 w-10" />
+      </div>
+      <div className="space-y-2">
+        <h3 className="text-xl font-black uppercase tracking-tight text-primary">
+          Repository Submitted
+        </h3>
+        <p className="text-muted-foreground text-sm leading-relaxed max-w-xs mx-auto">
+          The candidate's project repository has been successfully submitted. The evaluation will run automatically in 24 hours.
+        </p>
+        {githubUrl && (
+          <div className="mt-2 text-xs text-muted-foreground px-3 py-1.5 rounded-lg break-all max-w-[320px] mx-auto select-all">
+            {githubUrl}
+          </div>
+        )}
+      </div>
+      <Button
+        onClick={onEvaluate}
+        disabled={isEvaluating}
+        className="relative font-bold px-2 py-1 rounded-xl bg-primary hover:bg-primary/95 transition-all duration-200 shadow-md hover:shadow-primary/20 active:scale-95 flex items-center gap-2 group"
+      >
+        <Play className={`h-4 w-4 transition-transform duration-500 ${isEvaluating ? "animate-spin" : "group-hover:translate-x-0.5"}`} />
+        {isEvaluating ? "Triggering AI Evaluation..." : "Start AI Evaluation Now"}
+      </Button>
     </div>
   );
 }
