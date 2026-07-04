@@ -108,7 +108,7 @@ export const BasicJobDetails = ({ departments, priorities = [], positions, isEdi
                   <span className="">Due Date:</span>{" "}
                   <DateDisplay
                     date={field.value ? addDays(new Date(), Number(priorities.find((p) => p.id === field.value)?.duration_days)) : null}
-                    className="font-bold text-black"
+                    className="font-bold text-black dark:text-white"
                   />
                 </span>}
               </FormDescription>

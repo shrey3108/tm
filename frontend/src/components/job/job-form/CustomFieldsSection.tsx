@@ -64,7 +64,7 @@ export const CustomFieldsSection = () => {
                     </Badge>
                   ))}
                   {(!field.value || field.value.length === 0) && (
-                    <p className="text-sm text-muted-foreground italic font-medium py-2">
+                    <p className="text-sm text-muted-foreground py-2">
                       No custom fields added yet.
                     </p>
                   )}

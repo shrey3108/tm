@@ -381,7 +381,16 @@ export default function SendPaperPage() {
                 type="button"
                 variant="outline"
                 className="rounded-xl font-semibold"
-                onClick={() => navigate(-1)}
+                onClick={() => {
+                  if (candidateId && params.candidateName && params.stageSlug) {
+                    const jobSlug = slugify(job?.title || "");
+                    const candSlug = params.candidateName;
+                    const stgSlug = params.stageSlug;
+                    navigate(`/dashboard/jobs/${jobSlug}/candidates/${candSlug}/stages/${stgSlug}`, {
+                      state: { job, candidateId, candidateName, stageId: jobStageId },
+                    });
+                  }
+                }}
                 disabled={sendEmailMutation.isPending || sendBulkEmailMutation.isPending}
               >
                 Close
@@ -407,6 +416,7 @@ export default function SendPaperPage() {
                             navigate(`/dashboard/jobs/${slugify(job?.title || "")}/assign-paper`);
                           }
                         }}
+                        disabled={sendEmailMutation.isPending || sendBulkEmailMutation.isPending}
                       >
                         Change Paper
                       </Button>

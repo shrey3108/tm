@@ -39,9 +39,9 @@ const SingleStagePoller = ({ polling, onNavigate }: SingleStagePollerProps) => {
 
   useEffect(() => {
     if (data) {
-      const status = (data as any).status;
+      const status = data.status;
       if (status === "failed") {
-        const errorMsg = (data as any).error_message || "Evaluation processing failed";
+        const errorMsg = data.error_message || "Evaluation processing failed";
         toast.error(`Evaluation for ${polling.candidateName} failed: ${errorMsg}`);
         dispatch(stopPolling(polling.stageId));
         invalidateQueries(queryClient, polling);
@@ -67,8 +67,8 @@ const SingleStagePoller = ({ polling, onNavigate }: SingleStagePollerProps) => {
         "response" in error &&
         (error as any).response?.data?.status === "processing";
 
-      // Do not stop polling if it's a 404 or a processing status
-      if (responseStatus !== 404 && !isResponseProcessing) {
+      // Do not stop polling if it's a 404 or 429 (rate limit) or a processing status
+      if ((responseStatus !== 404 || responseStatus !== 429) && !isResponseProcessing) {
         const errorMsg = extractErrorMessage(error);
         toast.error(`Evaluation for ${polling.candidateName} failed: ${errorMsg}`);
         dispatch(stopPolling(polling.stageId));

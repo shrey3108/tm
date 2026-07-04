@@ -103,8 +103,8 @@ export function AnalysisContent({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
         <section className="space-y-2">
           <h3 className="text-lg font-medium tracking-tight flex items-center gap-2 text-foreground">
-            <AlertCircle className="h-5 w-5 text-red-500/80" />
-            <span className="text-red-500 font-medium">
+            <AlertCircle className="h-5 w-5" />
+            <span className="font-medium">
               Missing Skills
             </span>
           </h3>
@@ -119,7 +119,7 @@ export function AnalysisContent({
                   ).map((skill, idx) => (
                     <li
                       key={idx}
-                      className=" "
+                      className="text-sm"
                     >
                       <span className="text-black dark:text-white">
                         {skill.name}
@@ -160,7 +160,7 @@ export function AnalysisContent({
               analysis.extraordinary_points.map((point, idx) => (
                 <li
                   key={idx}
-                  className="text-sm leading-relaxed text-muted-foreground"
+                  className="text-sm"
                 >
                   <span className="text-black dark:text-white">
                     {point}

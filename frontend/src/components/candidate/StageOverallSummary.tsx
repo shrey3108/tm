@@ -130,12 +130,12 @@ export function StageOverallSummary({ data }: StageOverallSummaryProps) {
                 <SummaryList
                   title="Strengths"
                   items={data.strength_summary || []}
-                  titleColor="text-green-600"
+                  titleColor=""
                 />
                 <SummaryList
                   title="Weaknesses"
                   items={data.weakness_summary || []}
-                  titleColor="text-red-600"
+                  titleColor=""
                 />
               </div>
             )}

@@ -882,7 +882,7 @@ export default function AssignPaperPage() {
           ) : randomPoolQuestions.length === 0 && randomPoolMCQs.length === 0 && randomPoolTasks.length === 0 ? (
             <div className="text-xs text-muted-foreground py-2 text-center">No questions available for this job profile.</div>
           ) : (
-            <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+            <div className="space-y-2 overflow-y-auto pr-1">
               {/* Normal questions in Pool */}
               {randomPoolQuestions.length > 0 && (
                 <div className="space-y-1">
