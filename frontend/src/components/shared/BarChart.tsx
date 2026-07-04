@@ -2,6 +2,7 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Rectangle, ResponsiveContai
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig, } from "@/components/ui/chart"
 import { MAX_LOCATION_BAR_CHART_DISPLAY_LIMIT, HR_DECISION_OPTIONS, CHART_COLORS } from "@/constants";
 import type { JobCandidatesStatsProps } from "@/components/job/candidates/JobCandidatesStats";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const chartConfig = {
   value: {
@@ -377,11 +378,16 @@ interface LocationBarChartProps {
 
 export function LocationBarChart({ locations }: LocationBarChartProps) {
   const sortedEntries = Object.entries(locations).sort((a, b) => b[1] - a[1]);
+  const isMobile = useIsMobile();
 
   let displayData: [string, number][];
-  if (sortedEntries.length > MAX_LOCATION_BAR_CHART_DISPLAY_LIMIT) {
+  if (sortedEntries.length > MAX_LOCATION_BAR_CHART_DISPLAY_LIMIT && !isMobile) {
     const topX = sortedEntries.slice(0, MAX_LOCATION_BAR_CHART_DISPLAY_LIMIT);
     const others = sortedEntries.slice(MAX_LOCATION_BAR_CHART_DISPLAY_LIMIT).reduce((acc, [_, val]) => acc + val, 0);
+    displayData = [...topX, ["Other", others]];
+  } else if (isMobile && sortedEntries.length > 3) {
+    const topX = sortedEntries.slice(0, 3);
+    const others = sortedEntries.slice(3).reduce((acc, [_, val]) => acc + val, 0);
     displayData = [...topX, ["Other", others]];
   } else {
     displayData = sortedEntries;

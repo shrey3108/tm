@@ -82,7 +82,7 @@ const CreateGuidelineModal = ({
     <Dialog open={show} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto p-4">
         <DialogHeader className="mb-4">
-          <DialogTitle>{isEditMode ? "Edit Guideline" : "Create New Guideline"}</DialogTitle>
+          <DialogTitle>{isEditMode ? "Edit Term & Condition" : "Create New Term & Condition"}</DialogTitle>
         </DialogHeader>
 
         {submitError && (
@@ -98,10 +98,10 @@ const CreateGuidelineModal = ({
               name="content"
               render={({ field }) => (
                 <FormItem className="space-y-2">
-                  <FormLabel>Guideline Content</FormLabel>
+                  <FormLabel>Term & Condition Content</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Enter guidelines instructions here..."
+                      placeholder="Enter terms & conditions instructions here..."
                       rows={8}
                       {...field}
                       value={field.value || ""}
@@ -123,7 +123,7 @@ const CreateGuidelineModal = ({
             Cancel
           </Button>
           <Button type="submit" form="create-guideline-form" isLoading={isSubmitting}>
-            {isEditMode ? "Update Guideline" : "Create Guideline"}
+            {isEditMode ? "Update Term & Condition" : "Create Term & Condition"}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -425,7 +425,7 @@ export const router = createBrowserRouter([
                 ),
               },
               {
-                path: "settings/guidelines",
+                path: "settings/terms-conditions",
                 element: (
                   <RoleRoute requiredPermissions={PERMISSIONS.ADMIN_ACCESS}>
                     <AdminGuidelines />

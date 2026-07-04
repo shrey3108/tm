@@ -245,13 +245,20 @@ export function useCandidatesStages() {
   const totalAssociates = associateResults?.total_associates ?? 0;
   const submittedCount = associateResults?.submitted_count ?? 0;
 
+  const requiredInputs = candidateStage?.required_inputs || [];
+
   const isTechnicalPracticalRound =
     candidate?.current_stage?.template_name === "Technical Practical Round" &&
     currentStage === "Technical Practical Round";
 
+  const requiresAssociates =
+    isTechnicalPracticalRound ||
+    requiredInputs.includes("question") ||
+    requiredInputs.includes("github");
+
   const hasPendingAssociates =
     currentStage !== "Resume Screening" &&
-    ((isTechnicalPracticalRound && totalAssociates === 0) ||
+    ((requiresAssociates && totalAssociates === 0) ||
       (totalAssociates > 0 && submittedCount < totalAssociates));
 
   const form = useForm<CandidateDecisionFormValues>({

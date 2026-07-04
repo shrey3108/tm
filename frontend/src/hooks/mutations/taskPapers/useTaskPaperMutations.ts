@@ -90,21 +90,43 @@ export function useAssignTestPaperMutation() {
     mutationFn: (data: CandidateTestPaperAssign) =>
       taskService.assignTestPaperToCandidate(data),
     onSuccess: (data) => {
-      // Set query data immediately to update UI without delay
-      queryClient.setQueryData(
-        [QUERY_KEYS.TASK_PAPERS.ASSIGNED, data.candidate_id, data.job_stage_config_id],
-        data
-      );
-      // Invalidate queries for the specific candidate using the returned ID
-      queryClient.invalidateQueries({
-        queryKey: [QUERY_KEYS.TASK_PAPERS.ASSIGNED, data.candidate_id, data.job_stage_config_id],
-      });
-      queryClient.invalidateQueries({
-        queryKey: [QUERY_KEYS.TASK_PAPERS.TASK_METADATA, data.candidate_id],
-      });
-      queryClient.invalidateQueries({
-        queryKey: [QUERY_KEYS.TASK_PAPERS.SKILLS, data.candidate_id],
-      });
+      if (data.candidate_id) {
+        // Set query data immediately to update UI without delay
+        queryClient.setQueryData(
+          [QUERY_KEYS.TASK_PAPERS.ASSIGNED, data.candidate_id, data.job_stage_config_id],
+          data
+        );
+        queryClient.setQueryData(
+          [QUERY_KEYS.TASK_PAPERS.ASSIGNED, data.candidate_id],
+          data
+        );
+        // Invalidate queries for the specific candidate using the returned ID
+        queryClient.invalidateQueries({
+          queryKey: [QUERY_KEYS.TASK_PAPERS.ASSIGNED, data.candidate_id],
+        });
+        queryClient.invalidateQueries({
+          queryKey: [QUERY_KEYS.TASK_PAPERS.TASK_METADATA, data.candidate_id],
+        });
+        queryClient.invalidateQueries({
+          queryKey: [QUERY_KEYS.TASK_PAPERS.SKILLS, data.candidate_id],
+        });
+      }
+
+      if (data.job_id) {
+        // Set job query data immediately
+        queryClient.setQueryData(
+          [QUERY_KEYS.JOBS.TASK_ASSIGNED, data.job_id, data.job_stage_config_id],
+          data
+        );
+        queryClient.setQueryData(
+          [QUERY_KEYS.JOBS.TASK_ASSIGNED, data.job_id],
+          data
+        );
+        queryClient.invalidateQueries({
+          queryKey: [QUERY_KEYS.JOBS.TASK_ASSIGNED, data.job_id],
+        });
+      }
+
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.JOBS.CANDIDATES],
       });
@@ -131,8 +153,12 @@ export function useDeleteCandidateTestPaperMutation() {
         [QUERY_KEYS.TASK_PAPERS.ASSIGNED, candidateId, jobStageId],
         null
       );
+      queryClient.setQueryData(
+        [QUERY_KEYS.TASK_PAPERS.ASSIGNED, candidateId],
+        null
+      );
       queryClient.invalidateQueries({
-        queryKey: [QUERY_KEYS.TASK_PAPERS.ASSIGNED, candidateId, jobStageId],
+        queryKey: [QUERY_KEYS.TASK_PAPERS.ASSIGNED, candidateId],
       });
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.TASK_PAPERS.TASK_METADATA, candidateId],
@@ -158,8 +184,17 @@ export function useDeleteJobDefaultTestPaperMutation() {
     onSuccess: (_data, param) => {
       const jobId = typeof param === "string" ? param : param.jobId;
       const jobStageId = typeof param === "string" ? undefined : param.jobStageId;
+      
+      queryClient.setQueryData(
+        [QUERY_KEYS.JOBS.TASK_ASSIGNED, jobId, jobStageId],
+        null
+      );
+      queryClient.setQueryData(
+        [QUERY_KEYS.JOBS.TASK_ASSIGNED, jobId],
+        null
+      );
       queryClient.invalidateQueries({
-        queryKey: [QUERY_KEYS.TASK_PAPERS.ASSIGNED, jobId, jobStageId],
+        queryKey: [QUERY_KEYS.JOBS.TASK_ASSIGNED, jobId],
       });
     },
   });

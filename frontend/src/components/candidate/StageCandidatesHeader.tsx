@@ -114,6 +114,8 @@ export const StageCandidatesHeader = ({
     githubUrl.toLowerCase().startsWith("http") &&
     (githubUrl.toLowerCase().includes("github.com") || githubUrl.toLowerCase().includes("gitlab.com"));
 
+  const isGithubRequirementMet = !showGithub || isGithubUploaded;
+
   return (
     <AppPageHeader
       headingClassName="text-lg sm:text-xl capitalize"
@@ -241,30 +243,32 @@ export const StageCandidatesHeader = ({
                 onSuccess={onSuccess}
                 job={job!}
               />
-              <Button
-                variant="outline"
-                className="rounded-xl border border-muted-foreground/10 px-5 font-semibold text-center h-9 ml-2"
-                onClick={() => {
-                  const jobSlug = slugify(job?.title || "");
-                  const candSlug = slugify(candidateName || "");
-                  const stgSlug = slugify(stageName || "");
-                  navigate(`/dashboard/jobs/${jobSlug}/candidates/${candSlug}/stages/${stgSlug}/assign-associate`, {
-                    state: {
-                      job,
-                      candidate: {
-                        id: candidateId,
-                        first_name: candidateName?.split(" ")[0] || "",
-                        last_name: candidateName?.split(" ").slice(1).join(" ") || "",
-                      }
-                    }
-                  });
-                }}
-                // disabled={!job?.is_active || !isGithubUploaded || allAssociatesSubmitted}
-                disabled={!job?.is_active || allAssociatesSubmitted || !!associateResults}
-              >
-                Assign Associate
-              </Button>
             </>
+          )}
+
+          {(showQuestion || showGithub) && (
+            <Button
+              variant="outline"
+              className="rounded-xl border border-muted-foreground/10 px-5 font-semibold text-center h-9 ml-2"
+              onClick={() => {
+                const jobSlug = slugify(job?.title || "");
+                const candSlug = slugify(candidateName || "");
+                const stgSlug = slugify(stageName || "");
+                navigate(`/dashboard/jobs/${jobSlug}/candidates/${candSlug}/stages/${stgSlug}/assign-associate`, {
+                  state: {
+                    job,
+                    candidate: {
+                      id: candidateId,
+                      first_name: candidateName?.split(" ")[0] || "",
+                      last_name: candidateName?.split(" ").slice(1).join(" ") || "",
+                    }
+                  }
+                });
+              }}
+              disabled={!job?.is_active || allAssociatesSubmitted || !!associateResults || !isGithubRequirementMet}
+            >
+              Assign Associate
+            </Button>
           )}
 
           {showTranscript && (

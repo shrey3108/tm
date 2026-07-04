@@ -122,7 +122,17 @@ export default function AssignPaperPage() {
 
   // Fetch guidelines
   const { data: guidelines, loading: loadingGuidelines } = useGuidelines(0, 100);
-  const [selectedGuidelineId, setSelectedGuidelineId] = useState<string>("");
+  const [selectedGuidelineId, setSelectedGuidelineId] = useState<string>(() => guidelines?.find((val) => val.is_default)?.id || "");
+
+  // Automatically select the default guideline once guidelines are loaded
+  useEffect(() => {
+    if (guidelines && guidelines.length > 0 && !selectedGuidelineId) {
+      const defaultGuideline = guidelines.find((val) => val.is_default);
+      if (defaultGuideline) {
+        setSelectedGuidelineId(defaultGuideline.id);
+      }
+    }
+  }, [guidelines, selectedGuidelineId]);
 
   // Default to the first technical stage once loaded
   useEffect(() => {
@@ -583,7 +593,7 @@ export default function AssignPaperPage() {
     }
 
     if (!selectedGuidelineId) {
-      toast.error("Please select a guideline template.");
+      toast.error("Please select a terms & conditions template.");
       return;
     }
 
@@ -597,7 +607,7 @@ export default function AssignPaperPage() {
           questions: finalQuestions,
           mcqs: finalMCQs,
           project_task: finalTasks,
-          custom_skills: job.skills?.map((s: any) => s.name) || [],
+          custom_skills: job.skills?.map((s) => s.name) || [],
           guideline_id: selectedGuidelineId,
         });
         toast.success(`Successfully assigned test paper to ${candidateDisplayName}!`);
@@ -645,14 +655,15 @@ export default function AssignPaperPage() {
   };
 
   // @ts-ignore
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleUnassign = async () => {
     if (!job?.id || !selectedStageId) return;
     try {
       await unassignMutation.mutateAsync({ jobId: job.id, jobStageId: selectedStageId });
       toast.success("Successfully removed default test paper from this stage!");
       refetchAssignedPaper();
-    } catch (err: any) {
-      toast.error("Failed to remove assigned paper.");
+    } catch (err: unknown) {
+      toast.error(extractErrorMessage(err, "Failed to remove assigned paper."));
     }
   };
 
@@ -717,10 +728,10 @@ export default function AssignPaperPage() {
         <div className="bg-card border border-border/80 p-4 rounded-xl shadow-xs space-y-2 animate-in fade-in duration-300">
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-bold text-foreground flex items-center gap-1">
-              Select Guideline Template <Required />
+              Select Terms & Conditions Template <Required />
             </label>
             <p className="text-xs text-muted-foreground">
-              Select a custom guideline template to attach and send along with candidate test papers.
+              Select a custom terms & conditions template to attach and send along with candidate test papers.
             </p>
             <SearchableSelect
               value={selectedGuidelineId}
@@ -729,9 +740,9 @@ export default function AssignPaperPage() {
                 id: g.id,
                 label: g.content.length > 120 ? `${g.content.substring(0, 120)}...` : g.content
               }))}
-              placeholder="Choose a guideline template..."
-              searchPlaceholder="Search guidelines..."
-              emptyMessage="No guidelines found"
+              placeholder="Choose a terms & conditions template..."
+              searchPlaceholder="Search terms & conditions..."
+              emptyMessage="No terms & conditions found"
               loading={loadingGuidelines}
             />
           </div>

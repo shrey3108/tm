@@ -121,8 +121,8 @@ export const CHART_COLORS = {
       gradient: ["#86efac", "#4ade80"] as const,
     },
     project: {
-      solid: "#fcd34d",
-      gradient: ["#fde68a", "#fcd34d"] as const,
+      solid: "#a5b4fc",
+      gradient: ["#cbd5f5", "#a5b4fc"] as const, // kind of blue color
     },
   },
 

@@ -94,7 +94,7 @@ export default function AdminGuidelines() {
       setDeletingId(guideline.id);
       setDeleteError(null);
       await deleteGuidelineMutation.mutateAsync(guideline.id);
-      toast.success("Guideline deleted successfully");
+      toast.success("Term & condition deleted successfully");
     } catch (err) {
       const errMsg = extractErrorMessage(err);
       setDeleteError(errMsg);
@@ -135,17 +135,17 @@ export default function AdminGuidelines() {
   const handleDefaultToggle = async (guideline: Guideline, isChecked: boolean) => {
     try {
       await updateGuidelineMutation.mutateAsync({ id: guideline.id, data: { is_default: isChecked } });
-      toast.success("Guideline updated successfully");
+      toast.success("Term & condition updated successfully");
     } catch (error) {
       const errorMessage = extractErrorMessage(error);
-      toast.error(errorMessage || "Failed to update guideline");
+      toast.error(errorMessage || "Failed to update term & condition");
     }
   };
 
   const columns: ColumnDef<GuidelineRead>[] = [
     {
       accessorKey: "content",
-      header: () => <span className="text-base">Guideline Content</span>,
+      header: () => <span className="text-base">Term & Condition Content</span>,
       cell: ({ row }) => (
         <div className="max-w-[400px] truncate capitalize">
           {row.original.content}
@@ -217,7 +217,7 @@ export default function AdminGuidelines() {
                   )}
                 />
                 <HoverCardContent className="w-fit px-3 py-1 text-xs" side="top">
-                  Edit Guideline
+                  Edit Term & Condition
                 </HoverCardContent>
               </HoverCard>
 
@@ -237,7 +237,7 @@ export default function AdminGuidelines() {
                   )}
                 />
                 <HoverCardContent className="w-fit px-3 py-1 text-xs" side="top">
-                  Delete Guideline
+                  Delete Term & Condition
                 </HoverCardContent>
               </HoverCard>
             </div>
@@ -250,12 +250,12 @@ export default function AdminGuidelines() {
   return (
     <AppPageShell width="wide">
       <PageHeader
-        title="Guideline Management"
+        title="Terms & Conditions Management"
         breadcrumbActions={
           <PermissionGuard permissions={PERMISSIONS.ADMIN_ACCESS} hideWhenDenied>
             <Button onClick={handleCreateClick} size={"sm"} className="gap-2">
               <Plus className="h-4 w-4" />
-              Create Guideline
+              Create Term & Condition
             </Button>
           </PermissionGuard>
         }
@@ -271,7 +271,7 @@ export default function AdminGuidelines() {
           searchKey="content"
           searchValue={search}
           onSearchChange={handleSearchChange}
-          searchPlaceholder="Filter guidelines by content..."
+          searchPlaceholder="Filter terms & conditions by content..."
           initialSorting={[{ id: "created_at", desc: true }]}
           isServerSide={true}
           pageIndex={pageIndex}
@@ -281,7 +281,7 @@ export default function AdminGuidelines() {
           totalRecords={total}
           totalCount={overallTotal}
           resultCount={guidelines.length}
-          entityName="Guidelines"
+          entityName="Terms & Conditions"
         />
       )}
 
@@ -296,8 +296,8 @@ export default function AdminGuidelines() {
         show={showDeleteModal}
         handleClose={() => setShowDeleteModal(false)}
         handleConfirm={() => { }}
-        title="Delete Guideline Error"
-        message={itemToDelete ? `Unable to delete guideline` : ""}
+        title="Delete Term & Condition Error"
+        message={itemToDelete ? `Unable to delete term & condition` : ""}
         isLoading={false}
         error={renderFormattedError(deleteError)}
         showFooterButtons={false}

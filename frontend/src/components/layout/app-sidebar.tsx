@@ -204,8 +204,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           permission: [PERMISSIONS.ADMIN_ACCESS, PERMISSIONS.ANALYTICS_READ], // TODO: adjust as per backend API
         },
         {
-          title: "Guidelines",
-          url: "/dashboard/admin/settings/guidelines",
+          title: "Terms & Conditions",
+          url: "/dashboard/admin/settings/terms-conditions",
           permission: PERMISSIONS.ADMIN_ACCESS,
         },
         // {

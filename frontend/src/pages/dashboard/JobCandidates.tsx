@@ -430,15 +430,15 @@ export default function JobCandidates() {
                               <div className="">More Info</div>
                             </HoverCardContent>
                           </HoverCard> */}
-                          <CandidateStagesButton
-                            candidate={candidate}
-                            jobSlug={jobSlug}
-                            job={job}
-                          />
                           <CandidateAssignPaperButton candidate={candidate}
                             jobSlug={jobSlug}
                             job={job}
                             buttonClassName="h-9 w-9 p-0 rounded-xl bg-muted/50 hover:bg-gray-200/60 text-foreground border border-muted-foreground/10 flex items-center justify-center shrink-0"
+                          />
+                          <CandidateStagesButton
+                            candidate={candidate}
+                            jobSlug={jobSlug}
+                            job={job}
                           />
                           {/* <HoverCard>
                             <HoverCardTrigger
