@@ -28,7 +28,7 @@ export function ProjectTaskDisplay({
 
   if (variant === "simple") {
     return (
-      <div className="grid grid-cols-[minmax(0,1fr)_180px] gap-4 w-full">
+      <div className="grid grid-cols-[minmax(0,1fr)_180px] gap-4 w-full text-xs">
         <div className="min-w-0">
           <p className={cn("text-foreground text-wrap wrap-break-word text-sm", titleClassName)}>{taskText}</p>
           {instructions && <p className="text-xs text-wrap wrap-break-word mt-0.5">{instructions}</p>}

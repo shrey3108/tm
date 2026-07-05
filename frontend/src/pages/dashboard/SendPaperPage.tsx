@@ -226,7 +226,13 @@ export default function SendPaperPage() {
         force,
       });
       toast.success(`Successfully sent test paper email to ${email}!`);
-      navigate(-1);
+      // navigate(-1);
+      const jobSlug = slugify(job?.title || "");
+      const candSlug = params.candidateName;
+      const stgSlug = params.stageSlug;
+      navigate(`/dashboard/jobs/${jobSlug}/candidates/${candSlug}/stages/${stgSlug}`, {
+        state: { job, candidateId, candidateName, stageId: jobStageId },
+      });
     } catch (err: unknown) {
       toast.error(extractErrorMessage(err));
     }

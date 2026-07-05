@@ -5,7 +5,7 @@ import * as z from "zod";
  * Matches backend GuidelineCreate.
  */
 export const guidelineCreateSchema = z.object({
-  content: z.string().trim().min(1, "Guideline content cannot be empty"),
+  content: z.string().trim().min(10, "Guideline content atleast 10 characters"),
   is_default: z.boolean().default(false),
 });
 
@@ -14,7 +14,7 @@ export const guidelineCreateSchema = z.object({
  * Matches backend GuidelineUpdate.
  */
 export const guidelineUpdateSchema = z.object({
-  content: z.string().trim().min(1, "Guideline content cannot be empty").optional(),
+  content: z.string().trim().min(10, "Guideline content atleast 10 characters"),
   is_default: z.boolean().optional(),
 });
 

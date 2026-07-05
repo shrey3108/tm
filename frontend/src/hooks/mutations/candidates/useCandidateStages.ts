@@ -86,6 +86,15 @@ export function useEvaluateGithubMutation() {
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.JOBS.CANDIDATES],
       });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.CANDIDATES.DETAILS],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.CANDIDATES.SEARCH],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.TASK_PAPERS.TASK_METADATA],
+      });
     },
   });
 }
@@ -110,6 +119,15 @@ export function useSubmitGithubMutation() {
       });
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEYS.JOBS.CANDIDATES],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.CANDIDATES.DETAILS],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.CANDIDATES.SEARCH],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.TASK_PAPERS.TASK_METADATA],
       });
     },
   });

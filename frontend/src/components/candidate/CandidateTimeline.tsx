@@ -22,8 +22,6 @@ interface CandidateTimelineProps {
   candidate?: CandidateAnalysis;
   currentStage: string;
   stageId: string | undefined;
-  isPolling: boolean;
-  onTranscriptDisableChange?: (disabled: boolean) => void;
 }
 
 export function CandidateTimeline({
@@ -36,8 +34,6 @@ export function CandidateTimeline({
   candidate,
   currentStage,
   stageId,
-  isPolling,
-  onTranscriptDisableChange,
 }: CandidateTimelineProps) {
   const { data: events } = useCandidateTimelineQuery(candidateId, jobId);
 
@@ -47,8 +43,6 @@ export function CandidateTimeline({
     events,
     stageId,
     currentStage,
-    isPolling,
-    onTranscriptDisableChange,
   });
 
   const currentStageIndex = useMemo(

@@ -747,7 +747,7 @@ export default function AssignPaperPage() {
             />
           </div>
         </div>
-        {/*         
+        {/*
         <div className="rounded-xl border border-border bg-card p-2 shadow-xs space-y-2">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             <div className="flex flex-col gap-0.5">
@@ -768,7 +768,7 @@ export default function AssignPaperPage() {
               )}
             </div>
 
-            
+
             <div className="flex flex-col justify-center border-t md:border-t-0 md:border-l border-border pt-2 md:pt-0 md:pl-2">
               <Label className="text-xs font-bold text-foreground">Active Assigned Test Paper</Label>
               {loadingAssignedPaper ? (
@@ -865,7 +865,7 @@ export default function AssignPaperPage() {
             <div className="text-xs text-muted-foreground py-6 text-center border border-dashed rounded-lg border-border/60">
               No default paper has been assigned to this stage yet.
               {/* Generate Random Pool button - implemented but hidden */}
-              {/* 
+              {/*
               <Button
                 variant="outline"
                 size="sm"
@@ -1003,7 +1003,7 @@ export default function AssignPaperPage() {
                         className="flex items-start gap-2 p-1.5 rounded-lg border border-border/40 hover:bg-muted/10 cursor-pointer"
                         onClick={() => toggleQuestionSelection(item)}
                       >
-                        <div className="mt-0.5">
+                        <div className="mt-0.5 text-xs">
                           {isChecked ? (
                             <CheckSquare className="h-4 w-4 text-primary shrink-0" />
                           ) : (

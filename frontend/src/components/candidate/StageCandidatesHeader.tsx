@@ -43,6 +43,7 @@ interface StageCandidatesHeaderProps {
   transcriptHistory: any;
   /** Whether there is a processing error */
   hasError?: boolean;
+  stageStatus?: string;
 }
 
 /**
@@ -62,7 +63,8 @@ export const StageCandidatesHeader = ({
   stageName,
   candidateId,
   githubUrl,
-  transcriptHistory
+  transcriptHistory,
+  stageStatus,
 }: StageCandidatesHeaderProps) => {
   const navigate = useNavigate();
   const [isProjectSubmissionDialogOpen, setIsProjectSubmissionDialogOpen] = useState(false);
@@ -115,6 +117,8 @@ export const StageCandidatesHeader = ({
     (githubUrl.toLowerCase().includes("github.com") || githubUrl.toLowerCase().includes("gitlab.com"));
 
   const isGithubRequirementMet = !showGithub || isGithubUploaded;
+
+  const isStageSubmitted = stageStatus === "submitted" || stageStatus === "processing";
 
   return (
     <AppPageHeader
@@ -170,7 +174,7 @@ export const StageCandidatesHeader = ({
                     }
                   });
                 }}
-                disabled={isUploaded || !job?.is_active || isGithubUploaded}
+                disabled={isUploaded || !job?.is_active || isGithubUploaded || isStageSubmitted}
               >
                 {assignedPaper ?
                   <>
@@ -230,7 +234,7 @@ export const StageCandidatesHeader = ({
                 variant="outline"
                 className="rounded-xl border border-muted-foreground/10 px-5 font-semibold text-center h-9"
                 onClick={() => setIsProjectSubmissionDialogOpen(true)}
-                disabled={isUploaded || !job?.is_active || (showQuestion && assignedPaper?.email_sent_count === 0) || isGithubUploaded}
+                disabled={isUploaded || !job?.is_active || (showQuestion && assignedPaper?.email_sent_count === 0) || isGithubUploaded || isStageSubmitted}
               >
                 Project Submission
               </Button>

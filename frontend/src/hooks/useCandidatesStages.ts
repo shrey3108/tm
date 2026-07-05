@@ -10,6 +10,7 @@ import type { EvaluationRead, EvaluationHistoryRead } from "@/types/candidateSta
 import { slugify } from "@/utils/slug";
 import type { HrDecisionHistoryItem } from "@/apis/candidateDecision";
 import type { OverallSummaryData } from "@/components/candidate/StageOverallSummary";
+import { isFailed, isStageWaiting, isPassedOrRejected } from "@/components/candidate/timeline/timelineStatusUtils";
 import {
   useResolvedJobAndCandidate,
   useJobStagesQuery,
@@ -19,7 +20,9 @@ import {
   useHrDecisionHistoryQuery,
   useCandidateDetailsQuery,
   useCandidateAssociateResultsQuery,
+  useCandidateTimelineQuery,
 } from "./queries/candidates";
+import { useCandidateTaskMetadata } from "@/hooks/queries/taskPapers/useTaskPaperQueries";
 import {
   useSubmitDecisionMutation,
   useRetryEvaluationMutation,
@@ -126,10 +129,51 @@ export function useCandidatesStages() {
   const [refetchTimeline, setRefetchTimeline] = useState(0);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
-  const [isTranscriptDisabled, setIsTranscriptDisabled] = useState(true);
+
+  // Fetch timeline events to derive status
+  const { data: timelineEvents } = useCandidateTimelineQuery(candidate?.id, job?.id);
+
+  const firstRejectedIndex = useMemo(
+    () => timelineEvents?.events.findIndex((e) => isFailed(e.hr_decision)) ?? -1,
+    [timelineEvents],
+  );
+
+  const activeEventIndex = useMemo(
+    () =>
+      timelineEvents?.events.findIndex(
+        (e) => (instanceId && e.stage_id === instanceId) || e.title === currentStage,
+      ) ?? -1,
+    [timelineEvents, instanceId, currentStage],
+  );
+
+  const isPreviousStagePending = useMemo(() => {
+    if (activeEventIndex <= 0) return false;
+    const prev = timelineEvents?.events[activeEventIndex - 1];
+    return prev ? isStageWaiting(prev.hr_decision) : false;
+  }, [timelineEvents, activeEventIndex]);
+
+  const isCurrentStagePassedOrRejected = useMemo(() => {
+    if (activeEventIndex < 0) return false;
+    const current = timelineEvents?.events[activeEventIndex];
+    return isPassedOrRejected(current?.hr_decision);
+  }, [timelineEvents, activeEventIndex]);
+
+  const isResumePending = useMemo(() => {
+    const resume = timelineEvents?.events.find((e) => e.title === "Resume Screening");
+    return resume ? isStageWaiting(resume.hr_decision) : false;
+  }, [timelineEvents]);
+
+  const isTranscriptDisabled =
+    isPolling ||
+    currentStage === "Resume Screening" ||
+    isPreviousStagePending ||
+    isResumePending ||
+    firstRejectedIndex !== -1 ||
+    isCurrentStagePassedOrRejected;
 
   // 3. Candidate data query
   const { data: candidateData } = useCandidateDetailsQuery(job?.id, candidate?.id);
+  const { data: taskMetadata } = useCandidateTaskMetadata(candidate?.id);
   // console.log(candidateData);
 
   // 4. Candidate evaluation query (without redundant page-level polling interval)
@@ -497,7 +541,7 @@ export function useCandidatesStages() {
     isHistoryModalOpen,
     setIsHistoryModalOpen,
     isTranscriptDisabled,
-    setIsTranscriptDisabled,
+    setIsTranscriptDisabled: () => {},
     latestDecision,
     filteredHistory,
     canTakeDecision,
@@ -519,6 +563,8 @@ export function useCandidatesStages() {
     fetchHistory: () => {
       refetchHistory();
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CANDIDATES.DETAILS, job?.id, candidate?.id] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CANDIDATES.SEARCH] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.TASK_PAPERS.TASK_METADATA, candidate?.id] });
       if (instanceId) {
         // Clear/set evaluation cache to processing state to avoid using old failed evaluation data
         queryClient.setQueryData(
@@ -546,5 +592,7 @@ export function useCandidatesStages() {
     },
     setRefetchTimeline,
     requiredInputs: candidateStage?.required_inputs,
+    stageStatus: candidateStage?.status,
+    githubUrl: taskMetadata?.task_file_path || candidateData?.task_file_path || candidate?.task_file_path,
   };
 }

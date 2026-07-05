@@ -8,8 +8,6 @@ interface UseTimelineStatusParams {
   events: HiringTimelineResponse | undefined;
   stageId: string | undefined;
   currentStage: string;
-  isPolling: boolean;
-  onTranscriptDisableChange?: (disabled: boolean) => void;
 }
 
 interface TimelineStatusResult {
@@ -35,8 +33,6 @@ export function useTimelineStatus({
   events,
   stageId,
   currentStage,
-  isPolling,
-  onTranscriptDisableChange,
 }: UseTimelineStatusParams): TimelineStatusResult {
 
 
@@ -69,27 +65,6 @@ export function useTimelineStatus({
     const resume = events?.events.find((e) => e.title === "Resume Screening");
     return resume ? isStageWaiting(resume.hr_decision) : false;
   }, [events]);
-
-  //  side-effect: notify parent about transcript and project submission eligibility 
-
-  useEffect(() => {
-    onTranscriptDisableChange?.(
-      isPolling ||
-      currentStage === "Resume Screening" ||
-      isPreviousStagePending ||
-      isResumePending ||
-      firstRejectedIndex !== -1 ||
-      isCurrentStagePassedOrRejected,
-    );
-  }, [
-    isPolling,
-    currentStage,
-    isPreviousStagePending,
-    isResumePending,
-    firstRejectedIndex,
-    isCurrentStagePassedOrRejected,
-    onTranscriptDisableChange,
-  ]);
 
   return {
     firstRejectedIndex,

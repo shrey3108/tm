@@ -22,7 +22,7 @@ export function MCQQuestionDisplay({
 
   if (variant === "simple") {
     return (
-      <div className="grid grid-cols-[minmax(0,1fr)_180px] gap-4 w-full">
+      <div className="grid grid-cols-[minmax(0,1fr)_180px] gap-4 w-full text-xs">
         <div className="min-w-0">
           <p className={cn("text-foreground text-wrap wrap-break-word", titleClassName)}>{mcq.question}</p>
           {options.length > 0 && (

@@ -7,7 +7,7 @@ import { candidateStageService } from "@/apis/candidateStage";
 import jobService from "@/apis/job";
 import { QUERY_KEYS } from "@/constants/queryKeys";
 import { toast } from "sonner";
-import { extractErrorMessage } from "@/utils/error";
+// import { extractErrorMessage } from "@/utils/error";
 import { slugify } from "@/utils/slug";
 
 interface SingleStagePollerProps {
@@ -60,22 +60,8 @@ const SingleStagePoller = ({ polling, onNavigate }: SingleStagePollerProps) => {
         dispatch(stopPolling(polling.stageId));
         invalidateQueries(queryClient, polling);
       }
-    } else if (error) {
-      const responseStatus = (error as any)?.response?.status;
-      const isResponseProcessing =
-        typeof error === "object" &&
-        "response" in error &&
-        (error as any).response?.data?.status === "processing";
-
-      // Do not stop polling if it's a 404 or 429 (rate limit) or a processing status
-      if ((responseStatus !== 404 || responseStatus !== 429) && !isResponseProcessing) {
-        const errorMsg = extractErrorMessage(error);
-        toast.error(`Evaluation for ${polling.candidateName} failed: ${errorMsg}`);
-        dispatch(stopPolling(polling.stageId));
-        invalidateQueries(queryClient, polling);
-      }
     }
-  }, [data, error, polling, queryClient, dispatch, onNavigate]);
+  }, [data, polling, queryClient, dispatch, onNavigate]);
 
   return null;
 };
@@ -114,7 +100,7 @@ const SingleResumePoller = ({
     return () => clearTimeout(timer);
   }, []);
 
-  const { data, error } = useQuery({
+  const { data } = useQuery({
     queryKey: [QUERY_KEYS.CANDIDATES.DETAILS, polling.jobId, polling.candidateId],
     queryFn: async () => {
       const response = await jobService.getJobCandidates(
@@ -167,22 +153,8 @@ const SingleResumePoller = ({
         dispatch(stopPolling(polling.stageId));
         invalidateResumeQueries(queryClient, polling);
       }
-    } else if (error) {
-      const responseStatus = (error as any)?.response?.status;
-      const isResponseProcessing =
-        typeof error === "object" &&
-        "response" in error &&
-        (error as any).response?.data?.status === "processing";
-
-      // Do not stop polling if it's a 404 or a processing status
-      if (responseStatus !== 404 && !isResponseProcessing) {
-        const errorMsg = extractErrorMessage(error);
-        toast.error(`Resume processing for ${polling.candidateName || polling.fileName || "Candidate"} failed: ${errorMsg}`);
-        dispatch(stopPolling(polling.stageId));
-        invalidateResumeQueries(queryClient, polling);
-      }
     }
-  }, [data, error, polling, queryClient, dispatch, onNavigate]);
+  }, [data, polling, queryClient, dispatch, onNavigate]);
 
   return null;
 };

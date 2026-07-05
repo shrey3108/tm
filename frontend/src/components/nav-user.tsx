@@ -56,9 +56,12 @@ export function NavUser() {
 
   return (
     <div className="relative" ref={containerRef}>
-      {showProfileCard && !isCollapsed && (
-        <div className="absolute bottom-full left-0 right-0 mb-2 p-4 rounded-2xl bg-popover border border-border shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-200 z-50">
-          <div className="flex items-center gap-3 mb-4">
+      {showProfileCard && (
+        <div className={cn(
+          "absolute bottom-full mb-2 p-2 rounded-2xl bg-popover border border-border shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-200 z-50",
+          isCollapsed ? "left-0 w-64" : "left-0 right-0"
+        )}>
+          <div className="flex items-center gap-3 mb-2">
             <Avatar className="h-10 w-10 border border-border shrink-0">
               <AvatarFallback className="bg-green-100 text-green-700 font-bold">
                 {user?.full_name?.charAt(0) || "U"}
@@ -72,7 +75,7 @@ export function NavUser() {
             </div>
           </div>
 
-          <div className="space-y-2 mb-4">
+          <div className="space-y-1 mb-2">
             <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
               <Mail className="h-3 w-3 shrink-0" />
               <span className="truncate">{user?.email}</span>
@@ -82,9 +85,9 @@ export function NavUser() {
               <span className="truncate">{user?.role_name}</span>
             </div>
           </div>
-          <Separator className="mb-4 opacity-50" />
+          <Separator className="mb-1 opacity-80" />
 
-          <div className="space-y-2">
+          <div className="space-y-1">
             <div className="flex items-center justify-between pl-3 pr-1 py-1 rounded-xl bg-muted/50 border border-border/50">
               <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                 Appearance
@@ -116,12 +119,7 @@ export function NavUser() {
               showProfileCard ? "bg-muted text-foreground border-muted-foreground/20" : "hover:bg-muted"
             )}
             onClick={() => {
-              if (isCollapsed) {
-
-                navigate("/profile")
-              } else {
-                setShowProfileCard(!showProfileCard)
-              }
+              setShowProfileCard(!showProfileCard)
             }}
             tooltip={user.full_name || undefined}
           >

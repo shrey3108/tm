@@ -83,6 +83,8 @@ export default function CandidatesStages() {
     isLoadingAssociateResults,
     hasPendingAssociates,
     requiredInputs,
+    stageStatus,
+    githubUrl,
   } = useCandidatesStages();
 
   const [showChart, setShowChart] = useState(false);
@@ -112,9 +114,10 @@ export default function CandidatesStages() {
         stageId={instanceId as string}
         candidateId={candidate?.id}
         stageName={currentStage}
-        githubUrl={candidateData?.task_file_path || candidate?.task_file_path}
+        githubUrl={githubUrl}
         transcriptHistory={transcriptHistory}
         hasError={!!error}
+        stageStatus={stageStatus}
       />
       <div className="flex overflow-hidden">
         {/* Main Content Area */}
@@ -129,8 +132,6 @@ export default function CandidatesStages() {
             candidate={candidate || undefined}
             currentStage={currentStage}
             stageId={instanceId}
-            isPolling={isPolling}
-            onTranscriptDisableChange={setIsTranscriptDisabled}
           />
 
           {/* Scrollable Content Area */}
@@ -155,7 +156,7 @@ export default function CandidatesStages() {
               <PollingState />
             ) : isSubmittedEvaluation ? (
               <SubmittedState
-                githubUrl={candidateData?.task_file_path || candidate?.task_file_path}
+                githubUrl={githubUrl}
                 onEvaluate={handleEvaluateGithub}
                 isEvaluating={isEvaluatingGithub}
               />
@@ -176,7 +177,7 @@ export default function CandidatesStages() {
                     })
                   }
                   candidateId={candidate?.id}
-                  githubUrl={candidateData?.task_file_path || candidate?.task_file_path}
+                  githubUrl={githubUrl}
                   job={job || null}
                   onPaperChange={handlePaperChange}
                   stageName={currentStage}

@@ -31,13 +31,17 @@ export function useResolvedJobAndCandidate(
     stateJob,
     stateCandidate,
     stateCandidateId }: UseResolvedJobAndCandidate) {
+  // Validate stateJob against jobSlug to prevent using stale location state
+  const isStateJobValid = !!(stateJob && jobSlug && slugify(stateJob.title) === jobSlug);
+  const validatedStateJob = isStateJobValid ? stateJob : null;
+
   const searchJobTitle = jobSlug ? unSlugify(jobSlug) : "";
 
   // 1. Fetch job list matching the unslugified name if job is not in state
-  const jobTitleQuery = useJobTitle(searchJobTitle, !!jobSlug && !stateJob);
+  const jobTitleQuery = useJobTitle(searchJobTitle, !!jobSlug && !validatedStateJob);
 
   // Determine the resolved jobId
-  const resolvedJobId = stateJob?.id || (() => {
+  const resolvedJobId = validatedStateJob?.id || (() => {
     if (!jobTitleQuery.data || jobTitleQuery.data.length === 0) return null;
     const found = jobTitleQuery.data.find((j) => slugify(j.title) === jobSlug);
     return found ? found.id : null;
@@ -46,14 +50,18 @@ export function useResolvedJobAndCandidate(
   // Fetch full job details once we have resolvedJobId
   const jobDetailsQuery = useJob(resolvedJobId);
 
-  const resolvedJob = jobDetailsQuery.data || stateJob || undefined;
+  const resolvedJob = jobDetailsQuery.data || validatedStateJob || undefined;
+
+  // Validate stateCandidate against candidateNameSlug to prevent using stale location state
+  const isStateCandidateValid = !!(stateCandidate && candidateNameSlug && slugify(`${stateCandidate.first_name} ${stateCandidate.last_name}`) === candidateNameSlug);
+  const validatedStateCandidate = isStateCandidateValid ? stateCandidate : null;
 
   // Use the candidate ID from the full object if available, otherwise from the explicit ID parameter
-  const effectiveCandidateId = stateCandidate?.id || stateCandidateId || undefined;
+  const effectiveCandidateId = validatedStateCandidate?.id || stateCandidateId || undefined;
 
   // 2. Fetch candidate search matching the unslugified name if candidate is not in state
   const candidateSearchQuery = useQuery({
-    queryKey: [QUERY_KEYS.CANDIDATES.SEARCH, resolvedJob?.id, effectiveCandidateId],
+    queryKey: [QUERY_KEYS.CANDIDATES.SEARCH, resolvedJob?.id, effectiveCandidateId, candidateNameSlug],
     queryFn: async () => {
       const response = await jobService.getJobCandidates(
         resolvedJob!.id,
@@ -76,15 +84,15 @@ export function useResolvedJobAndCandidate(
     staleTime: QUERY_CONFIG.CANDIDATE_STAGES.staleTime,
   });
 
-  const resolvedCandidate = candidateSearchQuery.data || stateCandidate;
+  const resolvedCandidate = candidateSearchQuery.data || validatedStateCandidate;
 
   return {
     job: resolvedJob,
     candidate: resolvedCandidate,
     isLoading:
-      (!stateJob && jobTitleQuery.loading) ||
+      (!validatedStateJob && jobTitleQuery.loading) ||
       (!!resolvedJobId && jobDetailsQuery.loading) ||
-      (!stateCandidate && !!resolvedJob?.id && candidateSearchQuery.isLoading),
+      (!validatedStateCandidate && !!resolvedJob?.id && candidateSearchQuery.isLoading),
     error: jobTitleQuery.error || jobDetailsQuery.error || candidateSearchQuery.error,
   };
 }
