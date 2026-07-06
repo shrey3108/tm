@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Card, CardContent } from "@/components/ui/card";
 import { Required } from "@/components/shared/Required";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface AssociateSelectorSectionProps {
   initialSelectedAssociates?: AssociateRead[];
@@ -118,6 +119,30 @@ export const AssociateSelectorSection = ({
                 </div>
               </FormControl>
               <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={control}
+          name="send_ai_evaluation_to_associate"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-start gap-2 space-y-0 rounded-lg p-2">
+              <FormControl>
+                <Checkbox
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                  id="send_ai_evaluation_to_associate"
+                />
+              </FormControl>
+              <div className="space-y-1 leading-none">
+                <FormLabel className="text-sm font-medium leading-none cursor-pointer" htmlFor="send_ai_evaluation_to_associate">
+                  Send AI evaluation to associate
+                </FormLabel>
+                <p className="text-xs text-muted-foreground">
+                  Automatically share the generated AI evaluation report with the assigned associates when candidates submit their tasks.
+                </p>
+              </div>
             </FormItem>
           )}
         />

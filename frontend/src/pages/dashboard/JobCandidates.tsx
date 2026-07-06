@@ -261,7 +261,7 @@ export default function JobCandidates() {
   const navigateToAssignPage = () => {
     const jobSlug = slugify(job?.title);
     if (jobAssignedPaper) {
-      navigate(`/dashboard/jobs/${jobSlug}/send-paper`, {
+      return navigate(`/dashboard/jobs/${jobSlug}/send-paper`, {
         state: {
           selectedCandidates,
           job,

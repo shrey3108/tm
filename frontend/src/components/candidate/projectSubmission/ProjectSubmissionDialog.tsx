@@ -32,6 +32,7 @@ import type { Job } from "@/types/job";
 import { CandidateAssignPaperButton } from "@/components/shared/candidate/CandidateAssignPaperButton";
 import { slugify } from "@/utils/slug";
 import { useResolvedJobAndCandidate } from "@/hooks/queries/candidates";
+import { Label } from "@/components/ui/label";
 
 interface ProjectSubmissionDialogProps {
   isOpen: boolean;
@@ -56,7 +57,7 @@ export function ProjectSubmissionDialog({
   const { mutateAsync: evaluateGithub, isPending: isEvaluating } = useEvaluateGithubMutation();
   const { mutateAsync: submitGithub, isPending: isSubmitting } = useSubmitGithubMutation();
 
-  const [evaluateImmediately, setEvaluateImmediately] = useState(true);
+  const [evaluateImmediately, setEvaluateImmediately] = useState(false);
 
   // Fetch candidate's assigned task paper
   const jobSlug = slugify(job?.title);
@@ -152,12 +153,12 @@ export function ProjectSubmissionDialog({
                   className="mt-1"
                 />
                 <div className="grid gap-1.5 leading-none">
-                  <label
+                  <Label
                     htmlFor="evaluateImmediately"
                     className="text-sm font-semibold cursor-pointer"
                   >
                     Evaluate repository immediately using AI
-                  </label>
+                  </Label>
                   <p className="text-xs text-muted-foreground">
                     {evaluateImmediately
                       ? "Submit repository for AI evaluation immediately"

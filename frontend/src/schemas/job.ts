@@ -37,6 +37,12 @@ const jobBaseSchema = z.object({
   priority_start_date: z.string().optional().nullable(),
   /** Priority end date */
   priority_end_date: z.string().optional().nullable(),
+  /** Path to the task details file */
+  task_file_path: z.string().optional().nullable(),
+  /** Extracted or specified task skills */
+  task_skills: z.array(z.string()).optional().nullable(),
+  /** Toggle to send AI evaluation report to associate */
+  send_ai_evaluation_to_associate: z.boolean().default(true),
   /** Optional project requirement documentation PDF file (max size 5MB) */
   // adujest as per backend api
   project_document: z

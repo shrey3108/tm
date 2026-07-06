@@ -105,6 +105,7 @@ export default function CreateJob() {
       stages: null,
       processing_version: undefined,
       project_document: undefined,
+      send_ai_evaluation_to_associate: true,
     },
   });
 
@@ -136,6 +137,7 @@ export default function CreateJob() {
         associate_reminder_hours: job.associate_reminder_hours || undefined,
         processing_version: job.version || undefined,
         project_document: taskData?.task_file_path || undefined,
+        send_ai_evaluation_to_associate: job.send_ai_evaluation_to_associate ?? true,
       });
     }
   }, [job, taskData, form]);

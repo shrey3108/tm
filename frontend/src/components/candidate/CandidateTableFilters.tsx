@@ -462,8 +462,7 @@ export const CandidateTableFilters = ({
                   </div>
                   {!isTestPaperFilterEnabled && (
                     <p className="text-xs text-muted-foreground mt-2 text-center">
-                      Enable by selecting a Technical / Coding Test stage and "Pending"
-                      decision.
+                      Enable by selecting a Technical Practical stage and "Pending" status.
                     </p>
                   )}
                 </CollapsibleFilterSection>

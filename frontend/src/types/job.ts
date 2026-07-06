@@ -65,6 +65,9 @@ export interface Job {
   position?: JobPositionRead | null;
   processing_version?: number | null;
   message?: string | null;
+  task_file_path?: string | null;
+  task_skills?: string[] | null;
+  send_ai_evaluation_to_associate: boolean;
 }
 
 export type JobCreate = JobCreateFormValues

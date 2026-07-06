@@ -9,8 +9,7 @@ import { Button } from "@/components/ui/button";
 import { BarChart3, Upload, Users } from "lucide-react";
 import { JobStatus } from "@/components/shared/JobStatus";
 import { useJobAssignedTask } from "@/hooks/queries/jobs/useJobTask";
-import { useNavigate} from "react-router-dom";
-import { slugify } from "@/utils/slug";
+
 interface JobCandidatesHeaderProps {
   job: Job | null;
   onBack: () => void;

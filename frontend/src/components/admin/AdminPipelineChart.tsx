@@ -182,13 +182,14 @@ export function StageCentricChart({ data }: StageCentricChartProps) {
                           textAnchor="end"
                           fill="currentColor"
                           transform="rotate(-45)"
-                          className="text-xs"
+                          className="text-xs uppercase"
+                          // className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground"
                         >
                           {payload.value.length > 15 ? payload.value.substring(0, 12) + "..." : payload.value}
                         </text>
                       </HoverCardTrigger>
                       <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
-                        <p className="text-xs font-bold uppercase">{payload.value}</p>
+                        <p className="text-xs">{payload.value}</p>
                       </HoverCardContent>
                     </HoverCard>
                   </g>
