@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button";
 import { BarChart3, Upload, Users } from "lucide-react";
 import { JobStatus } from "@/components/shared/JobStatus";
 import { useJobAssignedTask } from "@/hooks/queries/jobs/useJobTask";
-
+import { useNavigate} from "react-router-dom";
+import { slugify } from "@/utils/slug";
 interface JobCandidatesHeaderProps {
   job: Job | null;
   onBack: () => void;
@@ -46,7 +47,7 @@ export const JobCandidatesHeader = ({
   const buttonLabel = useMemo(() => {
     if (emailFilterState === "sent") return "Re-Send Question Paper";
     if (emailFilterState === "not_sent") return "Send Question Paper";
-    return jobAssignedPaper ? "View Question Paper" : "Question Question";
+    return jobAssignedPaper ? "View Question Paper" : "Assign Question Paper";
   }, [emailFilterState, jobAssignedPaper]);
 
   const disabledTooltip = useMemo(() => {

@@ -442,7 +442,7 @@ export default function SendPaperPage() {
                         ) : (
                           <>
                             <MailIcon className="h-4 w-4 mr-2" />
-                            {isEmailAlreadySent ? "Re-Send" : "Send"} to Candidate
+                            {isEmailAlreadySent ? "Re-Send" : "Send"} Email to Candidate
                           </>
                         )}
                       </Button>

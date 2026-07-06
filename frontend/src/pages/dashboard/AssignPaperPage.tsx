@@ -826,7 +826,7 @@ export default function AssignPaperPage() {
         </div> */}
 
         {/* Section 1: Randomly Selected Pool (Checked by Default) */}
-        <div className="app-surface-card p-2 space-y-2">
+        <div className="app-surface-card p-2 space-y-2 rounded-xl">
           <div className="flex items-center justify-between border-b pb-1.5 border-border/40">
             <div className="flex items-center justify-between w-full flex-wrap gap-2">
               <h3 className="text-xs font-bold text-foreground flex items-center gap-1.5">
@@ -966,7 +966,7 @@ export default function AssignPaperPage() {
         </div>
 
         {/* Section 2: Available Pool (Unchecked by Default) */}
-        <div className="app-surface-card p-2 space-y-2">
+        <div className="app-surface-card p-2 space-y-2 rounded-xl">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b pb-1.5 border-border/40">
             <div>
               <h3 className="text-xs font-bold text-foreground flex items-center gap-1.5">
@@ -1075,7 +1075,7 @@ export default function AssignPaperPage() {
 
         {/* Section 3: Custom Added Questions List (If any exist) */}
         {(customQuestions.length > 0 || customMCQs.length > 0 || customTasks.length > 0) && (
-          <div className="app-surface-card p-2 space-y-2">
+          <div className="app-surface-card p-2 space-y-2 rounded-xl">
             <h3 className="text-xs font-bold text-foreground flex items-center gap-1.5">
               <UserCheck className="h-4 w-4 text-emerald-500" />
               Custom Added Questions
@@ -1240,7 +1240,7 @@ export default function AssignPaperPage() {
         )}
 
         {/* Section 4: Dynamic Custom Questions Creator (Zod Validated) */}
-        <div className="app-surface-card p-2 space-y-2">
+        <div className="app-surface-card p-2 space-y-2 rounded-xl">
           <div>
             <h3 className="text-xs font-bold text-foreground flex items-center gap-1.5">
               <Plus className="h-4 w-4 text-primary" />

@@ -33,6 +33,7 @@ import { Input } from "@/components/ui/input";
 import DeleteModal from "@/components/modal/DeleteModal";
 import LoadingSpinner from "@/components/shared/LoadingSpinner";
 import { CandidateAssignPaperButton } from "@/components/shared/candidate/CandidateAssignPaperButton";
+import { useJobAssignedTask } from "@/hooks/queries/jobs/useJobTask";
 
 const JobCandidatesCharts = lazy(() =>
   import("@/components/job/candidates/JobCandidatesCharts").then((m) => ({ default: m.JobCandidatesCharts }))
@@ -218,6 +219,7 @@ export default function JobCandidates() {
   }, [selectedCandidates]);
 
   const { data: selectedCandidatesTestPapers, loading: loadingTestPapers } = useCandidatesTestPapers(selectedCandidateIds);
+  const { data: jobAssignedPaper } = useJobAssignedTask(job?.id);
 
   // Derive button state from selected candidates' actual data
   // task_file_path: null → no paper assigned, non-null → paper assigned
@@ -256,6 +258,26 @@ export default function JobCandidates() {
     fileInputRef.current?.click();
   };
 
+  const navigateToAssignPage = () => {
+    const jobSlug = slugify(job?.title);
+    if (jobAssignedPaper) {
+      navigate(`/dashboard/jobs/${jobSlug}/send-paper`, {
+        state: {
+          selectedCandidates,
+          job,
+          emailFilterState: resolvedEmailState
+        }
+      });
+    }
+    navigate(`/dashboard/jobs/${jobSlug}/assign-paper`, {
+      state: {
+        selectedCandidates,
+        job,
+        emailFilterState: resolvedEmailState
+      }
+    });
+  };
+
   return (
     <AppPageShell width="wide" className="animate-in fade-in duration-500">
 
@@ -271,15 +293,7 @@ export default function JobCandidates() {
         viewMode={viewMode}
         setViewMode={setViewMode}
         showSendQuestionPaper={true}
-        onSendQuestionPaperClick={() => {
-          navigate(`/dashboard/jobs/${jobSlug}/send-paper`, {
-            state: {
-              selectedCandidates,
-              job,
-              emailFilterState: resolvedEmailState
-            }
-          });
-        }}
+        onSendQuestionPaperClick={navigateToAssignPage}
         emailFilterState={selectedCandidates.length > 0 ? resolvedEmailState : undefined}
       />
 

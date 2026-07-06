@@ -208,7 +208,7 @@ function SummaryList({
     const { score, remainingItems } = extractLeadingScore(items as string[]);
     return (
       <div className={className}>
-        <span className={`text-base font-black tracking-wide block mb-2 uppercase ${titleColor}`}>
+        <span className={`text-sm font-black tracking-wide block mb-2 uppercase ${titleColor}`}>
           {title}{score && (
             <Badge variant="outline" className="ml-2 text-xs font-semibold px-1.5 py-0 normal-case">
               {score}

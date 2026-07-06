@@ -81,7 +81,7 @@ export function QuestionsBankSkillSelector({
         skill.name.toLowerCase().includes(query) || (skill.description && skill.description.toLowerCase().includes(query))
       );
     }
-    
+
     // Sort: selected skills first
     return [...result].sort((a, b) => {
       const aSelected = selectedSkillIds.includes(a.id);
@@ -126,7 +126,7 @@ export function QuestionsBankSkillSelector({
       />
 
       {/* Skill Search */}
-      <div className="relative">
+      <div className="relative p-1">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
         <Input
           placeholder="Search skill stack..."

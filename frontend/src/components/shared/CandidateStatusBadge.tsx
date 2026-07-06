@@ -21,14 +21,14 @@ function CandidateStatusBadge({ status, className, label: customLabel, icon }: C
 
   const s = status.toLowerCase().trim();
   let statusClasses = "";
-  let label = customLabel || status;
+  let label = (customLabel || status).replace(/ed$/, "");
 
   // Success / Positive
   if (["pass", "approve", "active", "completed", "complete", "complet", "success"].includes(s)) {
     statusClasses = " bg-green-300 dark:bg-green-300";
   }
   // Destructive / Negative
-  else if (["fail", "reject", "inactive", "error", "rejected"].includes(s)) {
+  else if (["fail", "failed", "reject", "inactive", "error", "rejected"].includes(s)) {
     statusClasses = "bg-red-300 dark:bg-red-300";
   }
   // Neutral / Pending
@@ -73,7 +73,7 @@ export function CandidateEmailBadge({ email_sent_count, className, icon }: Candi
     statusClasses = "bg-green-300 dark:bg-green-300";
     variant = "default";
   }
-  // How frontend know email not able to sent 
+  // How frontend know email not able to sent
   else {
     statusClasses = "bg-red-300 dark:bg-red-300";
     variant = "destructive";
