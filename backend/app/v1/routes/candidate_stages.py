@@ -135,7 +135,7 @@ async def get_candidate_stage_evaluation_report(
     jd_skills = eval_data.get("JD Skills", [])
     project_skills = eval_data.get("Project requirements skills", [])
     
-    def render_column(items):
+    def render_column(items, category_class):
         html_output = ""
         for item in items:
             for category, details in item.items():
@@ -146,13 +146,15 @@ async def get_candidate_stage_evaluation_report(
                 display_cat = category.replace("_", " ").title()
                 
                 html_output += f'''
-                <div style="background-color: #ffffff; border: 1px solid #e5e7eb; padding: 16px; border-radius: 8px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid #f3f4f6; padding-bottom: 8px;">
+                <div class="accordion-item {category_class}" style="background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow: hidden;">
+                    <button class="accordion-header" onclick="toggleAccordion(this, '{category_class}')" style="width: 100%; text-align: left; background: none; border: none; cursor: pointer; display: flex; justify-content: space-between; align-items: center; padding: 16px; outline: none;">
                         <span style="font-weight: 600; color: #1f2937; font-size: 16px;">{display_cat}</span>
                         <span style="background-color: #d1fae5; color: #065f46; padding: 4px 10px; border-radius: 9999px; font-weight: 700; font-size: 14px;">{score}/5.0</span>
-                    </div>
-                    <div style="font-size: 14px; color: #4b5563; line-height: 1.6;">
-                        {reasoning}
+                    </button>
+                    <div class="accordion-content" style="max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out;">
+                        <div style="font-size: 14px; color: #4b5563; line-height: 1.6; padding: 0 16px 16px 16px; border-top: 1px solid #f3f4f6; margin-top: 0;">
+                            {reasoning}
+                        </div>
                     </div>
                 </div>
                 '''
@@ -222,6 +224,28 @@ async def get_candidate_stage_evaluation_report(
                 }}
             }}
         </style>
+        <script>
+            function toggleAccordion(header, categoryClass) {{
+                const item = header.parentElement;
+                const content = item.querySelector('.accordion-content');
+                const isOpen = item.classList.contains('active');
+                // Close all other accordions in the same category
+                document.querySelectorAll('.' + categoryClass).forEach(otherItem => {{
+                    if (otherItem !== item && otherItem.classList.contains('active')) {{
+                        otherItem.classList.remove('active');
+                        const otherContent = otherItem.querySelector('.accordion-content');
+                        otherContent.style.maxHeight = '0px';
+                    }}
+                }});
+                if (isOpen) {{
+                    item.classList.remove('active');
+                    content.style.maxHeight = '0px';
+                }} else {{
+                    item.classList.add('active');
+                    content.style.maxHeight = content.scrollHeight + 'px';
+                }}
+            }}
+        </script>
     </head>
     <body>
         <div class="container">
@@ -233,11 +257,11 @@ async def get_candidate_stage_evaluation_report(
             <div class="columns">
                 <div class="column">
                     <h2 class="column-header">Job Description Alignment</h2>
-                    {render_column(jd_skills)}
+                   {render_column(jd_skills, "accordion-jd")}
                 </div>
                 <div class="column">
                     <h2 class="column-header">Project Task Alignment</h2>
-                    {render_column(project_skills)}
+                    {render_column(project_skills, "accordion-project")}
                 </div>
             </div>
         </div>

@@ -24,7 +24,7 @@ import { JobInfoModal } from "@/components/modal/JobInfoModal";
 
 const JobCandidatesLineChart = lazy(() => import("@/components/job/candidates/JobCandidatesAreaChart"))
 
-/** 
+/**
  * The main page component for viewing and managing a candidate's progress through interview stages.
  * Orchestrates the display of resume screening, interview evaluations, and action buttons
  * for HR decisions. It uses the `useCandidatesStages` hook to manage its internal state.
@@ -187,7 +187,7 @@ export default function CandidatesStages() {
                 />
                 {showChart && (
                   <Suspense fallback={<LoadingSpinner message="Loading charts..." fullPage={true} />}>
-                    <div className="w-full flex justify-center bg-card/30 p-6 rounded-2xl border border-border/50 animate-in fade-in duration-300">
+                    <div className="w-full flex justify-center bg-card/30 p-3 rounded-2xl border border-border/50 animate-in fade-in duration-300">
                       <div className="w-full min-h-[100px] max-h-[300px]">
                         <JobCandidatesLineChart data={chartData.length > 0 ? chartData : undefined} />
                       </div>
@@ -263,5 +263,3 @@ export default function CandidatesStages() {
     </AppPageShell>
   );
 }
-
-
