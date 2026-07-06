@@ -134,7 +134,7 @@ export default function AdminGuidelines() {
   const updateGuidelineMutation = useUpdateGuidelineMutation();
   const handleDefaultToggle = async (guideline: Guideline, isChecked: boolean) => {
     try {
-      await updateGuidelineMutation.mutateAsync({ id: guideline.id, data: { is_default: isChecked } });
+      await updateGuidelineMutation.mutateAsync({ id: guideline.id, data: { is_default: isChecked, content: guideline.content || "" } });
       toast.success("Term & condition updated successfully");
     } catch (error) {
       const errorMessage = extractErrorMessage(error);
@@ -147,7 +147,7 @@ export default function AdminGuidelines() {
       accessorKey: "content",
       header: () => <span className="text-base">Term & Condition Content</span>,
       cell: ({ row }) => (
-        <div className="max-w-[400px] truncate capitalize">
+        <div className="max-w-[400px] text-wrap capitalize">
           {row.original.content}
         </div>
       ),
