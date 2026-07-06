@@ -163,8 +163,33 @@ async def auto_save_custom_items(
         auto_paper.mcqs = new_m
         auto_paper.project_task = new_t
 
+        from app.v1.db.models.skills import Skill
+        
+        # 1. Collect manually assigned skill IDs from the items themselves
+        collected_skill_ids = set()
+        for items_list in [questions, mcqs, tasks]:
+            if items_list:
+                for item in items_list:
+                    if isinstance(item, dict) and item.get("skill_ids"):
+                        collected_skill_ids.update(item["skill_ids"])
+                    elif hasattr(item, "skill_ids") and getattr(item, "skill_ids"):
+                        collected_skill_ids.update(item.skill_ids)
+
+        if collected_skill_ids:
+            # Query for the actual Skill objects
+            stmt = select(Skill).where(Skill.id.in_(list(collected_skill_ids)))
+            res = await db.execute(stmt)
+            fetched_skills = res.scalars().all()
+            
+            # Append to auto_paper if not already present
+            current_skill_ids = {str(s.id) for s in auto_paper.skills} if auto_paper.skills else set()
+            for skill in fetched_skills:
+                if str(skill.id) not in current_skill_ids:
+                    auto_paper.skills.append(skill)
+                    current_skill_ids.add(str(skill.id))
+
+        # 2. Append extracted skills (if any were passed as names)
         if extracted_skills:
-            from app.v1.db.models.skills import Skill
             from sqlalchemy import func
             existing_skills_stmt = select(Skill).where(
                 func.lower(Skill.name).in_([s.lower() for s in extracted_skills])
