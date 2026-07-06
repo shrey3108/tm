@@ -39,7 +39,7 @@ class JobBase(BaseModel):
     priority_end_date: datetime | None = None
     task_file_path: str | None = None
     task_skills: list[str] | None = None
-
+    send_ai_evaluation_to_associate: bool = True
 
 
 class StageInput(BaseModel):
@@ -101,10 +101,14 @@ class JobUpdate(BaseModel):
     question_bank_passing_threshold: float | None = None
     custom_extraction_fields: list[str] | None = None
     priority_id: uuid.UUID | None = None
+    associate_reminder_hours: int | None = Field(None, description="Hours between reminders for associates")
     position_id: uuid.UUID | None = None
     priority_start_date: datetime | None = None
     priority_end_date: datetime | None = None
     stages: list[StageInput] | None = None
+    task_file_path: str | None = None
+    task_skills: list[str] | None = None
+    send_ai_evaluation_to_associate: bool | None = None
 
 
 class JobStatusUpdate(BaseModel):

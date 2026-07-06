@@ -148,6 +148,13 @@ class Job(Base):
         nullable=True,
     )
 
+    send_ai_evaluation_to_associate: Mapped[bool] = mapped_column(
+        Boolean,
+        default=True,
+        server_default="true",
+        nullable=False,
+    )
+
     version: Mapped[int] = mapped_column(
         Integer,
         default=1,

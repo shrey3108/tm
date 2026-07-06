@@ -92,7 +92,8 @@ async def handle_duplicate_question(
     
     for p in papers:
         if p.questions:
-            for ex_q in p.questions:
+            updated = False
+            for i, ex_q in enumerate(p.questions):
                 ex_q_str = ex_q.get("question") if isinstance(ex_q, dict) else str(ex_q)
                 if normalize_text(ex_q_str) == norm_q:
                     existing_skill_ids = {s.id for s in p.skills}
@@ -101,7 +102,22 @@ async def handle_duplicate_question(
                         if s.id not in existing_skill_ids:
                             p.skills.append(s)
                             new_skills_added = True
-                    if new_skills_added:
+                            
+                    # Update marks and duration if it's a dict
+                    if isinstance(question_text, dict) and isinstance(ex_q, dict):
+                        if question_text.get("marks") is not None:
+                            ex_q["marks"] = question_text["marks"]
+                            updated = True
+                        if question_text.get("duration") is not None:
+                            ex_q["duration"] = question_text["duration"]
+                            updated = True
+                        if updated:
+                            p.questions[i] = ex_q
+                            
+                    if updated or new_skills_added:
+                        if updated:
+                            from sqlalchemy.orm.attributes import flag_modified
+                            flag_modified(p, "questions")
                         await db.commit()
                     return True
     return False
@@ -129,10 +145,11 @@ async def handle_duplicate_mcq(
     )
     res = await db.execute(stmt)
     papers = res.scalars().all()
-    norm_m = normalize_text(mcq_question_text)
+    norm_m = normalize_text(mcq_question_text.question if hasattr(mcq_question_text, "question") else str(mcq_question_text))
     for paper in papers:
         if paper.mcqs:
-            for m in paper.mcqs:
+            updated = False
+            for i, m in enumerate(paper.mcqs):
                 m_str = m.get("question") if isinstance(m, dict) else str(m)
                 if normalize_text(m_str) == norm_m:
                     existing_skill_ids = {s.id for s in paper.skills}
@@ -141,7 +158,21 @@ async def handle_duplicate_mcq(
                         if s.id not in existing_skill_ids:
                             paper.skills.append(s)
                             new_skills_added = True
-                    if new_skills_added:
+                            
+                    if isinstance(mcq_question_text, dict) and isinstance(m, dict):
+                        if mcq_question_text.get("marks") is not None:
+                            m["marks"] = mcq_question_text["marks"]
+                            updated = True
+                        if mcq_question_text.get("duration") is not None:
+                            m["duration"] = mcq_question_text["duration"]
+                            updated = True
+                        if updated:
+                            paper.mcqs[i] = m
+
+                    if updated or new_skills_added:
+                        if updated:
+                            from sqlalchemy.orm.attributes import flag_modified
+                            flag_modified(paper, "mcqs")
                         await db.commit()
                     return True
     return False

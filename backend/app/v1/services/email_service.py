@@ -580,7 +580,10 @@ async def send_associate_notification_email(
             logger.error(f"Failed to generate task PDF for associate email: {e}")
 
     # Fetch AI evaluation overall score if available
-    ai_score_html = await get_ai_evaluation_html(candidate, db)
+    ai_score_html = ""
+    if getattr(job, "send_ai_evaluation_to_associate", True):
+        ai_score_html = await get_ai_evaluation_html(candidate, db)
+    
     ai_score_row = ""
     # Since we are using detailed html, we don't need the summary row in the notification email header.
 
@@ -821,7 +824,7 @@ async def send_associate_notification_email(
     msg = MIMEMultipart()
     msg["From"] = smtp_from
     msg["To"] = target_recipient
-    msg["Subject"] = f"[{job_position}-{job_title or 'Job'}] GitHub Repo + Test Paper for {candidate_full_name}]"
+    msg["Subject"] = f"Action Required: Candidate Evaluation for {candidate_full_name} ({job_title or 'Job'})"
 
     msg.attach(MIMEText(html_body, "html"))
 
@@ -879,7 +882,9 @@ async def send_associate_reminder_email(
     review_form_url = f"{settings.APP_BASE_URL.rstrip('/')}/api/v1/associate-reviews/{review_token}"
     
     # AI Score/Criteria Logic
-    ai_score_html = await get_ai_evaluation_html(candidate, db)
+    ai_score_html = ""
+    if getattr(job, "send_ai_evaluation_to_associate", True):
+        ai_score_html = await get_ai_evaluation_html(candidate, db)
 
     html_content = f'''
     <!DOCTYPE html>

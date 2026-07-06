@@ -120,6 +120,29 @@ async def auto_save_custom_items(
     res = await db.execute(stmt)
     auto_paper = res.scalars().first()
     
+    # Pre-fetch all skills referenced in the incoming items
+    from app.v1.db.models.skills import Skill
+    collected_skill_ids = set()
+    for items_list in [questions, mcqs, tasks]:
+        if items_list:
+            for item in items_list:
+                if isinstance(item, dict) and item.get("skill_ids"):
+                    collected_skill_ids.update(item["skill_ids"])
+                elif hasattr(item, "skill_ids") and getattr(item, "skill_ids"):
+                    collected_skill_ids.update(item.skill_ids)
+
+    fetched_skills_map = {}
+    if collected_skill_ids:
+        stmt_skills = select(Skill).where(Skill.id.in_(list(collected_skill_ids)))
+        res_skills = await db.execute(stmt_skills)
+        for s in res_skills.scalars().all():
+            fetched_skills_map[str(s.id)] = s
+
+    def get_skills_for_item(item):
+        s_ids = item.get("skill_ids") if isinstance(item, dict) else getattr(item, "skill_ids", None)
+        if not s_ids: return []
+        return [fetched_skills_map[str(sid)] for sid in s_ids if str(sid) in fetched_skills_map]
+
     needs_save = False
     
     new_q = list(auto_paper.questions) if auto_paper and auto_paper.questions else []
@@ -129,21 +152,24 @@ async def auto_save_custom_items(
     if questions:
         for q in questions:
             q_text = q.get("question") if isinstance(q, dict) else q.question if hasattr(q, "question") else str(q)
-            if not await handle_duplicate_question(q, department_id, position_id, [], db):
+            q_skills = get_skills_for_item(q)
+            if not await handle_duplicate_question(q, department_id, position_id, q_skills, db):
                 new_q.append(q if isinstance(q, dict) else q.model_dump(mode="json") if hasattr(q, "model_dump") else q)
                 needs_save = True
 
     if mcqs:
         for m in mcqs:
             m_text = m.get("question") if isinstance(m, dict) else m.question if hasattr(m, "question") else str(m)
-            if not await handle_duplicate_mcq(m_text, department_id, position_id, [], db):
+            m_skills = get_skills_for_item(m)
+            if not await handle_duplicate_mcq(m, department_id, position_id, m_skills, db):
                 new_m.append(m if isinstance(m, dict) else m.model_dump(mode="json") if hasattr(m, "model_dump") else m)
                 needs_save = True
                 
     if tasks:
         for t in tasks:
             t_text = t.get("task") if isinstance(t, dict) else t.task if hasattr(t, "task") else str(t)
-            if not await handle_duplicate_task(t_text, department_id, position_id, [], db):
+            t_skills = get_skills_for_item(t)
+            if not await handle_duplicate_task(t, department_id, position_id, t_skills, db):
                 new_t.append(t if isinstance(t, dict) else t.model_dump(mode="json") if hasattr(t, "model_dump") else t)
                 needs_save = True
 
@@ -162,28 +188,11 @@ async def auto_save_custom_items(
         auto_paper.questions = new_q
         auto_paper.mcqs = new_m
         auto_paper.project_task = new_t
-
-        from app.v1.db.models.skills import Skill
         
-        # 1. Collect manually assigned skill IDs from the items themselves
-        collected_skill_ids = set()
-        for items_list in [questions, mcqs, tasks]:
-            if items_list:
-                for item in items_list:
-                    if isinstance(item, dict) and item.get("skill_ids"):
-                        collected_skill_ids.update(item["skill_ids"])
-                    elif hasattr(item, "skill_ids") and getattr(item, "skill_ids"):
-                        collected_skill_ids.update(item.skill_ids)
-
-        if collected_skill_ids:
-            # Query for the actual Skill objects
-            stmt = select(Skill).where(Skill.id.in_(list(collected_skill_ids)))
-            res = await db.execute(stmt)
-            fetched_skills = res.scalars().all()
-            
-            # Append to auto_paper if not already present
+        # Append to auto_paper if not already present
+        if fetched_skills_map:
             current_skill_ids = {str(s.id) for s in auto_paper.skills} if auto_paper.skills else set()
-            for skill in fetched_skills:
+            for skill in fetched_skills_map.values():
                 if str(skill.id) not in current_skill_ids:
                     auto_paper.skills.append(skill)
                     current_skill_ids.add(str(skill.id))
