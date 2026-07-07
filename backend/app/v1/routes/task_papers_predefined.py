@@ -105,6 +105,15 @@ async def handle_duplicate_question(
                             
                     # Update marks and duration if it's a dict
                     if isinstance(ex_q, dict):
+                        ex_q_skill_ids = ex_q.get("skill_ids") or []
+                        ex_q_skill_ids = [str(sid) for sid in ex_q_skill_ids]
+                        for s in current_skills:
+                            if str(s.id) not in ex_q_skill_ids:
+                                ex_q_skill_ids.append(str(s.id))
+                                updated = True
+                        if updated:
+                            ex_q["skill_ids"] = ex_q_skill_ids
+                            
                         in_marks = question_text.get("marks") if isinstance(question_text, dict) else getattr(question_text, "marks", None)
                         if in_marks is not None:
                             ex_q["marks"] = in_marks
@@ -164,6 +173,15 @@ async def handle_duplicate_mcq(
                             new_skills_added = True
                             
                     if isinstance(m, dict):
+                        m_skill_ids = m.get("skill_ids") or []
+                        m_skill_ids = [str(sid) for sid in m_skill_ids]
+                        for s in current_skills:
+                            if str(s.id) not in m_skill_ids:
+                                m_skill_ids.append(str(s.id))
+                                updated = True
+                        if updated:
+                            m["skill_ids"] = m_skill_ids
+                            
                         in_marks = mcq_question_text.get("marks") if isinstance(mcq_question_text, dict) else getattr(mcq_question_text, "marks", None)
                         if in_marks is not None:
                             m["marks"] = in_marks
@@ -223,6 +241,15 @@ async def handle_duplicate_task(
                             new_skills_added = True
                             
                     if isinstance(t, dict):
+                        t_skill_ids = t.get("skill_ids") or []
+                        t_skill_ids = [str(sid) for sid in t_skill_ids]
+                        for s in current_skills:
+                            if str(s.id) not in t_skill_ids:
+                                t_skill_ids.append(str(s.id))
+                                updated = True
+                        if updated:
+                            t["skill_ids"] = t_skill_ids
+                            
                         in_marks = task_text.get("marks") if isinstance(task_text, dict) else getattr(task_text, "marks", None)
                         if in_marks is not None:
                             t["marks"] = in_marks
