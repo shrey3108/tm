@@ -169,7 +169,7 @@ async def auto_save_custom_items(
         for t in tasks:
             t_text = t.get("task") if isinstance(t, dict) else t.task if hasattr(t, "task") else str(t)
             t_skills = get_skills_for_item(t)
-            if not await handle_duplicate_task(t, department_id, position_id, t_skills, db):
+            if not await handle_duplicate_task(t_text, department_id, position_id, t_skills, db):
                 new_t.append(t if isinstance(t, dict) else t.model_dump(mode="json") if hasattr(t, "model_dump") else t)
                 needs_save = True
 
