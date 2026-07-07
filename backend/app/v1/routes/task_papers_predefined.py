@@ -76,7 +76,7 @@ async def handle_duplicate_question(
     If it exists, adds any missing skills to that paper and commits.
     Returns True if a duplicate was found.
     """
-    q_str = question_text.question if hasattr(question_text, "question") else str(question_text)
+    q_str = question_text.get("question") if isinstance(question_text, dict) else getattr(question_text, "question", None) or str(question_text)
     
     stmt = (
         select(QuestionSetPaper)
@@ -104,12 +104,15 @@ async def handle_duplicate_question(
                             new_skills_added = True
                             
                     # Update marks and duration if it's a dict
-                    if isinstance(question_text, dict) and isinstance(ex_q, dict):
-                        if question_text.get("marks") is not None:
-                            ex_q["marks"] = question_text["marks"]
+                    if isinstance(ex_q, dict):
+                        in_marks = question_text.get("marks") if isinstance(question_text, dict) else getattr(question_text, "marks", None)
+                        if in_marks is not None:
+                            ex_q["marks"] = in_marks
                             updated = True
-                        if question_text.get("duration") is not None:
-                            ex_q["duration"] = question_text["duration"]
+                        
+                        in_duration = question_text.get("duration") if isinstance(question_text, dict) else getattr(question_text, "duration", None)
+                        if in_duration is not None:
+                            ex_q["duration"] = in_duration
                             updated = True
                         if updated:
                             p.questions[i] = ex_q
@@ -145,7 +148,8 @@ async def handle_duplicate_mcq(
     )
     res = await db.execute(stmt)
     papers = res.scalars().all()
-    norm_m = normalize_text(mcq_question_text.question if hasattr(mcq_question_text, "question") else str(mcq_question_text))
+    m_str = mcq_question_text.get("question") if isinstance(mcq_question_text, dict) else getattr(mcq_question_text, "question", None) or str(mcq_question_text)
+    norm_m = normalize_text(m_str)
     for paper in papers:
         if paper.mcqs:
             updated = False
@@ -159,12 +163,15 @@ async def handle_duplicate_mcq(
                             paper.skills.append(s)
                             new_skills_added = True
                             
-                    if isinstance(mcq_question_text, dict) and isinstance(m, dict):
-                        if mcq_question_text.get("marks") is not None:
-                            m["marks"] = mcq_question_text["marks"]
+                    if isinstance(m, dict):
+                        in_marks = mcq_question_text.get("marks") if isinstance(mcq_question_text, dict) else getattr(mcq_question_text, "marks", None)
+                        if in_marks is not None:
+                            m["marks"] = in_marks
                             updated = True
-                        if mcq_question_text.get("duration") is not None:
-                            m["duration"] = mcq_question_text["duration"]
+                        
+                        in_duration = mcq_question_text.get("duration") if isinstance(mcq_question_text, dict) else getattr(mcq_question_text, "duration", None)
+                        if in_duration is not None:
+                            m["duration"] = in_duration
                             updated = True
                         if updated:
                             paper.mcqs[i] = m
@@ -200,19 +207,38 @@ async def handle_duplicate_task(
     )
     res = await db.execute(stmt)
     papers = res.scalars().all()
-    norm_t = normalize_text(task_text)
+    t_str = task_text.get("task") or task_text.get("title") if isinstance(task_text, dict) else getattr(task_text, "task", None) or getattr(task_text, "title", None) or str(task_text)
+    norm_t = normalize_text(t_str)
     for paper in papers:
         if paper.project_task:
-            for t in paper.project_task:
-                t_str = t.get("task") if isinstance(t, dict) else str(t)
-                if normalize_text(t_str) == norm_t:
+            updated = False
+            for i, t in enumerate(paper.project_task):
+                t_ex_str = t.get("task") or t.get("title") if isinstance(t, dict) else str(t)
+                if normalize_text(t_ex_str) == norm_t:
                     existing_skill_ids = {s.id for s in paper.skills}
                     new_skills_added = False
                     for s in current_skills:
                         if s.id not in existing_skill_ids:
                             paper.skills.append(s)
                             new_skills_added = True
-                    if new_skills_added:
+                            
+                    if isinstance(t, dict):
+                        in_marks = task_text.get("marks") if isinstance(task_text, dict) else getattr(task_text, "marks", None)
+                        if in_marks is not None:
+                            t["marks"] = in_marks
+                            updated = True
+                        
+                        in_duration = task_text.get("duration") if isinstance(task_text, dict) else getattr(task_text, "duration", None)
+                        if in_duration is not None:
+                            t["duration"] = in_duration
+                            updated = True
+                        if updated:
+                            paper.project_task[i] = t
+                            
+                    if updated or new_skills_added:
+                        if updated:
+                            from sqlalchemy.orm.attributes import flag_modified
+                            flag_modified(paper, "project_task")
                         await db.commit()
                     return True
     return False
