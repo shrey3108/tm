@@ -33,6 +33,7 @@ import { CandidateAssignPaperButton } from "@/components/shared/candidate/Candid
 import { slugify } from "@/utils/slug";
 import { useResolvedJobAndCandidate } from "@/hooks/queries/candidates";
 import { Label } from "@/components/ui/label";
+import { useCandidateTestPaper } from "@/hooks/queries/taskPapers/useTaskPaperQueries";
 
 interface ProjectSubmissionDialogProps {
   isOpen: boolean;
@@ -61,7 +62,8 @@ export function ProjectSubmissionDialog({
 
   // Fetch candidate's assigned task paper
   const jobSlug = slugify(job?.title);
-  const { candidate: resolvedCandidate } = useResolvedJobAndCandidate({ jobSlug, candidateNameSlug: candidateName, stateJob: job, stateCandidateId: candidateId });
+  const { candidate: resolvedCandidate } = useResolvedJobAndCandidate({ jobSlug: jobSlug, candidateNameSlug: candidateName, stateJob: job, stateCandidateId: candidateId });
+  console.log({ resolvedCandidate });
 
   const currentStage = resolvedCandidate?.pipeline?.find(
     (s) => s.stage_id === stageId || (s as any).id === stageId || s.job_stage_id === stageId
@@ -110,7 +112,8 @@ export function ProjectSubmissionDialog({
       toast.error(errorMsg || "Failed to submit details. Please try again.");
     }
   };
-
+  const { data: assignedPaper } = useCandidateTestPaper(candidateId);
+  console.log(assignedPaper);
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-[700px] h-[93vh] flex flex-col p-0 bg-card/95 backdrop-blur-xl border-muted-foreground/20 shadow-2xl rounded-2xl gap-2">
@@ -191,18 +194,23 @@ export function ProjectSubmissionDialog({
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-foreground">
-                            Assigned Task File
+                            Assigned Question Paper
                           </p>
-                          <p className="text-xs text-muted-foreground">
-                            Click to view the candidate's assigned task paper.
-                          </p>
+                          {/*<p className="text-xs text-muted-foreground">
+                            Click to view the candidate's assigned question Paper.
+                          </p>*/}
                         </div>
-                        <CandidateAssignPaperButton candidate={resolvedCandidate} job={job} jobSlug={jobSlug}
+                        {/* <CandidateAssignPaperButton candidate={resolvedCandidate} job={job} jobSlug={jobSlug}
                           variant="ghost"
                           size="sm"
                           className="rounded-lg gap-1.5 text-xs"
                           iconClassName="h-3.5 w-3.5"
-                        />
+                        /> */}
+                        {assignedPaper && (
+                          <CandidateAssignPaperButton candidate={resolvedCandidate} job={job} jobSlug={jobSlug} variant="ghost"
+                            size="icon-sm"
+                            className="rounded-lg gap-1.5 text-xs" iconClassName="h-3.5 w-3.5" disabled={false} />
+                        )}
                       </div>
                     </FormControl>
                     <FormMessage />

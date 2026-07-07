@@ -184,13 +184,13 @@ export function SendQuestionPaperDialog({
       const filteredIds = filteredSelected.map((c) => c.id);
 
       try {
-        toast.info(`Sending test paper via bulk email to ${filteredSelected.length} candidates...`);
+        toast.info(`Sending question paper via bulk email to ${filteredSelected.length} candidates...`);
         await sendBulkEmailMutation.mutateAsync({
           paper_id: finalAssignedPaper.id,
           candidate_ids: filteredIds,
           force,
         });
-        toast.success("Successfully sent test paper emails in bulk!");
+        toast.success("Successfully sent question paper emails in bulk!");
         onOpenChange(false);
       } catch (err: unknown) {
         toast.error(extractErrorMessage(err));
@@ -212,13 +212,13 @@ export function SendQuestionPaperDialog({
     }
 
     try {
-      toast.info("Sending test paper via email...");
+      toast.info("Sending question paper via email...");
       await sendEmailMutation.mutateAsync({
         candidate_email: email,
         paper_id: finalAssignedPaper.id,
         force,
       });
-      toast.success(`Successfully sent test paper email to ${email}!`);
+      toast.success(`Successfully sent question paper email to ${email}!`);
       onOpenChange(false);
     } catch (err: unknown) {
       toast.error(extractErrorMessage(err));
@@ -255,7 +255,7 @@ export function SendQuestionPaperDialog({
       toast.info("Removing assignment...");
       if (job?.id) {
         await deleteJobDefaultMutation.mutateAsync({ jobId: job.id, jobStageId });
-        toast.success("Default test paper removed successfully from job.");
+        toast.success("Default question paper removed successfully from job.");
         queryClient.clear();
       }
       refetchAssigned();
@@ -333,7 +333,7 @@ export function SendQuestionPaperDialog({
           {/* Content body */}
           <div className="flex-1 overflow-y-auto min-h-0 p-2">
             {loadingAssigned ? (
-              <LoadingSpinner message="Checking candidate's test paper assignment..." />
+              <LoadingSpinner message="Checking candidate's question paper assignment..." />
             ) : (
               <div className="space-y-4 animate-in fade-in duration-300 h-full flex flex-col justify-center">
                 {finalAssignedPaper ? (

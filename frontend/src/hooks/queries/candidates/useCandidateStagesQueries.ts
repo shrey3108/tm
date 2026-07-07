@@ -53,7 +53,7 @@ export function useResolvedJobAndCandidate(
   const resolvedJob = jobDetailsQuery.data || validatedStateJob || undefined;
 
   // Validate stateCandidate against candidateNameSlug to prevent using stale location state
-  const isStateCandidateValid = !!(stateCandidate && candidateNameSlug && slugify(`${stateCandidate.first_name} ${stateCandidate.last_name}`) === candidateNameSlug);
+  const isStateCandidateValid = !!(stateCandidate && candidateNameSlug && slugify(`${stateCandidate.first_name} ${stateCandidate.last_name}`) === slugify(candidateNameSlug));
   const validatedStateCandidate = isStateCandidateValid ? stateCandidate : null;
 
   // Use the candidate ID from the full object if available, otherwise from the explicit ID parameter
@@ -73,7 +73,7 @@ export function useResolvedJobAndCandidate(
         { candidate_id: effectiveCandidateId }
       );
       const found = response.data.find(
-        (c) => slugify(`${c.first_name} ${c.last_name}`) === candidateNameSlug
+        (c) => slugify(`${c.first_name} ${c.last_name}`) === slugify(candidateNameSlug)
       );
       if (!found) {
         throw new Error("Candidate not found");

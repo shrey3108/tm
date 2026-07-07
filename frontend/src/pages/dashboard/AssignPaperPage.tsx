@@ -641,7 +641,7 @@ export default function AssignPaperPage() {
           custom_skills: job.skills?.map((s) => s.name) || [],
           guideline_id: selectedGuidelineId,
         });
-        toast.success("Successfully assigned default test paper to job!");
+        toast.success("Successfully assigned default question paper to job!");
         refetchAssignedPaper();
         if (jobSlug) {
           navigate(`/dashboard/jobs/${jobSlug}/candidates`);
@@ -660,7 +660,7 @@ export default function AssignPaperPage() {
     if (!job?.id || !selectedStageId) return;
     try {
       await unassignMutation.mutateAsync({ jobId: job.id, jobStageId: selectedStageId });
-      toast.success("Successfully removed default test paper from this stage!");
+      toast.success("Successfully removed default question paper from this stage!");
       refetchAssignedPaper();
     } catch (err: unknown) {
       toast.error(extractErrorMessage(err, "Failed to remove assigned paper."));
