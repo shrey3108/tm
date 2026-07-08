@@ -7,7 +7,7 @@ import { Save, ArrowLeft } from "lucide-react";
 import { useToast } from "@/components/shared/ToastProvider";
 import AppPageShell from "@/components/shared/AppPageShell";
 import PageHeader from "@/components/shared/PageHeader";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useCreatePriorityMutation, useUpdatePriorityMutation } from "@/hooks/mutations/admin/useJobPriority";
 import { useJobPriorities } from "@/hooks/queries/admin/useJobPriority";
 import { jobPriorityCreateSchema, type JobPriorityCreateFormValues } from "@/schemas/jobPriority";
@@ -120,10 +120,10 @@ export default function AdminPriorityForm() {
 
       <Card className="border-border/50 shadow-sm">
         <CardHeader>
-          <CardTitle>{isEditMode ? "Priority Details" : "New Priority"}</CardTitle>
-          <CardDescription>
+          {/* <CardTitle>{isEditMode ? "Priority Details" : "New Priority"}</CardTitle> */}
+          {/* <CardDescription>
             Configure the duration and reminder hours of this job priority.
-          </CardDescription>
+          </CardDescription> */}
         </CardHeader>
         <CardContent>
           <Form {...form}>

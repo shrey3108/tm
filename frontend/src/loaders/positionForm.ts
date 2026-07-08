@@ -5,7 +5,7 @@ import { adminJobPositionService } from "@/apis/admin";
 export const positionFormLoader = async ({ params }: any) => {
   const slug = params.slug || "";
   if (slug) {
-    await queryClient.ensureQueryData({
+    await queryClient.fetchQuery({
       queryKey: [QUERY_KEYS.ADMIN.POSITIONS, 0, 1, slug],
       queryFn: () => adminJobPositionService.getAllPositions({ skip: 0, limit: 1, q: slug }),
     });

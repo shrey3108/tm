@@ -7,7 +7,7 @@ import { Save, ArrowLeft } from "lucide-react";
 import { useToast } from "@/components/shared/ToastProvider";
 import AppPageShell from "@/components/shared/AppPageShell";
 import PageHeader from "@/components/shared/PageHeader";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useCreateDepartmentMutation, useUpdateDepartmentMutation } from "@/hooks/mutations/admin/useDepartment";
 import { useDepartment } from "@/hooks/queries/admin/useDepartment";
 import { departmentCreateSchema, type DepartmentCreateFormValues } from "@/schemas/department";
@@ -118,10 +118,10 @@ export default function AdminDepartmentForm() {
 
       <Card className="border-border/50 shadow-sm">
         <CardHeader>
-          <CardTitle>{isEditMode ? "Department Details" : "New Department"}</CardTitle>
-          <CardDescription>
+          {/* <CardTitle>{isEditMode ? "Department Details" : "New Department"}</CardTitle> */}
+          {/* <CardDescription>
             Configure the name and description of this department.
-          </CardDescription>
+          </CardDescription> */}
         </CardHeader>
         <CardContent>
           <Form {...form}>

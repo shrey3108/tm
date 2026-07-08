@@ -5,7 +5,7 @@ import { adminGuidelineService } from "@/apis/admin";
 export const guidelineFormLoader = async ({ params }: any) => {
   const slug = params.slug || "";
   if (slug) {
-    await queryClient.ensureQueryData({
+    await queryClient.fetchQuery({
       queryKey: [QUERY_KEYS.ADMIN.GUIDELINES, 0, 1, slug],
       queryFn: () => adminGuidelineService.getAllGuidelines({ skip: 0, limit: 1, q: slug }),
     });

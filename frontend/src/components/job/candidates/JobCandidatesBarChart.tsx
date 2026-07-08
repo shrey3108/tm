@@ -155,7 +155,7 @@ export default function JobCandidatesBarChart({ isAnimationActive = true, data: 
                         <Bar
                             dataKey="jd"
                             name="JD Skills"
-                            fill="url(#gradientJd)"
+                            fill="var(--color-jd)"
                             radius={[10, 10, 0, 0]}
                             barSize={50}
                             isAnimationActive={isAnimationActive}
@@ -181,7 +181,7 @@ export default function JobCandidatesBarChart({ isAnimationActive = true, data: 
                         <Bar
                             dataKey="project"
                             name="Project Skills"
-                            fill="url(#gradientProject)"
+                            fill="var(--color-project)"
                             radius={[10, 10, 0, 0]}
                             barSize={50}
                             isAnimationActive={isAnimationActive}

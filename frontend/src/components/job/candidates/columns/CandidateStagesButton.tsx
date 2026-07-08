@@ -37,7 +37,7 @@ export function CandidateStagesButton({ candidate, jobSlug, job }: CandidateStag
                         {...props}
                         variant="secondary"
                         size="sm"
-                        className="h-9 w-9 p-0 rounded-xl bg-muted/50 hover:bg-gray-200/60 text-foreground border border-muted-foreground/10 flex items-center justify-center shrink-0"
+                        className="h-7 w-7 p-0 rounded-xl bg-muted/50 hover:bg-gray-200/60 text-foreground border border-muted-foreground/10 flex items-center justify-center shrink-0"
                         onClick={handleNavigate}
                         // disabled={!candidate.pipeline || !candidate.is_parsed || isLoading}
                         disabled={!candidate.pipeline || !candidate.is_parsed}

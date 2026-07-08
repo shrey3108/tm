@@ -10,7 +10,7 @@ export function useCreatePriorityMutation() {
   return useMutation({
     mutationFn: (data: { duration_days: number }) => adminJobPriorityService.createPriority(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ADMIN.JOB_PRIORITIES] });
+      return queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ADMIN.JOB_PRIORITIES] });
     },
   });
 }
@@ -24,7 +24,7 @@ export function useUpdatePriorityMutation() {
     mutationFn: ({ id, data }: { id: string; data: { duration_days?: number } }) =>
       adminJobPriorityService.updatePriority({ id, data }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ADMIN.JOB_PRIORITIES] });
+      return queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ADMIN.JOB_PRIORITIES] });
     },
   });
 }
@@ -37,7 +37,7 @@ export function useDeletePriorityMutation() {
   return useMutation({
     mutationFn: (id: string) => adminJobPriorityService.deletePriority(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ADMIN.JOB_PRIORITIES] });
+      return queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ADMIN.JOB_PRIORITIES] });
     },
   });
 }

@@ -117,7 +117,7 @@ export const CHART_COLORS = {
   // JD and Project Skills criteria
   criteria: {
     jd: {
-      solid: "#4ade80",
+      solid: "#fdba74",
       gradient: ["#fed7aa", "#fdba74"] as const,
     },
     project: {

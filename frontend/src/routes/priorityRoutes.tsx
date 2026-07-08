@@ -3,6 +3,7 @@ import { type RouteObject, Outlet } from "react-router-dom";
 import RoleRoute from "@/components/auth/RoleRoute";
 import { PERMISSIONS } from "@/lib/permissions";
 import { priorityFormLoader } from "@/loaders/priorityForm";
+import { adminJobPrioritiesLoader } from "@/loaders/adminJobPriorities";
 
 const AdminJobPriorities = lazy(() => import("@/pages/priorities/index"));
 const AdminPriorityForm = lazy(() => import("@/pages/priorities/form"));
@@ -18,6 +19,7 @@ export const priorityRoutes: RouteObject = {
     {
       index: true,
       element: <AdminJobPriorities />,
+      loader: adminJobPrioritiesLoader,
     },
     {
       path: "new",

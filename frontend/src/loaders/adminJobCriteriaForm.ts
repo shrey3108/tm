@@ -3,7 +3,7 @@ import { QUERY_KEYS } from "@/constants/queryKeys";
 import { adminCriteriaService } from "@/apis/admin";
 
 export const adminJobCriteriaFormLoader = async () => {
-  await queryClient.ensureQueryData({
+  await queryClient.fetchQuery({
     queryKey: [QUERY_KEYS.ADMIN.CRITERIA, 0, 100, ""],
     queryFn: () => adminCriteriaService.getAllCriteria(0, 100, ""),
   });

@@ -5,7 +5,7 @@ import { adminJobPriorityService } from "@/apis/admin";
 export const priorityFormLoader = async ({ params }: any) => {
   const slug = params.slug || "";
   if (slug) {
-    await queryClient.ensureQueryData({
+    await queryClient.fetchQuery({
       queryKey: [QUERY_KEYS.ADMIN.JOB_PRIORITIES, 0, 1, slug],
       queryFn: () => adminJobPriorityService.getAllPriorities({ skip: 0, limit: 1, q: slug }),
     });

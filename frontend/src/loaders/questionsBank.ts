@@ -4,7 +4,7 @@ import { taskService } from "@/apis/task";
 import { adminDepartmentService, adminJobPositionService } from "@/apis/admin";
 
 export const questionsBankLoader = async () => {
-  const papersPromise = queryClient.ensureQueryData({
+  const papersPromise = queryClient.fetchQuery({
     queryKey: [QUERY_KEYS.TASK_PAPERS.LIST, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined],
     queryFn: () =>
       taskService.getQuestionSetPapers({
@@ -19,12 +19,12 @@ export const questionsBankLoader = async () => {
       }),
   });
 
-  const departmentsPromise = queryClient.ensureQueryData({
+  const departmentsPromise = queryClient.fetchQuery({
     queryKey: [QUERY_KEYS.ADMIN.DEPARTMENTS, 0, 100, ""],
     queryFn: () => adminDepartmentService.getAllDepartments({ skip: 0, limit: 100, q: "" }),
   });
 
-  const positionsPromise = queryClient.ensureQueryData({
+  const positionsPromise = queryClient.fetchQuery({
     queryKey: [QUERY_KEYS.ADMIN.POSITIONS, 0, 100, ""],
     queryFn: () => adminJobPositionService.getAllPositions({ skip: 0, limit: 100, q: "" }),
   });

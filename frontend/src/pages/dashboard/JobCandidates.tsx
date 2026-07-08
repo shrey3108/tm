@@ -354,7 +354,7 @@ export default function JobCandidates() {
                                       {...props}
                                       variant="ghost"
                                       size="sm"
-                                      className="h-9 w-9 p-0 rounded-xl border hover:bg-gray-200/60 flex items-center justify-center shrink-0"
+                                      className="h-7 w-7 p-0 rounded-xl border hover:bg-gray-200/60 flex items-center justify-center shrink-0"
                                       onClick={(e) => {
                                         if (props.onClick) props.onClick(e);
                                         handleReanalyzeCandidate(candidate.id);
@@ -378,7 +378,7 @@ export default function JobCandidates() {
                             <CandidateAssignPaperButton candidate={candidate}
                               jobSlug={jobSlug}
                               job={job}
-                              buttonClassName="h-9 w-9 p-0 rounded-xl bg-muted/50 hover:bg-gray-200/60 text-foreground border border-muted-foreground/10 flex items-center justify-center shrink-0"
+                              buttonClassName="h-7 w-7 p-0 rounded-xl bg-muted/50 hover:bg-gray-200/60 text-foreground border border-muted-foreground/10 flex items-center justify-center shrink-0"
                             />
                             <CandidateStagesButton
                               candidate={candidate}

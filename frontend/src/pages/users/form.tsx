@@ -7,7 +7,7 @@ import { Save, ArrowLeft } from "lucide-react";
 import { useToast } from "@/components/shared/ToastProvider";
 import AppPageShell from "@/components/shared/AppPageShell";
 import PageHeader from "@/components/shared/PageHeader";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useCreateUserMutation, useUpdateUserMutation } from "@/hooks/mutations/admin/useUser";
 import { useAdminUsers } from "@/hooks/queries/admin/useAdminUsers";
 import { useAdminRoles } from "@/hooks/queries/admin/useAdminRoles";
@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/shared/SearchableSelect";
 import ErrorDisplay from "@/components/shared/ErrorDisplay";
 import { slugify } from "@/utils/slug";
 import { extractErrorMessage } from "@/utils/error";
@@ -140,10 +140,10 @@ export default function AdminUserForm() {
 
       <Card className="border-border/50 shadow-sm">
         <CardHeader>
-          <CardTitle>{isEditMode ? "User Details" : "New User"}</CardTitle>
-          <CardDescription>
+          {/* <CardTitle>{isEditMode ? "User Details" : "New User"}</CardTitle> */}
+          {/* <CardDescription>
             Configure user details, authentication, and platform access role.
-          </CardDescription>
+          </CardDescription> */}
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -190,26 +190,19 @@ export default function AdminUserForm() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Role</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value}
-                        disabled={isLoadingRoles}
-                      >
-                        <FormControl>
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select a role">
-                              {roles.find((r) => r.id === field.value)?.name || user?.role_name}
-                            </SelectValue>
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {roles.filter(role => role.name !== "superadmin").map((role) => (
-                            <SelectItem key={role.id} value={role.id}>
-                              {role.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <FormControl>
+                        <SearchableSelect
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          options={roles
+                            .filter((role) => role.name !== "superadmin")
+                            .map((role) => ({ id: role.id, label: role.name }))}
+                          placeholder="Select a role"
+                          searchPlaceholder="Search roles..."
+                          disabled={isLoadingRoles}
+                          triggerClassName="w-full"
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}

@@ -14,7 +14,7 @@ export function useCreatePositionMutation() {
   return useMutation({
     mutationFn: (data: JobPositionCreate) => adminJobPositionService.createPosition(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ADMIN.POSITIONS] });
+      return queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ADMIN.POSITIONS] });
     },
   });
 }
@@ -28,7 +28,7 @@ export function useUpdatePositionMutation() {
     mutationFn: ({ id, data }: { id: string; data: JobPositionUpdate }) =>
       adminJobPositionService.updatePosition({ id, data }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ADMIN.POSITIONS] });
+      return queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ADMIN.POSITIONS] });
     },
   });
 }
@@ -41,7 +41,7 @@ export function useDeletePositionMutation() {
   return useMutation({
     mutationFn: (id: string) => adminJobPositionService.deletePosition(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ADMIN.POSITIONS] });
+      return queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ADMIN.POSITIONS] });
     },
   });
 }

@@ -220,17 +220,56 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
         },
       },
       // 4. SCREENING DECISION
-      // {
-      //   id: "hr_decision",
-      //   accessorKey: "hr_decision",
-      //   header: () => {
-      //     return <div className="flex items-center justify-between">
-      //       <span className="text-base">HR Decision</span>
-      //     </div>
-      //   },
-      //   cell: ({ row }) => <CandidateStatusBadge status={row.original.hr_decision} />,
-      // },
+      {
+        id: "hr_decision",
+        accessorKey: "hr_decision",
+        header: ({ column }) => (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="hover:bg-transparent p-0 text-base font-semibold "
+          >
+            HR Decision
+            <ArrowUpDown className="h-4 w-4" />
+          </Button>
+        ),
+        cell: ({ row }) => {
+          const pipeline = row.original.pipeline || [];
 
+          // Find the last stage in the pipeline where HR has made a decision (not pending)
+          const lastDecidedStage = [...pipeline]
+            .reverse()
+            .find((stage) => {
+              const decision = stage.hr_decision?.toLowerCase().trim();
+              return decision && decision !== "pending";
+            });
+
+          const prevStageName = lastDecidedStage ? lastDecidedStage.template_name : "Resume Screening";
+
+          return (
+            <div className="flex flex-col gap-1 items-start justify-center">
+              <div className="flex items-center justify-start gap-1">
+                <CandidateStatusBadge status={row.original.hr_decision} />
+                {row.original.hr_score !== undefined && row.original.hr_score !== null && (
+                  <span className="text-sm font-semibold text-foreground">
+                    {row.original.hr_score.toFixed(1)}/5
+                  </span>
+                )}
+              </div>
+              {prevStageName && (
+                <span className="text-xs">
+                  {prevStageName}
+                </span>
+              )}
+            </div>
+          );
+        },
+        sortingFn: (rowA, rowB) => {
+          const a = rowA.original.hr_score ?? 0;
+          const b = rowB.original.hr_score ?? 0;
+          return a - b;
+        },
+      },
       // CURRENT STAGE
       {
         id: "current_stage",

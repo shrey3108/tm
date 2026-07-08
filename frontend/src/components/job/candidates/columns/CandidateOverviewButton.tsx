@@ -23,10 +23,11 @@ export function CandidateOverviewButton({ candidate, jobSlug }: CandidateOvervie
     });
   };
 
-  const isCompletedAllRounds = true
-  // const isCompletedAllRounds = !!candidate.pipeline && candidate.pipeline.length > 0 && candidate.pipeline.every(
-  //   (stage) => stage.status === "completed" || stage.status === "failed"
-  // );
+
+  // const isCompletedAllRounds = true
+  const isCompletedAllRounds = !!candidate.pipeline && candidate.pipeline.length > 0 && candidate.pipeline.every(
+    (stage) => stage.status === "completed" || stage.status === "failed"
+  );
 
   return (
     <HoverCard>
@@ -36,7 +37,7 @@ export function CandidateOverviewButton({ candidate, jobSlug }: CandidateOvervie
             {...props}
             variant="secondary"
             size="sm"
-            className="h-9 w-9 p-0 rounded-xl bg-muted/50 hover:bg-gray-200/60 text-foreground border border-muted-foreground/10 flex items-center justify-center shrink-0"
+            className="h-7 w-7 p-0 rounded-xl bg-muted/50 hover:bg-gray-200/60 text-foreground border border-muted-foreground/10 flex items-center justify-center shrink-0"
             onClick={handleNavigate}
             disabled={!candidate.is_parsed || !isCompletedAllRounds}
           >

@@ -249,7 +249,7 @@ export function JobInfoModal({ isOpen, onClose, job }: JobInfoModalProps) {
                       variant="secondary"
                       className="rounded-xl px-1.5 py-1 text-xs font-semibold bg-secondary/40 hover:bg-secondary text-secondary-foreground border-muted-foreground/5 transition-colors"
                     >
-                      {skill.name}{" - "}{skill.default_weightage}
+                      {skill.name}{" - "} {skill.default_weightage}%
                     </Badge>
                   ))}
                 </div>

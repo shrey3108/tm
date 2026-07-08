@@ -5,7 +5,7 @@ import jobService from "@/apis/job";
 
 export const adminDashboardLoader = async () => {
   // Prefetch dashboard summary and hiring report
-  const dashboardPromise = queryClient.ensureQueryData({
+  const dashboardPromise = queryClient.fetchQuery({
     queryKey: [QUERY_KEYS.ADMIN.DASHBOARD_DATA],
     queryFn: async () => {
       const [analytics, report] = await Promise.all([
@@ -17,13 +17,13 @@ export const adminDashboardLoader = async () => {
   });
 
   // Prefetch job titles
-  const jobTitlesPromise = queryClient.ensureQueryData({
+  const jobTitlesPromise = queryClient.fetchQuery({
     queryKey: [QUERY_KEYS.JOBS.DETAIL, ""],
     queryFn: () => jobService.getJobTitles(""),
   });
 
   // Prefetch stage templates
-  const stageTemplatesPromise = queryClient.ensureQueryData({
+  const stageTemplatesPromise = queryClient.fetchQuery({
     queryKey: [QUERY_KEYS.ADMIN.STAGES, 0, 100, ""],
     queryFn: () => adminStageTemplateService.getAllTemplates(0, 100, ""),
   });

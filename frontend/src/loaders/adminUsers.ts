@@ -3,7 +3,7 @@ import { QUERY_KEYS } from "@/constants/queryKeys";
 import { adminUserService } from "@/apis/admin";
 
 export const adminUsersLoader = async () => {
-  await queryClient.ensureQueryData({
+  await queryClient.fetchQuery({
     queryKey: [QUERY_KEYS.ADMIN.USERS, 0, 10, ""],
     queryFn: () => adminUserService.getAllUsers({ skip: 0, limit: 10, q: "" }),
   });

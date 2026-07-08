@@ -15,7 +15,7 @@ import { useToast } from "@/components/shared/ToastProvider";
 import AppPageShell from "@/components/shared/AppPageShell";
 import PageHeader from "@/components/shared/PageHeader";
 import { enhanceJobCriteriaSchema, jobCriteriaCreateSchema, type JobCriteriaCreateFormValues } from "@/schemas/jobCriteria";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
     useCreateCriterionMutation,
     useEnhanceCriterionPromptMutation,
@@ -167,10 +167,10 @@ export default function AdminJobCriteriaForm() {
 
             <Card className="border-border/50 shadow-sm">
                 <CardHeader>
-                    <CardTitle>{isEditMode ? "Criteria Details" : "New Criteria"}</CardTitle>
+                    {/* <CardTitle>{isEditMode ? "Criteria Details" : "New Criteria"}</CardTitle>
                     <CardDescription>
                         Configure how this criterion will be used in the evaluation process.
-                    </CardDescription>
+                    </CardDescription> */}
                 </CardHeader>
                 <CardContent>
                     <Form {...form}>

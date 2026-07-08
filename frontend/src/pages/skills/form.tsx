@@ -6,7 +6,7 @@ import { Save, ArrowLeft } from "lucide-react";
 import { useToast } from "@/components/shared/ToastProvider";
 import AppPageShell from "@/components/shared/AppPageShell";
 import PageHeader from "@/components/shared/PageHeader";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useCreateSkillMutation, useUpdateSkillMutation } from "@/hooks/mutations/admin/useSkill";
 import { useSkill } from "@/hooks/queries/admin/useSkill";
 import { skillCreateSchema, type SkillCreateFormValues } from "@/schemas/skill";
@@ -119,10 +119,10 @@ export default function AdminSkillForm() {
 
       <Card className="border-border/50 shadow-sm">
         <CardHeader>
-          <CardTitle>{isEditMode ? "Skill Details" : "New Skill"}</CardTitle>
-          <CardDescription>
+          {/* <CardTitle>{isEditMode ? "Skill Details" : "New Skill"}</CardTitle> */}
+          {/* <CardDescription>
             Configure the name, description, and default weightage of this skill.
-          </CardDescription>
+          </CardDescription> */}
         </CardHeader>
         <CardContent>
           <Form {...form}>

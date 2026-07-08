@@ -7,7 +7,7 @@ import { Save, ArrowLeft } from "lucide-react";
 import { useToast } from "@/components/shared/ToastProvider";
 import AppPageShell from "@/components/shared/AppPageShell";
 import PageHeader from "@/components/shared/PageHeader";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useCreatePositionMutation, useUpdatePositionMutation } from "@/hooks/mutations/admin/useJobPosition";
 import { useJobPosition } from "@/hooks/queries/admin/useJobPosition";
 import { jobPositionCreateSchema, type JobPositionCreateFormValues } from "@/schemas/jobPosition";
@@ -118,10 +118,10 @@ export default function AdminPositionForm() {
 
       <Card className="border-border/50 shadow-sm">
         <CardHeader>
-          <CardTitle>{isEditMode ? "Position Details" : "New Position"}</CardTitle>
+          {/* <CardTitle>{isEditMode ? "Position Details" : "New Position"}</CardTitle>
           <CardDescription>
             Configure the name of this job position.
-          </CardDescription>
+          </CardDescription> */}
         </CardHeader>
         <CardContent>
           <Form {...form}>

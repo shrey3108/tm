@@ -147,9 +147,6 @@ export default function AssignPaperPage() {
     // selectedStageId || undefined
   );
 
-  // Collapsible toggle states
-  // const [showCurrentDetails, setShowCurrentDetails] = useState(false);
-
   // Trigger state to determine if random preview generator is active
   const [useRandomPool, setUseRandomPool] = useState(false);
 
@@ -1357,24 +1354,6 @@ export default function AssignPaperPage() {
           </div>
         </div>
 
-        {/* Section 5: Live Preview of Selected Configuration (Collapsible) */}
-
-        {/* <Accordion defaultValue={["questions"]}>
-          <AccordionItem value="questions">
-            <AccordionTrigger className={"hover:no-underline px-2 py-2"}><h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
-              <Eye className="h-4 w-4 text-primary" />
-              Preview of Selected Configuration ({selectedQuestions.length + customQuestions.length} Qs •{" "}
-              {selectedMCQs.length + customMCQs.length} MCQs • {selectedTasks.length + customTasks.length} Tasks)
-            </h3></AccordionTrigger>
-            <AccordionContent>
-              <PaperContentDisplay
-                questions={[...selectedQuestions, ...customQuestions]}
-                mcqs={[...selectedMCQs, ...customMCQs]}
-                project_task={[...selectedTasks, ...customTasks]}
-              />
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion> */}
 
         {/* Page Actions */}
         <div className="flex items-center justify-center gap-2 border-t pt-2 border-border/40">

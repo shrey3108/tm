@@ -117,4 +117,7 @@ export interface CandidateStageSummary {
   job_stage_id?: string | null;
   hr_decision?: string | null;
   ai_result?: string | null
+  completed: boolean;
+
+  evaluation_data: any
 }

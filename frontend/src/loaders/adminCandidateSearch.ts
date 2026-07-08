@@ -19,7 +19,7 @@ export const adminCandidateSearchLoader = async ({ params }: LoaderFunctionArgs)
     q: "",
   };
 
-  await queryClient.ensureQueryData({
+  await queryClient.fetchQuery({
     queryKey: [QUERY_KEYS.JOBS.ADMIN_CANDIDATES, jobId, skip, limit, filters],
     queryFn: async () => {
       let result: { data: CandidateResponse[]; total: number } = {

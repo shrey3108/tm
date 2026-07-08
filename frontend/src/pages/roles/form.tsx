@@ -7,7 +7,7 @@ import { Save, ArrowLeft } from "lucide-react";
 import { useToast } from "@/components/shared/ToastProvider";
 import AppPageShell from "@/components/shared/AppPageShell";
 import PageHeader from "@/components/shared/PageHeader";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useCreateRoleMutation, useUpdateRoleMutation } from "@/hooks/mutations/admin/useRole";
 import { useAdminRoles } from "@/hooks/queries/admin/useAdminRoles";
 import { useAdminRoleById } from "@/hooks/queries/admin/useAdminRoleById";
@@ -156,10 +156,10 @@ export default function AdminRoleForm() {
 
       <Card className="border-border/50 shadow-sm">
         <CardHeader>
-          <CardTitle>{isEditMode ? "Role Details" : "New Role"}</CardTitle>
-          <CardDescription>
+          {/* <CardTitle>{isEditMode ? "Role Details" : "New Role"}</CardTitle> */}
+          {/* <CardDescription>
             Configure role name and select the functional permissions to assign.
-          </CardDescription>
+          </CardDescription> */}
         </CardHeader>
         <CardContent>
           <Form {...form}>

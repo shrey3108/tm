@@ -1,5 +1,5 @@
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { ArrowLeft, User, Mail, Phone, Building } from "lucide-react";
+import { ArrowLeft, User, Mail, Phone, Briefcase } from "lucide-react";
 import {
   useResolvedJobAndCandidate,
   useCandidateTimelineQuery,
@@ -22,14 +22,16 @@ import { Badge } from "@/components/ui/badge";
 import CandidateStatusBadge from "@/components/shared/CandidateStatusBadge";
 import { Button } from "@/components/ui/button";
 import type { TimelineEvent } from "@/types/candidate";
+import { useMemo } from "react";
 
 interface StageRowProps {
   event: TimelineEvent;
   jobSlug: string;
   candidateNameSlug: string;
+  isFutureStage: boolean;
 }
 
-function StageRow({ event, jobSlug, candidateNameSlug }: StageRowProps) {
+function StageRow({ event, jobSlug, candidateNameSlug, isFutureStage }: StageRowProps) {
   const navigate = useNavigate();
   const { data: associateResults } = useCandidateAssociateResultsQuery(event.stage_id);
 
@@ -49,7 +51,7 @@ function StageRow({ event, jobSlug, candidateNameSlug }: StageRowProps) {
         {event.title}
       </TableCell>
       <TableCell className="p-3">
-        {event.ai_result ? (
+        {event.ai_result && !isFutureStage ? (
           <div
             onClick={handleNavigate}
             className="cursor-pointer flex items-center gap-2 w-fit hover:opacity-80 transition-opacity"
@@ -67,7 +69,7 @@ function StageRow({ event, jobSlug, candidateNameSlug }: StageRowProps) {
         )}
       </TableCell>
       <TableCell className="p-2">
-        {event.hr_decision ? (
+        {event.hr_decision && !isFutureStage ? (
           <div
             onClick={handleNavigate}
             className="cursor-pointer flex items-center gap-2 w-fit hover:opacity-80 transition-opacity"
@@ -116,10 +118,23 @@ export default function CandidateOverview() {
     stateCandidateId: location.state?.candidateId,
   });
 
+
+
   const { data: timelineData, isLoading: isTimelineLoading } = useCandidateTimelineQuery(
     candidate?.id,
     job?.id
   );
+
+  const currentStageIndex = useMemo(
+    () =>
+      timelineData?.events.findIndex((e) =>
+        timelineData.current_stage
+          ? e.title === timelineData.current_stage
+          : null,
+      ) ?? -1,
+    [timelineData],
+  );
+
 
   const handleBack = () => {
     navigate(`/dashboard/jobs/${jobSlug}/candidates`);
@@ -169,39 +184,62 @@ export default function CandidateOverview() {
       />
 
       <Card className="rounded-2xl border-muted-foreground/10 shadow-sm overflow-hidden bg-card/50 backdrop-blur-md p-4 flex flex-col gap-3">
-        {/* improve later */}
         <div className="flex items-center gap-2 text-foreground font-bold">
-          <User className="h-5 w-5 text-primary shrink-0" />
-          <span className="text-base">Candidate Information</span>
+          <User className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+          <span className="text-base text-foreground font-semibold">Candidate Information</span>
         </div>
         <div className="border-b border-border/50" />
-        <div className="flex flex-col gap-3">
-          <div className="flex items-start gap-2">
-            <User className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
-            <div className="flex flex-col">
-              <span className="text-base font-bold text-foreground capitalize leading-none">
-                {candidateDisplayName}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Column 1: Name */}
+          <div className="flex flex-col gap-1.5">
+            <span className="font-bold">
+              Name
+            </span>
+            <span className="text-sm font-bold text-foreground capitalize">
+              {candidateDisplayName}
+            </span>
+          </div>
+
+          {/* Column 2: Contact */}
+          <div className="flex flex-col gap-1.5">
+            <span className="font-bold">
+              Contact
+            </span>
+            <div className="flex flex-col gap-1.5 text-xs sm:text-sm text-foreground">
+              <span className="flex items-center gap-2">
+                <Mail className="h-4 w-4 shrink-0" />
+                <span className="truncate">{candidate.email || "N/A"}</span>
               </span>
-              <span className="text-sm mt-1">
-                {job.title}
+              <span className="flex items-center gap-2">
+                <Phone className="h-4 w-4 shrink-0" />
+                <span>{candidate.phone || "N/A"}</span>
               </span>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-foreground">
-            <span className="flex items-center gap-2">
-              <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
-              {candidate.email || "N/A"}
+          {/* Column 3: Role & Department */}
+          <div className="flex flex-col gap-1.5">
+            <span className="font-bold">
+              Role & Department
             </span>
-            <span className="flex items-center gap-2">
-              <Phone className="h-4 w-4 text-muted-foreground shrink-0" />
-              {candidate.phone || "N/A"}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2 text-sm text-foreground">
-            <Building className="h-4 w-4 text-muted-foreground shrink-0" />
-            <span>Department: {job.department_name || "N/A"}</span>
+            <div className="flex items-start gap-2">
+              <Briefcase className="h-4 w-4 shrink-0 mt-0.5" />
+              <div className="flex flex-col gap-1">
+                <span className="text-sm font-bold text-foreground leading-none">
+                  {job.title}
+                </span>
+                {job.position?.name && (
+                  <span className="text-xs capitalize leading-none">
+                    Position: {job.position.name}
+                  </span>
+                )}
+                {job.department_name && (
+                  <span className="text-xs capitalize leading-none">
+                    Dept: {job.department_name}
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </Card>
@@ -229,14 +267,16 @@ export default function CandidateOverview() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {stagesEvents.map((event) => (
-                  <StageRow
+                {stagesEvents.map((event, index) => {
+                  const isFutureStage = currentStageIndex !== -1 && index > currentStageIndex;
+                  return <StageRow
                     key={event.stage_id || event.title}
                     event={event}
                     jobSlug={jobSlug || ""}
                     candidateNameSlug={candidateName || ""}
+                    isFutureStage={isFutureStage}
                   />
-                ))}
+                })}
               </TableBody>
             </Table>
           )}

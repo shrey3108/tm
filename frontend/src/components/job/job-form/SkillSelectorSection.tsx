@@ -27,12 +27,6 @@ export const SkillSelectorSection = ({
   placeholderMessage = "Select the skills that should be linked to this job."
 }: SkillSelectorSectionProps) => {
   const { control, setValue } = useFormContext();
-  const [allSkills, setAllSkills] = useState<SkillRead[]>(initialSelectedSkills);
-  const [prevSkills, setPrevSkills] = useState<SkillRead[]>([]);
-  const [prevInitialSelectedSkills, setPrevInitialSelectedSkills] = useState<SkillRead[]>(initialSelectedSkills);
-
-
-
   const [skillSearch, setSkillSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [selectedSkill, setSelectedSkill] = useState<SkillRead | null>(null);
@@ -51,21 +45,12 @@ export const SkillSelectorSection = ({
 
   const { data: skills, loading: isLoading, refetch: refetchSkills } = useSkill({ skip: 0, limit: 100, q: debouncedSearch });
 
-  // If skills or initialSelectedSkills changed, we update allSkills and the prev state synchronously during render
-  if (skills !== prevSkills || initialSelectedSkills !== prevInitialSelectedSkills) {
-    setPrevSkills(skills);
-    setPrevInitialSelectedSkills(initialSelectedSkills);
-
+  const allSkills = useMemo(() => {
     const uniqueMap = new Map<string, SkillRead>();
-    allSkills.forEach((s) => uniqueMap.set(s.id, s));
     initialSelectedSkills.forEach((s) => uniqueMap.set(s.id, s));
     skills.forEach((s) => uniqueMap.set(s.id, s));
-    const merged = Array.from(uniqueMap.values());
-
-    if (merged.length !== allSkills.length || merged.some((s, idx) => s.id !== allSkills[idx]?.id)) {
-      setAllSkills(merged);
-    }
-  }
+    return Array.from(uniqueMap.values());
+  }, [skills, initialSelectedSkills]);
 
   const toggleSkill = (skillId: string) => {
     const current = [...selectedSkillIds];

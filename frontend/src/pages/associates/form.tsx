@@ -7,7 +7,7 @@ import { Save, ArrowLeft } from "lucide-react";
 import { useToast } from "@/components/shared/ToastProvider";
 import AppPageShell from "@/components/shared/AppPageShell";
 import PageHeader from "@/components/shared/PageHeader";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useCreateAssociateMutation, useUpdateAssociateMutation } from "@/hooks/mutations/admin/useAssociate";
 import { useAssociates } from "@/hooks/queries/admin/useAssociate";
 import { associateCreateSchema, type AssociateCreateFormValues } from "@/schemas/associate";
@@ -120,10 +120,10 @@ export default function AdminAssociateForm() {
 
       <Card className="border-border/50 shadow-sm">
         <CardHeader>
-          <CardTitle>{isEditMode ? "Associate Details" : "New Associate"}</CardTitle>
+          {/* <CardTitle>{isEditMode ? "Associate Details" : "New Associate"}</CardTitle>
           <CardDescription>
             Configure the name and email address of this associate.
-          </CardDescription>
+          </CardDescription> */}
         </CardHeader>
         <CardContent>
           <Form {...form}>

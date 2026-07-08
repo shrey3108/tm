@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import { formatDuration } from "@/utils/taskFormatter";
 import { TotalDuration } from "@/components/shared/question/TotalDuration";
 import { TotalMarks } from "@/components/shared/question/TotalMarks";
+import { PaperGuidelineDisplay } from "./PaperGuidelineDisplay";
 
 interface AssignedPaperViewProps {
   assignedPaper: CandidateTestPaperRead;
@@ -43,14 +44,24 @@ export function AssignedPaperView({
 
   return (
     <div className="space-y-1.5 animate-in fade-in duration-300">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 p-2 rounded-xl border border-primary/20 bg-primary/5">
-        <div className="space-y-1">
-          <span className="text-xs font-semibold uppercase tracking-wider text-primary">
-            Assigned Test Paper
-          </span>
-          <h3 className="text-base font-bold text-foreground capitalize">
-            {assignedPaper.name}
-          </h3>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 p-2 rounded-xl ">
+        <div className="space-y-1 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 w-full">
+          <div className="w-full">
+            <span className="text-xs font-semibold uppercase tracking-wider text-primary">
+              Assigned Test Paper
+            </span>
+            <div className="flex items-center justify-between w-full">
+
+              <h3 className="text-base font-bold text-foreground capitalize">
+                {assignedPaper.name}
+              </h3>
+              <div className="flex flex-wrap items-center gap-3">
+                <TotalMarks totalMarks={finalTotalMarks} />
+                <TotalDuration totalDuration={formatDuration(finalTotalDuration)} />
+              </div>
+            </div>
+          </div>
+
         </div>
         {/* <Button
           variant="outline"
@@ -62,12 +73,15 @@ export function AssignedPaperView({
           Change Existing Paper
         </Button> */}
       </div>
-      <div className="flex items-center justify-end">
+      {/* <div className="flex items-center justify-end">
         <div className="flex flex-wrap items-center gap-3">
           <TotalMarks totalMarks={finalTotalMarks} />
           <TotalDuration totalDuration={formatDuration(finalTotalDuration)} />
         </div>
-      </div>
+      </div> */}
+
+      <PaperGuidelineDisplay guidelineContent={assignedPaper.guideline_content} />
+
       <div className="p-2 border border-border/40 rounded-xl bg-card">
         <PaperContentDisplay
           questions={assignedPaper.questions}

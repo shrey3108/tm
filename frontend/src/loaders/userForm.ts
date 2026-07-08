@@ -5,7 +5,7 @@ import { adminUserService } from "@/apis/admin";
 export const userFormLoader = async ({ params }: any) => {
   const slug = params.slug || "";
   if (slug) {
-    await queryClient.ensureQueryData({
+    await queryClient.fetchQuery({
       queryKey: [QUERY_KEYS.ADMIN.USERS, 0, 1, slug],
       queryFn: () => adminUserService.getAllUsers({ skip: 0, limit: 1, q: slug }),
     });

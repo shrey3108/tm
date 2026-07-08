@@ -7,7 +7,7 @@ import { Save, ArrowLeft } from "lucide-react";
 import { useToast } from "@/components/shared/ToastProvider";
 import AppPageShell from "@/components/shared/AppPageShell";
 import PageHeader from "@/components/shared/PageHeader";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCreateGuidelineMutation, useUpdateGuidelineMutation } from "@/hooks/mutations/admin/useGuideline";
 import { useGuidelines } from "@/hooks/queries/admin/useGuideline";
 import { guidelineCreateSchema, type GuidelineCreateFormValues } from "@/schemas/guideline";
@@ -123,9 +123,9 @@ export default function AdminGuidelineForm() {
       <Card className="border-border/50 shadow-sm">
         <CardHeader>
           <CardTitle>{isEditMode ? "Term & Condition Details" : "New Term & Condition"}</CardTitle>
-          <CardDescription>
-            Configure the contents of this terms & conditions guideline.
-          </CardDescription>
+          {/* <CardDescription>
+            Configure the contents of this terms & conditions.
+          </CardDescription> */}
         </CardHeader>
         <CardContent>
           <Form {...form}>

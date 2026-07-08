@@ -200,7 +200,11 @@ function ChartTooltipContent({
           .map((item, index) => {
             const key = `${nameKey ?? item.name ?? item.dataKey ?? "value"}`
             const itemConfig = getPayloadConfigFromPayload(config, item, key)
-            const indicatorColor = color ?? item.payload?.fill ?? item.color
+            const indicatorColor =
+              color ??
+              (item.payload?.fill && !String(item.payload.fill).startsWith("url(") ? item.payload.fill : undefined) ??
+              (item.color && !String(item.color).startsWith("url(") ? item.color : undefined) ??
+              itemConfig?.color
 
             return (
               <div

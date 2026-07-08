@@ -15,7 +15,7 @@ export const JobCandidatesStats = ({
 }: JobCandidatesStatsProps) => {
   const stats = [
     {
-      label: "Candidates",
+      label: "Total Candidates",
       value: totalCandidates,
       activeColor: "text-foreground",
       labelColor: "text-muted-foreground group-hover:text-foreground",
@@ -23,7 +23,7 @@ export const JobCandidatesStats = ({
       hoverBorder: "border-muted-foreground/10",
     },
     {
-      label: "Pass",
+      label: "HR Pass",
       value: passedCount,
       activeColor: "text-green-600",
       labelColor: "text-green-600/70 group-hover:text-green-600",
@@ -31,7 +31,7 @@ export const JobCandidatesStats = ({
       hoverBorder: "hover:border-green-500/20",
     },
     {
-      label: "Fail",
+      label: "HR Fail",
       value: failedCount,
       activeColor: "text-red-600",
       labelColor: "text-red-500/50 group-hover:text-red-500/80",
@@ -39,7 +39,7 @@ export const JobCandidatesStats = ({
       hoverBorder: "hover:border-red-500/20",
     },
     {
-      label: "Maybe",
+      label: "HR Maybe",
       value: maybeCount,
       activeColor: "text-amber-600",
       labelColor: "text-amber-600/70 group-hover:text-amber-600",
@@ -47,7 +47,7 @@ export const JobCandidatesStats = ({
       hoverBorder: "hover:border-amber-500/20",
     },
     {
-      label: "Pending",
+      label: "HR Pending",
       value: undecidedCount,
       activeColor: "text-slate-600",
       labelColor: "text-slate-600/70 group-hover:text-slate-600",
