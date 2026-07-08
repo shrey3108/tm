@@ -5,14 +5,12 @@ import { QUERY_CONFIG } from "@/constants/queryConfig";
 
 /**
  * Hook to get paginated and filtered list of associates.
- * @param skip number of records to skip
- * @param limit number of records to fetch
- * @param q query string
+ * @param params - Object containing skip, limit, and search query q
  */
-export const useAssociates = (skip: number = 0, limit: number = 10, q: string = "") => {
+export const useAssociates = ({ skip = 0, limit = 10, q }: { skip?: number; limit?: number; q?: string } = {}) => {
   const res = useQuery({
     queryKey: [QUERY_KEYS.ADMIN.ASSOCIATES, skip, limit, q],
-    queryFn: () => adminAssociateService.getAllAssociates(skip, limit, q),
+    queryFn: () => adminAssociateService.getAllAssociates({ skip, limit, q }),
     placeholderData: keepPreviousData,
     staleTime: QUERY_CONFIG.ASSOCIATE.staleTime,
   });

@@ -26,7 +26,7 @@ export function useUpdatePositionMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: JobPositionUpdate }) =>
-      adminJobPositionService.updatePosition(id, data),
+      adminJobPositionService.updatePosition({ id, data }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ADMIN.POSITIONS] });
     },

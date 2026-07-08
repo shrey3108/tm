@@ -5,7 +5,7 @@ import { adminGuidelineService } from "@/apis/admin";
 export const adminGuidelinesLoader = async () => {
   await queryClient.ensureQueryData({
     queryKey: [QUERY_KEYS.ADMIN.GUIDELINES, 0, 10, ""],
-    queryFn: () => adminGuidelineService.getAllGuidelines(0, 10, ""),
+    queryFn: () => adminGuidelineService.getAllGuidelines({ skip: 0, limit: 10, q: "" }),
   });
   return null;
 };

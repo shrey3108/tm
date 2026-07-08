@@ -11,7 +11,7 @@ import { QUERY_CONFIG } from "@/constants/queryConfig";
 export const useRecentUploads = (skip: number = 0, limit: number = 10, q: string = "") => {
     const res = useQuery({
         queryKey: [QUERY_KEYS.ADMIN.RECENT_UPLOADS, skip, limit, q],
-        queryFn: () => adminAnalyticsService.getRecentUploads(skip, limit, q),
+        queryFn: () => adminAnalyticsService.getRecentUploads({ skip, limit, q }),
         placeholderData: keepPreviousData,
         staleTime: QUERY_CONFIG.RECENT_UPLOADS.staleTime
     })

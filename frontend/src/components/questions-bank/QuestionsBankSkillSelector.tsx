@@ -41,7 +41,7 @@ export function QuestionsBankSkillSelector({
   });
 
   const debouncedSearch = useDebouncedValue(skillSearch);
-  const { data: skills, loading: isLoading, refetch: refetchSkills } = useSkill(0, 100, debouncedSearch);
+  const { data: skills, loading: isLoading, refetch: refetchSkills } = useSkill({ skip: 0, limit: 100, q: debouncedSearch });
 
   if (skills !== prevSkills || initialSelectedSkills !== prevInitialSelectedSkills) {
     setPrevSkills(skills);

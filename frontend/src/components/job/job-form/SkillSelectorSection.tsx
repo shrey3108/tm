@@ -49,7 +49,7 @@ export const SkillSelectorSection = ({
 
   const debouncedSearch = useDebouncedValue(skillSearch);
 
-  const { data: skills, loading: isLoading, refetch: refetchSkills } = useSkill(0, 100, debouncedSearch);
+  const { data: skills, loading: isLoading, refetch: refetchSkills } = useSkill({ skip: 0, limit: 100, q: debouncedSearch });
 
   // If skills or initialSelectedSkills changed, we update allSkills and the prev state synchronously during render
   if (skills !== prevSkills || initialSelectedSkills !== prevInitialSelectedSkills) {
@@ -243,7 +243,7 @@ export const SkillSelectorSection = ({
         <div className="pt-6 border-t border-muted-foreground/10 animate-in fade-in duration-300">
           <Accordion defaultValue={["weightages"]} className="border-none bg-transparent px-1">
             <AccordionItem value="weightages" className="border-none bg-transparent ">
-              <AccordionTrigger className="hover:no-underline p-0 border-none bg-transparent hover:bg-transparent flex justify-between items-center p-1">
+              <AccordionTrigger className="hover:no-underline border-none bg-transparent hover:bg-transparent flex justify-between items-center p-1">
                 <span className="text-sm font-bold text-left">
                   Selected Skills & Custom Weightages ({selectedSkillIds.length})
                 </span>

@@ -5,7 +5,7 @@ import { adminUserService } from "@/apis/admin";
 export const adminUsersLoader = async () => {
   await queryClient.ensureQueryData({
     queryKey: [QUERY_KEYS.ADMIN.USERS, 0, 10, ""],
-    queryFn: () => adminUserService.getAllUsers(0, 10, ""),
+    queryFn: () => adminUserService.getAllUsers({ skip: 0, limit: 10, q: "" }),
   });
   return null;
 };

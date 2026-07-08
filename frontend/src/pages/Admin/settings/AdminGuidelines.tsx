@@ -65,9 +65,7 @@ export default function AdminGuidelines() {
   const debouncedSearch = useDebouncedValue(search);
 
   const { data: guidelines, total, loading, error, refetch } = useGuidelines(
-    pageIndex * pageSize,
-    pageSize,
-    debouncedSearch,
+    { skip: pageIndex * pageSize, limit: pageSize, q: debouncedSearch, }
   );
 
   const handleSearchChange = (value: string) => {

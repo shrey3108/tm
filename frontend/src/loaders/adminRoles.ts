@@ -5,7 +5,7 @@ import { adminRoleService } from "@/apis/admin";
 export const adminRolesLoader = async () => {
   await queryClient.ensureQueryData({
     queryKey: [QUERY_KEYS.ADMIN.ROLES, 0, 10, ""],
-    queryFn: () => adminRoleService.getAllRoles(0, 10, ""),
+    queryFn: () => adminRoleService.getAllRoles({ skip: 0, limit: 10, q: "" }),
   });
   return null;
 };

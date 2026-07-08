@@ -53,9 +53,9 @@ export default function CreateJob() {
 
   const isEditMode = !!jobSlug;
 
-  const { data: departments, loading: deptsLoading } = useDepartment(0, 10);
-  const { data: priorities, loading: prioritiesLoading } = useJobPriorities(0, 10);
-  const { data: positions, loading: positionsLoading } = useJobPosition(0, 10);
+  const { data: departments, loading: deptsLoading } = useDepartment({ skip: 0, limit: 100 });
+  const { data: priorities, loading: prioritiesLoading } = useJobPriorities({ skip: 0, limit: 100 });
+  const { data: positions, loading: positionsLoading } = useJobPosition({ skip: 0, limit: 10 });
 
   const jobIdFromState = (location.state as any)?.jobId;
   const jobQuery = useJobBySlugOrId(jobIdFromState, jobSlug, isEditMode);

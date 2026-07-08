@@ -121,7 +121,7 @@ export default function AssignPaperPage() {
   const [selectedStageId, setSelectedStageId] = useState<string>("");
 
   // Fetch guidelines
-  const { data: guidelines, loading: loadingGuidelines } = useGuidelines(0, 100);
+  const { data: guidelines, loading: loadingGuidelines } = useGuidelines({ skip: 0, limit: 100 });
   const [selectedGuidelineId, setSelectedGuidelineId] = useState<string>(() => guidelines?.find((val) => val.is_default)?.id || "");
 
   // Automatically select the default guideline once guidelines are loaded

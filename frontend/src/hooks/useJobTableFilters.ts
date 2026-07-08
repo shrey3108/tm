@@ -62,7 +62,7 @@ export const useJobTableFilters = (pageKey: string = "jobBoard") => {
   };
 
   const debouncedDepartmentSearch = useDebouncedValue(departmentSearch);
-  const { data: allDepartments } = useDepartment(0, 100, debouncedDepartmentSearch);
+  const { data: allDepartments } = useDepartment({ skip: 0, limit: 100, q: debouncedDepartmentSearch });
 
   const hasActiveFilters =
     !!titleFilter ||

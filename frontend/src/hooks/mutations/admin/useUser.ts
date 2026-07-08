@@ -23,7 +23,7 @@ export function useUpdateUserMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UserAdminUpdate }) =>
-      adminUserService.updateUser(id, data),
+      adminUserService.updateUser({ id, data }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ADMIN.USERS] });
     },

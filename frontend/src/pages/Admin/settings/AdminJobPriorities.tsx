@@ -66,7 +66,7 @@ export default function AdminJobPriorities() {
     });
   };
 
-  const { data: priorities, loading, error, refetch, total } = useJobPriorities(pageIndex * pageSize, pageSize, debouncedSearch);
+  const { data: priorities, loading, error, refetch, total } = useJobPriorities({ skip: pageIndex * pageSize, limit: pageSize, q: debouncedSearch });
 
   useEffect(() => {
     if (!debouncedSearch && overallTotal !== total) {

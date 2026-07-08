@@ -87,8 +87,8 @@ export default function QuestionsBankCreate() {
   const handleDeptSearch = useCallback((query: string) => setDeptSearch(query), []);
 
   // Fetch departments and positions
-  const { data: departments, loading: loadingDepts } = useDepartment(0, 100, debouncedDeptSearch);
-  const { data: positions, loading: loadingPositions } = useJobPosition(0, 100);
+  const { data: departments, loading: loadingDepts } = useDepartment({ skip: 0, limit: 100, q: debouncedDeptSearch });
+  const { data: positions, loading: loadingPositions } = useJobPosition({ skip: 0, limit: 10 });
 
   // Queries for Edit Mode
   const { data: fetchedPaper, loading: loadingFetchedPaper, refetch: refetchFetchedPaper } = useQuestionSetPaper(initialPaperId);

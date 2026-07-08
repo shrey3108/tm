@@ -66,7 +66,7 @@ export default function AssignAssociatePage() {
       : "Candidate";
 
   // Fetch associates list using debounced query
-  const { data: associates, loading: loadingAssociates } = useAssociates(0, 100, debouncedQuery);
+  const { data: associates, loading: loadingAssociates } = useAssociates({ skip: 0, limit: 100, q: debouncedQuery });
 
   const {
     control,

@@ -12,7 +12,7 @@ export const adminDepartmentService = {
    * @param search - Search query
    */
   getAllDepartments: async (
-    { skip = 0, limit = 10, q }: { skip?: number; limit?: number; q?: string },
+    { skip = 0, limit = 10, q }: { skip?: number; limit?: number; q?: string }
   ): Promise<{ data: DepartmentRead[]; total: number }> => {
     const response = await apiClient.get<{ data: DepartmentRead[]; total: number }>(
       "/departments",

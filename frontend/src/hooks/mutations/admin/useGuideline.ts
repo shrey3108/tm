@@ -23,7 +23,7 @@ export function useUpdateGuidelineMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: GuidelineUpdate }) =>
-      adminGuidelineService.updateGuideline(id, data),
+      adminGuidelineService.updateGuideline({ id, data }),
     onMutate: async ({ id, data }) => {
       // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
       await queryClient.cancelQueries({ queryKey: [QUERY_KEYS.ADMIN.GUIDELINES] });

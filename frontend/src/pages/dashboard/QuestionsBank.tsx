@@ -54,7 +54,7 @@ export default function QuestionsBank() {
   // const debouncedSkillSearch = useDebouncedValue(skillSearch);
 
   // Fetch departments list
-  const { data: departments, loading: loadingDepts } = useDepartment(0, 100, debouncedDeptSearch);
+  const { data: departments, loading: loadingDepts } = useDepartment({ skip: 0, limit: 100, q: debouncedDeptSearch });
   const isDeptSearching = deptSearch !== debouncedDeptSearch;
   const handleDeptSearch = useCallback((query: string) => setDeptSearch(query), []);
 
@@ -91,7 +91,7 @@ export default function QuestionsBank() {
   });
 
   // Fetch positions for filters
-  const { data: positions, loading: loadingPositions } = useJobPosition(0, 100);
+  const { data: positions, loading: loadingPositions } = useJobPosition({ skip: 0, limit: 10 });
 
   // Flatten the papers into a list of questions, project tasks, and MCQs
   const flatItems = useMemo(() => {
