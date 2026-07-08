@@ -5,7 +5,7 @@ import { adminAssociateService } from "@/apis/admin";
 export const adminAssociatesLoader = async () => {
   await queryClient.ensureQueryData({
     queryKey: [QUERY_KEYS.ADMIN.ASSOCIATES, 0, 10, ""],
-    queryFn: () => adminAssociateService.getAllAssociates(0, 10, ""),
+    queryFn: () => adminAssociateService.getAllAssociates({ skip: 0, limit: 10, q: "" }),
   });
   return null;
 };

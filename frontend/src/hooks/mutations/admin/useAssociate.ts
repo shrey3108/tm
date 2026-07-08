@@ -23,7 +23,7 @@ export function useUpdateAssociateMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: AssociateUpdate }) =>
-      adminAssociateService.updateAssociate(id, data),
+      adminAssociateService.updateAssociate({ id, data }),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ADMIN.ASSOCIATES] });
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ADMIN.ASSOCIATE_DETAIL, variables.id] });

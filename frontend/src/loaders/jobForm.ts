@@ -12,17 +12,17 @@ export const jobFormLoader = async ({ params }: LoaderFunctionArgs) => {
   // Prefetch baseline dependencies
   const deptsPromise = queryClient.ensureQueryData({
     queryKey: [QUERY_KEYS.ADMIN.DEPARTMENTS, 0, 10, ""],
-    queryFn: () => adminDepartmentService.getAllDepartments(0, 10, ""),
+    queryFn: () => adminDepartmentService.getAllDepartments({ skip: 0, limit: 10, q: "" }),
   });
 
   const prioritiesPromise = queryClient.ensureQueryData({
     queryKey: [QUERY_KEYS.ADMIN.JOB_PRIORITIES, 0, 10, ""],
-    queryFn: () => adminJobPriorityService.getAllPriorities(0, 10, ""),
+    queryFn: () => adminJobPriorityService.getAllPriorities({ skip: 0, limit: 10, q: "" }),
   });
 
   const positionsPromise = queryClient.ensureQueryData({
     queryKey: [QUERY_KEYS.ADMIN.POSITIONS, 0, 10, ""],
-    queryFn: () => adminJobPositionService.getAllPositions(0, 10, ""),
+    queryFn: () => adminJobPositionService.getAllPositions({ skip: 0, limit: 10, q: "" }),
   });
 
   const promises: Promise<any>[] = [deptsPromise, prioritiesPromise, positionsPromise];

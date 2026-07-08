@@ -6,12 +6,12 @@ import { adminDepartmentService, adminJobPositionService } from "@/apis/admin";
 export const questionsBankEditLoader = async () => {
   const departmentsPromise = queryClient.ensureQueryData({
     queryKey: [QUERY_KEYS.ADMIN.DEPARTMENTS, 0, 100, ""],
-    queryFn: () => adminDepartmentService.getAllDepartments(0, 100, ""),
+    queryFn: () => adminDepartmentService.getAllDepartments({ skip: 0, limit: 100, q: "" }),
   });
 
   const positionsPromise = queryClient.ensureQueryData({
     queryKey: [QUERY_KEYS.ADMIN.POSITIONS, 0, 100, ""],
-    queryFn: () => adminJobPositionService.getAllPositions(0, 100, ""),
+    queryFn: () => adminJobPositionService.getAllPositions({ skip: 0, limit: 100, q: "" }),
   });
 
   const allPapersPromise = queryClient.ensureQueryData({

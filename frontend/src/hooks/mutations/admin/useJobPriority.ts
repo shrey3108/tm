@@ -22,7 +22,7 @@ export function useUpdatePriorityMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: { duration_days?: number } }) =>
-      adminJobPriorityService.updatePriority(id, data),
+      adminJobPriorityService.updatePriority({ id, data }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ADMIN.JOB_PRIORITIES] });
     },

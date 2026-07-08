@@ -5,7 +5,7 @@ import { adminAnalyticsService } from "@/apis/admin";
 export const adminRecentUploadsLoader = async () => {
   await queryClient.ensureQueryData({
     queryKey: [QUERY_KEYS.ADMIN.RECENT_UPLOADS, 0, 10, ""],
-    queryFn: () => adminAnalyticsService.getRecentUploads(0, 10, ""),
+    queryFn: () => adminAnalyticsService.getRecentUploads({ skip: 0, limit: 10, q: "" }),
   });
   return null;
 };

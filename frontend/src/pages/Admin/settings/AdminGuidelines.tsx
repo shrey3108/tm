@@ -65,9 +65,7 @@ export default function AdminGuidelines() {
   const debouncedSearch = useDebouncedValue(search);
 
   const { data: guidelines, total, loading, error, refetch } = useGuidelines(
-    pageIndex * pageSize,
-    pageSize,
-    debouncedSearch,
+    { skip: pageIndex * pageSize, limit: pageSize, q: debouncedSearch, }
   );
 
   const handleSearchChange = (value: string) => {
@@ -145,7 +143,7 @@ export default function AdminGuidelines() {
   const columns: ColumnDef<GuidelineRead>[] = [
     {
       accessorKey: "content",
-      header: () => <span className="text-base">Term & Condition Content</span>,
+      header: () => <span className="text-base">Content</span>,
       cell: ({ row }) => (
         <div className="max-w-[400px] text-wrap capitalize">
           {row.original.content}

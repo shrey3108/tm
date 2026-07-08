@@ -5,14 +5,12 @@ import { QUERY_CONFIG } from "@/constants/queryConfig";
 
 /**
  * Hook to get paginated and filtered list of guidelines.
- * @param skip number of records to skip
- * @param limit number of records to fetch
- * @param q query string
+ * @param params - Object containing skip, limit, and search query q
  */
-export const useGuidelines = (skip: number = 0, limit: number = 10, q: string = "") => {
+export const useGuidelines = ({ skip = 0, limit = 10, q }: { skip?: number; limit?: number; q?: string } = {}) => {
   const res = useQuery({
     queryKey: [QUERY_KEYS.ADMIN.GUIDELINES, skip, limit, q],
-    queryFn: () => adminGuidelineService.getAllGuidelines(skip, limit, q),
+    queryFn: () => adminGuidelineService.getAllGuidelines({ skip, limit, q }),
     placeholderData: keepPreviousData,
     staleTime: QUERY_CONFIG.GUIDELINE.staleTime,
   });

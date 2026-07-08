@@ -66,7 +66,7 @@ export default function AdminAssociates() {
   };
 
   const debouncedSearch = useDebouncedValue(search);
-  const { data: associates, total, loading, error, refetch } = useAssociates(pageIndex * pageSize, pageSize, debouncedSearch);
+  const { data: associates, total, loading, error, refetch } = useAssociates({ skip: pageIndex * pageSize, limit: pageSize, q: debouncedSearch });
 
   useEffect(() => {
     if (!debouncedSearch && total !== overallTotal) {

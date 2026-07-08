@@ -60,7 +60,7 @@ export default function AdminJobPositions() {
 
   const debouncedSearch = useDebouncedValue(search);
 
-  const { data: positions, total, loading, error, refetch } = useJobPosition(pageIndex * pageSize, pageSize, debouncedSearch)
+  const { data: positions, total, loading, error, refetch } = useJobPosition({ skip: pageIndex * pageSize, limit: pageSize, q: debouncedSearch })
 
   const handleSearchChange = (value: string) => {
     setFilters({

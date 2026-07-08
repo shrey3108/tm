@@ -73,7 +73,7 @@ export function CandidateAssignPaperButton({
                             className
                         )}
                         onClick={handleNavigate}
-                        disabled={disabled || !candidate || !candidate.pipeline || !candidate.is_parsed}
+                        disabled={disabled !== undefined ? disabled : !candidate}
                     >
                         {children || <FileText className={cn("h-4 w-4 shrink-0 ", iconClassName)} />}
                     </Button>

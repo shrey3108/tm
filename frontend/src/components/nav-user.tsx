@@ -1,5 +1,4 @@
 import { useState, useRef } from "react"
-import { useNavigate } from "react-router-dom"
 import {
   Avatar,
   AvatarFallback,
@@ -33,7 +32,6 @@ import { useLogoutMutation } from "@/hooks/mutations/auth/useAuthMutations"
 
 export function NavUser() {
   const { state } = useSidebar()
-  const navigate = useNavigate()
   const user = useAppSelector(selectCurrentUser)
   const logoutMutation = useLogoutMutation()
 

@@ -1,4 +1,4 @@
-import { useMemo, useEffect } from "react";
+import { useMemo } from "react";
 import type { HiringTimelineResponse } from "@/types/candidate";
 import { isFailed, isStageWaiting, isPassedOrRejected } from "./timelineStatusUtils";
 

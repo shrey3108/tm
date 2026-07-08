@@ -63,7 +63,7 @@ export default function AdminDepartments() {
 
   const debouncedSearch = useDebouncedValue(search)
 
-  const { data: departments, total, loading, error, refetch } = useDepartment(pageIndex * pageSize, pageSize, debouncedSearch)
+  const { data: departments, total, loading, error, refetch } = useDepartment({ skip: pageIndex * pageSize, limit: pageSize, q: debouncedSearch });
 
   const handleSearchChange = (value: string) => {
     setFilters({

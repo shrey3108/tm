@@ -13,12 +13,10 @@ export const adminSkillService = {
    * @returns Promise resolving to skills and total count
    */
   getAllSkills: async (
-    skip: number = 0,
-    limit: number = 100,
-    search?: string,
+    { skip = 0, limit = 10, q }: { skip?: number; limit?: number; q?: string },
   ): Promise<{ data: SkillRead[]; total: number }> => {
     const response = await apiClient.get<{ data: SkillRead[]; total: number }>("/skills", {
-      params: { skip, limit, q: search ? search : undefined },
+      params: { skip, limit, q: q ? q : undefined },
     });
     return response.data;
   },

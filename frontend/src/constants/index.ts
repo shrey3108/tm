@@ -118,7 +118,7 @@ export const CHART_COLORS = {
   criteria: {
     jd: {
       solid: "#4ade80",
-      gradient: ["#86efac", "#4ade80"] as const,
+      gradient: ["#fed7aa", "#fdba74"] as const,
     },
     project: {
       solid: "#a5b4fc",

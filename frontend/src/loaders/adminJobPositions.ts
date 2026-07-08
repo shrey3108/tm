@@ -5,7 +5,7 @@ import { adminJobPositionService } from "@/apis/admin";
 export const adminJobPositionsLoader = async () => {
   await queryClient.ensureQueryData({
     queryKey: [QUERY_KEYS.ADMIN.POSITIONS, 0, 10, ""],
-    queryFn: () => adminJobPositionService.getAllPositions(0, 10, ""),
+    queryFn: () => adminJobPositionService.getAllPositions({ skip: 0, limit: 10, q: "" }),
   });
   return null;
 };

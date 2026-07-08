@@ -191,13 +191,13 @@ export default function SendPaperPage() {
       const filteredIds = filteredSelected.map((c) => c.id);
 
       try {
-        toast.info(`Sending test paper via bulk email to ${filteredSelected.length} candidates...`);
+        toast.info(`Sending question paper via bulk email to ${filteredSelected.length} candidates...`);
         await sendBulkEmailMutation.mutateAsync({
           paper_id: finalAssignedPaper.id,
           candidate_ids: filteredIds,
           force,
         });
-        toast.success("Successfully sent test paper emails in bulk!");
+        toast.success("Successfully sent question paper emails in bulk!");
         navigate(-1);
       } catch (err: unknown) {
         toast.error(extractErrorMessage(err));
@@ -219,13 +219,13 @@ export default function SendPaperPage() {
     }
 
     try {
-      toast.info("Sending test paper via email...");
+      toast.info("Sending question paper via email...");
       await sendEmailMutation.mutateAsync({
         candidate_email: email,
         paper_id: finalAssignedPaper.id,
         force,
       });
-      toast.success(`Successfully sent test paper email to ${email}!`);
+      toast.success(`Successfully sent question paper email to ${email}!`);
       // navigate(-1);
       const jobSlug = slugify(job?.title || "");
       const candSlug = params.candidateName;
@@ -268,7 +268,7 @@ export default function SendPaperPage() {
       toast.info("Removing assignment...");
       if (job?.id) {
         await deleteJobDefaultMutation.mutateAsync({ jobId: job.id, jobStageId });
-        toast.success("Default test paper removed successfully from job.");
+        toast.success("Default question paper removed successfully from job.");
         queryClient.clear();
       }
       refetchAssigned();
