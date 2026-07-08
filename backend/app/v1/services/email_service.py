@@ -236,6 +236,19 @@ async def send_candidate_task_email_via_smtp(
                 if orig_paper.questions == test_paper.questions and orig_paper.project_task == test_paper.project_task:
                     is_modified = False
 
+    guidelines_content = None
+    if test_paper and test_paper.guideline_content:
+        guidelines_content = test_paper.guideline_content
+    elif db:
+        try:
+            from app.v1.db.models.guidelines import Guideline
+            res = await db.execute(select(Guideline.content).where(Guideline.is_default == True))
+            default_guideline = res.scalars().first()
+            if default_guideline:
+                guidelines_content = default_guideline
+        except Exception as e:
+            logger.error(f"Failed to fetch fallback guidelines for email: {e}")
+
     external_url = None
     if task_file_path and task_file_path.startswith(("http://", "https://")):
         external_url = task_file_path
@@ -247,7 +260,12 @@ async def send_candidate_task_email_via_smtp(
     else:
         # Generate PDF dynamically
         try:
-            temp_file_to_delete = generate_candidate_task_pdf_file(candidate, test_paper, job_name=job_title)
+            temp_file_to_delete = generate_candidate_task_pdf_file(
+                candidate, 
+                test_paper, 
+                job_name=job_title, 
+                guideline_content=guidelines_content
+            )
             attachment_path = temp_file_to_delete
             attachment_name = f"Test_Paper_{candidate.first_name or 'Candidate'}.pdf"
         except Exception as e:
@@ -290,18 +308,7 @@ async def send_candidate_task_email_via_smtp(
             details_html += f'<div style="font-size: 14px;"><a href="{external_url}" target="_blank" style="color: #3b82f6; text-decoration: underline;">{external_url}</a></div>'
         details_html += '</div>'
 
-    guidelines_content = None
-    if test_paper and test_paper.guideline_content:
-        guidelines_content = test_paper.guideline_content
-    elif db:
-        try:
-            from app.v1.db.models.guidelines import Guideline
-            res = await db.execute(select(Guideline.content).where(Guideline.is_default == True))
-            default_guideline = res.scalars().first()
-            if default_guideline:
-                guidelines_content = default_guideline
-        except Exception as e:
-            logger.error(f"Failed to fetch fallback guidelines for email: {e}")
+
 
     guidelines_html = ""
     if guidelines_content:
@@ -568,11 +575,27 @@ async def send_associate_notification_email(
         if abs_path.is_file():
             attachment_path = str(abs_path)
             attachment_name = os.path.basename(task_file_path)
+    guidelines_content = None
+    if test_paper and test_paper.guideline_content:
+        guidelines_content = test_paper.guideline_content
+    elif db:
+        try:
+            from app.v1.db.models.guidelines import Guideline
+            res = await db.execute(select(Guideline.content).where(Guideline.is_default == True))
+            default_guideline = res.scalars().first()
+            if default_guideline:
+                guidelines_content = default_guideline
+        except Exception as e:
+            logger.error(f"Failed to fetch fallback guidelines for email: {e}")
+
     else:
         # Generate PDF dynamically
         try:
             temp_file_to_delete = generate_candidate_task_pdf_file(
-                candidate, test_paper, job_name=job_title
+                candidate, 
+                test_paper, 
+                job_name=job_title,
+                guideline_content=guidelines_content
             )
             attachment_path = temp_file_to_delete
             attachment_name = f"Test_Paper_{candidate.first_name or 'Candidate'}.pdf"

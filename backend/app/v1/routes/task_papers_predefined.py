@@ -114,15 +114,6 @@ async def handle_duplicate_question(
                         if updated:
                             ex_q["skill_ids"] = ex_q_skill_ids
                             
-                        in_marks = question_text.get("marks") if isinstance(question_text, dict) else getattr(question_text, "marks", None)
-                        if in_marks is not None:
-                            ex_q["marks"] = in_marks
-                            updated = True
-                        
-                        in_duration = question_text.get("duration") if isinstance(question_text, dict) else getattr(question_text, "duration", None)
-                        if in_duration is not None:
-                            ex_q["duration"] = in_duration
-                            updated = True
                         if updated:
                             p.questions[i] = ex_q
                             
@@ -182,15 +173,6 @@ async def handle_duplicate_mcq(
                         if updated:
                             m["skill_ids"] = m_skill_ids
                             
-                        in_marks = mcq_question_text.get("marks") if isinstance(mcq_question_text, dict) else getattr(mcq_question_text, "marks", None)
-                        if in_marks is not None:
-                            m["marks"] = in_marks
-                            updated = True
-                        
-                        in_duration = mcq_question_text.get("duration") if isinstance(mcq_question_text, dict) else getattr(mcq_question_text, "duration", None)
-                        if in_duration is not None:
-                            m["duration"] = in_duration
-                            updated = True
                         if updated:
                             paper.mcqs[i] = m
 
@@ -250,15 +232,6 @@ async def handle_duplicate_task(
                         if updated:
                             t["skill_ids"] = t_skill_ids
                             
-                        in_marks = task_text.get("marks") if isinstance(task_text, dict) else getattr(task_text, "marks", None)
-                        if in_marks is not None:
-                            t["marks"] = in_marks
-                            updated = True
-                        
-                        in_duration = task_text.get("duration") if isinstance(task_text, dict) else getattr(task_text, "duration", None)
-                        if in_duration is not None:
-                            t["duration"] = in_duration
-                            updated = True
                         if updated:
                             paper.project_task[i] = t
                             

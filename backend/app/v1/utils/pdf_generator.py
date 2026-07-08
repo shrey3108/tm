@@ -103,7 +103,8 @@ def create_and_store_master_pdf(paper_id: uuid.UUID, paper_name: str, questions:
 def generate_candidate_task_pdf_file(
     candidate: Candidate,
     test_paper: CandidateTestPaper,
-    job_name: str = ""
+    job_name: str = "",
+    guideline_content: str = None
 ) -> str:
     import re
     from reportlab.lib.pagesizes import letter
@@ -249,7 +250,36 @@ def generate_candidate_task_pdf_file(
                 Story.append(Spacer(1, 10))
             else:
                 add_question(str(t), "-")
+
+    if guideline_content:
+        Story.append(Spacer(1, 20))
+        Story.append(Paragraph("<b>Terms & Conditions:</b>", styles['Heading2']))
+        
+        # Simple markdown to ReportLab HTML-like tags
+        gc_safe = sanitize_for_pdf(guideline_content)
+        # Convert **bold** to <b>bold</b>
+        gc_safe = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', gc_safe)
+        
+        lines = gc_safe.split('\n')
+        in_list = False
+        for line in lines:
+            stripped = line.strip()
+            if not stripped:
+                continue
             
+            if stripped.startswith(('- ', '* ', '· ')):
+                bullet_text = stripped[2:]
+                Story.append(Paragraph(f"• {bullet_text}", normal_style))
+            elif stripped.startswith(('#')):
+                # headings
+                header_text = stripped.lstrip('#').strip()
+                Story.append(Spacer(1, 10))
+                Story.append(Paragraph(f"<b>{header_text}</b>", styles['Heading3']))
+            else:
+                Story.append(Paragraph(stripped, normal_style))
+                
+        Story.append(Spacer(1, 10))
+
     doc_rl.build(Story)
 
     # Post-process with PyMuPDF to add logo and footer
