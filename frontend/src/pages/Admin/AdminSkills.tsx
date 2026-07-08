@@ -68,7 +68,7 @@ export default function AdminSkills() {
 
 
   const debouncedSearch = useDebouncedValue(search)
-  const { data: skills, total, loading, error, refetch } = useSkill(pageIndex * pageSize, pageSize, debouncedSearch)
+  const { data: skills, total, loading, error, refetch } = useSkill({ skip: pageIndex * pageSize, limit: pageSize, q: debouncedSearch });
 
 
   useEffect(() => {

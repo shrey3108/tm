@@ -68,6 +68,10 @@ const ROUTE_META: Record<string, { label: string; icon?: LucideIcon }> = {
   "assign-associate": { label: "Assign Associate", icon: UserCog },
 
   //  Path-Specific Context Overrides 
+  "dashboard/admin/departments/new": { label: "Create Department", icon: PlusCircle },
+  "dashboard/admin/departments/*/edit": { label: "Edit Department", icon: PencilIcon },
+  "dashboard/admin/skills/new": { label: "Create Skill", icon: PlusCircle },
+  "dashboard/admin/skills/*/edit": { label: "Edit Skill", icon: PencilIcon },
   // Job Criteria Forms
   "dashboard/admin/criteria-stages/criteria/new": { label: "Create Criteria", icon: PlusCircle },
   "dashboard/admin/criteria-stages/criteria/*/edit": { label: "Edit Criteria", icon: PencilIcon },

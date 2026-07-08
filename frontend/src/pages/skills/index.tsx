@@ -1,44 +1,43 @@
 /**
- * @module AdminDepartments
- * @component AdminDepartments
+ * @module AdminSkills
+ * @component AdminSkills
  *
- * Admin page for managing departments.
- * Displays all departments with ability to create, edit, and delete.
+ * Admin page for managing skills.
+ * Displays all skills with ability to create, edit, and delete.
  */
 import { useState, useEffect } from "react";
-import type { DepartmentRead } from "@/types/department";
+import type { SkillRead } from "@/types/skill";
 import AppPageShell from "@/components/shared/AppPageShell";
 import PageHeader from "@/components/shared/PageHeader";
 import { useToast } from "@/components/shared/ToastProvider";
 import { DataTable } from "@/components/shared/DataTable";
 import ErrorDisplay from "@/components/shared/ErrorDisplay";
-
-import { useDebouncedValue } from "@/hooks/useDebounced";
 import { Edit2, Trash2Icon, ArrowUpDown, AlertCircle, Plus } from "lucide-react";
 import { extractErrorMessage } from "@/utils/error";
 import type { ColumnDef, PaginationState } from "@tanstack/react-table";
-import { Button } from "@/components/ui/button";
 import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card";
 import { Badge } from "@/components/ui/badge";
 import PermissionGuard from "@/components/auth/PermissionGuard";
 import { PERMISSIONS, hasPermissions } from "@/lib/permissions";
 import { useAppSelector } from "@/store/hooks";
 import { selectCurrentUser } from "@/store/slices/authSlice";
-import { useDepartment } from "@/hooks/queries/admin/useDepartment";
-import { useDeleteDepartmentMutation } from "@/hooks/mutations/admin/useDepartment";
+import { useSkill } from "@/hooks/queries/admin/useSkill";
+import { useDeleteSkillMutation } from "@/hooks/mutations/admin/useSkill";
 import { usePageFilters } from "@/hooks/usePageFilters";
-import CreateDepartmentModal from "@/components/modal/CreateDepartmentModal";
 import DeleteModal from "@/components/modal/DeleteModal";
+import { useDebouncedValue } from "@/hooks/useDebounced";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+import { slugify } from "@/utils/slug";
 
-export default function AdminDepartments() {
+export default function AdminSkills() {
   const toast = useToast();
+  const navigate = useNavigate();
   const user = useAppSelector(selectCurrentUser);
-  const hasManagePermission = hasPermissions(user?.permissions, PERMISSIONS.DEPARTMENTS_MANAGE);
-  const deleteDepartmentMutation = useDeleteDepartmentMutation();
-  const [showModal, setShowModal] = useState(false);
-  const [selectedDepartment, setSelectedDepartment] = useState<DepartmentRead | null>(null);
+  const hasManagePermission = hasPermissions(user?.permissions, PERMISSIONS.SKILLS_MANAGE);
+  const deleteSkillMutation = useDeleteSkillMutation();
 
-  const { filters, setFilters } = usePageFilters("adminDepartments", {
+  const { filters, setFilters } = usePageFilters("adminSkills", {
     pageIndex: 0,
     pageSize: 10,
     search: "",
@@ -54,16 +53,11 @@ export default function AdminDepartments() {
     });
   };
 
-  const [_deletingId, setDeletingId] = useState<string | null>(null);
+  const [, setDeletingId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState<DepartmentRead | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<SkillRead | null>(null);
   const [overallTotal, setOverallTotal] = useState(0);
-
-
-  const debouncedSearch = useDebouncedValue(search)
-
-  const { data: departments, total, loading, error, refetch } = useDepartment({ skip: pageIndex * pageSize, limit: pageSize, q: debouncedSearch });
 
   const handleSearchChange = (value: string) => {
     setFilters({
@@ -71,6 +65,9 @@ export default function AdminDepartments() {
       pageIndex: 0,
     });
   };
+
+  const debouncedSearch = useDebouncedValue(search);
+  const { data: skills, total, loading, error, refetch } = useSkill({ skip: pageIndex * pageSize, limit: pageSize, q: debouncedSearch });
 
   useEffect(() => {
     if (!debouncedSearch && total !== overallTotal) {
@@ -80,22 +77,20 @@ export default function AdminDepartments() {
     }
   }, [total, debouncedSearch, overallTotal]);
 
-
-
   /**
-   * Performs immediate deletion of a department.
+   * Performs immediate deletion of a skill.
    * If failure occurs, displays reason in a modal.
    */
-  const handleDeleteClick = async (dept: DepartmentRead) => {
+  const handleDeleteClick = async (skill: SkillRead) => {
     try {
-      setDeletingId(dept.id);
+      setDeletingId(skill.id);
       setDeleteError(null);
-      await deleteDepartmentMutation.mutateAsync(dept.id);
-      toast.success("Department deleted successfully");
+      await deleteSkillMutation.mutateAsync(skill.id);
+      toast.success("Skill deleted successfully");
     } catch (err) {
       const errMsg = extractErrorMessage(err);
       setDeleteError(errMsg);
-      setItemToDelete(dept);
+      setItemToDelete(skill);
       setShowDeleteModal(true);
     } finally {
       setDeletingId(null);
@@ -103,30 +98,27 @@ export default function AdminDepartments() {
   };
 
   const handleCreateClick = () => {
-    setSelectedDepartment(null);
-    setShowModal(true);
+    navigate("/dashboard/admin/skills/new");
   };
 
   /**
-   * Parses the backend error message to extract job names if the department is in use.
+   * Parses the backend error message to extract job names if the skill is in use.
    */
   const renderFormattedError = (error: string | null) => {
     if (!error) return null;
 
     // Get job names
-    const jobMatch = error.match(/active job\(s\): \[(.*?)\]/i);
+    const jobMatch = error.match(/ACTIVE Job\(s\): \[(.*?)\]/);
     if (!jobMatch) return error;
 
-    // Get department delete main message
+    // Get skill delete main message
     const mainMessage = error.split(/active job\(s\):/i)[0].trim();
     const jobNamesStr = jobMatch[1];
 
-    // Simple parser for comma-separated job names: [Job A, Job B]
     const jobNames = jobNamesStr
       .split(",")
       .flatMap((name) => {
         const trimmed = name.trim();
-        // remove quotes if they exist (for robustness)
         const val =
           (trimmed.startsWith("'") && trimmed.endsWith("'")) ||
             (trimmed.startsWith('"') && trimmed.endsWith('"'))
@@ -149,56 +141,74 @@ export default function AdminDepartments() {
           ))}
         </div>
         <p className="text-xs text-muted-foreground pl-6 italic">
-          Please deactivate or remove this department from these jobs before deleting.
+          Please deactivate or remove this skill from these jobs before deleting.
         </p>
       </div>
     );
   };
 
-  const handleEditClick = (dept: DepartmentRead) => {
-    setSelectedDepartment(dept);
-    setShowModal(true);
+  const handleEditClick = (skill: SkillRead) => {
+    navigate(`/dashboard/admin/skills/${slugify(skill.name)}/edit`, { state: { skill } });
   };
 
-  const handleCloseModal = () => {
-    setShowModal(false);
-    setSelectedDepartment(null);
-  };
-
-  const columns: ColumnDef<DepartmentRead>[] = [
+  const columns: ColumnDef<SkillRead>[] = [
     {
       accessorKey: "name",
       header: ({ column }) => (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="hover:bg-transparent p-0 font-semibold text-base"
-        >
-          Name
-          <ArrowUpDown className="h-4 w-4" />
-        </Button>
+        <div className="max-w-50">
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="hover:bg-transparent p-0 font-semibold text-base"
+          >
+            Name
+            <ArrowUpDown className="h-4 w-4" />
+          </Button>
+        </div>
       ),
-      cell: ({ row }) => <span className="capitalize"> {row.original.name} </span>
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2 min-w-50 truncate ">
+          {row.original.name}
+        </div>
+      ),
     },
     {
       accessorKey: "description",
-
       header: () => {
         return (
-          <div className="flex items-center gap-2">
-            <span className="text-base">Description</span>
+          <div className="flex items-center gap-2  max-w-150">
+            <span>Description</span>
           </div>
-        )
+        );
       },
-      cell: ({ row }) => <span className="capitalize"> {row.original.description || "No description provided"}</span>,
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2 max-w-150 truncate ">
+          {row.original.description || "No description provided"}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "default_weightage",
+      header: () => {
+        return (
+          <div className="flex items-center justify-center gap-2">
+            <span>Weightage</span>
+          </div>
+        );
+      },
+      cell: ({ row }) => (
+        <div className="flex items-center justify-center gap-2 max-w-37.5 font-medium text-foreground">
+          {row.original.default_weightage ?? 10}
+        </div>
+      ),
     },
     ...(hasManagePermission
       ? [
         {
           id: "actions",
           header: () => (
-            <div className="flex items-center justify-center gap-0.5">
-              <span className="text-base">Actions</span>
+            <div className="flex items-center justify-center gap-2">
+              <span>Actions</span>
             </div>
           ),
           cell: ({ row }) => (
@@ -219,7 +229,7 @@ export default function AdminDepartments() {
                   )}
                 />
                 <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
-                  Edit Department
+                  Edit Skill
                 </HoverCardContent>
               </HoverCard>
 
@@ -231,7 +241,7 @@ export default function AdminDepartments() {
                       variant="ghost"
                       size="icon"
                       onClick={() => handleDeleteClick(row.original)}
-                      className="h-9 w-9 rounded-xl hover:bg-gray-200/60flex items-center justify-center shrink-0"
+                      className="h-9 w-9 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
                     >
                       <Trash2Icon className="h-4 w-4 shrink-0" />
                       <span className="sr-only">Delete</span>
@@ -239,12 +249,12 @@ export default function AdminDepartments() {
                   )}
                 />
                 <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
-                  Delete Department
+                  Delete Skill
                 </HoverCardContent>
               </HoverCard>
             </div>
           ),
-        } as ColumnDef<DepartmentRead>,
+        } as ColumnDef<SkillRead>,
       ]
       : []),
   ];
@@ -252,29 +262,28 @@ export default function AdminDepartments() {
   return (
     <AppPageShell width="wide">
       <PageHeader
-        title="Department Management"
-
+        title="Skill Management"
         breadcrumbActions={
-          <PermissionGuard permissions={PERMISSIONS.DEPARTMENTS_MANAGE} hideWhenDenied>
+          <PermissionGuard permissions={PERMISSIONS.SKILLS_MANAGE} hideWhenDenied>
             <Button onClick={handleCreateClick} size={"sm"} className="gap-2">
               <Plus className="h-4 w-4" />
-              Create Department
+              Create Skill
             </Button>
           </PermissionGuard>
         }
       />
 
-      {error && !departments.length ? (
+      {error && !skills.length ? (
         <ErrorDisplay message={error.message} onRetry={refetch} />
       ) : (
         <DataTable
           columns={columns}
-          data={departments}
+          data={skills}
           loading={loading}
           searchKey="name"
+          searchPlaceholder="Filter skills by name..."
           searchValue={search}
           onSearchChange={handleSearchChange}
-          searchPlaceholder="Filter departments by name..."
           initialSorting={[{ id: "name", desc: false }]}
           isServerSide={true}
           pageIndex={pageIndex}
@@ -283,29 +292,21 @@ export default function AdminDepartments() {
           onPaginationChange={setPagination}
           totalRecords={total}
           totalCount={overallTotal}
-          resultCount={departments.length}
-          entityName="Departments"
+          resultCount={skills.length}
+          entityName="Skills"
         />
-
       )}
-
-      <CreateDepartmentModal
-        show={showModal}
-        handleClose={handleCloseModal}
-        onDepartmentSaved={refetch}
-        department={selectedDepartment}
-      />
 
       <DeleteModal
         show={showDeleteModal}
         handleClose={() => setShowDeleteModal(false)}
         handleConfirm={() => { }} // Not used as we delete before opening modal
-        title="Delete Department Error"
-        message={itemToDelete ? `Unable to delete department "${itemToDelete.name}"` : ""}
+        title="Delete Skill Error"
+        message={itemToDelete ? `Unable to delete skill "${itemToDelete.name}"` : ""}
         isLoading={false}
         error={renderFormattedError(deleteError)}
         showFooterButtons={false}
       />
     </AppPageShell>
   );
-};
+}

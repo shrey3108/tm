@@ -12,6 +12,8 @@ import PublicRoute from "@/components/auth/PublicRoute";
 import RoleRoute from "@/components/auth/RoleRoute";
 import { PERMISSIONS } from "@/lib/permissions";
 import RouteErrorBoundary from "@/components/shared/RouteErrorBoundary";
+import { skillRoutes } from "./skillRoutes";
+import { departmentRoutes } from "./departmentRoutes";
 
 // Loaders
 import { RootLayout } from "@/components/layout/RootLayout";
@@ -24,9 +26,9 @@ import { adminRolesLoader } from "@/loaders/adminRoles";
 import { adminAuditLogsLoader } from "@/loaders/adminAuditLogs";
 import { adminRecentUploadsLoader } from "@/loaders/adminRecentUploads";
 import { adminJobsLoader } from "@/loaders/adminJobs";
-import { adminSkillsLoader } from "@/loaders/adminSkills";
+// import { adminSkillsLoader } from "@/loaders/adminSkills";
 import { adminAssociatesLoader } from "@/loaders/adminAssociates";
-import { adminDepartmentsLoader, } from "@/loaders/adminDepartments";
+// import { adminDepartmentsLoader, } from "@/loaders/adminDepartments";
 import { adminJobPositionsLoader } from "@/loaders/adminJobPositions";
 import { adminCandidateSearchLoader } from "@/loaders/adminCandidateSearch";
 import { adminJobCriteriaLoader } from "@/loaders/adminJobCriteria";
@@ -62,9 +64,9 @@ const AdminAuditLogs = lazy(() => import("@/pages/Admin/AdminAuditLogs"));
 const AdminRecentUploads = lazy(() => import("@/pages/Admin/AdminRecentUploads"));
 const AdminJobs = lazy(() => import("@/pages/Admin/AdminJobs"));
 const AdminCandidateSearch = lazy(() => import("@/pages/Admin/AdminCandidateSearch"));
-const AdminSkills = lazy(() => import("@/pages/Admin/AdminSkills"));
+// const AdminSkills = lazy(() => import("@/pages/Admin/AdminSkills"));
 const AdminAssociates = lazy(() => import("@/pages/Admin/AdminAssociates"));
-const AdminDepartments = lazy(() => import("@/pages/Admin/AdminDepartments"));
+// const AdminDepartments = lazy(() => import("@/pages/Admin/AdminDepartments"));
 const AdminJobStages = lazy(() => import("@/pages/Admin/AdminJobStages"));
 const AdminJobCriteria = lazy(() => import("@/pages/Admin/AdminJobCriteria"));
 const AdminJobCriteriaForm = lazy(() => import("@/pages/Admin/AdminJobCriteriaForm"));
@@ -332,15 +334,7 @@ export const router = createBrowserRouter([
                 ),
                 loader: adminCandidateSearchLoader,
               },
-              {
-                path: "skills",
-                element: (
-                  <RoleRoute requiredPermissions={PERMISSIONS.SKILLS_ACCESS}>
-                    <AdminSkills />
-                  </RoleRoute>
-                ),
-                loader: adminSkillsLoader,
-              },
+              skillRoutes,
               {
                 path: "associates",
                 element: (
@@ -350,15 +344,7 @@ export const router = createBrowserRouter([
                 ),
                 loader: adminAssociatesLoader,
               },
-              {
-                path: "departments",
-                element: (
-                  <RoleRoute requiredPermissions={PERMISSIONS.DEPARTMENTS_ACCESS}>
-                    <AdminDepartments />
-                  </RoleRoute>
-                ),
-                loader: adminDepartmentsLoader,
-              },
+              departmentRoutes,
               {
                 path: "candidates",
                 element: (

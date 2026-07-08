@@ -8,7 +8,7 @@ const skillBaseSchema = z.object({
     /** Optional description of the skill */
     description: z.string().trim().optional(),
     /** Default weightage for this skill */
-    default_weightage: z.coerce.number().min(0, "Weightage must be at least 0").optional().default(10),
+    default_weightage: z.number().min(0, "Weightage must be at least 0").optional().default(10),
 });
 
 /**

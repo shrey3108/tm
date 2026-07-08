@@ -145,7 +145,7 @@ export default function AdminGuidelines() {
   const columns: ColumnDef<GuidelineRead>[] = [
     {
       accessorKey: "content",
-      header: () => <span className="text-base">Term & Condition Content</span>,
+      header: () => <span className="text-base">Content</span>,
       cell: ({ row }) => (
         <div className="max-w-[400px] text-wrap capitalize">
           {row.original.content}

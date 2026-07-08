@@ -27,16 +27,16 @@ import { selectCurrentUser } from "@/store/slices/authSlice";
 import { useDepartment } from "@/hooks/queries/admin/useDepartment";
 import { useDeleteDepartmentMutation } from "@/hooks/mutations/admin/useDepartment";
 import { usePageFilters } from "@/hooks/usePageFilters";
-import CreateDepartmentModal from "@/components/modal/CreateDepartmentModal";
 import DeleteModal from "@/components/modal/DeleteModal";
+import { useNavigate } from "react-router-dom";
+import { slugify } from "@/utils/slug";
 
 export default function AdminDepartments() {
   const toast = useToast();
+  const navigate = useNavigate();
   const user = useAppSelector(selectCurrentUser);
   const hasManagePermission = hasPermissions(user?.permissions, PERMISSIONS.DEPARTMENTS_MANAGE);
   const deleteDepartmentMutation = useDeleteDepartmentMutation();
-  const [showModal, setShowModal] = useState(false);
-  const [selectedDepartment, setSelectedDepartment] = useState<DepartmentRead | null>(null);
 
   const { filters, setFilters } = usePageFilters("adminDepartments", {
     pageIndex: 0,
@@ -54,15 +54,13 @@ export default function AdminDepartments() {
     });
   };
 
-  const [_deletingId, setDeletingId] = useState<string | null>(null);
+  const [, setDeletingId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<DepartmentRead | null>(null);
   const [overallTotal, setOverallTotal] = useState(0);
 
-
-  const debouncedSearch = useDebouncedValue(search)
-
+  const debouncedSearch = useDebouncedValue(search);
   const { data: departments, total, loading, error, refetch } = useDepartment({ skip: pageIndex * pageSize, limit: pageSize, q: debouncedSearch });
 
   const handleSearchChange = (value: string) => {
@@ -79,8 +77,6 @@ export default function AdminDepartments() {
       });
     }
   }, [total, debouncedSearch, overallTotal]);
-
-
 
   /**
    * Performs immediate deletion of a department.
@@ -103,8 +99,7 @@ export default function AdminDepartments() {
   };
 
   const handleCreateClick = () => {
-    setSelectedDepartment(null);
-    setShowModal(true);
+    navigate("/dashboard/admin/departments/new");
   };
 
   /**
@@ -121,12 +116,10 @@ export default function AdminDepartments() {
     const mainMessage = error.split(/active job\(s\):/i)[0].trim();
     const jobNamesStr = jobMatch[1];
 
-    // Simple parser for comma-separated job names: [Job A, Job B]
     const jobNames = jobNamesStr
       .split(",")
       .flatMap((name) => {
         const trimmed = name.trim();
-        // remove quotes if they exist (for robustness)
         const val =
           (trimmed.startsWith("'") && trimmed.endsWith("'")) ||
             (trimmed.startsWith('"') && trimmed.endsWith('"'))
@@ -156,13 +149,7 @@ export default function AdminDepartments() {
   };
 
   const handleEditClick = (dept: DepartmentRead) => {
-    setSelectedDepartment(dept);
-    setShowModal(true);
-  };
-
-  const handleCloseModal = () => {
-    setShowModal(false);
-    setSelectedDepartment(null);
+    navigate(`/dashboard/admin/departments/${slugify(dept.name)}/edit`, { state: { department: dept } });
   };
 
   const columns: ColumnDef<DepartmentRead>[] = [
@@ -178,17 +165,16 @@ export default function AdminDepartments() {
           <ArrowUpDown className="h-4 w-4" />
         </Button>
       ),
-      cell: ({ row }) => <span className="capitalize"> {row.original.name} </span>
+      cell: ({ row }) => <span className="capitalize"> {row.original.name} </span>,
     },
     {
       accessorKey: "description",
-
       header: () => {
         return (
           <div className="flex items-center gap-2">
             <span className="text-base">Description</span>
           </div>
-        )
+        );
       },
       cell: ({ row }) => <span className="capitalize"> {row.original.description || "No description provided"}</span>,
     },
@@ -231,7 +217,7 @@ export default function AdminDepartments() {
                       variant="ghost"
                       size="icon"
                       onClick={() => handleDeleteClick(row.original)}
-                      className="h-9 w-9 rounded-xl hover:bg-gray-200/60flex items-center justify-center shrink-0"
+                      className="h-9 w-9 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
                     >
                       <Trash2Icon className="h-4 w-4 shrink-0" />
                       <span className="sr-only">Delete</span>
@@ -253,7 +239,6 @@ export default function AdminDepartments() {
     <AppPageShell width="wide">
       <PageHeader
         title="Department Management"
-
         breadcrumbActions={
           <PermissionGuard permissions={PERMISSIONS.DEPARTMENTS_MANAGE} hideWhenDenied>
             <Button onClick={handleCreateClick} size={"sm"} className="gap-2">
@@ -286,15 +271,7 @@ export default function AdminDepartments() {
           resultCount={departments.length}
           entityName="Departments"
         />
-
       )}
-
-      <CreateDepartmentModal
-        show={showModal}
-        handleClose={handleCloseModal}
-        onDepartmentSaved={refetch}
-        department={selectedDepartment}
-      />
 
       <DeleteModal
         show={showDeleteModal}
@@ -308,4 +285,4 @@ export default function AdminDepartments() {
       />
     </AppPageShell>
   );
-};
+}
