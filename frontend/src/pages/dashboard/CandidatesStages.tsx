@@ -22,7 +22,7 @@ import { useCandidatesStages } from "@/hooks/useCandidatesStages";
 import LoadingSpinner from "@/components/shared/LoadingSpinner";
 import { JobInfoModal } from "@/components/modal/JobInfoModal";
 
-const JobCandidatesLineChart = lazy(() => import("@/components/job/candidates/JobCandidatesAreaChart"))
+const JobCandidatesBarChart = lazy(() => import("@/components/job/candidates/JobCandidatesBarChart"))
 
 /**
  * The main page component for viewing and managing a candidate's progress through interview stages.
@@ -189,7 +189,7 @@ export default function CandidatesStages() {
                   <Suspense fallback={<LoadingSpinner message="Loading charts..." fullPage={true} />}>
                     <div className="w-full flex justify-center bg-card/30 p-3 rounded-2xl border border-border/50 animate-in fade-in duration-300">
                       <div className="w-full min-h-[100px] max-h-[300px]">
-                        <JobCandidatesLineChart data={chartData.length > 0 ? chartData : undefined} />
+                        <JobCandidatesBarChart data={chartData.length > 0 ? chartData : undefined} />
                       </div>
                     </div>
                   </Suspense>

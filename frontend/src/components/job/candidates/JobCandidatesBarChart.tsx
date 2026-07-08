@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CartesianGrid, XAxis, YAxis, ResponsiveContainer, Label, Legend, LineChart, Line } from 'recharts';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Rectangle, ResponsiveContainer, Label, Legend } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 import { CHART_COLORS } from "@/constants";
 
@@ -31,14 +31,14 @@ const colors = {
     project: CHART_COLORS.criteria.project.gradient,
 };
 
-export default function JobCandidatesLineChart({ isAnimationActive = true, data: chartData }: JobCandidatesAreaChartProps) {
-    const [activeLine, setActiveLine] = useState<'all' | 'jd' | 'project'>('all');
+export default function JobCandidatesBarChart({ isAnimationActive = true, data: chartData }: JobCandidatesAreaChartProps) {
+    const [activeBar, setActiveBar] = useState<'all' | 'jd' | 'project'>('all');
     const displayData = chartData;
 
     const handleLegendClick = (entry: any) => {
         const dataKey = entry.dataKey || entry.payload?.dataKey || (entry.value === "JD Skills" ? "jd" : "project");
         if (dataKey === "jd" || dataKey === "project") {
-            setActiveLine((prev) => (prev === dataKey ? 'all' : dataKey));
+            setActiveBar((prev) => (prev === dataKey ? 'all' : dataKey));
         }
     };
 
@@ -58,26 +58,26 @@ export default function JobCandidatesLineChart({ isAnimationActive = true, data:
     };
 
     return (
-        <div className="w-full h-full animate-in fade-in zoom-in-95 duration-700">
-            <ChartContainer config={chartConfig} className="w-full h-full">
+        <div className="w-full animate-in fade-in zoom-in-95 duration-700">
+            <ChartContainer config={chartConfig} className="w-full min-h-[100px] max-h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
-                    <LineChart
+                    <BarChart
                         data={displayData}
-                        margin={{ top: 20, right: 20, left: 30, bottom: 50 }}
+                        barGap={6}
+                        // margin={{ top: 20, right: 30, left: 30, bottom: 50 }}
                         className='[&_.recharts-cartesian-grid-horizontal>line]:[stroke-dasharray:0]'
-
                     >
                         <Legend
                             verticalAlign="top"
                             align="right"
-                            wrapperStyle={{ paddingBottom: '10px' }}
+                            wrapperStyle={{ paddingBottom: '40px' }}
                             onClick={handleLegendClick}
                             formatter={(value, entry) => {
                                 const dataKey = entry.dataKey || (value === "JD Skills" ? "jd" : "project");
-                                const isInactive = activeLine !== 'all' && activeLine !== dataKey;
+                                const isInactive = activeBar !== 'all' && activeBar !== dataKey;
                                 return (
                                     <span
-                                        className={`text-xs font-semibold cursor-pointer transition-all duration-300 select-none ${isInactive ? "opacity-30 line-through text-muted-foreground" : "opacity-100 font-bold"
+                                        className={`text-xs font-bold text-black dark:text-white cursor-pointer transition-all duration-300 select-none ${isInactive ? "line-through" : ""
                                             }`}
                                     >
                                         {value}
@@ -90,24 +90,24 @@ export default function JobCandidatesLineChart({ isAnimationActive = true, data:
                                 <stop
                                     offset="0%"
                                     stopColor={colors.jd[0]}
-                                    stopOpacity={0.4}
+                                    stopOpacity={0.8}
                                 />
                                 <stop
                                     offset="100%"
                                     stopColor={colors.jd[1]}
-                                    stopOpacity={0.0}
+                                    stopOpacity={1.0}
                                 />
                             </linearGradient>
                             <linearGradient id="gradientProject" x1="0" y1="0" x2="0" y2="1">
                                 <stop
                                     offset="0%"
                                     stopColor={colors.project[0]}
-                                    stopOpacity={0.4}
+                                    stopOpacity={0.8}
                                 />
                                 <stop
                                     offset="100%"
                                     stopColor={colors.project[1]}
-                                    stopOpacity={0.0}
+                                    stopOpacity={1.0}
                                 />
                             </linearGradient>
                         </defs>
@@ -122,6 +122,7 @@ export default function JobCandidatesLineChart({ isAnimationActive = true, data:
                             tickLine={false}
                             tickMargin={12}
                             axisLine={false}
+                            interval={0}
                             className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground"
                         >
                             <Label
@@ -151,37 +152,62 @@ export default function JobCandidatesLineChart({ isAnimationActive = true, data:
                             cursor={false}
                             content={<ChartTooltipContent />}
                         />
-                        <Line
-                            type="linear"
+                        <Bar
                             dataKey="jd"
                             name="JD Skills"
-                            stroke={CHART_COLORS.criteria.jd.solid}
-                            strokeWidth={2}
-                            fillOpacity={1}
                             fill="url(#gradientJd)"
+                            radius={[10, 10, 0, 0]}
+                            barSize={50}
                             isAnimationActive={isAnimationActive}
                             animationBegin={200}
                             animationDuration={1300}
-                            hide={activeLine !== 'all' && activeLine !== 'jd'}
+                            hide={activeBar !== 'all' && activeBar !== 'jd'}
                             label={renderLabel}
+                            shape={(props: any) => {
+                                const { x, y, width, height } = props;
+                                return (
+                                    <Rectangle
+                                        x={x}
+                                        y={y}
+                                        width={width}
+                                        height={height}
+                                        radius={[10, 10, 0, 0]}
+                                        fill="url(#gradientJd)"
+                                        className="transition-all duration-300 hover:opacity-80"
+                                    />
+                                );
+                            }}
                         />
-                        <Line
-                            type="linear"
+                        <Bar
                             dataKey="project"
                             name="Project Skills"
-                            stroke={CHART_COLORS.criteria.project.solid}
-                            strokeWidth={2}
-                            fillOpacity={1}
                             fill="url(#gradientProject)"
+                            radius={[10, 10, 0, 0]}
+                            barSize={50}
                             isAnimationActive={isAnimationActive}
                             animationBegin={200}
                             animationDuration={1300}
-                            hide={activeLine !== 'all' && activeLine !== 'project'}
+                            hide={activeBar !== 'all' && activeBar !== 'project'}
                             label={renderLabel}
+                            shape={(props: any) => {
+                                const { x, y, width, height } = props;
+                                console.log(props);
+                                return (
+                                    <Rectangle
+                                        x={x}
+                                        y={y}
+                                        width={width}
+                                        height={height}
+                                        radius={[10, 10, 0, 0]}
+                                        fill="url(#gradientProject)"
+                                        className="transition-all duration-300 hover:opacity-80"
+                                    />
+                                );
+                            }}
                         />
-                    </LineChart>
+                    </BarChart>
                 </ResponsiveContainer>
             </ChartContainer>
         </div>
     );
-};
+}

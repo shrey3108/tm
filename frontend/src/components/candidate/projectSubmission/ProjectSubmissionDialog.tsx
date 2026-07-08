@@ -58,7 +58,7 @@ export function ProjectSubmissionDialog({
   const { mutateAsync: evaluateGithub, isPending: isEvaluating } = useEvaluateGithubMutation();
   const { mutateAsync: submitGithub, isPending: isSubmitting } = useSubmitGithubMutation();
 
-  const [evaluateImmediately, setEvaluateImmediately] = useState(false);
+  const [evaluateImmediately, setEvaluateImmediately] = useState(true);
 
   // Fetch candidate's assigned task paper
   const jobSlug = slugify(job?.title);

@@ -257,7 +257,7 @@ export default function AdminJobPriorities() {
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
             className="hover:bg-transparent p-0 font-semibold text-base"
           >
-            Assigned Jobs Count
+            Associate Reminder Hours
             <ArrowUpDown className="h-4 w-4" />
           </Button>
         </div>

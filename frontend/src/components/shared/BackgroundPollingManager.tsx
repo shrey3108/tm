@@ -29,7 +29,7 @@ const SingleStagePoller = ({ polling, onNavigate }: SingleStagePollerProps) => {
     return () => clearTimeout(timer);
   }, []);
 
-  const { data, error } = useQuery({
+  const { data } = useQuery({
     queryKey: [QUERY_KEYS.CANDIDATES.EVALUATION, polling.stageId],
     queryFn: () => candidateStageService.getEvaluation(polling.stageId),
     refetchInterval: 30000,
