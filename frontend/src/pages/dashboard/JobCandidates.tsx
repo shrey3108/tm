@@ -6,7 +6,7 @@
  */
 import { useState, useRef, useMemo, useEffect, lazy, Suspense, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { RotateCw, Layers } from "lucide-react";
+import { RotateCw } from "lucide-react";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import CandidateTable from "@/components/candidate/CandidateTable";
 import { useJobCandidates } from "@/hooks/useJobCandidates";
@@ -22,10 +22,7 @@ import type { PaginationState } from "@tanstack/react-table";
 import type { CandidateActiveFilters } from "@/hooks/useCandidateTableFilters";
 import { slugify } from "@/utils/slug";
 import type { DateRange } from "react-day-picker";
-// import { SendQuestionPaperDialog } from "@/components/candidate/projectSubmission/SendQuestionPaperDialog";
 import { useCandidatesTestPapers } from "@/hooks/queries/taskPapers/useTaskPaperQueries";
-// import { useCandidateTimelineQuery } from "@/hooks/queries/candidates";
-import type { Job } from "@/types/job";
 import { Button } from "@/components/ui/button";
 import { CandidateDetailsModal } from "@/components/modal/CandidateDetailsModal";
 import { JobInfoModal } from "@/components/modal/JobInfoModal";
@@ -33,60 +30,15 @@ import { Input } from "@/components/ui/input";
 import DeleteModal from "@/components/modal/DeleteModal";
 import LoadingSpinner from "@/components/shared/LoadingSpinner";
 import { CandidateAssignPaperButton } from "@/components/shared/candidate/CandidateAssignPaperButton";
+import { ProjectSubmissionDialog } from "@/components/candidate/projectSubmission/ProjectSubmissionDialog";
 import { useJobAssignedTask } from "@/hooks/queries/jobs/useJobTask";
+import { CandidateProjectSubmissionButton } from "@/components/job/candidates/columns/CandidateProjectSubmissionButton";
+import { CandidateStagesButton } from "@/components/job/candidates/columns/CandidateStagesButton";
+import { CandidateOverviewButton } from "@/components/job/candidates/columns/CandidateOverviewButton";
 
 const JobCandidatesCharts = lazy(() =>
   import("@/components/job/candidates/JobCandidatesCharts").then((m) => ({ default: m.JobCandidatesCharts }))
 );
-interface CandidateStagesButtonProps {
-  candidate: CandidateAnalysis;
-  jobSlug: string | undefined;
-  job: Job | null;
-}
-
-function CandidateStagesButton({ candidate, jobSlug, job }: CandidateStagesButtonProps) {
-  const navigate = useNavigate();
-  const handleNavigate = () => {
-    const candidateFullName = slugify(`${candidate.first_name || ""} ${candidate.last_name || ""}`);
-    const currentStageName = candidate.current_stage?.template_name || "Resume Screening";
-    const stageSlug = slugify(currentStageName);
-
-    navigate(`/dashboard/jobs/${jobSlug}/candidates/${candidateFullName}/stages/${stageSlug}`, {
-      state: {
-        candidate: candidate,
-        jobSlug: jobSlug,
-        job
-      }
-    });
-  };
-
-  return (
-    <HoverCard>
-      <HoverCardTrigger
-        render={(props) => (
-          <Button
-            {...props}
-            variant="secondary"
-            size="sm"
-            className="h-9 w-9 p-0 rounded-xl bg-muted/50 hover:bg-gray-200/60 text-foreground border border-muted-foreground/10 flex items-center justify-center shrink-0"
-            onClick={handleNavigate}
-            // disabled={!candidate.pipeline || !candidate.is_parsed || isLoading}
-            disabled={!candidate.pipeline || !candidate.is_parsed}
-          >
-            {/* {isLoading ? (
-              <div className="h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin shrink-0" />
-            ) : ( */}
-            <Layers className="h-4 w-4 shrink-0" />
-            {/* )} */}
-          </Button>
-        )}
-      />
-      <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
-        Stages
-      </HoverCardContent>
-    </HoverCard>
-  );
-}
 
 /**
  * Page component for managing job candidates with toggle between candidates list and analytics views.
@@ -176,12 +128,13 @@ export default function JobCandidates() {
     test_email_sent: filters.test_email_sent,
   });
 
-  const [selectedCandidate, _setSelectedCandidate] = useState<CandidateAnalysis | null>(null);
+  const [selectedCandidate, setSelectedCandidate] = useState<CandidateAnalysis | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isJobModalOpen, setIsJobModalOpen] = useState(false);
+  const [isProjectSubmissionOpen, setIsProjectSubmissionOpen] = useState(false);
 
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
-  // const [isSendQuestionPaperDialogOpen, setIsSendQuestionPaperDialogOpen] = useState(false);
+
 
   // Reset rowSelection when filters or pagination changes
   useEffect(() => {
@@ -390,93 +343,77 @@ export default function JobCandidates() {
                           </HoverCard>
                         </PermissionGuard>
                       }
-                      renderActions={(candidate) => (
-                        <div className="flex items-center gap-0.5 justify-end">
-                          <PermissionGuard permissions={PERMISSIONS.JOBS_MANAGE} hideWhenDenied>
-                            <HoverCard>
+                      renderActions={(candidate) => {
+                        return (
+                          <div className="flex items-center gap-0.5 justify-end">
+                            <PermissionGuard permissions={PERMISSIONS.JOBS_MANAGE} hideWhenDenied>
+                              <HoverCard>
+                                <HoverCardTrigger
+                                  render={(props) => (
+                                    <Button
+                                      {...props}
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-9 w-9 p-0 rounded-xl border hover:bg-gray-200/60 flex items-center justify-center shrink-0"
+                                      onClick={(e) => {
+                                        if (props.onClick) props.onClick(e);
+                                        handleReanalyzeCandidate(candidate.id);
+                                      }}
+                                      isLoading={reanalyzingCandidateIds.includes(candidate.id)}
+                                      disabled={
+                                        !needsReanalysis(candidate) ||
+                                        reanalyzingCandidateIds.includes(candidate.id) ||
+                                        !candidate.is_parsed
+                                      }
+                                    >
+                                      <RotateCw className="h-4 w-4  shrink-0" />
+                                    </Button>
+                                  )}
+                                />
+                                <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
+                                  Reanalyze
+                                </HoverCardContent>
+                              </HoverCard>
+                            </PermissionGuard>
+                            <CandidateAssignPaperButton candidate={candidate}
+                              jobSlug={jobSlug}
+                              job={job}
+                              buttonClassName="h-9 w-9 p-0 rounded-xl bg-muted/50 hover:bg-gray-200/60 text-foreground border border-muted-foreground/10 flex items-center justify-center shrink-0"
+                            />
+                            <CandidateStagesButton
+                              candidate={candidate}
+                              jobSlug={jobSlug}
+                              job={job}
+                            />
+                            <CandidateProjectSubmissionButton candidate={candidate} onClick={() => {
+                              setSelectedCandidate(candidate);
+                              setIsProjectSubmissionOpen(true);
+                            }} />
+                            <CandidateOverviewButton candidate={candidate} jobSlug={jobSlug} />
+                            {/* <HoverCard>
                               <HoverCardTrigger
                                 render={(props) => (
                                   <Button
                                     {...props}
-                                    variant="ghost"
+                                    variant="outline"
                                     size="sm"
-                                    className="h-9 w-9 p-0 rounded-xl border hover:bg-gray-200/60 flex items-center justify-center shrink-0"
-                                    onClick={(e) => {
-                                      if (props.onClick) props.onClick(e);
-                                      handleReanalyzeCandidate(candidate.id);
+                                    className="h-9 w-9 p-0 rounded-xl bg-muted/50 hover:bg-muted text-foreground transition-all duration-300 border border-muted-foreground/10 flex items-center justify-center shrink-0"
+                                    onClick={() => {
+                                      setSelectedCandidate(candidate);
+                                      handleDeleteClick(candidate);
                                     }}
-                                    isLoading={reanalyzingCandidateIds.includes(candidate.id)}
-                                    disabled={
-                                      !needsReanalysis(candidate) ||
-                                      reanalyzingCandidateIds.includes(candidate.id) ||
-                                      !candidate.is_parsed
-                                    }
                                   >
-                                    <RotateCw className="h-4 w-4  shrink-0" />
+                                    <Trash className="h-4 w-4 shrink-0" />
                                   </Button>
-                                )}
-                              />
-                              <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
-                                Reanalyze
+                                )} />
+  
+                                  <HoverCardContent className="w-fit px-3 py-1.5 text-xs " side="top">
+                                <div className="">Delete</div>
                               </HoverCardContent>
-                            </HoverCard>
-                          </PermissionGuard>
-                          {/* <HoverCard>
-                            <HoverCardTrigger
-                              render={(props) => (
-                                <Button
-                                  {...props}
-                                  variant="secondary"
-                                  size="sm"
-                                  className="h-9 w-9 p-0 rounded-xl bg-muted/50 hover:bg-muted text-foreground transition-all duration-300 border border-muted-foreground/10 flex items-center justify-center shrink-0"
-                                  onClick={(e) => {
-                                    if (props.onClick) props.onClick(e);
-                                    setSelectedCandidate(candidate);
-                                    setModalInitialTab("analysis");
-                                    setIsModalOpen(true);
-                                  }}
-                                >
-                                  <Info className="h-4 w-4 shrink-0" />
-                                </Button>
-                              )}
-                            />
-                                 <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
-                              <div className="">More Info</div>
-                            </HoverCardContent>
-                          </HoverCard> */}
-                          <CandidateAssignPaperButton candidate={candidate}
-                            jobSlug={jobSlug}
-                            job={job}
-                            buttonClassName="h-9 w-9 p-0 rounded-xl bg-muted/50 hover:bg-gray-200/60 text-foreground border border-muted-foreground/10 flex items-center justify-center shrink-0"
-                          />
-                          <CandidateStagesButton
-                            candidate={candidate}
-                            jobSlug={jobSlug}
-                            job={job}
-                          />
-                          {/* <HoverCard>
-                            <HoverCardTrigger
-                              render={(props) => (
-                                <Button
-                                  {...props}
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-9 w-9 p-0 rounded-xl bg-muted/50 hover:bg-muted text-foreground transition-all duration-300 border border-muted-foreground/10 flex items-center justify-center shrink-0"
-                                  onClick={() => {
-                                    setSelectedCandidate(candidate);
-                                    handleDeleteClick(candidate);
-                                  }}
-                                >
-                                  <Trash className="h-4 w-4 shrink-0" />
-                                </Button>
-                              )} />
-
-                                <HoverCardContent className="w-fit px-3 py-1.5 text-xs " side="top">
-                              <div className="">Delete</div>
-                            </HoverCardContent>
-                          </HoverCard> */}
-                        </div>
-                      )}
+                            </HoverCard> */}
+                          </div>
+                        );
+                      }}
                     />
                   </div>
                 )}
@@ -522,23 +459,15 @@ export default function JobCandidates() {
         isLoading={isDeleting}
         error={deleteError}
       />
-      {/* {isSendQuestionPaperDialogOpen && (
-        <SendQuestionPaperDialog
-          isOpen={isSendQuestionPaperDialogOpen}
-          onOpenChange={setIsSendQuestionPaperDialogOpen}
-          job={job}
-          candidateName={selectedCandidates?.[0]?.first_name || ""}
-          candidateId={selectedCandidates?.[0]?.id}
-          selectedCandidates={selectedCandidates}
-          allCandidates={candidates}
-          emailFilterState={resolvedEmailState}
-          onSuccess={() => {
-            fetchData();
-            setRowSelection({});
-            setIsSendQuestionPaperDialogOpen(false);
-          }}
-        />
-      )} */}
+      <ProjectSubmissionDialog
+        isOpen={isProjectSubmissionOpen}
+        onOpenChange={setIsProjectSubmissionOpen}
+        candidateName={selectedCandidate ? `${selectedCandidate.first_name || ""} ${selectedCandidate.last_name || ""}`.trim() : ""}
+        candidateId={selectedCandidate?.id}
+        stageId={selectedCandidate?.current_stage?.stage_id}
+        job={job}
+        onSuccess={() => fetchData()}
+      />
     </AppPageShell>
   );
 }

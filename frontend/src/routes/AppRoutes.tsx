@@ -45,6 +45,7 @@ const JobBoard = lazy(() => import("@/pages/dashboard/job-board"));
 const JobForm = lazy(() => import("@/pages/dashboard/JobForm"));
 const JobCandidates = lazy(() => import("@/pages/dashboard/JobCandidates"));
 const CandidatesStages = lazy(() => import("@/pages/dashboard/CandidatesStages"));
+const CandidateOverview = lazy(() => import("@/pages/dashboard/CandidateOverview"));
 const TranscriptPage = lazy(() => import("@/pages/dashboard/TranscriptPage"));
 const QuestionsBank = lazy(() => import("@/pages/dashboard/QuestionsBank"));
 const QuestionsBankCreate = lazy(() => import("@/pages/dashboard/QuestionsBankCreate"));
@@ -195,6 +196,10 @@ export const router = createBrowserRouter([
                         element: <AssignPaperPage />,
                       },
                     ],
+                  },
+                  {
+                    path: ":candidateName/overview",
+                    element: <CandidateOverview />,
                   },
                 ],
               },
