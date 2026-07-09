@@ -17,7 +17,7 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui/table";
-import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
+import { Card, CardContent} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import CandidateStatusBadge from "@/components/shared/CandidateStatusBadge";
 import { Button } from "@/components/ui/button";
@@ -38,8 +38,8 @@ function StageRow({ event, jobSlug, candidateNameSlug, isFutureStage }: StageRow
   const handleNavigate = () => {
     navigate(
       `/dashboard/jobs/${jobSlug}/candidates/${candidateNameSlug}/stages/${slugify(
-        event.title || "Resume Screening"
-      )}`
+        event.title || "Resume Screening",
+      )}`,
     );
   };
 
@@ -47,10 +47,8 @@ function StageRow({ event, jobSlug, candidateNameSlug, isFutureStage }: StageRow
 
   return (
     <TableRow className="hover:bg-muted/50 transition-colors border-b border-border/50">
-      <TableCell className="p-2 text-sm text-foreground">
-        {event.title}
-      </TableCell>
-      <TableCell className="p-3">
+      <TableCell className="p-2 text-sm text-foreground">{event.title}</TableCell>
+      <TableCell className="p-2">
         {event.ai_result && !isFutureStage ? (
           <div
             onClick={handleNavigate}
@@ -76,9 +74,7 @@ function StageRow({ event, jobSlug, candidateNameSlug, isFutureStage }: StageRow
           >
             <CandidateStatusBadge status={event.hr_decision} />
             {event.hr_score !== null && event.hr_score !== undefined && (
-              <span className="text-xs font-bold">
-                {event.hr_score.toFixed(1)}/5
-              </span>
+              <span className="text-xs font-bold">{event.hr_score.toFixed(1)}/5</span>
             )}
           </div>
         ) : (
@@ -118,23 +114,18 @@ export default function CandidateOverview() {
     stateCandidateId: location.state?.candidateId,
   });
 
-
-
   const { data: timelineData, isLoading: isTimelineLoading } = useCandidateTimelineQuery(
     candidate?.id,
-    job?.id
+    job?.id,
   );
 
   const currentStageIndex = useMemo(
     () =>
       timelineData?.events.findIndex((e) =>
-        timelineData.current_stage
-          ? e.title === timelineData.current_stage
-          : null,
+        timelineData.current_stage ? e.title === timelineData.current_stage : null,
       ) ?? -1,
     [timelineData],
   );
-
 
   const handleBack = () => {
     navigate(`/dashboard/jobs/${jobSlug}/candidates`);
@@ -169,7 +160,6 @@ export default function CandidateOverview() {
     <AppPageShell width="wide" className="animate-in fade-in duration-500 p-4 space-y-4">
       <AppPageHeader
         title={`${candidateDisplayName}'s Results Overview`}
-        subtitle="Stage-wise recruitment breakdown including AI evaluations, HR decision audits, and associate reports."
         breadcrumbActions={
           <Button
             variant="outline"
@@ -192,9 +182,7 @@ export default function CandidateOverview() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Column 1: Name */}
           <div className="flex flex-col gap-1.5">
-            <span className="font-bold">
-              Name
-            </span>
+            <span className="font-bold">Name</span>
             <span className="text-sm font-bold text-foreground capitalize">
               {candidateDisplayName}
             </span>
@@ -202,9 +190,7 @@ export default function CandidateOverview() {
 
           {/* Column 2: Contact */}
           <div className="flex flex-col gap-1.5">
-            <span className="font-bold">
-              Contact
-            </span>
+            <span className="font-bold">Contact</span>
             <div className="flex flex-col gap-1.5 text-xs sm:text-sm text-foreground">
               <span className="flex items-center gap-2">
                 <Mail className="h-4 w-4 shrink-0" />
@@ -219,15 +205,11 @@ export default function CandidateOverview() {
 
           {/* Column 3: Role & Department */}
           <div className="flex flex-col gap-1.5">
-            <span className="font-bold">
-              Role & Department
-            </span>
+            <span className="font-bold">Role & Department</span>
             <div className="flex items-start gap-2">
               <Briefcase className="h-4 w-4 shrink-0 mt-0.5" />
               <div className="flex flex-col gap-1">
-                <span className="text-sm font-bold text-foreground leading-none">
-                  {job.title}
-                </span>
+                <span className="text-sm font-bold text-foreground leading-none">{job.title}</span>
                 {job.position?.name && (
                   <span className="text-xs capitalize leading-none">
                     Position: {job.position.name}
@@ -245,12 +227,6 @@ export default function CandidateOverview() {
       </Card>
 
       <Card className="rounded-2xl border-muted-foreground/10 shadow-sm overflow-hidden bg-card/50 backdrop-blur-md py-1 gap-2">
-        <CardHeader className="p-2 border-b border-border/50 bg-muted/20 pb-2 group-data-[size=sm]/card:[.border-b]:pb-2 [.border-b]:pb-2">
-          {/* <CardTitle className="text-sm font-bold text-foreground/80"> */}
-          <CardTitle className="text-sm font-bold flex items-center gap-2 text-foreground/80">
-            Stage Performance
-          </CardTitle>
-        </CardHeader>
         <CardContent className="p-0">
           {stagesEvents.length === 0 ? (
             <div className="p-4 text-center text-sm text-muted-foreground italic">
@@ -269,13 +245,15 @@ export default function CandidateOverview() {
               <TableBody>
                 {stagesEvents.map((event, index) => {
                   const isFutureStage = currentStageIndex !== -1 && index > currentStageIndex;
-                  return <StageRow
-                    key={event.stage_id || event.title}
-                    event={event}
-                    jobSlug={jobSlug || ""}
-                    candidateNameSlug={candidateName || ""}
-                    isFutureStage={isFutureStage}
-                  />
+                  return (
+                    <StageRow
+                      key={event.stage_id || event.title}
+                      event={event}
+                      jobSlug={jobSlug || ""}
+                      candidateNameSlug={candidateName || ""}
+                      isFutureStage={isFutureStage}
+                    />
+                  );
                 })}
               </TableBody>
             </Table>

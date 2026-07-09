@@ -30,7 +30,7 @@ export function ProjectTaskDisplay({
     return (
       <div className="grid grid-cols-[minmax(0,1fr)_180px] gap-4 w-full text-xs">
         <div className="min-w-0">
-          <p className={cn("text-foreground text-wrap wrap-break-word text-sm", titleClassName)}>{taskText}</p>
+          <p className={cn("text-foreground text-wrap wrap-break-word", titleClassName)}>{taskText}</p>
           {instructions && <p className="text-xs text-wrap wrap-break-word mt-0.5">{instructions}</p>}
           {showTypeSuffix && (
             <span className="text-xs block mt-0.5 text-muted-foreground">

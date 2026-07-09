@@ -127,7 +127,7 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
               if (!jobId || !jobName) return <span className="text-muted-foreground text-sm font-medium italic">N/A</span>;
               const slug = slugify(jobName);
               return (
-                <div className="flex items-center gap-1.5 min-w-[120px] max-w-50">
+                <div className="flex items-center gap-1.5 min-w-30 max-w-50">
                   <Link
                     to={`/dashboard/jobs/${slug}/candidates`}
                     state={{ state: { jobId: jobId } }}
@@ -193,7 +193,7 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
                   <HoverCardTrigger delay={10} closeDelay={10}>
                     <div className="relative w-14 h-1.5 bg-muted rounded-full">
                       <div className={`h-full rounded-full ${scoreColor(score, passing_threshold)}`} style={{ width: `${score}%` }} />
-                      <div className="absolute top-1/2 -translate-y-1/2 w-[2px] h-3 bg-neutral-600 dark:bg-neutral-400 rounded-sm -translate-x-1/2"
+                      <div className="absolute top-1/2 -translate-y-1/2 w-0.5 h-3 bg-neutral-600 dark:bg-neutral-400 rounded-sm -translate-x-1/2"
                         style={{ left: `${passing_threshold}%` }} />
                     </div>
                   </HoverCardTrigger>
@@ -257,7 +257,7 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
                 )}
               </div>
               {prevStageName && (
-                <span className="text-xs">
+                <span className="text-xs text-wrap">
                   {prevStageName}
                 </span>
               )}
@@ -289,8 +289,8 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
           }
 
           return (
-            <div className="flex flex-col gap-1 min-w-[120px]">
-              <span className=" text-sm text-foreground text-wrap max-w-[150px]">
+            <div className="flex flex-col gap-1 min-w-30">
+              <span className=" text-sm text-foreground text-wrap max-w-37.5">
                 {stage.template_name}
               </span>
               {/* <CandidateStatusBadge status={stage.status == "completed" ? stage.status.replace("completed", "complete") : stage.status.replace("ed", "")} /> */}
@@ -447,11 +447,9 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
 
           // Normalize to Title Case
           const normalized = toTitleCase(loc.trim());
-
-          const truncatedLoc = normalized.length > 20 ? `${normalized.slice(0, 18)}...` : normalized;
           return (
-            <div className="flex items-center gap-1.5 text-sm" >
-              <span>{truncatedLoc}</span>
+            <div className="flex items-center text-sm text-wrap" >
+              <span>{normalized}</span>
             </div>
           );
         },

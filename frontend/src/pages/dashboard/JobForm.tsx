@@ -216,7 +216,6 @@ export default function CreateJob() {
     <AppPageShell
       width="wide"
       gap="default"
-      className="animate-in fade-in duration-500 bg-background"
     >
       <PageHeader
         title={isEditMode ? "Edit Job" : "Create Job"}
