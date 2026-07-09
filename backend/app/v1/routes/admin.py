@@ -475,7 +475,7 @@ async def get_all_criteria(
     total = await db.scalar(count_stmt) or 0
 
     # Get paginated data
-    stmt = stmt.order_by(Criterion.name).offset(skip).limit(limit)
+    stmt = stmt.order_by(Criterion.created_at.desc()).offset(skip).limit(limit)
     res = await db.execute(stmt)
     criteria = res.scalars().all()
     
