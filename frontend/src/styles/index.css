@@ -134,7 +134,7 @@
     /* Fluid root: 14px (mobile) → 22px (4K) — smooth linear scale, no breakpoint jumps */
     /* font-size: clamp(0.875rem, 0.625rem + 0.833vw, 1.375rem); */
     font-size: clamp(0.875rem, 0.725rem + 0.5vw, 1.375rem);
-    @apply font-sans;
+    @apply font-sans scrollbar-thin;
   }
 
   body {
@@ -170,6 +170,7 @@
   }
 
   .custom-scrollbar {
+    scrollbar-width: thin;
     &::-webkit-scrollbar {
       width: 6px;
       height: 6px;
