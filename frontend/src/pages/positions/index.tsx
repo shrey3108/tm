@@ -271,7 +271,6 @@ export default function AdminJobPositions() {
           searchValue={search}
           onSearchChange={handleSearchChange}
           searchPlaceholder="Filter positions by name..."
-          initialSorting={[{ id: "name", desc: false }]}
           isServerSide={true}
           pageIndex={pageIndex}
           pageSize={pageSize}

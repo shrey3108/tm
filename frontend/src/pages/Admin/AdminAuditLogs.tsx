@@ -145,7 +145,6 @@ export default function AdminAuditLogs() {
           loading={loading}
           searchKey="action"
           searchPlaceholder="Filter by action..."
-          initialSorting={[{ id: "created_at", desc: true }]}
           pageIndex={pageIndex}
           pageSize={pageSize}
           onPaginationChange={setPagination}

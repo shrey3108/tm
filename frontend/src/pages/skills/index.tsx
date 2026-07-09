@@ -284,7 +284,6 @@ export default function AdminSkills() {
           searchPlaceholder="Filter skills by name..."
           searchValue={search}
           onSearchChange={handleSearchChange}
-          initialSorting={[{ id: "name", desc: false }]}
           isServerSide={true}
           pageIndex={pageIndex}
           pageSize={pageSize}

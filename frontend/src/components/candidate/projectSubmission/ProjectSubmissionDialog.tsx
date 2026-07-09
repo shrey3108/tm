@@ -63,7 +63,6 @@ export function ProjectSubmissionDialog({
   // Fetch candidate's assigned task paper
   const jobSlug = slugify(job?.title);
   const { candidate: resolvedCandidate } = useResolvedJobAndCandidate({ jobSlug: jobSlug, candidateNameSlug: candidateName, stateJob: job, stateCandidateId: candidateId });
-  console.log({ resolvedCandidate });
 
   const currentStage = resolvedCandidate?.pipeline?.find(
     (s) => s.stage_id === stageId || (s as any).id === stageId || s.job_stage_id === stageId
@@ -113,7 +112,7 @@ export function ProjectSubmissionDialog({
     }
   };
   const { data: assignedPaper } = useCandidateTestPaper(candidateId);
-  console.log(assignedPaper);
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-175 h-[93vh] flex flex-col p-0 bg-card/95 backdrop-blur-xl border-muted-foreground/20 shadow-2xl rounded-2xl gap-2">

@@ -260,7 +260,6 @@ export default function AdminDepartments() {
           searchValue={search}
           onSearchChange={handleSearchChange}
           searchPlaceholder="Filter departments by name..."
-          initialSorting={[{ id: "name", desc: false }]}
           isServerSide={true}
           pageIndex={pageIndex}
           pageSize={pageSize}

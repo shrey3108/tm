@@ -527,14 +527,15 @@ export const CandidateTableFilters = ({
             </Button>
 
           </div> : null} */}
+          {/* Actions slot (e.g. Reanalyze All button) */}
+          {actions && (
+            <div className="shrink-0 flex items-center">
+              {actions}
+            </div>
+          )}
         </div>
 
-        {/* Actions slot (e.g. Reanalyze All button) */}
-        {actions && (
-          <div className="shrink-0 flex items-center">
-            {actions}
-          </div>
-        )}
+
 
         {/* Result Count Area (Anchored Right) */}
         <div className="shrink-0 lg:ml-auto text-xs font-medium flex items-center gap-2 p-2 border rounded-xl bg-background/50 h-10 self-start">

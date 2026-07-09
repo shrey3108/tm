@@ -340,7 +340,7 @@ export default function AdminJobPriorities() {
           searchValue={search}
           onSearchChange={handleSearchChange}
           searchPlaceholder="Filter priorities by name..."
-          initialSorting={[{ id: "name", desc: false }]}
+          // initialSorting={[{ id: "name", desc: false }]}
           isServerSide={true}
           pageIndex={pageIndex}
           pageSize={pageSize}

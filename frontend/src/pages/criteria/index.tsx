@@ -310,7 +310,7 @@ export default function AdminJobCriteria() {
                     searchPlaceholder="Search criteria..."
                     searchValue={search}
                     onSearchChange={handleSearchChange}
-                    initialSorting={[{ id: "created_at", desc: true }]}
+
                     isServerSide={true}
                     pageIndex={pageIndex}
                     pageSize={pageSize}

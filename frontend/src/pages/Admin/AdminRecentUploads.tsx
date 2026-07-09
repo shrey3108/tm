@@ -174,7 +174,6 @@ export default function AdminRecentUploads() {
           loading={loading}
           searchKey="file_name"
           searchPlaceholder="Filter by file name..."
-          initialSorting={[{ id: "created_at", desc: true }]}
           pageIndex={pageIndex}
           pageSize={pageSize}
           onPaginationChange={setPagination}

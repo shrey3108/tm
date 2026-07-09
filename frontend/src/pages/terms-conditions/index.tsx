@@ -263,7 +263,6 @@ export default function AdminGuidelines() {
           searchValue={search}
           onSearchChange={handleSearchChange}
           searchPlaceholder="Filter terms & conditions by content..."
-          initialSorting={[{ id: "created_at", desc: true }]}
           isServerSide={true}
           pageIndex={pageIndex}
           pageSize={pageSize}

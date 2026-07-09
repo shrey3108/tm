@@ -24,9 +24,9 @@ export function CandidateOverviewButton({ candidate, jobSlug }: CandidateOvervie
   };
 
 
-  // const isCompletedAllRounds = true
+
   const isCompletedAllRounds = !!candidate.pipeline && candidate.pipeline.length > 0 && candidate.pipeline.every(
-    (stage) => stage.status === "completed" || stage.status === "failed"
+    (stage) => (stage.status === "completed" || stage.status === "failed") && stage.hr_decision !== "pending"
   );
 
   return (

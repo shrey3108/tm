@@ -191,7 +191,6 @@ export default function JobCandidatesBarChart({ isAnimationActive = true, data: 
                             label={renderLabel}
                             shape={(props: any) => {
                                 const { x, y, width, height } = props;
-                                console.log(props);
                                 return (
                                     <Rectangle
                                         x={x}
