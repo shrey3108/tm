@@ -111,6 +111,8 @@ export default function AdminUsers() {
   const columns: ColumnDef<UserAdminRead>[] = [
     {
       accessorKey: "full_name",
+      size: 20,
+      meta: { overflow: 'ellipsis' },
       header: ({ column }) => (
         <Button
           variant="ghost"
@@ -121,10 +123,12 @@ export default function AdminUsers() {
           <ArrowUpDown className="h-4 w-4" />
         </Button>
       ),
-      cell: ({ row }) => <span>{row.original.full_name || "N/A"}</span>,
+      cell: ({ row }) => <div className="text-left h-9 flex items-center justify-start">{row.original.full_name || "N/A"}</div>,
     },
     {
       accessorKey: "email",
+      size: 25,
+      meta: { overflow: 'ellipsis' },
       header: ({ column }) => (
         <Button
           variant="ghost"
@@ -138,6 +142,8 @@ export default function AdminUsers() {
     },
     {
       accessorKey: "is_active",
+      size: 12,
+      meta: { overflow: 'ellipsis' },
       header: ({ column }) => (
         <Button
           variant="ghost"
@@ -152,6 +158,8 @@ export default function AdminUsers() {
     },
     {
       accessorKey: "role_name",
+      size: 13,
+      meta: { overflow: 'ellipsis' },
       header: () => (
         <div className="">
           <span className="font-semibold text-base">Role Name</span>
@@ -165,6 +173,8 @@ export default function AdminUsers() {
     },
     {
       accessorKey: "created_at",
+      size: 15,
+      meta: { overflow: 'ellipsis' },
       header: ({ column }) => (
         <Button
           variant="ghost"
@@ -179,6 +189,8 @@ export default function AdminUsers() {
     },
     {
       id: "actions",
+      size: 15,
+      meta: { overflow: 'ellipsis' },
       header: () => <div className="flex items-center justify-center ">Actions</div>,
       cell: ({ row }) => {
         const user = row.original;

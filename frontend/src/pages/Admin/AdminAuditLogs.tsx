@@ -65,6 +65,8 @@ export default function AdminAuditLogs() {
   const columns: ColumnDef<AuditLogRead>[] = [
     {
       accessorKey: "created_at",
+      size: 30,
+      meta: { overflow: 'ellipsis' },
       header: ({ column }) => (
         <Button
           variant="ghost"
@@ -79,6 +81,8 @@ export default function AdminAuditLogs() {
     },
     {
       accessorKey: "action",
+      size: 35,
+      meta: { overflow: 'ellipsis' },
 
       header: () => {
         return (
@@ -94,6 +98,8 @@ export default function AdminAuditLogs() {
     },
     {
       accessorKey: "user_name",
+      size: 35,
+      meta: { overflow: 'ellipsis' },
 
       header: () => {
         return (

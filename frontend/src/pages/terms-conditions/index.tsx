@@ -136,15 +136,19 @@ export default function AdminGuidelines() {
   const columns: ColumnDef<GuidelineRead>[] = [
     {
       accessorKey: "content",
+      size: 50,
+      meta: { overflow: 'wrap' },
       header: () => <span className="text-base">Content</span>,
       cell: ({ row }) => (
-        <div className="max-w-[400px] text-wrap capitalize">
+        <div className="text-wrap capitalize">
           {row.original.content}
         </div>
       ),
     },
     {
       accessorKey: "is_default",
+      size: 15,
+      meta: { overflow: 'ellipsis' },
       header: ({ column }) => (
         <div className="flex justify-center">
           <Button
@@ -169,6 +173,8 @@ export default function AdminGuidelines() {
     },
     {
       accessorKey: "created_at",
+      size: 20,
+      meta: { overflow: 'ellipsis' },
       header: ({ column }) => (
         <Button
           variant="ghost"
@@ -183,6 +189,8 @@ export default function AdminGuidelines() {
     },
     {
       id: "actions",
+      size: 15,
+      meta: { overflow: 'ellipsis' },
       header: () => (
         <div className="flex items-center justify-center gap-0.5">
           <span className="text-base">Actions</span>

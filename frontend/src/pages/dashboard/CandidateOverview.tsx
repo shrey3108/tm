@@ -17,7 +17,7 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui/table";
-import { Card, CardContent} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import CandidateStatusBadge from "@/components/shared/CandidateStatusBadge";
 import { Button } from "@/components/ui/button";
@@ -56,7 +56,7 @@ function StageRow({ event, jobSlug, candidateNameSlug, isFutureStage }: StageRow
           >
             <CandidateStatusBadge status={event.ai_result} />
             {event.score !== null && event.score !== undefined && (
-              <span className="text-xs font-bold">
+              <span className="font-bold">
                 {event.score.toFixed(1)}
                 {event.title === "Resume Screening" ? "%" : "/5"}
               </span>
@@ -74,7 +74,7 @@ function StageRow({ event, jobSlug, candidateNameSlug, isFutureStage }: StageRow
           >
             <CandidateStatusBadge status={event.hr_decision} />
             {event.hr_score !== null && event.hr_score !== undefined && (
-              <span className="text-xs font-bold">{event.hr_score.toFixed(1)}/5</span>
+              <span className="font-bold">{event.hr_score.toFixed(1)}/5</span>
             )}
           </div>
         ) : (
@@ -133,7 +133,7 @@ export default function CandidateOverview() {
 
   if (isLoading || isTimelineLoading) {
     return (
-      <AppPageShell width="wide" className="p-4">
+      <AppPageShell width="wide">
         <LoadingSpinner message="Loading candidate stage overview..." />
       </AppPageShell>
     );
@@ -141,7 +141,7 @@ export default function CandidateOverview() {
 
   if (error || !candidate || !job) {
     return (
-      <AppPageShell width="wide" className="p-4 space-y-4">
+      <AppPageShell width="wide">
         <div className="p-4 text-center border border-destructive/20 rounded-xl bg-destructive/5 text-destructive">
           Failed to resolve candidate and job details. Please try again.
         </div>
@@ -157,7 +157,7 @@ export default function CandidateOverview() {
   const stagesEvents = timelineData?.events.filter((e) => e.event_type === "stage") || [];
 
   return (
-    <AppPageShell width="wide" className="animate-in fade-in duration-500 p-4 space-y-4">
+    <AppPageShell width="wide">
       <AppPageHeader
         title={`${candidateDisplayName}'s Results Overview`}
         breadcrumbActions={

@@ -56,7 +56,7 @@ export default function TranscriptPage() {
   }
 
   return (
-    <AppPageShell width="wide" className="pb-20">
+    <AppPageShell width="wide">
       <div className="flex flex-col gap-8">
         {/* Header Section */}
         <div className="flex items-center justify-between">

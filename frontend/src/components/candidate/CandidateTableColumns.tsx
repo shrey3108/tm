@@ -52,6 +52,8 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
       // 1. CANDIDATE
       {
         id: "candidate",
+        size: 16,
+        meta: { overflow: 'ellipsis' },
         accessorFn: (row) =>
           `${row.first_name || ""} ${row.last_name || ""}`.trim(),
         header: ({ column }) => (
@@ -115,6 +117,8 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
           {
             id: "job_context",
             accessorKey: "applied_job_id",
+            size: 8,
+            meta: { overflow: 'ellipsis' },
 
             header: () => {
               return <div className="flex items-center justify-between">
@@ -127,7 +131,7 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
               if (!jobId || !jobName) return <span className="text-muted-foreground text-sm font-medium italic">N/A</span>;
               const slug = slugify(jobName);
               return (
-                <div className="flex items-center gap-1.5 min-w-30 max-w-50">
+                <div className="flex items-center gap-1.5">
                   <Link
                     to={`/dashboard/jobs/${slug}/candidates`}
                     state={{ state: { jobId: jobId } }}
@@ -146,6 +150,8 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
       {
         id: "result",
         accessorKey: "resume_score",
+        size: 10,
+        meta: { overflow: 'ellipsis' },
         header: ({ column }) => (
           <Button
             variant="ghost"
@@ -223,6 +229,8 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
       {
         id: "hr_decision",
         accessorKey: "hr_decision",
+        size: 10,
+        meta: { overflow: 'ellipsis' },
         header: ({ column }) => (
           <Button
             variant="ghost"
@@ -274,6 +282,8 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
       {
         id: "current_stage",
         accessorKey: "current_stage",
+        size: 9,
+        meta: { overflow: 'ellipsis' },
 
         header: () => {
           return <div className="flex items-center justify-between">
@@ -303,6 +313,8 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
       // 5. SOCIALS
       {
         id: "socials",
+        size: 6,
+        meta: { overflow: 'visible' },
 
         header: () => {
           return <div className="flex items-center justify-between">
@@ -407,6 +419,8 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
       // 6. APPLIED AT
       {
         id: "applied_at",
+        size: 8,
+        meta: { overflow: 'ellipsis' },
         accessorFn: (row) => row.applied_at || row.created_at,
         header: ({ column }) => (
           <Button
@@ -430,6 +444,8 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
       {
         id: "location",
         accessorKey: "location",
+        size: 9,
+        meta: { overflow: 'ellipsis' },
         header: ({ column }) => (
           <Button
             variant="ghost"
@@ -460,6 +476,8 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
         ? [
           {
             id: "actions",
+            size: 12,
+            meta: { overflow: 'visible' },
             header: () => <div className="text-center text-base">Actions</div>,
             cell: ({ row }: { row: { original: T } }) => (
               <div className="flex items-center justify-center gap-2">

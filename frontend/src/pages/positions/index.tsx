@@ -147,6 +147,8 @@ export default function AdminJobPositions() {
   const columns: ColumnDef<JobPositionRead>[] = [
     {
       accessorKey: "name",
+      size: 30,
+      meta: { overflow: 'ellipsis' },
       header: ({ column }) => (
         <Button
           variant="ghost"
@@ -160,6 +162,8 @@ export default function AdminJobPositions() {
     },
     {
       accessorKey: "created_at",
+      size: 25,
+      meta: { overflow: 'ellipsis' },
       header: ({ column }) => (
         <Button variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
@@ -174,6 +178,8 @@ export default function AdminJobPositions() {
     },
     {
       accessorKey: "updated_at",
+      size: 25,
+      meta: { overflow: 'ellipsis' },
       header: ({ column }) => (
         <Button variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
@@ -188,6 +194,8 @@ export default function AdminJobPositions() {
     },
     {
       id: "actions",
+      size: 20,
+      meta: { overflow: 'ellipsis' },
       header: () => (
         <div className="flex items-center justify-center">
           <span className="text-base">

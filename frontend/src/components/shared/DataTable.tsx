@@ -220,7 +220,11 @@ export function DataTable<TData, TValue>({
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
                   return (
-                    <TableHead key={header.id} className="px-1 font-semibold text-base">
+                    <TableHead
+                      key={header.id}
+                      className="px-1 font-semibold text-base"
+                      style={header.column.columnDef.size && header.column.columnDef.size !== 150 ? { width: `${header.column.columnDef.size}%` } : undefined}
+                    >
                       {header.isPlaceholder
                         ? null
                         : flexRender(header.column.columnDef.header, header.getContext())}
@@ -242,11 +246,21 @@ export function DataTable<TData, TValue>({
                   data-state={row.getIsSelected() && "selected"}
                   className={loading ? "opacity-50 pointer-events-none transition-opacity" : "transition-opacity"}
                 >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="w-fit p-1 h-fit">
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
-                  ))}
+                  {row.getVisibleCells().map((cell) => {
+                    const overflow = (cell.column.columnDef.meta as any)?.overflow ?? 'ellipsis';
+                    return (
+                      <TableCell
+                        key={cell.id}
+                        className={cn(
+                          "p-1 h-fit",
+                          overflow === 'ellipsis' && "overflow-hidden text-ellipsis whitespace-nowrap",
+                          overflow === 'wrap' && "whitespace-normal wrap-break-word",
+                        )}
+                      >
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
+                    );
+                  })}
                 </TableRow>
               ))
             ) : (
@@ -291,7 +305,7 @@ export function DataTable<TData, TValue>({
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-          <div className={cn("flex w-[100px] items-center justify-center text-sm font-medium", !data.length && "text-muted-foreground")}>
+          <div className={cn("flex w-25 items-center justify-center text-sm font-medium", !data.length && "text-muted-foreground")}>
             Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
           </div>
           <div className="flex items-center space-x-2">

@@ -6,6 +6,7 @@
 import React, { type ReactNode } from "react";
 import ErrorDisplay from "@/components/shared/ErrorDisplay";
 import Pagination from "@/components/shared/Pagination";
+import { cn } from "@/lib/utils";
 
 import { TableRowSkeleton } from "@/components/shared/SkeletonVariants";
 import { Card, CardContent } from "@/components/ui/card";
@@ -31,6 +32,10 @@ export interface Column<T> {
   className?: string;
   /** Optional inline styles for the column */
   style?: React.CSSProperties;
+  /** Optional width for the column (e.g., '30%', '100px') */
+  width?: string;
+  /** Optional overflow behavior */
+  overflow?: 'ellipsis' | 'wrap';
 }
 
 /**
@@ -106,11 +111,15 @@ function AdminDataTable<T>({
           </div>
         )}
 
-        <Table>
+        <Table className="table-fixed">
           <TableHeader>
             <TableRow>
               {columns.map((column, index) => (
-                <TableHead key={index} className={column.className} style={column.style}>
+                <TableHead
+                  key={index}
+                  className={column.className}
+                  style={column.width ? { width: column.width, ...column.style } : column.style}
+                >
                   {column.header}
                 </TableHead>
               ))}
@@ -133,13 +142,24 @@ function AdminDataTable<T>({
             ) : (
               data.map((item) => (
                 <TableRow key={getRowKey(item)}>
-                  {columns.map((column, index) => (
-                    <TableCell key={index} className={column.className} style={column.style}>
-                      {typeof column.accessor === "function"
-                        ? column.accessor(item)
-                        : (item[column.accessor] as ReactNode)}
-                    </TableCell>
-                  ))}
+                  {columns.map((column, index) => {
+                    const overflow = column.overflow ?? 'ellipsis';
+                    return (
+                      <TableCell
+                        key={index}
+                        className={cn(
+                          column.className,
+                          overflow === 'ellipsis' && "overflow-hidden text-ellipsis whitespace-nowrap",
+                          overflow === 'wrap' && "whitespace-normal break-words",
+                        )}
+                        style={column.style}
+                      >
+                        {typeof column.accessor === "function"
+                          ? column.accessor(item)
+                          : (item[column.accessor] as ReactNode)}
+                      </TableCell>
+                    );
+                  })}
                 </TableRow>
               ))
             )}

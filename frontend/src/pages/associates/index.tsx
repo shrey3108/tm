@@ -127,6 +127,8 @@ export default function AdminAssociates() {
   const columns: ColumnDef<AssociateRead>[] = [
     {
       accessorKey: "name",
+      size: 35,
+      meta: { overflow: 'ellipsis' },
       header: ({ column }) => (
         <div className="max-w-50">
           <Button
@@ -147,6 +149,8 @@ export default function AdminAssociates() {
     },
     {
       accessorKey: "email",
+      size: 45,
+      meta: { overflow: 'ellipsis' },
       header: ({ column }) => (
         <div className="max-w-75">
           <Button
@@ -169,6 +173,8 @@ export default function AdminAssociates() {
       ? [
           {
             id: "actions",
+            size: 20,
+            meta: { overflow: 'ellipsis' },
             header: () => (
               <div className="flex items-center justify-center gap-0.5">
                 <span className="text-base">Actions</span>

@@ -93,6 +93,8 @@ export default function AdminRoles() {
   const roleColumns: ColumnDef<RoleRead>[] = [
     {
       accessorKey: "name",
+      size: 30,
+      meta: { overflow: 'ellipsis' },
       header: () => (
         <div className="text-left text-base">Role Name</div>
       ),
@@ -100,6 +102,8 @@ export default function AdminRoles() {
     },
     {
       accessorKey: "created_at",
+      size: 25,
+      meta: { overflow: 'ellipsis' },
       header: () => (
         <div className="text-center text-base">Created At</div>
       ),
@@ -111,17 +115,21 @@ export default function AdminRoles() {
     },
     {
       accessorKey: "user_count",
+      size: 20,
+      meta: { overflow: 'ellipsis' },
       header: () => (
         <div className="text-center text-base">Users Count</div>
       ),
       cell: ({ row }) => (
-        <div className="text-center">
+        <div className="text-center h-9 flex items-center justify-center">
           {row.original.user_count}
         </div>
       ),
     },
     {
       id: "actions",
+      size: 25,
+      meta: { overflow: 'ellipsis' },
       header: () => (
         <div className="text-center text-base">Actions</div>
       ),

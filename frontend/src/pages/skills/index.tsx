@@ -154,8 +154,10 @@ export default function AdminSkills() {
   const columns: ColumnDef<SkillRead>[] = [
     {
       accessorKey: "name",
+      size: 30,
+      meta: { overflow: 'ellipsis' },
       header: ({ column }) => (
-        <div className="max-w-50">
+        <div>
           <Button
             variant="ghost"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
@@ -167,28 +169,32 @@ export default function AdminSkills() {
         </div>
       ),
       cell: ({ row }) => (
-        <div className="flex items-center gap-2 min-w-50 truncate ">
+        <div className="flex items-center gap-2 truncate ">
           {row.original.name}
         </div>
       ),
     },
     {
       accessorKey: "description",
+      size: 35,
+      meta: { overflow: 'wrap' },
       header: () => {
         return (
-          <div className="flex items-center gap-2  max-w-150">
+          <div className="flex items-center gap-2">
             <span>Description</span>
           </div>
         );
       },
       cell: ({ row }) => (
-        <div className="flex items-center gap-2 max-w-150 truncate ">
+        <div className="flex items-center gap-2 truncate">
           {row.original.description || "No description provided"}
         </div>
       ),
     },
     {
       accessorKey: "default_weightage",
+      size: 10,
+      meta: { overflow: 'ellipsis' },
       header: () => {
         return (
           <div className="flex items-center justify-center gap-2">
@@ -197,7 +203,7 @@ export default function AdminSkills() {
         );
       },
       cell: ({ row }) => (
-        <div className="flex items-center justify-center gap-2 max-w-37.5 font-medium text-foreground">
+        <div className="flex items-center justify-center gap-2 font-medium text-foreground">
           {row.original.default_weightage ?? 10}
         </div>
       ),
@@ -206,6 +212,8 @@ export default function AdminSkills() {
       ? [
         {
           id: "actions",
+          size: 25,
+          meta: { overflow: 'ellipsis' },
           header: () => (
             <div className="flex items-center justify-center gap-2">
               <span>Actions</span>

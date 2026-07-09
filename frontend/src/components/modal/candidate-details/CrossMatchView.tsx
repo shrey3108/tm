@@ -82,6 +82,8 @@ export function CrossMatchView({ resumeId, onClose }: CrossMatchViewProps) {
     {
       header: "Job",
       accessorKey: "job_title",
+      size: 35,
+      meta: { overflow: 'ellipsis' },
       cell: ({ row }) => (
         <div className="flex gap-1">
           <span className="font-medium text-foreground">
@@ -104,6 +106,8 @@ export function CrossMatchView({ resumeId, onClose }: CrossMatchViewProps) {
           <ArrowUpDown className="h-4 w-4" />
         </Button></>,
       accessorKey: "match_score",
+      size: 20,
+      meta: { overflow: 'ellipsis' },
       cell: ({ row }) => (
         <div className="flex items-center gap-1.5 min-w-[140px]">
           <div className="w-20 h-1.5 bg-muted rounded-full overflow-hidden">
@@ -120,6 +124,8 @@ export function CrossMatchView({ resumeId, onClose }: CrossMatchViewProps) {
     },
     {
       accessorKey: "status",
+      size: 20,
+      meta: { overflow: 'ellipsis' },
       header: ({ column }) => <>
         <Button
           variant="ghost"
@@ -150,6 +156,8 @@ export function CrossMatchView({ resumeId, onClose }: CrossMatchViewProps) {
     },
     {
       accessorKey: "actions",
+      size: 25,
+      meta: { overflow: 'ellipsis' },
       header: "View Job",
       cell: ({ row }) => (
         <Button

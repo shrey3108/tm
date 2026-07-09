@@ -148,7 +148,7 @@ export default function AssignAssociatePage() {
   ]
 
   return (
-    <AppPageShell width="full" className="p-0 bg-background">
+    <AppPageShell width="full">
       <AppPageHeader
         headingClassName="text-lg sm:text-xl capitalize"
         title={`Assign Associates for ${candidateName}`}

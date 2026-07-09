@@ -137,6 +137,8 @@ export function CandidateTable<T extends UnifiedCandidate>({
 
     const selectColumn: ColumnDef<T> = {
       id: "select",
+      size: 4,
+      meta: { overflow: 'ellipsis' },
       header: ({ table }) => (
         <div className="flex items-center justify-center pl-2.5 pr-1.5">
           <Checkbox

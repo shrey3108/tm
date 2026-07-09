@@ -39,9 +39,9 @@ export default function AdminDashboard() {
   const { departments, stages: filteredStages, filteredReport, filteredJobs, filters, setFilter, resetFilters, toggleFilter, clearFilter, hasActiveFilters } = useAdminDashboardFilters(report, jobs, stages);
 
   const jobColumns: Column<any>[] = [
-    { header: "Job Title", accessor: "job_title" },
-    { header: "Department", accessor: "department", className: "capitalize text-center" },
-    { header: "Candidate Count", accessor: "candidate_count", className: "text-center" },
+    { header: "Job Title", accessor: "job_title", width: "40%", overflow: "ellipsis" },
+    { header: "Department", accessor: "department", className: "capitalize text-center", width: "30%", overflow: "ellipsis" },
+    { header: "Candidate Count", accessor: "candidate_count", className: "text-center", width: "30%", overflow: "ellipsis" },
   ];
 
   return (

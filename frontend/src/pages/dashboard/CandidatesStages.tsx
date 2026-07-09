@@ -97,7 +97,7 @@ export default function CandidatesStages() {
   const chartData = evaluation?.evaluation_data ? getChartData(evaluation.evaluation_data) : [];
 
   return (
-    <AppPageShell width="full" className="p-0 overflow-hidden bg-background">
+    <AppPageShell width="full">
       <StageCandidatesHeader
         job={job || null}
         candidateName={candidateName}

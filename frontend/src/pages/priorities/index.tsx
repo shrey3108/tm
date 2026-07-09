@@ -127,7 +127,7 @@ export default function AdminJobPriorities() {
         const trimmed = name.trim();
         const val =
           (trimmed.startsWith("'") && trimmed.endsWith("'")) ||
-          (trimmed.startsWith('"') && trimmed.endsWith('"'))
+            (trimmed.startsWith('"') && trimmed.endsWith('"'))
             ? trimmed.slice(1, -1)
             : trimmed;
         return val ? [val] : [];
@@ -164,6 +164,8 @@ export default function AdminJobPriorities() {
   const columns: ColumnDef<JobPriorityRead>[] = [
     {
       accessorKey: "name",
+      size: 10,
+      meta: { overflow: 'ellipsis' },
       header: ({ column }) => (
         <Button
           variant="ghost"
@@ -182,6 +184,8 @@ export default function AdminJobPriorities() {
     },
     {
       accessorKey: "duration_days",
+      size: 13,
+      meta: { overflow: 'ellipsis' },
       header: ({ column }) => (
         <Button
           variant="ghost"
@@ -201,6 +205,8 @@ export default function AdminJobPriorities() {
     },
     {
       accessorKey: "created_at",
+      size: 12,
+      meta: { overflow: 'ellipsis' },
       header: ({ column }) => (
         <Button
           variant="ghost"
@@ -217,6 +223,8 @@ export default function AdminJobPriorities() {
     },
     {
       accessorKey: "assigned_jobs_count",
+      size: 22,
+      meta: { overflow: 'ellipsis' },
       header: ({ column }) => (
         <div className="flex justify-center">
           <Button
@@ -237,6 +245,8 @@ export default function AdminJobPriorities() {
     },
     {
       accessorKey: "associate_reminder_hours",
+      size: 22,
+      meta: { overflow: 'ellipsis' },
       header: ({ column }) => (
         <div className="flex justify-center">
           <Button
@@ -257,6 +267,8 @@ export default function AdminJobPriorities() {
     },
     {
       id: "actions",
+      size: 15,
+      meta: { overflow: 'ellipsis' },
       header: () => (
         <div className="flex items-center justify-center gap-2">
           <span className="font-semibold">

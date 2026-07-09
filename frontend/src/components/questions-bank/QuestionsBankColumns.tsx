@@ -35,11 +35,15 @@ export const getQuestionsBankColumns = ({
 }: ColumnHandlers): ColumnDef<FlatItem>[] => [
     {
       id: "index",
+      size: 6,
+      meta: { overflow: 'ellipsis' },
       header: () => <div className="flex items-center justify-center">No.</div>,
       cell: ({ row }) => <div className="flex items-center justify-center text-base">{row.index + 1}</div>,
     },
     {
       accessorKey: "content",
+      size: 44,
+      meta: { overflow: 'wrap' },
       header: () => (
         <div className="min-w-[400px] ">
           <span className="text-base">Content</span>
@@ -54,7 +58,7 @@ export const getQuestionsBankColumns = ({
 
           return (
             <div className="min-w-[400px] whitespace-pre-wrap wrap-break-word space-y-1">
-              <div className="font-semibold text-foreground">{item.content}</div>
+              <div className="text-foreground">{item.content}</div>
               {tasks.length > 0 && (
                 <div className="flex items-center gap-1.5 text-[10px] font-bold">
                   <span className="inline-flex items-center gap-1 bg-primary/5 text-primary border border-primary/10 px-2 py-0.5 rounded-full">
@@ -76,7 +80,7 @@ export const getQuestionsBankColumns = ({
 
           return (
             <div className="min-w-[400px] whitespace-pre-wrap wrap-break-word space-y-1">
-              <div className="font-medium text-foreground">{item.content}</div>
+              <div className="text-foreground">{item.content}</div>
               {(marks !== undefined || (duration !== undefined && duration > 0)) && (
                 <div className="flex items-center gap-1.5 text-[10px] font-bold">
                   {marks !== undefined && (
@@ -104,6 +108,8 @@ export const getQuestionsBankColumns = ({
     },
     {
       accessorKey: "type",
+      size: 12,
+      meta: { overflow: 'ellipsis' },
       header: () => <div className=" flex items-center justify-center">Type</div>,
       cell: ({ row }) => {
         const typeLabels: Record<FlatItem["type"], string> = {
@@ -120,6 +126,8 @@ export const getQuestionsBankColumns = ({
     },
     {
       accessorKey: "skills",
+      size: 22,
+      meta: { overflow: 'wrap' },
       header: () => (
         <div className="flex items-center gap-2 min-w-[160px]">
           <span className="">Skills</span>
@@ -143,6 +151,8 @@ export const getQuestionsBankColumns = ({
     },
     {
       id: "actions",
+      size: 16,
+      meta: { overflow: 'ellipsis' },
       header: () => (
         <div className="flex items-center justify-center gap-2">
           <span className="">Actions</span>

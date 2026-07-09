@@ -131,6 +131,8 @@ export default function AdminJobStages() {
     const columns: ColumnDef<StageTemplate>[] = [
         {
             accessorKey: "default_order",
+            size: 8,
+            meta: { overflow: 'ellipsis' },
             header: ({ column }) => (
                 <Button
                     variant="ghost"
@@ -154,6 +156,8 @@ export default function AdminJobStages() {
         },
         {
             accessorKey: "name",
+            size: 17,
+            meta: { overflow: 'ellipsis' },
             header: ({ column }) => (
                 <Button
                     variant="ghost"
@@ -170,6 +174,8 @@ export default function AdminJobStages() {
         },
         {
             accessorKey: "description",
+            size: 25,
+            meta: { overflow: 'wrap' },
             header: () => {
                 return <div className="flex items-center gap-2">
                     <span className="text-base">Description</span>
@@ -183,6 +189,8 @@ export default function AdminJobStages() {
         },
         {
             accessorKey: "is_default",
+            size: 13,
+            meta: { overflow: 'ellipsis' },
             header: ({ column }) => (
                 <Button
                     variant="ghost"
@@ -206,6 +214,8 @@ export default function AdminJobStages() {
         },
         {
             accessorKey: "required_inputs",
+            size: 22,
+            meta: { overflow: 'wrap' },
             header: () => (
                 <div className="flex items-center justify-center gap-2">
                     <span>Criteria</span>
@@ -222,6 +232,8 @@ export default function AdminJobStages() {
         },
         {
             id: "actions",
+            size: 15,
+            meta: { overflow: 'ellipsis' },
             header: () => {
                 return <div className="flex items-center justify-center gap-2">
                     <span className="text-base">Actions</span>

@@ -250,7 +250,7 @@ export default function JobCandidates() {
         emailFilterState={selectedCandidates.length > 0 ? resolvedEmailState : undefined}
       />
 
-      <div className="relative min-h-[400px]">
+      <div className="relative min-h-100">
         {viewMode === "analytics" ? (
           /* Analytics View: Only Charts */
           <div className="animate-in fade-in slide-in-from-right-4 duration-500">

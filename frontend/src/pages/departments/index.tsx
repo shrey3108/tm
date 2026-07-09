@@ -155,6 +155,8 @@ export default function AdminDepartments() {
   const columns: ColumnDef<DepartmentRead>[] = [
     {
       accessorKey: "name",
+      size: 35,
+      meta: { overflow: 'ellipsis' },
       header: ({ column }) => (
         <Button
           variant="ghost"
@@ -169,6 +171,8 @@ export default function AdminDepartments() {
     },
     {
       accessorKey: "description",
+      size: 45,
+      meta: { overflow: 'wrap' },
       header: () => {
         return (
           <div className="flex items-center gap-2">
@@ -182,6 +186,8 @@ export default function AdminDepartments() {
       ? [
         {
           id: "actions",
+          size: 20,
+          meta: { overflow: 'ellipsis' },
           header: () => (
             <div className="flex items-center justify-center gap-0.5">
               <span className="text-base">Actions</span>

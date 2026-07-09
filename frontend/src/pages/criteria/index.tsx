@@ -164,6 +164,8 @@ export default function AdminJobCriteria() {
         {
             id: "name",
             accessorKey: "name",
+            size: 25,
+            meta: { overflow: 'ellipsis' },
             header: ({ column }) => (
                 <Button
                     variant="ghost"
@@ -181,6 +183,8 @@ export default function AdminJobCriteria() {
         {
             id: "description",
             accessorKey: "description",
+            size: 35,
+            meta: { overflow: 'ellipsis' },
             header: () => {
                 return <div className="flex items-center gap-2">
                     <span className="text-base">Description</span>
@@ -194,6 +198,8 @@ export default function AdminJobCriteria() {
         },
         {
             accessorKey: "created_at",
+            size: 20,
+            meta: { overflow: 'ellipsis' },
             header: ({ column }) => (
                 <Button
                     variant="ghost"
@@ -208,6 +214,8 @@ export default function AdminJobCriteria() {
         },
         {
             id: "actions",
+            size: 20,
+            meta: { overflow: 'ellipsis' },
             header: () => {
                 return <div className="flex items-center justify-center gap-2">
                     <span className="text-base">Actions</span>

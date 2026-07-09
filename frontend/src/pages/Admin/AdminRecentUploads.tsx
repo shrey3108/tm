@@ -73,6 +73,8 @@ export default function AdminRecentUploads() {
   const columns: ColumnDef<RecentUploadRead>[] = [
     {
       accessorKey: "created_at",
+      size: 15,
+      meta: { overflow: 'ellipsis' },
       header: ({ column }) => (
         <Button
           variant="ghost"
@@ -87,6 +89,8 @@ export default function AdminRecentUploads() {
     },
     {
       accessorKey: "file_name",
+      size: 30,
+      meta: { overflow: 'wrap' },
       header: ({ column }) => (
         <Button
           variant="ghost"
@@ -112,7 +116,8 @@ export default function AdminRecentUploads() {
     // },
     {
       accessorKey: "size",
-
+      size: 12,
+      meta: { overflow: 'ellipsis' },
       header: () => {
         return (
           <div className="flex items-center gap-2">
@@ -125,7 +130,8 @@ export default function AdminRecentUploads() {
     },
     {
       accessorKey: "uploader_name",
-
+      size: 20,
+      meta: { overflow: 'ellipsis' },
       header: () => {
         return (
           <div className="flex items-center gap-2">
@@ -143,7 +149,8 @@ export default function AdminRecentUploads() {
     },
     {
       accessorKey: "candidate_name",
-
+      size: 23,
+      meta: { overflow: 'ellipsis' },
       header: () => {
         return (
           <div className="flex items-center gap-2">
@@ -159,7 +166,6 @@ export default function AdminRecentUploads() {
         </span>
       ),
     },
-
   ];
 
   return (

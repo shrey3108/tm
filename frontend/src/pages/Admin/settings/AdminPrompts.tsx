@@ -97,6 +97,8 @@ export default function AdminPrompts() {
     const columns: ColumnDef<PromptRead>[] = [
         {
             accessorKey: "name",
+            size: 30,
+            meta: { overflow: 'wrap' },
             header: ({ column }) => (
                 <Button
                     variant="ghost"
@@ -116,6 +118,8 @@ export default function AdminPrompts() {
         },
         {
             accessorKey: "content",
+            size: 50,
+            meta: { overflow: 'ellipsis' },
             header: () => {
                 return (
                     <div className="flex items-center gap-2">
@@ -124,12 +128,14 @@ export default function AdminPrompts() {
                 )
             },
             cell: ({ row }) => (
-                <div className="max-w-87.5 truncate">
+                <div className="max-w-md truncate">
                     {row.original.content}
                 </div>
             ),
         }, {
             id: "stages",
+            size: 15,
+            meta: { overflow: 'ellipsis' },
             header: () => {
                 return (
                     <div className="flex items-center gap-2">
@@ -147,6 +153,8 @@ export default function AdminPrompts() {
         },
         {
             id: "actions",
+            size: 5,
+            meta: { overflow: 'ellipsis' },
             cell: ({ row }) => (
                 <div className="flex justify-end">
                     <HoverCard>

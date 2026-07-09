@@ -48,6 +48,8 @@ export const getJobColumns = ({
 }: ColumnHandlers): ColumnDef<Job>[] => [
     {
       accessorKey: "title",
+      size: 25,
+      meta: { overflow: 'ellipsis' },
       header: ({ column }) => {
         return (
           <Button
@@ -102,6 +104,8 @@ export const getJobColumns = ({
     },
     {
       accessorKey: "is_active",
+      size: 10,
+      meta: { overflow: 'ellipsis' },
       header: ({ column }) => {
         return (
           <PermissionGuard
@@ -132,6 +136,8 @@ export const getJobColumns = ({
     },
     {
       accessorKey: "created_at",
+      size: 13,
+      meta: { overflow: 'ellipsis' },
       header: ({ column }) => {
         return (
           <Button
@@ -259,6 +265,8 @@ export const getJobColumns = ({
     // },
     {
       accessorKey: "total_candidates",
+      size: 12,
+      meta: { overflow: 'ellipsis' },
       header: ({ column }) => {
         return <Button
           variant="ghost"
@@ -279,6 +287,8 @@ export const getJobColumns = ({
     },
     {
       accessorKey: "skills",
+      size: 22,
+      meta: { overflow: 'wrap' },
 
       header: () => {
         return (
@@ -298,6 +308,8 @@ export const getJobColumns = ({
     },
     {
       id: "actions",
+      size: 18,
+      meta: { overflow: 'ellipsis' },
 
       header: () => {
         return (
