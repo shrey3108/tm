@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import ErrorDisplay from "@/components/shared/ErrorDisplay";
 import { slugify } from "@/utils/slug";
 import { extractErrorMessage } from "@/utils/error";
+import { Required } from "@/components/shared/Required";
 
 export default function AdminSkillForm() {
   const navigate = useNavigate();
@@ -80,7 +81,7 @@ export default function AdminSkillForm() {
   if (isEditMode && isLoadingSkills && !skill) {
     return (
       <AppPageShell width="wide">
-        <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex items-center justify-center min-h-100">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
         </div>
       </AppPageShell>
@@ -132,7 +133,7 @@ export default function AdminSkillForm() {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Skill Name</FormLabel>
+                    <FormLabel>Skill Name<Required /></FormLabel>
                     <FormControl>
                       <Input placeholder="e.g. React.js" {...field} />
                     </FormControl>
@@ -164,7 +165,7 @@ export default function AdminSkillForm() {
                 name="default_weightage"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Default Weightage</FormLabel>
+                    <FormLabel>Weightage</FormLabel>
                     <FormControl>
                       <Input
                         type="number"

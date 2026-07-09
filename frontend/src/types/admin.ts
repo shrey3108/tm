@@ -102,6 +102,8 @@ export interface LocationRead {
   name: string;
 }
 
+import type { StageTemplateCreateFormValues, StageTemplateUpdateFormValues } from "@/schemas/stageTemplate";
+
 /**
  * Stage Template Management Types
  */
@@ -109,21 +111,12 @@ export interface LocationRead {
 /**
  * Payload for creating a new stage template.
  */
-export interface StageTemplateCreate {
-  name: string;
-  description?: string;
-  default_config?: Record<string, any>;
-}
+export type StageTemplateCreate = StageTemplateCreateFormValues;
 
 /**
  * Payload for updating an existing stage template.
  */
-export interface StageTemplateUpdate {
-  name?: string;
-  description?: string;
-  default_config?: Record<string, any>;
-  is_default: boolean
-}
+export type StageTemplateUpdate = StageTemplateUpdateFormValues;
 
 /**
  * Job Stage Configuration Types

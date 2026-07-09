@@ -12,8 +12,10 @@ import { useCreateGuidelineMutation, useUpdateGuidelineMutation } from "@/hooks/
 import { useGuidelines } from "@/hooks/queries/admin/useGuideline";
 import { guidelineCreateSchema, type GuidelineCreateFormValues } from "@/schemas/guideline";
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormMessage, FormLabel } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Required } from "@/components/shared/Required";
 import ErrorDisplay from "@/components/shared/ErrorDisplay";
 import { slugify } from "@/utils/slug";
 import { extractErrorMessage } from "@/utils/error";
@@ -83,7 +85,7 @@ export default function AdminGuidelineForm() {
   if (isEditMode && isLoadingGuidelines && !guideline) {
     return (
       <AppPageShell width="wide">
-        <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex items-center justify-center min-h-100">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
         </div>
       </AppPageShell>
@@ -135,14 +137,38 @@ export default function AdminGuidelineForm() {
                 name="content"
                 render={({ field }) => (
                   <FormItem>
+                    <FormLabel className="text-sm font-semibold">
+                      Content <Required />
+                    </FormLabel>
                     <FormControl>
                       <Textarea
                         placeholder="Enter terms & conditions instructions here..."
-                        className="min-h-[200px] resize-y"
+                        className="min-h-50 resize-y"
                         {...field}
                       />
                     </FormControl>
                     <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="is_default"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Default Term & Condition</FormLabel>
+                      <p className="text-sm text-muted-foreground">
+                        Set this as the default term & condition for new templates or processes.
+                      </p>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
                   </FormItem>
                 )}
               />

@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import ErrorDisplay from "@/components/shared/ErrorDisplay";
 import { slugify } from "@/utils/slug";
 import { extractErrorMessage } from "@/utils/error";
+import { Required } from "@/components/shared/Required";
 
 export default function AdminDepartmentForm() {
   const navigate = useNavigate();
@@ -79,7 +80,7 @@ export default function AdminDepartmentForm() {
   if (isEditMode && isLoadingDepts && !department) {
     return (
       <AppPageShell width="wide">
-        <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex items-center justify-center min-h-100">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
         </div>
       </AppPageShell>
@@ -131,7 +132,7 @@ export default function AdminDepartmentForm() {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Department Name</FormLabel>
+                    <FormLabel>Department Name<Required /></FormLabel>
                     <FormControl>
                       <Input placeholder="e.g. Engineering" {...field} />
                     </FormControl>

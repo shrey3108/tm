@@ -13,7 +13,7 @@ export const CustomFieldsSection = () => {
         <h2 className="text-lg font-bold tracking-tight">
           Custom Extraction Fields
         </h2>
-        <p className="text-muted-foreground text-base font-medium">
+        <p className="text-muted-foreground text-sm font-medium">
           Add specific information you want the AI to extract from resumes (e.g. "Notice Period", "Willingness to Relocate").
         </p>
       </div>

@@ -1,28 +1,13 @@
 import * as z from "zod";
-import { nameSchema,descriptionSchema } from "@/schemas/schema-utils";
-
-
-const jobCriteriaBaseSchema = z.object({
-  /** Name of the criteria (minimum 3 characters) */
-  name: nameSchema(3, "Criteria name"),
-  /** Description of the criteria (minimum 5 characters) */
-  description: descriptionSchema(),
-  /** Whether the criteria is active */
-  is_active: z.boolean(),
-  /** Whether to apply this criteria to all jobs */
-  apply_to_all: z.boolean(),
-  /** List of job UUIDs this criteria applies to (if not apply_to_all) */
-  job_ids: z.array(z.string()).optional(),
-});
+import { nameSchema, descriptionSchema } from "@/schemas/schema-utils";
 
 /**
- * Schema for creating a new job criteria.
+ * Zod validation schema for creating a new job criteria.
  */
-export const jobCriteriaCreateSchema = jobCriteriaBaseSchema.extend({
-  is_active: z.boolean().default(true),
-  apply_to_all: z.boolean().default(true),
-  job_ids: z.array(z.string()).optional().default([]),
-  prompt_text: descriptionSchema(),
+export const jobCriteriaCreateSchema = z.object({
+  name: nameSchema(3, "Criteria name"),
+  description: descriptionSchema(10),
+  prompt_text: z.string().trim().optional().or(z.literal("")),
 });
 
 /**
@@ -38,8 +23,9 @@ export type JobCriteriaCreateFormValues = z.infer<typeof jobCriteriaCreateSchema
 
 /**
  * Schema for updating an existing job criteria.
+ * Matches backend CriterionUpdate.
  */
-export const jobCriteriaUpdateSchema = jobCriteriaBaseSchema.partial();
+export const jobCriteriaUpdateSchema = jobCriteriaCreateSchema.partial();
 
 /** Type inferred from jobCriteriaUpdateSchema. */
 export type JobCriteriaUpdateFormValues = z.infer<typeof jobCriteriaUpdateSchema>;

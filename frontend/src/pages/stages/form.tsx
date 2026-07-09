@@ -12,7 +12,6 @@ import { Save, ArrowLeft, Search, Check } from "lucide-react";
 import {
     Form,
     FormControl,
-    FormDescription,
     FormField,
     FormItem,
     FormLabel,
@@ -38,6 +37,7 @@ import { stageTemplateCreateSchema, type StageTemplateCreateFormValues } from "@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useJobCriteria } from "@/hooks/queries/admin/useJobCriteria";
 import { useJobStage } from "@/hooks/queries/admin/useJobStage";
+import { Required } from "@/components/shared/Required";
 
 
 /**
@@ -239,13 +239,13 @@ export default function AdminJobStageForm() {
                                 name="name"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Name</FormLabel>
+                                        <FormLabel>Name<Required /> </FormLabel>
                                         <FormControl>
                                             <Input placeholder="e.g. Technical Interview" {...field} />
                                         </FormControl>
-                                        <FormDescription>
+                                        {/* <FormDescription>
                                             The display name for this stage.
-                                        </FormDescription>
+                                        </FormDescription> */}
                                         <FormMessage />
                                     </FormItem>
                                 )}
@@ -256,7 +256,7 @@ export default function AdminJobStageForm() {
                                 name="description"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Description</FormLabel>
+                                        <FormLabel>Description<Required /></FormLabel>
                                         <FormControl>
                                             <Textarea
                                                 placeholder="Describe the purpose of this stage..."
@@ -265,62 +265,63 @@ export default function AdminJobStageForm() {
                                                 value={field.value || ""}
                                             />
                                         </FormControl>
-                                        <FormDescription>
+                                        {/* <FormDescription>
                                             A detailed explanation of what happens in this stage.
-                                        </FormDescription>
+                                        </FormDescription> */}
                                         <FormMessage />
                                     </FormItem>
                                 )}
                             />
 
-                            <FormField
-                                control={form.control}
-                                name="default_config.is_active"
-                                render={({ field }) => (
-                                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm">
-                                        <div className="space-y-0.5">
-                                            <FormLabel className="text-base font-bold">Active Status</FormLabel>
-                                            <FormDescription>
+                            <div className="grid grid-cols-2 gap-2">
+                                <FormField
+                                    control={form.control}
+                                    name="default_config.is_active"
+                                    render={({ field }) => (
+                                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-2 shadow-sm">
+                                            <div className="space-y-0.5">
+                                                <FormLabel>Active Status</FormLabel>
+                                                {/* <FormDescription>
                                                 Indicate if this stage is currently enabled for use.
-                                            </FormDescription>
-                                        </div>
-                                        <FormControl>
-                                            <Switch
-                                                checked={field.value}
-                                                onCheckedChange={field.onChange}
-                                            />
-                                        </FormControl>
-                                    </FormItem>
-                                )}
-                            />
+                                            </FormDescription> */}
+                                            </div>
+                                            <FormControl>
+                                                <Switch
+                                                    checked={field.value}
+                                                    onCheckedChange={field.onChange}
+                                                />
+                                            </FormControl>
+                                        </FormItem>
+                                    )}
+                                />
 
-                            <FormField
-                                control={form.control}
-                                name="is_default"
-                                render={({ field }) => (
-                                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm">
-                                        <div className="space-y-0.5">
-                                            <FormLabel className="text-base font-bold">Default Stage</FormLabel>
-                                            <FormDescription>
+                                <FormField
+                                    control={form.control}
+                                    name="is_default"
+                                    render={({ field }) => (
+                                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-2 shadow-sm">
+                                            <div className="space-y-0.5">
+                                                <FormLabel>Default Stage</FormLabel>
+                                                {/* <FormDescription>
                                                 Indicate if this stage should be automatically added to new jobs.
-                                            </FormDescription>
-                                        </div>
-                                        <FormControl>
-                                            <Switch
-                                                checked={field.value}
-                                                onCheckedChange={field.onChange}
-                                            />
-                                        </FormControl>
-                                    </FormItem>
-                                )}
-                            />
-
+                                            </FormDescription> */}
+                                            </div>
+                                            <FormControl>
+                                                <Switch
+                                                    checked={field.value}
+                                                    onCheckedChange={field.onChange}
+                                                />
+                                            </FormControl>
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
                             <FormField
                                 control={form.control}
                                 name="default_order"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Default Order</FormLabel>
+                                        <FormLabel>Order <Required /></FormLabel>
                                         <FormControl>
                                             <Input
                                                 type="number"
@@ -331,21 +332,27 @@ export default function AdminJobStageForm() {
                                                 onChange={(e) => field.onChange(e.target.value === "" ? null : parseInt(e.target.value, 10))}
                                             />
                                         </FormControl>
-                                        <FormDescription>
+                                        {/* <FormDescription>
                                             The default position of this stage in a new pipeline.
-                                        </FormDescription>
+                                        </FormDescription> */}
+                                        <FormMessage />
                                     </FormItem>
                                 )}
                             />
 
                             <div className="space-y-4 pt-4 border-t">
                                 <div className="space-y-0.5">
-                                    <FormLabel className="text-lg font-bold">Stage Requirements</FormLabel>
-                                    <FormDescription>
+                                    <FormLabel>Stage Requirements <Required /></FormLabel>
+                                    {form.formState.errors.default_config?.required_inputs && (
+                                        <p className="text-destructive text-sm font-medium">
+                                            {form.formState.errors.default_config.required_inputs.message}
+                                        </p>
+                                    )}
+                                    {/* <FormDescription>
                                         Select the required inputs/actions candidate must complete during this stage.
-                                    </FormDescription>
+                                    </FormDescription> */}
                                 </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                     {[
                                         {
                                             id: "resume",
@@ -373,7 +380,7 @@ export default function AdminJobStageForm() {
                                             <div
                                                 key={item.id}
                                                 className={cn(
-                                                    "flex items-center space-x-3 space-y-0 rounded-xl border p-4 shadow-sm transition-all hover:bg-muted/5",
+                                                    "flex items-center space-x-1.5 space-y-0 rounded-xl border p-2 shadow-sm transition-all hover:bg-muted/5",
                                                     isChecked ? "border-primary bg-primary/5" : "border-border"
                                                 )}
                                             >
@@ -390,10 +397,10 @@ export default function AdminJobStageForm() {
                                                         className="text-sm font-bold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                                                     >
                                                         {item.label}
+                                                        <p className="text-xs font-normal text-muted-foreground">
+                                                            {item.description}
+                                                        </p>
                                                     </label>
-                                                    <p className="text-xs text-muted-foreground">
-                                                        {item.description}
-                                                    </p>
                                                 </div>
                                             </div>
                                         );
@@ -403,13 +410,23 @@ export default function AdminJobStageForm() {
 
                             <div className="space-y-4 pt-4 border-t">
                                 <div className="space-y-2">
-                                    <FormLabel className="text-lg font-bold">Associated Criteria</FormLabel>
-                                    <FormDescription className="flex items-center justify-between">
+                                    <FormLabel className=" flex items-center justify-between">
+                                        <span>Associated Criteria <Required /></span>
+                                        {selectedCriteriaData.length > 0 ? <span className="text-primary text-sm font-bold">
+                                            Selected Criteria ({selectedCriteriaData.length})
+                                        </span> : null}
+                                    </FormLabel>
+                                    {form.formState.errors.default_config?.criteria_ids && (
+                                        <p className="text-destructive text-sm font-medium">
+                                            {form.formState.errors.default_config.criteria_ids.message}
+                                        </p>
+                                    )}
+                                    {/* <FormDescription className="flex items-center justify-between">
                                         <span>Select the evaluation criteria to use for this stage.</span>
                                         {selectedCriteriaData.length > 0 ? <span className="text-primary text-sm font-bold">
                                             Selected Criteria ({selectedCriteriaData.length})
                                         </span> : null}
-                                    </FormDescription>
+                                    </FormDescription> */}
                                     <div className="relative">
                                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                         <Input

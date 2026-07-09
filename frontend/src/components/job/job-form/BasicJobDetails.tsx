@@ -142,7 +142,7 @@ export const BasicJobDetails = ({ departments, priorities = [], positions, isEdi
                 />
               </FormControl>
               <FormDescription>
-                Frequency of reminder emails
+                Frequency of reminder emails send to the associates
               </FormDescription>
               <FormMessage />
             </FormItem>

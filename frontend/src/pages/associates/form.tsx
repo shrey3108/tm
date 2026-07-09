@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import ErrorDisplay from "@/components/shared/ErrorDisplay";
 import { slugify } from "@/utils/slug";
 import { extractErrorMessage } from "@/utils/error";
+import { Required } from "@/components/shared/Required";
 
 export default function AdminAssociateForm() {
   const navigate = useNavigate();
@@ -81,7 +82,7 @@ export default function AdminAssociateForm() {
   if (isEditMode && isLoadingAssociates && !associate) {
     return (
       <AppPageShell width="wide">
-        <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex items-center justify-center min-h-100">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
         </div>
       </AppPageShell>
@@ -133,7 +134,7 @@ export default function AdminAssociateForm() {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Associate Name</FormLabel>
+                    <FormLabel>Associate Name<Required /></FormLabel>
                     <FormControl>
                       <Input placeholder="e.g. John Doe" {...field} />
                     </FormControl>
@@ -147,7 +148,7 @@ export default function AdminAssociateForm() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email Address</FormLabel>
+                    <FormLabel>Email Address <Required /></FormLabel>
                     <FormControl>
                       <Input type="email" placeholder="e.g. john.doe@example.com" {...field} />
                     </FormControl>

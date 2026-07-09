@@ -20,6 +20,7 @@ import { SearchableSelect } from "@/components/shared/SearchableSelect";
 import ErrorDisplay from "@/components/shared/ErrorDisplay";
 import { slugify } from "@/utils/slug";
 import { extractErrorMessage } from "@/utils/error";
+import { Required } from "@/components/shared/Required";
 
 export default function AdminUserForm() {
   const navigate = useNavigate();
@@ -154,7 +155,7 @@ export default function AdminUserForm() {
                   name="full_name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Full Name</FormLabel>
+                      <FormLabel>Full Name<Required /></FormLabel>
                       <FormControl>
                         <Input placeholder="Enter full name" {...field} disabled={isEditMode} />
                       </FormControl>
@@ -168,7 +169,7 @@ export default function AdminUserForm() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email Address</FormLabel>
+                      <FormLabel>Email Address<Required /></FormLabel>
                       <FormControl>
                         <Input
                           type="email"
@@ -189,7 +190,7 @@ export default function AdminUserForm() {
                   name="role_id"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Role</FormLabel>
+                      <FormLabel>Role<Required /></FormLabel>
                       <FormControl>
                         <SearchableSelect
                           value={field.value}

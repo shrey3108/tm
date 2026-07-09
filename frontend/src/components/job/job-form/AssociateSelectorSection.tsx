@@ -42,7 +42,7 @@ export const AssociateSelectorSection = ({
           </div>
           <div>
             <h2 className="text-lg font-semibold tracking-tight text-foreground">Assigned Associates <Required /></h2>
-            <p className="text-xs text-muted-foreground">Select the associates who will be responsible for reviewing candidate submissions for this job.</p>
+            <p className="text-sm text-muted-foreground">Select the associates who will be responsible for reviewing candidate submissions for this job.</p>
           </div>
         </div>
 

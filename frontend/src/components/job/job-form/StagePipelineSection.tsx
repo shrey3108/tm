@@ -79,7 +79,7 @@ export const StagePipelineSection = ({ jobId, onChange }: StagePipelineSectionPr
             <Layers className="h-5 w-5 text-primary" />
             <h2 className="text-lg font-bold tracking-tight">Interview Pipeline</h2>
           </div>
-          <p className="text-muted-foreground text-base font-medium mt-0.5">
+          <p className="text-muted-foreground text-sm font-medium mt-0.5">
             Configure the interview stages for this job. Reorder or add more as needed.
           </p>
         </div>

@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import ErrorDisplay from "@/components/shared/ErrorDisplay";
 import { slugify } from "@/utils/slug";
 import { extractErrorMessage } from "@/utils/error";
+import { Required } from "@/components/shared/Required";
 
 export default function AdminPriorityForm() {
   const navigate = useNavigate();
@@ -81,7 +82,7 @@ export default function AdminPriorityForm() {
   if (isEditMode && isLoadingPriorities && !priority) {
     return (
       <AppPageShell width="wide">
-        <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex items-center justify-center min-h-100">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
         </div>
       </AppPageShell>
@@ -133,7 +134,7 @@ export default function AdminPriorityForm() {
                 name="duration_days"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Duration (Days)</FormLabel>
+                    <FormLabel>Duration (Days)<Required /> </FormLabel>
                     <FormControl>
                       <Input
                         {...field}
@@ -152,7 +153,7 @@ export default function AdminPriorityForm() {
                 name="associate_reminder_hours"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Reminder Hours</FormLabel>
+                    <FormLabel>Reminder Hours<Required /></FormLabel>
                     <FormControl>
                       <Input
                         type="number"

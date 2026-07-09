@@ -1,4 +1,4 @@
-// import { } from "@/schemas/"
+import type { JobCriteriaCreateFormValues, JobCriteriaUpdateFormValues } from "@/schemas/jobCriteria";
 
 /**
  * Shared fields for an evaluation criterion.
@@ -6,22 +6,18 @@
 export interface CriterionBase {
   name: string;
   description?: string | null;
-  prompt_text: string;
+  prompt_text?: string | null;
 }
 
 /**
  * Payload for creating a new evaluation criterion.
  */
-export interface CriterionCreate extends CriterionBase { }
+export type CriterionCreate = JobCriteriaCreateFormValues;
 
 /**
  * Payload for updating an existing evaluation criterion.
  */
-export interface CriterionUpdate {
-  name?: string;
-  description?: string | null;
-  prompt_text?: string;
-}
+export type CriterionUpdate = JobCriteriaUpdateFormValues;
 
 /**
  * Evaluation criterion returned from read operations.
