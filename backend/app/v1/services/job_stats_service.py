@@ -133,10 +133,13 @@ class JobStatsService:
         stmt = (
             select(
                 func.coalesce(Candidate.email, func.cast(Candidate.id, Text)).label("unique_id"),
-                func.coalesce(Resume.pass_fail, 
-                    case((CrossJobMatch.match_score >= threshold, "passed"),
-                         (CrossJobMatch.match_score < threshold, "failed"),
-                         else_="pending")
+                case(
+                    (Candidate.applied_job_id == job_id, Resume.pass_fail),
+                    else_=case(
+                        (CrossJobMatch.match_score >= threshold, "passed"),
+                        (CrossJobMatch.match_score < threshold, "failed"),
+                        else_="pending"
+                    )
                 ).label("final_pass_fail")
             )
             .distinct(func.coalesce(Candidate.email, func.cast(Candidate.id, Text)))
@@ -548,10 +551,13 @@ class JobStatsService:
                 subq = (
                     select(
                         func.coalesce(Candidate.email, func.cast(Candidate.id, Text)).label("unique_id"),
-                        func.coalesce(Resume.pass_fail, 
-                            case((CrossJobMatch.match_score >= threshold, "passed"),
-                                 (CrossJobMatch.match_score < threshold, "failed"),
-                                 else_="pending")
+                        case(
+                            (Candidate.applied_job_id == job_id, Resume.pass_fail),
+                            else_=case(
+                                (CrossJobMatch.match_score >= threshold, "passed"),
+                                (CrossJobMatch.match_score < threshold, "failed"),
+                                else_="pending"
+                            )
                         ).label("final_pass_fail")
                     )
                     .distinct(func.coalesce(Candidate.email, func.cast(Candidate.id, Text)))

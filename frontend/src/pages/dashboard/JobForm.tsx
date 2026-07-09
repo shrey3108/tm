@@ -135,7 +135,7 @@ export default function CreateJob() {
         priority_id: job.priority_id || "",
         position_id: job.position_id || "",
         associate_reminder_hours: job.associate_reminder_hours || undefined,
-        processing_version: job.version || undefined,
+        processing_version: job.processing_version || undefined,
         project_document: taskData?.task_file_path || undefined,
         send_ai_evaluation_to_associate: job.send_ai_evaluation_to_associate ?? true,
       });

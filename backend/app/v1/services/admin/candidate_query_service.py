@@ -428,7 +428,51 @@ class CandidateQueryService:
         seen_emails = set()
         
         for c in direct_candidates:
-            responses.append(map_candidate_to_response(c, target_job_id=job_id, focus_stage_id=stage_id))
+            resp = map_candidate_to_response(c, target_job_id=job_id, focus_stage_id=stage_id)
+            
+            # If candidate applied for a different job originally, they are fundamentally a cross-match
+            # We must override their score/analysis with the cross_job_matches data for this target job.
+            if c.applied_job_id and str(c.applied_job_id) != str(job_id):
+                specific_version = next((vr for vr in (resp.version_results or []) if vr.get("job_id") == str(job_id)), None)
+                if specific_version:
+                    analysis_obj = None
+                    if specific_version.get("analysis_data"):
+                        try:
+                            analysis_obj = ResumeMatchAnalysis.model_validate(specific_version["analysis_data"])
+                        except Exception:
+                            pass
+                    resp = resp.model_copy(
+                        update={
+                            "resume_score": float(specific_version.get("resume_score", 0.0)) if specific_version.get("resume_score") is not None else 0.0,
+                            "pass_fail": specific_version.get("pass_fail"),
+                            "resume_analysis": analysis_obj,
+                        }
+                    )
+                else:
+                    xm = next((x for x in cross_matches if x.candidate_id == c.id), None)
+                    if xm:
+                        analysis_obj = None
+                        if xm.match_analysis:
+                            try:
+                                analysis_obj = ResumeMatchAnalysis.model_validate(xm.match_analysis)
+                            except Exception:
+                                pass
+
+                        match_score_val = float(xm.match_score) if xm.match_score is not None else 0.0
+                        threshold_val = float(xm.matched_job.passing_threshold) if xm.matched_job and xm.matched_job.passing_threshold else 70.0
+                        derived_pass_fail = "passed" if match_score_val >= threshold_val else "failed"
+
+                        resp = resp.model_copy(
+                            update={
+                                "applied_version_number": (xm.matched_job.version if xm.matched_job else resp.applied_version_number),
+                                "resume_score": match_score_val,
+                                "pass_fail": derived_pass_fail,
+                                "resume_analysis": analysis_obj,
+                                "created_at": xm.created_at,
+                            }
+                        )
+                    
+            responses.append(resp)
             seen_candidate_ids.add(c.id)
             if c.email:
                 seen_emails.add(c.email.lower().strip())
@@ -471,39 +515,56 @@ class CandidateQueryService:
                 if resp.pass_fail not in result:
                     continue
 
-            # Retrieve match analysis as object (OVERRIDE)
-            analysis_obj = None
-            if xm.match_analysis:
-                try:
-                    analysis_obj = ResumeMatchAnalysis.model_validate(xm.match_analysis)
-                except Exception:
-                    pass
+            specific_version = next((vr for vr in (resp.version_results or []) if vr.get("job_id") == str(job_id)), None)
+            if specific_version:
+                analysis_obj = None
+                if specific_version.get("analysis_data"):
+                    try:
+                        analysis_obj = ResumeMatchAnalysis.model_validate(specific_version["analysis_data"])
+                    except Exception:
+                        pass
+                resp = resp.model_copy(
+                    update={
+                        "resume_score": float(specific_version.get("resume_score", 0.0)) if specific_version.get("resume_score") is not None else 0.0,
+                        "pass_fail": specific_version.get("pass_fail"),
+                        "resume_analysis": analysis_obj,
+                        "created_at": xm.created_at,
+                    }
+                )
+            else:
+                # Retrieve match analysis as object (OVERRIDE)
+                analysis_obj = None
+                if xm.match_analysis:
+                    try:
+                        analysis_obj = ResumeMatchAnalysis.model_validate(xm.match_analysis)
+                    except Exception:
+                        pass
 
-            # Calculate pass_fail dynamically based on this job's threshold
-            match_score_val = (
-                float(xm.match_score) if xm.match_score is not None else 0.0
-            )
-            threshold_val = (
-                float(xm.matched_job.passing_threshold)
-                if xm.matched_job and xm.matched_job.passing_threshold
-                else 70.0
-            )
-            derived_pass_fail = (
-                "passed" if match_score_val >= threshold_val else "failed"
-            )
+                # Calculate pass_fail dynamically based on this job's threshold
+                match_score_val = (
+                    float(xm.match_score) if xm.match_score is not None else 0.0
+                )
+                threshold_val = (
+                    float(xm.matched_job.passing_threshold)
+                    if xm.matched_job and xm.matched_job.passing_threshold
+                    else 70.0
+                )
+                derived_pass_fail = (
+                    "passed" if match_score_val >= threshold_val else "failed"
+                )
 
-            # Override with cross-match data securely via model_copy
-            resp = resp.model_copy(
-                update={
-                    "applied_version_number": (
-                        xm.matched_job.version if xm.matched_job else resp.applied_version_number
-                    ),
-                    "resume_score": match_score_val,
-                    "pass_fail": derived_pass_fail,
-                    "resume_analysis": analysis_obj,
-                    "created_at": xm.created_at,
-                }
-            )
+                # Override with cross-match data securely via model_copy
+                resp = resp.model_copy(
+                    update={
+                        "applied_version_number": (
+                            xm.matched_job.version if xm.matched_job else resp.applied_version_number
+                        ),
+                        "resume_score": match_score_val,
+                        "pass_fail": derived_pass_fail,
+                        "resume_analysis": analysis_obj,
+                        "created_at": xm.created_at,
+                    }
+                )
 
             responses.append(resp)
 
