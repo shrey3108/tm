@@ -123,7 +123,7 @@ export default function AdminUserForm() {
   }
 
   return (
-    <AppPageShell width="wide" className="animate-in fade-in duration-500">
+    <AppPageShell width="wide">
       <PageHeader
         title={isEditMode ? "Edit User" : "Create User"}
         breadcrumbActions={

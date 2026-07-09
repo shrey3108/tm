@@ -103,7 +103,7 @@ export default function AdminPriorityForm() {
   }
 
   return (
-    <AppPageShell width="wide" className="animate-in fade-in duration-500">
+    <AppPageShell width="wide">
       <PageHeader
         title={isEditMode ? "Edit Priority" : "Create Priority"}
         breadcrumbActions={

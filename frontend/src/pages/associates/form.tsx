@@ -103,7 +103,7 @@ export default function AdminAssociateForm() {
   }
 
   return (
-    <AppPageShell width="wide" className="animate-in fade-in duration-500">
+    <AppPageShell width="wide">
       <PageHeader
         title={isEditMode ? "Edit Associate" : "Create Associate"}
         breadcrumbActions={

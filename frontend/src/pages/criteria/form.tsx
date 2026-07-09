@@ -145,7 +145,7 @@ export default function AdminJobCriteriaForm() {
     };
 
     return (
-        <AppPageShell width="wide" className="animate-in fade-in duration-500">
+        <AppPageShell width="wide">
             <PageHeader
                 title={isEditMode ? "Edit Job Criteria" : "Create Job Criteria"}
                 // subtitle={isEditMode ? "Update the configuration for this evaluation criterion." : "Define a new criterion for candidate evaluation."}

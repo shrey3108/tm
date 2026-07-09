@@ -232,7 +232,7 @@ export default function JobCandidates() {
   };
 
   return (
-    <AppPageShell width="wide" className="animate-in fade-in duration-500">
+    <AppPageShell width="wide">
 
       <JobCandidatesHeader
         job={job}
@@ -406,7 +406,7 @@ export default function JobCandidates() {
                                     <Trash className="h-4 w-4 shrink-0" />
                                   </Button>
                                 )} />
-  
+
                                   <HoverCardContent className="w-fit px-3 py-1.5 text-xs " side="top">
                                 <div className="">Delete</div>
                               </HoverCardContent>

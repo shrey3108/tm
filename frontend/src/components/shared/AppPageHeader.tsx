@@ -84,12 +84,12 @@ export default function AppPageHeader({
 
       {/* Breadcrumbs Label Row */}
       {(breadcrumbs || breadcrumbActions) && (
-        <div className="px-1.5 py-2 lg:py-1 border-b border-border/40 bg-muted/5 mb-0.5 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-2 lg:gap-4 min-h-9 h-auto">
-          <div className="flex flex-row flex-1 max-w-full lg:max-w-fit items-center min-w-0">
+        <div className="px-1.5 py-2 lg:py-1 border-b border-border/40 bg-muted/5 mb-0.5 flex flex-col md:flex-row items-start md:items-center justify-between gap-1 min-h-9 h-auto">
+          <div className="flex flex-row flex-1 max-w-full sm:max-w-fit items-center min-w-0">
             {breadcrumbs}
           </div>
           {breadcrumbActions && (
-            <div className="flex flex-wrap items-center justify-start lg:justify-end gap-2 w-full lg:w-auto lg:ml-auto">
+            <div className="flex flex-wrap items-center justify-start sm:justify-end gap-2 w-full sm:w-auto sm:ml-auto">
               {breadcrumbActions}
             </div>
           )}

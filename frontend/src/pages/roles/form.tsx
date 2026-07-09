@@ -137,7 +137,7 @@ export default function AdminRoleForm() {
   }
 
   return (
-    <AppPageShell width="wide" className="animate-in fade-in duration-500">
+    <AppPageShell width="wide">
       <PageHeader
         title={isEditMode ? "Edit Role" : "Create Role"}
         breadcrumbActions={

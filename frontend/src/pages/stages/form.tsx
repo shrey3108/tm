@@ -206,7 +206,7 @@ export default function AdminJobStageForm() {
     };
 
     return (
-        <AppPageShell width="wide" className="animate-in fade-in duration-500">
+        <AppPageShell width="wide">
             <PageHeader
                 title={isEditMode ? "Edit Job Stage" : "Create Job Stage"}
                 // subtitle={isEditMode ? "Update the configuration for this recruitment stage." : "Define a new recruitment stage template."}

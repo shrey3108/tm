@@ -101,7 +101,7 @@ export default function AdminPositionForm() {
   }
 
   return (
-    <AppPageShell width="wide" className="animate-in fade-in duration-500">
+    <AppPageShell width="wide">
       <PageHeader
         title={isEditMode ? "Edit Position" : "Create Position"}
         breadcrumbActions={

@@ -328,7 +328,7 @@ export default function SendPaperPage() {
   const isLoading = loadingResolution || loadingAssigned;
 
   return (
-    <AppPageShell width="wide" className="animate-in fade-in duration-500">
+    <AppPageShell width="wide">
       <AppPageHeader
         title={
           <span className="flex items-center gap-2 flex-wrap">
