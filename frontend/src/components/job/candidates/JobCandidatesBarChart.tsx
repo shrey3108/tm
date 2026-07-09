@@ -59,7 +59,7 @@ export default function JobCandidatesBarChart({ isAnimationActive = true, data: 
 
     return (
         <div className="w-full animate-in fade-in zoom-in-95 duration-700">
-            <ChartContainer config={chartConfig} className="w-full min-h-[100px] max-h-[300px]">
+            <ChartContainer config={chartConfig} className="w-full min-h-25 max-h-75">
                 <ResponsiveContainer width="100%" height="100%">
                     <BarChart
                         data={displayData}

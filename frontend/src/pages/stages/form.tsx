@@ -260,7 +260,7 @@ export default function AdminJobStageForm() {
                                         <FormControl>
                                             <Textarea
                                                 placeholder="Describe the purpose of this stage..."
-                                                className="min-h-[120px] resize-y"
+                                                className="min-h-30 resize-y"
                                                 {...field}
                                                 value={field.value || ""}
                                             />
@@ -421,7 +421,7 @@ export default function AdminJobStageForm() {
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[300px] overflow-y-auto p-2 border rounded-xl bg-background/50">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-75 overflow-y-auto p-2 border rounded-xl bg-background/50">
                                     {isLoadingCriteria ? (
                                         <div className="col-span-full py-8 text-center text-muted-foreground italic">
                                             Loading available criteria...

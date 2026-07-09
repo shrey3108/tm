@@ -3,7 +3,6 @@ import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Save, ArrowLeft } from "lucide-react";
-
 import { useToast } from "@/components/shared/ToastProvider";
 import AppPageShell from "@/components/shared/AppPageShell";
 import PageHeader from "@/components/shared/PageHeader";
@@ -117,7 +116,7 @@ export default function AdminRoleForm() {
   if (isEditMode && isLoading && !roleDetails) {
     return (
       <AppPageShell width="wide">
-        <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex items-center justify-center min-h-100">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
         </div>
       </AppPageShell>
@@ -185,11 +184,11 @@ export default function AdminRoleForm() {
                     placeholder="Search permissions..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="h-9 w-full sm:w-64"
+                    className="w-full sm:w-64"
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 bg-muted/30 rounded-2xl border border-muted-foreground/10 max-h-[300px] overflow-y-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 p-2 bg-muted/30 rounded-2xl border border-muted-foreground/10 overflow-y-auto custom-scrollbar">
                   {filteredPermissions.map((permission) => {
                     const isChecked = selectedPermissionIds.includes(permission.id);
                     return (
@@ -197,10 +196,10 @@ export default function AdminRoleForm() {
                         key={permission.id}
                         orientation="horizontal"
                         className={cn(
-                          "items-start gap-3 p-3 rounded-xl border-2 transition-all duration-200 min-h-20 cursor-pointer",
+                          "items-start gap-3 p-3 rounded-xl border-2 transition-all duration-200 min-h-10 cursor-pointer ",
                           isChecked
                             ? "bg-primary/5 border-primary shadow-sm"
-                            : "bg-background/50 border-transparent hover:border-muted-foreground/20",
+                            : "bg-background/50 border-muted-foreground/10 hover:border-muted-foreground/20",
                         )}
                         onClick={() => togglePermission(permission.id)}
                       >

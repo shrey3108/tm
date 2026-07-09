@@ -261,7 +261,7 @@ export function SearchableSelect({
             </div>
           </div>
         )}
-        <div className="max-h-[300px] overflow-y-auto overflow-x-hidden custom-scrollbar">
+        <div className="max-h-75 overflow-y-auto overflow-x-hidden custom-scrollbar">
           {filteredOptions.length === 0 ? (
             <div className="px-2 py-4 text-xs text-center text-muted-foreground">
               {emptyMessage}{search.trim() ? ` "${search}"` : ""}

@@ -188,7 +188,7 @@ export default function CandidatesStages() {
                 {showChart && (
                   <Suspense fallback={<LoadingSpinner message="Loading charts..." fullPage={true} />}>
                     <div className="w-full flex justify-center bg-card/30 p-3 rounded-2xl border border-border/50 animate-in fade-in duration-300">
-                      <div className="w-full min-h-[100px] max-h-[300px]">
+                      <div className="w-full min-h-25 max-h-75">
                         <JobCandidatesBarChart data={chartData.length > 0 ? chartData : undefined} />
                       </div>
                     </div>

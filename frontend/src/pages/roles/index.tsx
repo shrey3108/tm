@@ -202,7 +202,6 @@ export default function AdminRoles() {
       ) : (
         <div className="flex flex-col gap-8">
           <div className="space-y-4">
-            <h2 className="text-xl font-bold tracking-tight">Roles</h2>
             <DataTable
               columns={roleColumns}
               data={roles}

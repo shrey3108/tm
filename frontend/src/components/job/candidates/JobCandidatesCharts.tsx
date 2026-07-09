@@ -100,7 +100,7 @@ export function JobCandidatesCharts({
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12 animate-in fade-in duration-700">
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="h-[400px] rounded-3xl bg-muted/30 animate-pulse" />
+          <div key={i} className="h-100 rounded-3xl bg-muted/30 animate-pulse" />
         ))}
       </div>
     );
@@ -109,7 +109,7 @@ export function JobCandidatesCharts({
   const stagesList = [...Object.keys(jobStats?.stages || {})];
   const StageSelector = (
     <DropdownMenu>
-      <DropdownMenuTrigger className="inline-flex items-center justify-between gap-2 h-10 px-3 w-[200px] rounded-xl border text-sm font-medium cursor-pointer select-none transition-all truncate">
+      <DropdownMenuTrigger className="inline-flex items-center justify-between gap-2 h-10 px-3 w-50 rounded-xl border text-sm font-medium cursor-pointer select-none transition-all truncate">
         <span className="truncate">{selectedStage ?? "Resume Screening"}</span>
         <ChevronDown className="h-4 w-4 opacity-60 shrink-0" />
       </DropdownMenuTrigger>
@@ -243,7 +243,7 @@ export function JobCandidatesCharts({
               </div>
             )}
           </div>
-          <div className="w-full min-h-[100px] max-h-[300px]">{chart}</div>
+          <div className="w-full min-h-25 max-h-75">{chart}</div>
         </div>
       ))}
     </div>

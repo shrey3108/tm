@@ -7,10 +7,10 @@ import { adminJobCriteriaFormLoader } from "@/loaders/adminJobCriteriaForm";
 import { adminJobStagesLoader } from "@/loaders/adminJobStages";
 import { adminJobStageFormLoader } from "@/loaders/adminJobStageForm";
 
-const AdminJobCriteria = lazy(() => import("@/pages/Admin/AdminJobCriteria"));
-const AdminJobCriteriaForm = lazy(() => import("@/pages/Admin/AdminJobCriteriaForm"));
-const AdminJobStages = lazy(() => import("@/pages/Admin/AdminJobStages"));
-const AdminJobStageForm = lazy(() => import("@/pages/Admin/AdminJobStageForm"));
+const AdminJobCriteria = lazy(() => import("@/pages/criteria/index"));
+const AdminJobCriteriaForm = lazy(() => import("@/pages/criteria/form"));
+const AdminJobStages = lazy(() => import("@/pages/stages/index"));
+const AdminJobStageForm = lazy(() => import("@/pages/stages/form"));
 
 export const criteriaStagesRoutes: RouteObject = {
   path: "criteria-stages",

@@ -124,7 +124,7 @@ export default function AdminPrompts() {
                 )
             },
             cell: ({ row }) => (
-                <div className="max-w-[350px] truncate">
+                <div className="max-w-87.5 truncate">
                     {row.original.content}
                 </div>
             ),
@@ -138,7 +138,7 @@ export default function AdminPrompts() {
                 )
             },
             cell: ({ row }) => (
-                <div className="max-w-[500px] truncate">
+                <div className="max-w-125 truncate">
                     <Badge variant="outline" className="capitalize">
                         {row.original.stage}
                     </Badge>
@@ -249,7 +249,7 @@ export default function AdminPrompts() {
                     />}
 
                 <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
-                    <DialogContent className="flex w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] flex-col sm:w-[92vw] sm:max-w-[92vw] lg:max-w-250 max-h-[calc(100vh-1rem)] sm:max-h-[92vh] p-0 overflow-hidden rounded-[1.75rem] sm:rounded-3xl border-muted-foreground/10 bg-card/95 backdrop-blur-xl shadow-2xl h-[650px] gap-0.5">
+                    <DialogContent className="flex w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] flex-col sm:w-[92vw] sm:max-w-[92vw] lg:max-w-250 max-h-[calc(100vh-1rem)] sm:max-h-[92vh] p-0 overflow-hidden rounded-[1.75rem] sm:rounded-3xl border-muted-foreground/10 bg-card/95 backdrop-blur-xl shadow-2xl h-162.5 gap-0.5">
                         <div className="px-4 py-2 ">
                             <DialogHeader className="mb-2">
                                 <DialogTitle className="flex items-center gap-2 text-xl">

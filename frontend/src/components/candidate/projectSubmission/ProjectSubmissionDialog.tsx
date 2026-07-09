@@ -116,7 +116,7 @@ export function ProjectSubmissionDialog({
   console.log(assignedPaper);
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-[700px] h-[93vh] flex flex-col p-0 bg-card/95 backdrop-blur-xl border-muted-foreground/20 shadow-2xl rounded-2xl gap-2">
+      <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-175 h-[93vh] flex flex-col p-0 bg-card/95 backdrop-blur-xl border-muted-foreground/20 shadow-2xl rounded-2xl gap-2">
         <DialogHeader className="p-3 pb-2 border-b border-muted-foreground/10">
           <DialogTitle className="text-xl font-bold tracking-tight">
             Technical Practical Round Submission

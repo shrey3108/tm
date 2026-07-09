@@ -50,7 +50,7 @@ export function CandidatesDistributionChart({ stats }: CandidatesDistributionCha
 
   return (
     <div className="w-full animate-in fade-in zoom-in-95 duration-700">
-      <ChartContainer config={chartConfig} className="w-full min-h-[100px] max-h-[300px]">
+      <ChartContainer config={chartConfig} className="w-full min-h-25 max-h-75">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={data}
@@ -221,7 +221,7 @@ export function StagesBarChart({ stages, onStageClick, selectedStage }: StagesBa
 
   if (data.length === 0) {
     return (
-      <div className="w-full h-[300px] flex items-center justify-center border-2 border-dashed border-muted rounded-3xl">
+      <div className="w-full h-75 flex items-center justify-center border-2 border-dashed border-muted rounded-3xl">
         <div className="text-center space-y-2">
           <p className="text-muted-foreground font-medium italic">No stage data available yet.</p>
           <p className="text-xs text-muted-foreground/60">Upload candidates to see stage distribution.</p>
@@ -239,7 +239,7 @@ export function StagesBarChart({ stages, onStageClick, selectedStage }: StagesBa
             color: "hsl(var(--primary))",
           },
         }}
-        className="w-full min-h-[100px] max-h-[300px]"
+        className="w-full min-h-25 max-h-75"
       >
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
@@ -403,7 +403,7 @@ export function LocationBarChart({ locations }: LocationBarChartProps) {
 
   if (data.length === 0) {
     return (
-      <div className="w-full h-[300px] flex items-center justify-center border-2 border-dashed border-muted rounded-3xl">
+      <div className="w-full h-75 flex items-center justify-center border-2 border-dashed border-muted rounded-3xl">
         <div className="text-center space-y-2">
           <p className="text-muted-foreground font-medium italic">No location data available yet.</p>
           <p className="text-xs text-muted-foreground/60">Candidate locations will appear here once extracted.</p>
@@ -421,7 +421,7 @@ export function LocationBarChart({ locations }: LocationBarChartProps) {
             color: "hsl(var(--primary))",
           },
         }}
-        className="w-full min-h-[100px] max-h-[300px]"
+        className="w-full min-h-25 max-h-75"
       >
         <ResponsiveContainer width="100%" height="100%">
           <BarChart

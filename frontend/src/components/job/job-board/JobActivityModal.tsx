@@ -33,7 +33,7 @@ export function JobActivityModal({ isOpen, onOpenChange, job, onSessionClick }: 
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[60vw] max-w-[60vw] sm:max-w-3xl md:max-w-4xl lg:max-w-5xl max-h-[90vh] flex flex-col p-0 overflow-hidden bg-card/95 backdrop-blur-xl border-muted-foreground/20 shadow-2xl rounded-2xl h-[600px]">
+      <DialogContent className="w-[60vw] max-w-[60vw] sm:max-w-3xl md:max-w-4xl lg:max-w-5xl max-h-[90vh] flex flex-col p-0 overflow-hidden bg-card/95 backdrop-blur-xl border-muted-foreground/20 shadow-2xl rounded-2xl h-150">
         <div className="p-6 pb-2 shrink-0">
           <DialogHeader>
             <div className="flex items-center gap-2 mb-1">
@@ -67,13 +67,13 @@ export function JobActivityModal({ isOpen, onOpenChange, job, onSessionClick }: 
           <Table className="border-separate border-spacing-0">
             <TableHeader className="sticky top-0 bg-background z-20 shadow-[0_1px_0_rgba(0,0,0,0.05)]">
               <TableRow className="hover:bg-transparent">
-                <TableHead className="w-[80px] bg-background border-b">ID</TableHead>
+                <TableHead className="w-20 bg-background border-b">ID</TableHead>
                 <TableHead className="bg-background border-b">Period</TableHead>
                 <TableHead className="text-right bg-background border-b">Total</TableHead>
                 <TableHead className="text-center bg-background border-b">Approve</TableHead>
                 <TableHead className="text-center bg-background border-b">Reject</TableHead>
                 <TableHead className="text-center bg-background border-b">Pending</TableHead>
-                <TableHead className="w-[120px] text-center bg-background border-b">Status</TableHead>
+                <TableHead className="w-30 text-center bg-background border-b">Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

@@ -31,7 +31,7 @@ interface StatCardProps {
  */
 const StatCard = ({ label, value, icon, loading, trend, className = "" }: StatCardProps) => {
   return (
-    <Card className={`border-0 shadow-md rounded-2xl aspect-square flex flex-col transition-all hover:shadow-lg min-h-[100px]  max-h-[150px] flex-1 p-2 ${className}`}>
+    <Card className={`border-0 shadow-md rounded-2xl aspect-square flex flex-col transition-all hover:shadow-lg min-h-25  max-h-37.5 flex-1 p-2 ${className}`}>
       <CardContent className="p-2 flex flex-col h-full text-center">
         <div className="flex-1 flex flex-col items-center justify-center gap-1">
           {icon && <span className="text-primary text-xl mb-1">{icon}</span>}
