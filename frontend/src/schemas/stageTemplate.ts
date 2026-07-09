@@ -15,7 +15,7 @@ const stageTemplateBaseSchema = z.object({
   /** Whether this stage is automatically assigned to new jobs */
   is_default: z.boolean().default(false),
   /** The default position of this stage in a new pipeline */
-  default_order: z.coerce.number({ invalid_type_error: "Order is required" }).int().min(0, "Order must be a non-negative integer"),
+  default_order: z.coerce.number({ error: "Order is required" }).int().min(0, "Order must be a non-negative integer"),
 });
 
 /**

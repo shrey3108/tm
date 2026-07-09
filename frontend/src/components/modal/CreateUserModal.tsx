@@ -4,7 +4,7 @@
  * Uses Zod for form validation and shadcn components.
  */
 
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { useCreateUserMutation, useUpdateUserMutation } from "@/hooks/mutations/admin/useUser";
 import type { UserAdminRead } from "@/types/permission-role";
 import ErrorDisplay from "@/components/shared/ErrorDisplay";
@@ -19,8 +19,8 @@ import { useFormModal } from "@/hooks/useFormModal";
 import { userCreateSchema, type UserCreateFormValues } from "@/schemas/user";
 import { useAdminRoles } from "@/hooks/queries/admin/useAdminRoles";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { SearchableSelect } from "@/components/shared/SearchableSelect";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 
@@ -101,6 +101,16 @@ const CreateUserModal = ({ show, handleClose, onUserSaved, user }: CreateUserMod
 
   const { data: roles, loading } = useAdminRoles({ isEnable: show });
 
+  const roleOptions = useMemo(() => {
+    if (!roles) return [];
+    return roles
+      .filter((role) => role.name !== "superadmin")
+      .map((role) => ({
+        id: role.id,
+        label: role.name,
+      }));
+  }, [roles]);
+
   return (
     <Dialog open={show} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto overflow-x-hidden">
@@ -154,27 +164,23 @@ const CreateUserModal = ({ show, handleClose, onUserSaved, user }: CreateUserMod
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Role</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value}
-                      disabled={loading}
-                      modal={false}
-                    >
-                      <FormControl>
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Select a role">
-                            {roles.find((r) => r.id === field.value)?.name || user?.role_name}
-                          </SelectValue>
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent alignItemWithTrigger={false}>
-                        {roles.filter(role => role.name !== "superadmin").map((role) => (
-                          <SelectItem key={role.id} value={role.id}>
-                            {role.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <SearchableSelect
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        options={roleOptions}
+                        placeholder="Select a role"
+                        searchPlaceholder="Search roles..."
+                        loading={loading}
+                        loadingPlaceholder="Loading roles..."
+                        triggerClassName="w-full"
+                        getTriggerLabel={(selected) => {
+                          const foundRole = roles?.find((r) => r.id === selected.id);
+                          if (foundRole) return foundRole.name;
+                          return user?.role_name || selected.label;
+                        }}
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

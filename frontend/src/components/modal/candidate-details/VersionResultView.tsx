@@ -1,9 +1,9 @@
 import { useState, useMemo } from "react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { History } from "lucide-react";
 import type { CandidateAnalysis, CandidateMatchAnalysis } from "@/types/admin";
 import type { Job } from "@/types/job";
 import { AnalysisContent } from "./AnalysisContent";
+import { SearchableSelect } from "@/components/shared/SearchableSelect";
 
 interface VersionResultViewProps {
   candidate: CandidateAnalysis;
@@ -86,13 +86,20 @@ export function VersionResultView({
 
   const [selectedVersion, setSelectedVersion] = useState(String(results[0].version));
 
+  const options = useMemo(() => {
+    return results.map((r) => ({
+      id: String(r.version),
+      label: `Version ${r.version}`,
+    }));
+  }, [results]);
+
   const activeResult = useMemo(() =>
     results.find((r) => String(r.version) === selectedVersion) || results[0],
     [selectedVersion, results]);
 
   return (
-    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-2.5 sm:px-1.5 sm:pr-6">
+    <div className="space-y-2 animate-in fade-in slide-in-from-bottom-2 duration-500">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2">
         <div className="space-y-0.5">
           <h3 className="text-lg font-extrabold tracking-tight flex items-center gap-2">
             <History className="h-5 w-5 text-primary" />
@@ -107,22 +114,15 @@ export function VersionResultView({
           <span className="text-[10px] font-black uppercase text-muted-foreground tracking-wider whitespace-nowrap">
             Select Version:
           </span>
-          <Select
+          <SearchableSelect
             value={selectedVersion}
             onValueChange={(val) => val && setSelectedVersion(val)}
-            modal={false}
-          >
-            <SelectTrigger className="w-fit min-w-25 rounded-lg border-muted-foreground/5 h-8 text-xs font-bold shadow-none bg-background gap-2">
-              <SelectValue placeholder="Version" className={"min-w-25"} />
-            </SelectTrigger>
-            <SelectContent className="rounded-xl border-muted-foreground/10 " side="bottom" alignItemWithTrigger={false}>
-              {results.map((r) => (
-                <SelectItem key={r.version} value={String(r.version)} className="rounded-lg text-xs font-medium ">
-                  {r.version}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            options={options}
+            placeholder="Version"
+            searchPlaceholder="Search versions..."
+            triggerClassName="w-fit min-w-25 rounded-lg border-muted-foreground/5 h-8 text-xs font-bold shadow-none bg-background gap-2"
+            contentClassName="rounded-xl border-muted-foreground/10"
+          />
         </div>
       </div>
 

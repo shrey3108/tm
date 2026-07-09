@@ -176,8 +176,8 @@ export function CrossMatchView({ resumeId, onClose }: CrossMatchViewProps) {
   }
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-2.5 sm:px-1.5 sm:pr-6">
+    <div className="space-y-2 animate-in fade-in slide-in-from-bottom-2 duration-500">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2">
         <div className="space-y-0.5">
           <h3 className="text-lg font-bold flex items-center gap-2">
             <Compass className="h-5 w-5 text-primary" />

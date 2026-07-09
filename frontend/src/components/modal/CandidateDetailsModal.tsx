@@ -197,11 +197,11 @@ export function CandidateDetailsModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose} >
-      <DialogContent className="flex w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] flex-col sm:w-[92vw] sm:max-w-[92vw] lg:max-w-250 max-h-[calc(100vh-1rem)] sm:max-h-[92vh] p-0 overflow-hidden rounded-[1.75rem] sm:rounded-3xl border-muted-foreground/10 bg-card/95 backdrop-blur-xl shadow-2xl h-[650px]">
-        <DialogHeader className="pt-3 px-2 pb-2 sm:pt-4 sm:px-3">
+      <DialogContent className="flex w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] flex-col sm:w-[92vw] sm:max-w-[92vw] lg:max-w-250 max-h-[calc(100vh-1rem)] sm:max-h-[92vh] p-0 overflow-hidden rounded-[1.75rem] sm:rounded-3xl border-muted-foreground/10 bg-card/95 backdrop-blur-xl shadow-2xl h-[650px] gap-1 custom-scrollbar">
+        <DialogHeader className="p-2">
           <CandidateHeader candidate={candidate} activeTab={activeTab} passing_threshold={passing_threshold ?? 0} setActiveTab={setActiveTab} />
         </DialogHeader>
-        <div className="min-h-0 flex-1 overflow-y-auto p-2 pb-4 sm:p-3">
+        <div className="min-h-0 flex-1 overflow-y-auto p-2 custom-scrollbar">
           {activeTab === "analysis" ? (
             <AnalysisContent
               candidate={candidate}

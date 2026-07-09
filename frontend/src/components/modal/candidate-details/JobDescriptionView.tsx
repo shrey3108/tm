@@ -1,16 +1,8 @@
-import { Separator } from "@/components/ui/separator";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { useMemo } from "react";
 import { FileText, History, AlertCircle } from "lucide-react";
 import type { Job, JobVersionDetail } from "@/types/job";
 import { DateDisplay } from "@/components/shared/DateDisplay";
+import { SearchableSelect } from "@/components/shared/SearchableSelect";
 
 /**
  * Props for {@link JobDescriptionView}.
@@ -35,18 +27,28 @@ export function JobDescriptionView({
   onVersionChange,
   appliedVersionNumber,
 }: JobDescriptionViewProps) {
+  const options = useMemo(() => {
+    if (!job?.job_versions) return [];
+    return job.job_versions.map((ver) => ({
+      id: ver.id,
+      label: ver.version_num === appliedVersionNumber
+        ? `Version ${ver.version_num} (Applied)`
+        : `Version ${ver.version_num}`,
+    }));
+  }, [job?.job_versions, appliedVersionNumber]);
+
   return (
-    <div className="flex h-full flex-col gap-4 p-2 sm:p-4">
+    <div className="flex h-full flex-col gap-2">
       {isLoadingVersion ? (
-        <div className="flex-1 flex flex-col items-center justify-center gap-4 py-20">
+        <div className="flex-1 flex flex-col items-center justify-center gap-2 py-20">
           <div className="h-8 w-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
           <p className="text-sm font-bold text-muted-foreground">
             Loading JD Version...
           </p>
         </div>
       ) : selectedVersionData ? (
-        <div className="space-y-3.5 rounded-[2.5rem] border border-border/80 bg-card/40 backdrop-blur-sm p-4 sm:p-5">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between px-0.5 md:pr-4">
+        <div className="space-y-2 rounded-2xl border border-border/80 bg-card/40 backdrop-blur-sm p-2">
+          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between px-0.5">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-inner">
                 <FileText className="h-5.5 w-5.5" />
@@ -71,51 +73,17 @@ export function JobDescriptionView({
 
               {job?.job_versions && (
                 <div className="flex items-center gap-2">
-                  <Select
+                  <SearchableSelect
                     value={selectedVersionData?.id || ""}
-                    onValueChange={onVersionChange}
-                    modal={false}
-                  >
-                    <SelectTrigger className="h-8.5 rounded-xl border-border/60 bg-muted/30 px-3 text-[11px] font-bold hover:bg-muted/50 transition-colors w-45">
-                      <div className="flex items-center gap-2">
-                        <History className="h-3.5 w-3.5 text-muted-foreground" />
-                        <SelectValue placeholder="Version">
-                          {selectedVersionData
-                            ? `Version ${selectedVersionData.version_number}`
-                            : "Version"}
-                        </SelectValue>
-                      </div>
-                    </SelectTrigger>
-                    <SelectContent className="rounded-2xl border-border/60 bg-popover/80 backdrop-blur-xl shadow-2xl" alignItemWithTrigger={false}>
-                      <SelectGroup>
-                        <SelectLabel className="px-2 py-1.5 text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none">
-                          JD History
-                        </SelectLabel>
-                        <Separator className="bg-border/40 my-1" />
-                        {job.job_versions.map((ver) => (
-                          <SelectItem
-                            key={ver.id}
-                            value={ver.id}
-                            className="flex items-center justify-between rounded-xl px-2.5 py-2 transition-all hover:bg-primary/5 focus:bg-primary/5 group"
-                          >
-                            <div className="flex items-center gap-2 mr-4">
-                              <span className="text-[12px] font-bold text-foreground/80 group-data-[state=checked]:text-primary">
-                                Version {ver.version_num}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-1.5 pr-2">
-                              {ver.version_num === appliedVersionNumber && (
-                                <span className="rounded-md bg-primary text-primary-foreground px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider shadow-sm">
-                                  Applied
-                                </span>
-                              )}
-
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
+                    onValueChange={(val) => onVersionChange(val, null)}
+                    options={options}
+                    placeholder="Version"
+                    searchPlaceholder="Search versions..."
+                    icon={<History className="h-3.5 w-3.5 text-muted-foreground" />}
+                    triggerClassName="h-8.5 rounded-xl border-border/60 bg-muted/30 px-3 text-[11px] font-bold hover:bg-muted/50 transition-colors w-45"
+                    contentClassName="rounded-2xl border-border/60 bg-popover/80 backdrop-blur-xl shadow-2xl"
+                    getTriggerLabel={(selected) => selected.label.replace(" (Applied)", "")}
+                  />
                 </div>
               )}
               {appliedVersionNumber === selectedVersionData.version_number && (
@@ -129,7 +97,7 @@ export function JobDescriptionView({
 
 
 
-          <div className="rounded-2xl border border-border/50 bg-muted/20 p-4 sm:p-5">
+          <div className="rounded-2xl border border-border/50 bg-muted/20 p-2">
             <p className="text-sm text-foreground/80 leading-relaxed font-medium whitespace-pre-wrap selection:bg-primary/20">
               {selectedVersionData.jd_text}
             </p>
