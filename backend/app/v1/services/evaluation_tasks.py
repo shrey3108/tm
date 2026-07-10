@@ -601,7 +601,7 @@ def evaluate_candidate_practical_task(
                 from app.v1.db.models.associate_evaluations import AssociateEvaluation
                 from app.v1.services.email_service import send_associate_notification_email
                 
-                # Fetch default test paper
+                # Fetch default question paper
                 stmt_job = select(CandidateTestPaper).where(
                     CandidateTestPaper.job_id == job.id,
                     CandidateTestPaper.candidate_id.is_(None),

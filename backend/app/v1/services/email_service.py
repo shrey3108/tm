@@ -203,6 +203,7 @@ async def send_candidate_task_email_via_smtp(
     test_paper: CandidateTestPaper,
     db: AsyncSession
 ) -> None:
+    # reload trigger
     # 1. Determine attachment and details
     temp_file_to_delete = None
     attachment_path = None
@@ -225,7 +226,7 @@ async def send_candidate_task_email_via_smtp(
     is_modified = True
     
     if test_paper:
-        if test_paper.name == "Custom Test Paper" or test_paper.name.startswith("Randomized Test Paper"):
+        if test_paper.name in ("Custom Test Paper", "Custom Question Paper") or test_paper.name.startswith("Randomized Test Paper") or test_paper.name.startswith("Randomized Question Paper"):
             is_modified = True
         elif test_paper.task_file_path:
             # Find the original QuestionSetPaper by task_file_path
@@ -409,20 +410,23 @@ async def send_candidate_task_email_via_smtp(
           <div class="content">
             <div class="greeting">Hello {candidate.first_name or "Candidate"},</div>
             <div class="message">
-              We are pleased to invite you to take the next step in our interview process{job_info_str}. A test paper <strong></strong> has been assigned to you.
+              We are pleased to invite you to take the next step in our interview process{job_info_str}. A question paper <strong></strong> has been assigned to you.
             </div>
             
             {details_html}
             {guidelines_html}
 
             <div class="message">
-              Please review the questions and tasks above. If a PDF is attached, it contains the full details of your test paper.
+              Please review the questions and tasks above.There is a PDF attached that contains a Full details of Question Paper.
             </div>
           </div>
           <div class="footer">
             August Infotech<br>
             32, SAI ASHISH SOCIETY PART-1, BEHIND VIJAY SALES, NR. CHANDNI CHOWK,<br>
             PIPLOD, SURAT 395007 | www.augustinfotech.com
+            <div style="margin-top: 10px; font-size: 10px; color: #cbd5e1;">
+              Ref: {uuid.uuid4().hex[:8].upper()}
+            </div>
           </div>
         </div>
       </body>
@@ -451,7 +455,7 @@ async def send_candidate_task_email_via_smtp(
     job_name = job.title if job else "Job"
     job_position = job.position.name if job and job.position else "Position"
 
-    msg["Subject"] = f"[{job_position}-{job_name} Test Paper assigned for {candidate.first_name or 'Candidate'} {candidate.last_name or ''}]"
+    msg["Subject"] = f"{job_position}-{job_name} Question Paper assigned for {candidate.first_name or 'Candidate'} {candidate.last_name or ''}]"
     
     msg.attach(MIMEText(html_body, "html"))
 
@@ -502,7 +506,7 @@ async def send_associate_notification_email(
     stage_job_id: Optional[uuid.UUID] = None,
     stage_name: Optional[str] = None,
 ) -> None:
-    """Send test paper + candidate GitHub URL to an associate for the GitHub+Question round.
+    """Send question paper + candidate GitHub URL to an associate for the GitHub+Question round.
 
     Reuses the same PDF generation and SMTP safety pattern as
     ``send_candidate_task_email_via_smtp`` but targets an associate (reviewer)
@@ -760,7 +764,7 @@ async def send_associate_notification_email(
           <div class="content">
             <div class="greeting">Hello {html.escape(associate_name)},</div>
             <div class="message">
-              You have been assigned to evaluate the GitHub repository and test paper for
+              You have been assigned to evaluate the GitHub repository and question paper for
               <strong>{html.escape(candidate_full_name)}</strong>{job_info_str}.
             </div>
 
@@ -805,7 +809,7 @@ async def send_associate_notification_email(
             <div class="review-form-box">
               <div class="review-form-title">📝 Submit Your Evaluation</div>
               <div class="review-form-text">
-                After reviewing the candidate's GitHub repository and test paper,
+                After reviewing the candidate's GitHub repository and question paper,
                 please click the button below to open the review form and submit your marks
                 for each question.
               </div>
@@ -818,13 +822,16 @@ async def send_associate_notification_email(
 
             <div class="message">
               {f"Please review the candidate's GitHub repository using the link above." if github_url else ""}
-              The attached PDF contains the full details of the test paper (questions and project tasks).
+              The attached PDF contains the full details of the question paper (questions and project tasks).
             </div>
           </div>
           <div class="footer">
             August Infotech<br>
             32, SAI ASHISH SOCIETY PART-1, BEHIND VIJAY SALES, NR. CHANDNI CHOWK,<br>
             PIPLOD, SURAT 395007 | www.augustinfotech.com
+            <div style="margin-top: 10px; font-size: 10px; color: #cbd5e1;">
+              Ref: {uuid.uuid4().hex[:8].upper()}
+            </div>
           </div>
         </div>
       </body>
@@ -899,6 +906,15 @@ async def send_associate_reminder_email(
     """Send a reminder email to an associate for a pending evaluation."""
     candidate_full_name = f"{candidate.first_name} {candidate.last_name}".strip()
     job_title = job.title if job else "the assigned job"
+    job_position = "Position"
+    job_department = "Department"
+    if job:
+        if job.position:
+            job_position = job.position.name or "Position"
+        else:
+            job_position = job.title or "Position"
+        if job.department:
+            job_department = job.department.name or "Department"
     
     subject = f"ACTION REQUIRED: Pending Evaluation for {candidate_full_name} - {job_title}"
     
@@ -932,7 +948,7 @@ async def send_associate_reminder_email(
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
           }}
           .header {{
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            background: linear-gradient(135deg, #fca5a5 0%, #f87171 100%);
             padding: 30px 40px;
             color: white;
             text-align: center;
@@ -950,6 +966,36 @@ async def send_associate_reminder_email(
             font-weight: 600;
             margin-top: 15px;
           }}
+          .candidate-info-box {{
+            background-color: #f9fafb;
+            border-radius: 8px;
+            padding: 20px;
+            border-left: 4px solid #3b82f6;
+            margin-bottom: 30px;
+          }}
+          .info-row {{
+            display: flex;
+            margin-bottom: 10px;
+            font-size: 14px;
+            line-height: 1.5;
+          }}
+          .info-label {{
+            font-weight: 600;
+            color: #1f2937;
+            min-width: 140px;
+          }}
+          .info-value {{
+            color: #4b5563;
+            flex: 1;
+          }}
+          .footer {{
+            background-color: #f9fafb;
+            padding: 20px 30px;
+            text-align: center;
+            font-size: 12px;
+            color: #9ca3af;
+            border-top: 1px solid #eef2f6;
+          }}
         </style>
       </head>
       <body>
@@ -959,13 +1005,41 @@ async def send_associate_reminder_email(
           </div>
           <div class="content">
             <p>Hi {html.escape(associate_name)},</p>
-            <p>This is a friendly reminder that you have a pending evaluation for <strong>{html.escape(candidate_full_name)}</strong> for the <strong>{html.escape(job_title)}</strong> position.
+            <p>This is a gentle reminder that you have a pending evaluation for <strong>{html.escape(candidate_full_name)}</strong> for the <strong>{html.escape(job_position)}</strong> position.
               The deadline for submitting this evaluation is approaching. Your timely feedback is critical.
             </p>
+            
+            <div class="candidate-info-box">
+              <div class="info-row">
+                <div class="info-label">Candidate Name:</div>
+                <div class="info-value">{html.escape(candidate_full_name)}</div>
+              </div>
+              <div class="info-row">
+                <div class="info-label">Job Role:</div>
+                <div class="info-value">{html.escape(job_title) or 'N/A'}</div>
+              </div>
+              <div class="info-row">
+                <div class="info-label">Department:</div>
+                <div class="info-value">{html.escape(job_department)}</div>
+              </div>
+              <div class="info-row">
+                <div class="info-label">Position:</div>
+                <div class="info-value">{html.escape(job_position)}</div>
+              </div>
+            </div>
+
             <div class="button-container" style="text-align: center; margin: 30px 0;">
               <a href="{html.escape(review_form_url)}" class="btn">Open Review Form</a>
             </div>
             {ai_score_html}
+          </div>
+          <div class="footer">
+            August Infotech<br>
+            32, SAI ASHISH SOCIETY PART-1, BEHIND VIJAY SALES, NR. CHANDNI CHOWK,<br>
+            PIPLOD, SURAT 395007 | www.augustinfotech.com
+            <div style="margin-top: 10px; font-size: 10px; color: #cbd5e1;">
+              Ref: {uuid.uuid4().hex[:8].upper()}
+            </div>
           </div>
         </div>
       </body>

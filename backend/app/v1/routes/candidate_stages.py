@@ -723,7 +723,7 @@ async def send_paper_to_associates(
     db: AsyncSession = Depends(get_db),
     user: UserRead = Depends(check_permission("candidates:decide")),
 ) -> Any:
-    """Send the default test paper + candidate GitHub URL to multiple associates via email.
+    """Send the default question paper + candidate GitHub URL to multiple associates via email.
 
     Used for the GitHub + Question round where associates need the paper and the
     candidate's GitHub repository link to evaluate the submission.
@@ -759,7 +759,7 @@ async def send_paper_to_associates(
     if stage.evaluation_data and isinstance(stage.evaluation_data, dict):
         github_url = stage.evaluation_data.get("github_url")
 
-    # 3. Fetch the default test paper for this job stage
+    # 3. Fetch the default question paper for this job stage
     #    (CandidateTestPaper where candidate_id IS NULL = job-level default)
     test_paper = None
     target_job_id = stage.job_stage.job_id if stage.job_stage else candidate.applied_job_id
@@ -786,7 +786,7 @@ async def send_paper_to_associates(
     if not test_paper:
         raise HTTPException(
             status_code=400,
-            detail="No default test paper found for this job stage. Please assign a test paper first.",
+            detail="No default question paper found for this job stage. Please assign a question paper first.",
         )
 
     # 4. Fetch associates by IDs
@@ -888,7 +888,7 @@ async def send_paper_to_associates(
 
     return SendToAssociatesResponse(
         status="success",
-        message=f"Test paper + GitHub URL email processed: {len(sent_results)} sent, {len(failed_results)} failed.",
+        message=f"Question paper + GitHub URL email processed: {len(sent_results)} sent, {len(failed_results)} failed.",
         candidate_stage_id=id,
         candidate_name=candidate_full_name,
         github_url=github_url,
@@ -956,7 +956,7 @@ async def get_associate_results(
         raise HTTPException(
             status_code=404,
             detail="No associate evaluations found for this candidate stage. "
-            "Please send the test paper to associates first.",
+            "Please send the question paper to associates first.",
         )
 
     # 4. Resolve candidate name

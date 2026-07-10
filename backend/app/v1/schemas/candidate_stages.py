@@ -54,7 +54,7 @@ class StageDecisionCreate(BaseModel):
 
 
 class SendToAssociatesRequest(BaseModel):
-    """Request body for sending test paper + GitHub URL to multiple associates."""
+    """Request body for sending question paper + GitHub URL to multiple associates."""
     associate_ids: list[uuid.UUID] = Field(
         ..., min_length=1, description="List of associate IDs to notify via email"
     )
@@ -71,7 +71,7 @@ class AssociateEmailResult(BaseModel):
 
 
 class SendToAssociatesResponse(BaseModel):
-    """Response after sending test paper + GitHub URL to associates."""
+    """Response after sending question paper + GitHub URL to associates."""
     status: str
     message: str
     candidate_stage_id: uuid.UUID

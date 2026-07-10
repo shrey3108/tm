@@ -349,7 +349,7 @@ async def test_task_papers_flow():
             )
             assert response.status_code == 200
             random_assigned = response.json()
-            assert random_assigned["name"] == f"Randomized Test Paper ({job_title})"
+            assert random_assigned["name"] == f"Randomized Question Paper ({job_title})"
             assert len(random_assigned["questions"]) == 10
             # Questions should be subset of the 10 pooled questions
             pooled_questions = [
@@ -387,7 +387,7 @@ async def test_task_papers_flow():
             )
             assert response.status_code == 200
             custom_assigned = response.json()
-            assert custom_assigned["name"] == "Custom Test Paper"
+            assert custom_assigned["name"] == "Custom Question Paper"
             assert [q["question"] for q in custom_assigned["questions"]] == [
                 "Custom Q1",
                 "Custom Q2",
@@ -1031,7 +1031,8 @@ async def test_task_papers_duplicate_checks():
 
 @pytest.mark.anyio
 async def test_dynamic_stage_requirements():
-    test_id_suffix = str(UUIDHelper.generate_uuid7())[:8]
+    import uuid
+    test_id_suffix = str(uuid.uuid4())[:8]
     job_title = f"Test Job {test_id_suffix}"
     position_name = f"Test Pos {test_id_suffix}"
     candidate_email = f"candidate_{test_id_suffix}@example.com"
@@ -1161,7 +1162,7 @@ async def test_dynamic_stage_requirements():
         # Test 4: Get assigned paper (should fail now because active stage B does not require "question")
         res_get_b = client.get(f"/api/v1/task-papers/assigned/{candidate_id}")
         assert res_get_b.status_code == 404
-        assert "Candidate has not reached the test paper stage yet." in res_get_b.json()["detail"]
+        assert "Candidate has not reached the question paper stage yet." in res_get_b.json()["detail"]
 
         # Test 5: Upload transcript to CandidateStage B (should succeed/start processing because Stage B requires "transcript")
         with patch("app.v1.services.transcript_tasks.process_transcript_task.delay") as mock_celery:

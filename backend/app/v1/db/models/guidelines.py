@@ -13,7 +13,7 @@ from app.v1.utils.uuid import UUIDHelper
 class Guideline(Base):
     """Guideline ORM model.
 
-    Stores custom guideline templates to be assigned to test papers sent to candidates.
+    Stores custom guideline templates to be assigned to question papers sent to candidates.
     """
 
     __tablename__ = "guidelines"

@@ -444,14 +444,14 @@ class CandidateTestPaperAssign(BaseModel):
 
 
 class CandidateTestPaperEmailSend(BaseModel):
-    candidate_email: str = Field(..., description="The candidate's email address to send the test paper to")
+    candidate_email: str = Field(..., description="The candidate's email address to send the question paper to")
     paper_id: uuid.UUID = Field(..., description="The ID of the generated CandidateTestPaper to send")
     force: bool = Field(False, description="Force send the email even if it has already been sent before")
 
 
 class CandidateTestPaperBulkEmailSend(BaseModel):
-    candidate_ids: Optional[list[uuid.UUID]] = Field(None, description="List of candidate IDs to send the test paper to")
-    candidate_emails: Optional[list[str]] = Field(None, description="List of candidate email addresses to send the test paper to")
+    candidate_ids: Optional[list[uuid.UUID]] = Field(None, description="List of candidate IDs to send the question paper to")
+    candidate_emails: Optional[list[str]] = Field(None, description="List of candidate email addresses to send the question paper to")
     paper_id: uuid.UUID = Field(..., description="The ID of the CandidateTestPaper to send")
     force: bool = Field(False, description="Force send the emails even if they have already been sent before")
 

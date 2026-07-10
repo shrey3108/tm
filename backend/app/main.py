@@ -6,6 +6,7 @@ and sets up the API router. It also handles the application lifespan events
 for database initialization.
 """
 
+# reload trigger
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI

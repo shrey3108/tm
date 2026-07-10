@@ -140,9 +140,16 @@ def generate_candidate_task_pdf_file(
         alignment=TA_RIGHT
     )
 
+    desc_style = ParagraphStyle(
+        name='DescStyle',
+        parent=styles['Normal'],
+        fontSize=11,
+        spaceAfter=0
+    )
+
     Story = []
     display_title = sanitize_for_pdf(job_name if job_name else test_paper.name)
-    Story.append(Paragraph(f"Test Paper: {display_title}", title_style))
+    Story.append(Paragraph(f"Question Paper: {display_title}", title_style))
     Story.append(Spacer(1, 20))
     
     def format_meta(item: dict) -> str:
@@ -189,7 +196,7 @@ def generate_candidate_task_pdf_file(
                 if isinstance(t, dict):
                     instructions = t.get("instructions")
                     if instructions:
-                        Story.append(Paragraph(f"<b>Instructions:</b> {sanitize_for_pdf(instructions)}", normal_style))
+                        Story.append(Paragraph(sanitize_for_pdf(instructions), normal_style))
             Story.append(Spacer(1, 10))
 
     if test_paper.questions:
@@ -215,8 +222,9 @@ def generate_candidate_task_pdf_file(
                     q_text += format_meta(mcq.model_dump())
             add_question(q_text, f"{i+1}.")
             options = mcq.get("options") if isinstance(mcq, dict) else getattr(mcq, "options", [])
-            for opt in options:
-                Story.append(Paragraph(f"   - {sanitize_for_pdf(opt)}", normal_style))
+            for j, opt in enumerate(options):
+                prefix = chr(65 + j)  # A, B, C, D...
+                Story.append(Paragraph(f"{prefix}. {sanitize_for_pdf(opt)}", normal_style))
             Story.append(Spacer(1, 10))
 
     if test_paper.project_task:
@@ -232,24 +240,23 @@ def generate_candidate_task_pdf_file(
                 
                 desc = t.get("description")
                 if desc:
-                    Story.append(Paragraph(f"<b>Description:</b> {sanitize_for_pdf(desc)}", normal_style))
+                    Story.append(Paragraph(f"<b>Description:</b> {sanitize_for_pdf(desc)}", desc_style))
                     
                 subtasks = t.get("tasks")
                 if subtasks and isinstance(subtasks, list):
-                    Story.append(Spacer(1, 5))
                     for sub in subtasks:
                         if isinstance(sub, dict):
                             sub_name = sub.get("name", "Untitled Task")
                             sub_name = str(sub_name) + format_meta(sub)
-                            add_question(sub_name, "-")
+                            add_question(sub_name, "Task-")
                             sub_desc = sub.get("description")
                             if sub_desc:
                                 Story.append(Paragraph(f"   {sanitize_for_pdf(sub_desc)}", normal_style))
                         else:
-                            add_question(str(sub), "-")
+                            add_question(str(sub), "Task-")
                 Story.append(Spacer(1, 10))
             else:
-                add_question(str(t), "-")
+                add_question(str(t), "Task-")
 
     if guideline_content:
         Story.append(Spacer(1, 20))
@@ -299,16 +306,25 @@ def generate_candidate_task_pdf_file(
 
     footer_text = "32, SAI ASHISH SOCIETY PART-1, BEHIND VIJAY SALES, NR. CHANDNI CHOWK,\nPIPLOD, SURAT 395007 | www.augustinfotech.com"
 
-    for page in doc:
+    total_pages = len(doc)
+    for i, page in enumerate(doc):
         if has_logo and pdf_doc_logo:
             page.show_pdf_page(fitz.Rect(50, 40, 200, 80), pdf_doc_logo, 0)
             
         page.insert_textbox(
-            fitz.Rect(50, 750, 550, 800), 
+            fitz.Rect(50, 750, 562, 800), 
             footer_text, 
             fontsize=10, 
             fontname="hebo", 
             align=fitz.TEXT_ALIGN_CENTER
+        )
+
+        page.insert_textbox(
+            fitz.Rect(470, 750, 562, 800), 
+            f"{i + 1}", 
+            fontsize=9, 
+            fontname="hebo", 
+            align=fitz.TEXT_ALIGN_RIGHT
         )
 
     temp_pdf_final = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")

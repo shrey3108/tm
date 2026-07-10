@@ -2,7 +2,7 @@
 AssociateEvaluation ORM model.
 
 Tracks each associate's evaluation assignment and submission for a candidate stage.
-Created when HR sends a test paper to an associate via the send-to-associates endpoint.
+Created when HR sends a question paper to an associate via the send-to-associates endpoint.
 Updated when the associate submits marks via the token-based review form.
 """
 
@@ -36,7 +36,7 @@ class AssociateEvaluation(Base):
         id: Primary key (UUID7).
         candidate_stage_id: FK to the candidate stage.
         associate_id: FK to the associate.
-        test_paper_id: FK to the candidate test paper sent.
+        test_paper_id: FK to the candidate question paper sent.
         candidate_id: FK to the candidate.
         job_id: FK to the job.
         review_token: Unique token for form access (no auth).

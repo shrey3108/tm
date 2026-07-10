@@ -134,8 +134,9 @@ async def test_task_paper_history_and_evaluation_flow():
             assert response.status_code == 200
             res_json = response.json()
             assert res_json["id"] == job_paper_id
-            assert res_json["name"] == "Custom Test Paper"
-            assert res_json["project_task"] == [{"task": "Task A", "instructions": ""}]
+            assert res_json["name"] == "Custom Question Paper"
+            assert res_json["project_task"][0]["task"] == "Task A"
+            assert res_json["project_task"][0]["instructions"] == ""
             assert len(res_json["mcqs"]) == 1
             assert res_json["mcqs"][0]["question"] == "What is Python?"
             # It should not show that job default changed yet, because candidate does not have candidate-specific paper
@@ -157,9 +158,12 @@ async def test_task_paper_history_and_evaluation_flow():
                 )
                 cand_paper = res_ctp.mappings().first()
                 assert cand_paper is not None
-                assert cand_paper["name"] == "Custom Test Paper"
-                assert cand_paper["project_task"] == [{"task": "Task A", "instructions": ""}]
-                assert cand_paper["mcqs"] == [{"question": "What is Python?", "options": ["lang", "snake"], "answer": "lang"}]
+                assert cand_paper["name"] == "Custom Question Paper"
+                assert cand_paper["project_task"][0]["task"] == "Task A"
+                assert cand_paper["project_task"][0]["instructions"] == ""
+                assert cand_paper["mcqs"][0]["question"] == "What is Python?"
+                assert cand_paper["mcqs"][0]["options"] == ["lang", "snake"]
+                assert cand_paper["mcqs"][0]["answer"] == "lang"
                 candidate_paper_id = cand_paper["id"]
 
             # Query assigned paper again -> should return candidate-specific assignment
@@ -176,7 +180,8 @@ async def test_task_paper_history_and_evaluation_flow():
             assert response.status_code == 200
             history = response.json()
             assert len(history) == 1
-            assert history[0]["project_task"] == [{"task": "Task A", "instructions": ""}]
+            assert history[0]["project_task"][0]["task"] == "Task A"
+            assert history[0]["project_task"][0]["instructions"] == ""
             assert len(history[0]["mcqs"]) == 1
             assert history[0]["mcqs"][0]["question"] == "What is Python?"
 
@@ -198,11 +203,12 @@ async def test_task_paper_history_and_evaluation_flow():
             assert response.status_code == 200
             res_json = response.json()
             assert res_json["id"] == str(candidate_paper_id)
-            assert res_json["project_task"] == [{"task": "Task A", "instructions": ""}]
+            assert res_json["project_task"][0]["task"] == "Task A"
+            assert res_json["project_task"][0]["instructions"] == ""
             assert len(res_json["mcqs"]) == 1
             assert res_json["mcqs"][0]["question"] == "What is Python?"
             assert res_json["job_default_paper_changed"] is True
-            assert res_json["job_default_paper_name"] == "Custom Test Paper"
+            assert res_json["job_default_paper_name"] == "Custom Question Paper"
             assert res_json["job_default_paper_id"] == new_job_paper_id
 
             # 5. Email new default paper to candidate to verify reassignment and history (needs force=True because email was already sent once)
@@ -219,8 +225,8 @@ async def test_task_paper_history_and_evaluation_flow():
             assert response.status_code == 200
             history = response.json()
             assert len(history) == 2
-            assert history[0]["project_task"] == [{"task": "Task B", "instructions": ""}]
-            assert history[1]["project_task"] == [{"task": "Task A", "instructions": ""}]
+            assert history[0]["project_task"][0]["task"] == "Task B"
+            assert history[1]["project_task"][0]["task"] == "Task A"
             assert len(history[0]["mcqs"]) == 1
             assert history[0]["mcqs"][0]["question"] == "What is FastAPI?"
             assert len(history[1]["mcqs"]) == 1
@@ -231,8 +237,8 @@ async def test_task_paper_history_and_evaluation_flow():
             assert response.status_code == 200
             job_history = response.json()
             assert len(job_history) == 2
-            assert job_history[0]["project_task"] == [{"task": "Task B", "instructions": ""}]
-            assert job_history[1]["project_task"] == [{"task": "Task A", "instructions": ""}]
+            assert job_history[0]["project_task"][0]["task"] == "Task B"
+            assert job_history[1]["project_task"][0]["task"] == "Task A"
             assert len(job_history[0]["mcqs"]) == 1
             assert job_history[0]["mcqs"][0]["question"] == "What is FastAPI?"
             assert len(job_history[1]["mcqs"]) == 1

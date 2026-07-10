@@ -73,7 +73,7 @@ async def trigger_github_evaluation(
             res_paper = await db.execute(stmt_paper)
             test_paper = res_paper.scalar_one_or_none()
 
-        # Fallback to job-level default test paper
+        # Fallback to job-level default question paper
         target_job_id = stage.job_stage.job_id if stage.job_stage else candidate.applied_job_id
         if not test_paper and target_job_id:
             stmt_job = select(CandidateTestPaper).where(
@@ -101,7 +101,7 @@ async def trigger_github_evaluation(
     if not has_assigned_paper:
         raise HTTPException(
             status_code=400,
-            detail="Please assign a test paper to the candidate first before running the repository evaluation.",
+            detail="Please assign a question paper to the candidate first before running the repository evaluation.",
         )
 
     # Get Job standard skills

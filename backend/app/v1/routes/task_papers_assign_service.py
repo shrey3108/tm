@@ -1,5 +1,5 @@
 """
-Service layer for assigning test papers to candidates/jobs.
+Service layer for assigning question papers to candidates/jobs.
 
 Extracted from the original `task_papers_assigned.py` route file to keep
 route handlers thin. Contains the heavy business logic for the
@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 
 
 class TaskPaperAssignService:
-    """Handles assignment of test papers (predefined/random/custom/hybrid)."""
+    """Handles assignment of question papers (predefined/random/custom/hybrid)."""
 
     async def assign_test_paper(
         self,
@@ -48,7 +48,7 @@ class TaskPaperAssignService:
         assign_data: CandidateTestPaperAssign,
         user: UserRead,
     ) -> CandidateTestPaper:
-        """Assign, randomly generate, or custom construct a test paper for a candidate or a job."""
+        """Assign, randomly generate, or custom construct a question paper for a candidate or a job."""
         if not assign_data.candidate_id and not assign_data.job_id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -107,7 +107,7 @@ class TaskPaperAssignService:
             if guideline_contents:
                 guideline_content = "\n\n".join(guideline_contents)
 
-        # Persist the assigned test paper
+        # Persist the assigned question paper
         new_paper = await self._persist_paper(
             db,
             candidate_id=candidate_id,
@@ -163,7 +163,7 @@ class TaskPaperAssignService:
             if s.status == "completed":
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Cannot assign or modify test paper after the candidate has completed the {stage_name}.",
+                    detail=f"Cannot assign or modify question paper after the candidate has completed the {stage_name}.",
                 )
 
         job_id = await get_candidate_active_job_id(db, candidate)
@@ -186,7 +186,7 @@ class TaskPaperAssignService:
 
         stage_config_id = assign_data.job_stage_id or await get_candidate_active_stage_config_id(db, candidate_id)
 
-        # Delete any existing test paper assignment for this candidate and stage config
+        # Delete any existing question paper assignment for this candidate and stage config
         delete_stmt = delete(CandidateTestPaper).where(CandidateTestPaper.candidate_id == candidate_id)
         if stage_config_id:
             delete_stmt = delete_stmt.where(CandidateTestPaper.job_stage_config_id == stage_config_id)
@@ -216,7 +216,7 @@ class TaskPaperAssignService:
         # Auto-resolve the first question-type round's stage config if not explicitly provided.
         stage_config_id = assign_data.job_stage_id or await get_job_first_question_stage_config_id(db, job_id)
 
-        # Delete any existing job-level default test paper for this stage config
+        # Delete any existing job-level default question paper for this stage config
         delete_stmt = delete(CandidateTestPaper).where(
             CandidateTestPaper.job_id == job_id,
             CandidateTestPaper.candidate_id.is_(None),
@@ -403,7 +403,7 @@ class TaskPaperAssignService:
 
         assigned_skills = None  # Will be extracted dynamically
 
-        assigned_name = f"Randomized Test Paper ({job.title})"
+        assigned_name = f"Randomized Question Paper ({job.title})"
 
         # Slice the top 10 since they are already sorted by weightage descending
         assigned_questions = unique_questions[:10]
@@ -419,7 +419,7 @@ class TaskPaperAssignService:
                 detail="At least one of 'questions', 'mcqs', or 'project_task' is required when mode is 'custom'.",
             )
 
-        assigned_name = "Custom Test Paper"
+        assigned_name = "Custom Question Paper"
         assigned_questions = (
             [q.model_dump(mode="json") if hasattr(q, "model_dump") else q for q in assign_data.questions]
             if assign_data.questions
@@ -448,7 +448,7 @@ class TaskPaperAssignService:
         return assigned_name, assigned_questions, assigned_mcqs, assigned_task, assigned_file_path, assigned_skills
 
     async def _build_hybrid(self, db: AsyncSession, assign_data: CandidateTestPaperAssign) -> tuple:
-        assigned_name = "Hybrid Custom Test Paper"
+        assigned_name = "Hybrid Custom Question Paper"
         final_questions = (
             [q.model_dump(mode="json") if hasattr(q, "model_dump") else q for q in assign_data.questions]
             if assign_data.questions
@@ -600,7 +600,7 @@ class TaskPaperAssignService:
         guideline_id=None,
         guideline_content=None,
     ) -> CandidateTestPaper:
-        """Persist the assigned test paper (and history entry for candidate-level)."""
+        """Persist the assigned question paper (and history entry for candidate-level)."""
         new_paper = CandidateTestPaper(
             candidate_id=candidate_id,
             job_id=job_id,

@@ -207,7 +207,14 @@ async def handle_duplicate_task(
     )
     res = await db.execute(stmt)
     papers = res.scalars().all()
-    t_str = task_text.get("task") or task_text.get("title") if isinstance(task_text, dict) else getattr(task_text, "task", None) or getattr(task_text, "title", None) or str(task_text)
+    if isinstance(task_text, str):
+        t_str = task_text
+    elif isinstance(task_text, dict):
+        t_str = task_text.get("task") or task_text.get("title") or ""
+    else:
+        val_task = getattr(task_text, "task", None)
+        val_title = getattr(task_text, "title", None)
+        t_str = val_task if (val_task and not callable(val_task)) else (val_title if (val_title and not callable(val_title)) else str(task_text))
     norm_t = normalize_text(t_str)
     for paper in papers:
         if paper.project_task:

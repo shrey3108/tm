@@ -686,7 +686,7 @@ Output Format Example (JSON ONLY):
             assigned_task = []
             assigned_file_path = None
         
-        assigned_name = f"Randomized Test Paper ({job.title})"
+        assigned_name = f"Randomized Question Paper ({job.title})"
 
         # Slice the top 10 since they are already sorted by weightage descending
         assigned_questions = unique_questions[:10]

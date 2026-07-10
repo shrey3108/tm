@@ -39,7 +39,7 @@ async def assign_test_paper_to_candidate(
     db: AsyncSession = Depends(get_db),
     user: UserRead = Depends(check_permission("candidates:decide")),
 ):
-    """Assign, randomly generate, or custom construct a test paper for a candidate or a job."""
+    """Assign, randomly generate, or custom construct a question paper for a candidate or a job."""
     return await task_paper_assign_service.assign_test_paper(
         db=db, assign_data=assign_data, user=user
     )
@@ -52,7 +52,7 @@ async def get_candidate_test_paper(
     db: AsyncSession = Depends(get_db),
     user: UserRead = Depends(check_permission("candidates:access")),
 ):
-    """Retrieve the test paper currently assigned to the candidate."""
+    """Retrieve the question paper currently assigned to the candidate."""
     active_stage_id = job_stage_id or await get_candidate_active_stage_config_id(db, candidate_id)
 
     stmt = select(CandidateTestPaper).where(CandidateTestPaper.candidate_id == candidate_id)
@@ -72,7 +72,7 @@ async def get_candidate_test_paper(
     is_candidate_specific = (paper is not None)
 
     if not paper:
-        # Fallback to job-level default test paper!
+        # Fallback to job-level default question paper!
         candidate = await db.get(Candidate, candidate_id)
         if candidate:
             job_id = await get_candidate_active_job_id(db, candidate)
@@ -121,12 +121,12 @@ async def get_candidate_test_paper(
         if not stages:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="No test paper assigned. Candidate has not reached the test paper stage yet.",
+                detail="No question paper assigned. Candidate has not reached the question paper stage yet.",
             )
         
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="No test paper assigned to this candidate.",
+            detail="No question paper assigned to this candidate.",
         )
 
     # Set default values for comparison fields
@@ -184,7 +184,7 @@ async def delete_candidate_test_paper(
     db: AsyncSession = Depends(get_db),
     user: UserRead = Depends(check_permission("candidates:decide")),
 ):
-    """Unassign/delete the candidate's test paper."""
+    """Unassign/delete the candidate's question paper."""
     active_stage_id = job_stage_id or await get_candidate_active_stage_config_id(db, candidate_id)
 
     # Verify if Question/Practical stage is completed
@@ -205,7 +205,7 @@ async def delete_candidate_test_paper(
         if s.status == "completed":
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Cannot assign or modify test paper after the candidate has completed the {stage_name}.",
+                detail=f"Cannot assign or modify question paper after the candidate has completed the {stage_name}.",
             )
 
     stmt = select(CandidateTestPaper).where(CandidateTestPaper.candidate_id == candidate_id)
@@ -224,13 +224,13 @@ async def delete_candidate_test_paper(
     if not paper:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="No test paper assigned to this candidate.",
+            detail="No question paper assigned to this candidate.",
         )
     job_id = paper.job_id
     await db.delete(paper)
     await db.commit()
 
-    # Invalidate job cache immediately after deleting candidate test paper
+    # Invalidate job cache immediately after deleting candidate question paper
     if job_id:
         try:
             from app.v1.services.admin.system_service import system_service
@@ -248,7 +248,7 @@ async def get_job_default_test_paper(
     db: AsyncSession = Depends(get_db),
     user: UserRead = Depends(check_permission("candidates:access")),
 ):
-    """Retrieve the default common test paper assigned to the job (where candidate_id is null)."""
+    """Retrieve the default common question paper assigned to the job (where candidate_id is null)."""
     if job_stage_id:
         # Explicit stage requested → strict lookup, no fallback
         stmt = select(CandidateTestPaper).where(
@@ -261,7 +261,7 @@ async def get_job_default_test_paper(
         if not paper:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"No default test paper assigned to this job for the specified stage.",
+                detail=f"No default question paper assigned to this job for the specified stage.",
             )
         return paper
 
@@ -291,7 +291,7 @@ async def get_job_default_test_paper(
     if not paper:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="No default test paper assigned to this job.",
+            detail="No default question paper assigned to this job.",
         )
     return paper
 
@@ -303,7 +303,7 @@ async def delete_job_default_test_paper(
     db: AsyncSession = Depends(get_db),
     user: UserRead = Depends(check_permission("candidates:decide")),
 ):
-    """Delete the default common test paper assigned to the job."""
+    """Delete the default common question paper assigned to the job."""
     # Auto-resolve the first question-type round if no explicit stage id given.
     resolved_stage_id = job_stage_id or await get_job_first_question_stage_config_id(db, job_id)
 
@@ -328,12 +328,12 @@ async def delete_job_default_test_paper(
     if not paper:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="No default test paper assigned to this job.",
+            detail="No default question paper assigned to this job.",
         )
     await db.delete(paper)
     await db.commit()
 
-    # Invalidate job cache immediately after deleting job default test paper
+    # Invalidate job cache immediately after deleting job default question paper
     try:
         from app.v1.services.admin.system_service import system_service
         await system_service.invalidate_job_cache(job_id)
@@ -399,7 +399,7 @@ async def download_candidate_task_file(
     if not candidate:
         raise HTTPException(status_code=404, detail="Candidate not found")
 
-    # 2. Get Test Paper
+    # 2. Get Question Paper
     active_stage_id = await get_candidate_active_stage_config_id(db, candidate_id)
     stmt_paper = select(CandidateTestPaper).where(CandidateTestPaper.candidate_id == candidate_id)
     if active_stage_id:
@@ -463,12 +463,12 @@ async def download_candidate_task_file(
         if not stages:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="No test paper assigned. Candidate has not reached the test paper stage yet.",
+                detail="No question paper assigned. Candidate has not reached the question paper stage yet.",
             )
             
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="No test paper assigned to this candidate.",
+            detail="No question paper assigned to this candidate.",
         )
 
     task_file_path = candidate.task_file_path or (test_paper.task_file_path if test_paper else None)
@@ -476,7 +476,7 @@ async def download_candidate_task_file(
     # 4. Check if the paper has overridden questions/task compared to the template
     is_modified = True
     if test_paper:
-        if test_paper.name == "Custom Test Paper" or test_paper.name.startswith("Randomized Test Paper"):
+        if test_paper.name in ("Custom Test Paper", "Custom Question Paper") or test_paper.name.startswith("Randomized Test Paper") or test_paper.name.startswith("Randomized Question Paper"):
             is_modified = True
         elif test_paper.task_file_path:
             # Find the original QuestionSetPaper by task_file_path

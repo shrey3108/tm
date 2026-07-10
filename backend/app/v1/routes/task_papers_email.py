@@ -89,7 +89,7 @@ async def send_test_paper_email(
     db: AsyncSession = Depends(get_db),
     user: UserRead = Depends(check_permission("candidates:decide")),
 ):
-    """Trigger sending/notifying the candidate of their assigned test paper via email."""
+    """Trigger sending/notifying the candidate of their assigned question paper via email."""
     # Find Candidate by email
     stmt = select(Candidate).where(func.lower(Candidate.email) == email_data.candidate_email.lower())
     res = await db.execute(stmt)
@@ -112,7 +112,7 @@ async def send_test_paper_email(
         if not (paper.candidate_id is None and paper.job_id == job_id):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="The specified test paper does not belong to this candidate.",
+                detail="The specified question paper does not belong to this candidate.",
             )
 
     # Clone/lock job-level paper for this candidate
@@ -209,7 +209,7 @@ async def send_test_paper_email(
             detail="SMTP_TARGET_EMAIL_OVERRIDE is not configured in .env. Cannot send emails.",
         )
 
-    message = f"Assigned test paper email successfully sent to {target_email} (intended for: {candidate.email})."
+    message = f"Assigned question paper email successfully sent to {target_email} (intended for: {candidate.email})."
 
     return {
         "status": "success",
@@ -223,7 +223,7 @@ async def send_bulk_test_paper_email(
     db: AsyncSession = Depends(get_db),
     user: UserRead = Depends(check_permission("candidates:decide")),
 ):
-    """Trigger sending/notifying multiple candidates of their assigned test paper via email in bulk."""
+    """Trigger sending/notifying multiple candidates of their assigned question paper via email in bulk."""
     # 1. Fetch the paper
     paper = await db.get(CandidateTestPaper, email_data.paper_id)
     if not paper:
@@ -268,7 +268,7 @@ async def send_bulk_test_paper_email(
             if not (paper.candidate_id is None and paper.job_id == job_id):
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"The specified test paper does not belong to candidate {candidate.email}.",
+                    detail=f"The specified question paper does not belong to candidate {candidate.email}.",
                 )
 
     if paper.email_sent_count > 0 and not email_data.force:
@@ -311,7 +311,7 @@ async def send_bulk_test_paper_email(
                     existing_paper.guideline_content = paper.guideline_content
                     current_paper = existing_paper
                 else:
-                    # Create a cloned candidate-specific test paper
+                    # Create a cloned candidate-specific question paper
                     current_paper = CandidateTestPaper(
                         candidate_id=candidate.id,
                         job_id=paper.job_id,
@@ -368,7 +368,7 @@ async def send_bulk_test_paper_email(
 
     return {
         "status": "success",
-        "message": f"Assigned test paper email successfully processed: {len(sent_emails)} sent, {len(failed_emails)} failed.",
+        "message": f"Assigned question paper email successfully processed: {len(sent_emails)} sent, {len(failed_emails)} failed.",
         "sent_to": sent_emails,
         "failed": failed_emails,
     }

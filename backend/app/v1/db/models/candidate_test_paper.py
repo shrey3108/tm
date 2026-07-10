@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 class CandidateTestPaper(Base):
     """CandidateTestPaper ORM model.
 
-    Represents the actual instance of the test paper assigned
+    Represents the actual instance of the question paper assigned
     to a candidate for their evaluation.
     """
 

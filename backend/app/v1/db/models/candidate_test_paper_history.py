@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 class CandidateTestPaperHistory(Base):
     """CandidateTestPaperHistory ORM model.
 
-    Logs every test paper assignment or email sent to a candidate,
+    Logs every question paper assignment or email sent to a candidate,
     preserving the exact questions, tasks, files, and skills at that moment.
     """
 

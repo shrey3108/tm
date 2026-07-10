@@ -216,7 +216,7 @@ async def serve_review_form(token: uuid.UUID, db: AsyncSession = Depends(get_db)
     if test_paper is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="The test paper for this review could no longer be found.",
+            detail="The question paper for this review could no longer be found.",
         )
 
     items = _parse_all_items(test_paper)
@@ -288,7 +288,7 @@ async def submit_review_form(
     if test_paper is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="The test paper for this review could no longer be found.",
+            detail="The question paper for this review could no longer be found.",
         )
 
     items = _parse_all_items(test_paper)
