@@ -1,5 +1,4 @@
 import React, { useMemo } from "react";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { Clock, ChevronRight } from "lucide-react";
 import { useCandidateTimelineQuery } from "@/hooks/queries/candidates";
@@ -11,6 +10,7 @@ import { slugify } from "@/utils/slug";
 import { useTimelineStatus } from "./timeline/useTimelineStatus";
 import { TimelineCard } from "./timeline/TimelineCard";
 import { isEventOngoing } from "./timeline/timelineStatusUtils";
+import { NativeScrollArea } from "@/components/ui/native-scroll-area";
 
 interface CandidateTimelineProps {
   candidateId?: string;
@@ -82,7 +82,7 @@ export function CandidateTimeline({
           Hiring Journey Timeline
         </h3>
       </div>
-      <ScrollArea className="w-full whitespace-nowrap rounded-md border-0">
+      <NativeScrollArea className="w-full whitespace-nowrap rounded-md border-0">
         <div className="flex w-max space-x-1 p-1">
           {events?.events.map((event, index) => {
             const isAfterRejection = firstRejectedIndex !== -1 && index > firstRejectedIndex;
@@ -111,8 +111,8 @@ export function CandidateTimeline({
             );
           })}
         </div>
-        <ScrollBar orientation="horizontal" />
-      </ScrollArea>
+        {/* <ScrollBar orientation="horizontal" /> */}
+      </NativeScrollArea>
     </div>
   );
 }

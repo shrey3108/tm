@@ -150,7 +150,7 @@ function AdminDataTable<T>({
                         className={cn(
                           column.className,
                           overflow === 'ellipsis' && "overflow-hidden text-ellipsis whitespace-nowrap",
-                          overflow === 'wrap' && "whitespace-normal break-words",
+                          overflow === 'wrap' && "whitespace-normal wrap-break-word",
                         )}
                         style={column.style}
                       >

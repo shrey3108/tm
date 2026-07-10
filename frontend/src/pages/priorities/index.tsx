@@ -239,7 +239,7 @@ export default function AdminJobPriorities() {
       ),
       cell: ({ row }) => (
         <div className="text-center ">
-          {row.original.assigned_jobs_count}
+          {row.original.assigned_jobs_count ?? "N/A"}
         </div>
       ),
     },
@@ -261,7 +261,7 @@ export default function AdminJobPriorities() {
       ),
       cell: ({ row }) => (
         <div className="text-center ">
-          {row.original.associate_reminder_hours}
+          {row.original.associate_reminder_hours ?? "N/A"}
         </div>
       ),
     },

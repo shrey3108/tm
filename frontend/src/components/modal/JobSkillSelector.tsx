@@ -65,7 +65,7 @@ const JobSkillSelector = ({
                   <span className="font-semibold">{skill.name}</span>
                 </div>
                 <small className="text-muted-foreground truncate">
-                  {skill.description || "No description"}
+                  {skill.description || "N/A"}
                 </small>
               </label>
             ))}

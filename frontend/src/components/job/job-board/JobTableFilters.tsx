@@ -52,8 +52,8 @@ export const JobTableFilters = ({
 }: JobTableFiltersProps) => {
 
   return (
-    <div className="flex flex-col gap-4 p-4 bg-muted/20 rounded-2xl border border-muted-foreground/10 overflow-hidden">
-      <div className="flex flex-col lg:flex-row items-start gap-4 w-full">
+    <div className="flex flex-col gap-2 p-2 bg-muted/20 rounded-2xl border border-muted-foreground/10 overflow-hidden">
+      <div className="flex flex-col lg:flex-row items-start gap-2 w-full">
         {/* All Filters Area */}
         <div className="flex flex-wrap items-center gap-2 flex-1 ">
           {/* Title Search */}
@@ -184,12 +184,12 @@ export const JobTableFilters = ({
 
         {/* Result Count Area (Anchored Right) */}
         <div className="shrink-0 lg:ml-auto text-xs font-medium flex items-center gap-2 p-2 border rounded-xl bg-background/50 h-10 self-start">
-          <span className="text-muted-foreground">Total</span>
-          <span className="font-bold">{totalCount}</span>
-          <span className="text-muted-foreground">Jobs</span>
-          <Separator orientation="vertical" className="h-4 mx-1" />
-          <span className="font-bold">{resultCount}</span>
-          <span className="text-muted-foreground">Jobs found</span>
+          <div className="text-xs font-medium flex items-center gap-2 justify-self-center px-2">
+            <span>Total</span>
+            <span className="font-bold">{totalCount}</span> Jobs
+            <Separator orientation="vertical" className="h-4 bg-gray-700 dark:bg-gray-300" />
+            <span className="font-bold">{resultCount}</span> Jobs found
+          </div>
         </div>
       </div>
     </div>

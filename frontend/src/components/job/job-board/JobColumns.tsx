@@ -84,9 +84,9 @@ export const getJobColumns = ({
           <div className="flex items-center gap-2">
             <span
               className="text-sm text-muted-foreground truncate capitalize"
-              title={row.original.department?.name || "No Department"}
+              title={row.original.department?.name || "N/A"}
             >
-              {row.original.department?.name || "No Department"}
+              {row.original.department?.name || "N/A"}
             </span>
             <Badge
               variant="outline"

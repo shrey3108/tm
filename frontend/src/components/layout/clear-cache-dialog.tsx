@@ -2,14 +2,12 @@ import { useState, useEffect } from "react"
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
@@ -18,6 +16,7 @@ import { extractErrorMessage } from "@/utils/error"
 import { useGetAllCacheKeys } from "@/hooks/queries/admin/useClearCache"
 import { useClearCacheMutation } from "@/hooks/mutations/admin/useClearCache"
 import { useDebouncedValue } from "@/hooks/useDebounced"
+import { NativeScrollArea } from "@/components/ui/native-scroll-area";
 
 interface ClearCacheDialogProps {
   open: boolean
@@ -88,12 +87,12 @@ export function ClearCacheDialog({ open, onOpenChange }: ClearCacheDialogProps) 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-3xl md:max-w-4xl lg:max-w-5xl max-h-[90vh] flex flex-col p-0 overflow-hidden bg-card/95 backdrop-blur-xl border-muted-foreground/20 shadow-2xl rounded-2xl h-[600px]">
+      <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-3xl md:max-w-4xl lg:max-w-5xl max-h-[90vh] flex flex-col p-0 overflow-hidden bg-card/95 backdrop-blur-xl border-muted-foreground/20 shadow-2xl rounded-2xl h-150 gap-2">
         <DialogHeader className="p-2 pb-1 border-b border-muted-foreground/10 bg-muted/30">
           <DialogTitle className="text-xl font-black tracking-tight text-foreground capitalize">Clear System Cache</DialogTitle>
-          <DialogDescription className="text-sm">
+          {/* <DialogDescription className="text-sm">
             Select specific cache keys to clear or clear the entire system cache.
-          </DialogDescription>
+          </DialogDescription> */}
         </DialogHeader>
 
         <div className="flex flex-col gap-2 py-1 px-2 flex-1 overflow-hidden">
@@ -125,15 +124,15 @@ export function ClearCacheDialog({ open, onOpenChange }: ClearCacheDialogProps) 
             )}
           </div>
 
-          <ScrollArea className="flex-1 rounded-xl border border-muted-foreground/10 bg-muted/20 p-2 shadow-inner overflow-hidden">
+          <NativeScrollArea className="flex-1 rounded-xl border border-muted-foreground/10 bg-muted/20 p-1 shadow-inner overflow-hidden">
             {loading ? (
               <div className="flex h-full  items-center justify-center">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
             ) : filteredKeys.length > 0 ? (
-              <div className="flex flex-col gap-2 pb-2">
+              <div className="flex flex-col gap-2">
                 {filteredKeys.map((key) => (
-                  <div key={key} className="flex items-center gap-3 p-2 rounded-lg hover:bg-background transition-colors ">
+                  <div key={key} className="flex items-center gap-2 p-2 rounded-lg hover:bg-background transition-colors ">
                     <Checkbox
                       id={`key-${key}`}
                       checked={selectedKeys.has(key)}
@@ -164,10 +163,10 @@ export function ClearCacheDialog({ open, onOpenChange }: ClearCacheDialogProps) 
                 </div>
               </div>
             )}
-          </ScrollArea>
+          </NativeScrollArea>
         </div>
 
-        <DialogFooter className="p-2 bg-muted/20 border-t border-muted-foreground/10">
+        <DialogFooter className="p-1 bg-muted/20 border-t border-muted-foreground/10">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}

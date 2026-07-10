@@ -145,7 +145,7 @@ export default function AdminJobStages() {
             ),
             cell: ({ row }) => (
                 <div className="flex items-center justify-center gap-2">
-                    {row.original.default_order ?? "N|A"}
+                    {row.original.default_order ?? "N/A"}
                 </div>
             ),
             sortingFn: (rowA, rowB) => {
@@ -183,7 +183,7 @@ export default function AdminJobStages() {
             },
             cell: ({ row }) => (
                 <span className="truncate line-clamp-1 max-w-sm capitalize">
-                    {row.original.description || "No description"}
+                    {row.original.description || "N/A"}
                 </span>
             ),
         },
@@ -225,7 +225,7 @@ export default function AdminJobStages() {
                 const requiredInputs = row.original.config?.required_inputs || [];
                 return (
                     <span className="truncate line-clamp-1 max-w-sm capitalize">
-                        {requiredInputs.length > 0 ? requiredInputs.join(", ") : "No criteria"}
+                        {requiredInputs.length > 0 ? requiredInputs.join(", ") : "N/A"}
                     </span>
                 );
             },

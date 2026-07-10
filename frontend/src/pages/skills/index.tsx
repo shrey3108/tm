@@ -187,7 +187,7 @@ export default function AdminSkills() {
       },
       cell: ({ row }) => (
         <div className="flex items-center gap-2 truncate">
-          {row.original.description || "No description provided"}
+          {row.original.description || "N/A"}
         </div>
       ),
     },

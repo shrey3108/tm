@@ -45,16 +45,16 @@ export const UserTableFilters = ({
   const statusOptions = ["active", "inactive"];
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[auto_1fr_auto] items-center gap-3 p-3 bg-muted/30 rounded-2xl border border-muted-foreground/10 text-center">
+    <div className="grid grid-cols-1 lg:grid-cols-[auto_1fr_auto] items-center gap-2 p-2 bg-muted/20 rounded-2xl border border-muted-foreground/10 text-center">
       {/* User Search */}
       <div className="relative w-full lg:w-[320px]">
         <Input
           placeholder="Search name or email..."
           value={searchFilter}
           onChange={(e) => setSearchFilter(e.target.value)}
-          className="pl-9 h-9 rounded-xl text-sm border-border/50 focus:ring-primary/20"
+          className="pl-10 h-10 rounded-xl text-base w-full bg-background"
         />
-        <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+        <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 " />
       </div>
 
       <div className="grid grid-cols-2 lg:flex lg:flex-wrap lg:items-center gap-1 min-w-0">
@@ -159,11 +159,14 @@ export const UserTableFilters = ({
       )}
 
       {/* Result Count */}
-      <span className="text-xs font-medium flex items-center gap-2 justify-self-center">
-        Total <span className="font-bold">{totalCount}</span> Users
-        <Separator orientation="vertical" className="h-4  bg-gray-700 dark:bg-gray-300" />
-        <span className="font-bold">{resultCount}</span> Users found
-      </span>
+      <div className="shrink-0 lg:ml-auto text-xs font-medium flex items-center gap-2 p-2 border rounded-xl bg-background/50 h-10 self-start">
+        <div className="text-xs font-medium flex items-center gap-2 justify-self-center px-2">
+          <span>Total</span>
+          <span className="font-bold">{totalCount}</span> Users
+          <Separator orientation="vertical" className="h-4 bg-gray-700 dark:bg-gray-300" />
+          <span className="font-bold">{resultCount}</span> Users found
+        </div>
+      </div>
     </div>
   );
 };

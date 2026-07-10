@@ -5,7 +5,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { NativeScrollArea } from "@/components/ui/native-scroll-area";
 import { Separator } from "@/components/ui/separator";
 import type { CriterionRead } from "@/types/jobCriteria";
 import { DateDisplay } from "@/components/shared/DateDisplay";
@@ -24,15 +24,15 @@ export const CriteriaInfoModal = ({ criterion, isOpen, onClose }: CriteriaInfoMo
   if (!criterion) return null;
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-3xl md:max-w-4xl lg:max-w-5xl max-h-[90vh] flex flex-col p-0 overflow-hidden bg-card/95 backdrop-blur-xl border-muted-foreground/20 shadow-2xl rounded-2xl h-[600px]">
-        <DialogHeader className="p-6 pb-2">
+      <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-3xl md:max-w-4xl lg:max-w-5xl max-h-[90vh] flex flex-col p-0 overflow-hidden bg-card/95 backdrop-blur-xl border-muted-foreground/20 shadow-2xl rounded-2xl h-150 gap-2">
+        <DialogHeader className="p-2 pb-2">
           <div className="flex items-center justify-between gap-20">
             <div>
               <DialogTitle className="text-2xl font-bold tracking-tight">
                 {criterion.name}
               </DialogTitle>
               <DialogDescription className="text-sm text-muted-foreground line-clamp-2  mt-1">
-                {criterion.description || "No description provided."}
+                {criterion.description || "N/A"}
               </DialogDescription>
               <p>Created At:
                 {" "}
@@ -43,7 +43,7 @@ export const CriteriaInfoModal = ({ criterion, isOpen, onClose }: CriteriaInfoMo
             </div>
           </div>
         </DialogHeader>
-        <ScrollArea className="flex-1 px-6 pb-6 overflow-y-auto">
+        <NativeScrollArea className="flex-1 px-3 pb-2 overflow-y-auto">
 
           <Separator className="bg-border/40" />
           <div className="space-y-2">
@@ -57,7 +57,7 @@ export const CriteriaInfoModal = ({ criterion, isOpen, onClose }: CriteriaInfoMo
               </div>
             </div>
           </div>
-        </ScrollArea>
+        </NativeScrollArea>
       </DialogContent>
     </Dialog>
   );

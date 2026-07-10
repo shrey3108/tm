@@ -86,11 +86,11 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
                   toTitleCase(fullName)
                 )}
               </span>
-              <span className="text-muted-foreground text-wrap break-all">
+              <span className="text-wrap break-all">
                 {c.email || "N/A"}
               </span>
               <div className="flex items-center gap-1">
-                <span className="text-muted-foreground text-wrap">
+                <span className="text-wrap">
                   {c.phone || "N/A"}
                 </span>
                 {c.current_stage?.required_inputs && (
@@ -128,14 +128,14 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
             cell: ({ row }: { row: { original: T } }) => {
               const jobId = row.original.applied_job_id;
               const jobName = row.original.job_name
-              if (!jobId || !jobName) return <span className="text-muted-foreground text-sm font-medium italic">N/A</span>;
+              if (!jobId || !jobName) return <span className="text-sm">N/A</span>;
               const slug = slugify(jobName);
               return (
                 <div className="flex items-center gap-1.5">
                   <Link
                     to={`/dashboard/jobs/${slug}/candidates`}
                     state={{ state: { jobId: jobId } }}
-                    className="text-primary font-medium hover:underline  capitalize block w-full text-wrap"
+                    className="text-primary hover:underline  capitalize block w-full text-wrap"
                   >
                     {jobName}
                   </Link>
@@ -188,7 +188,7 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
 
           const score = c.resume_score ?? null;
           if (score === null) {
-            return <span className="text-muted-foreground text-sm">N/A</span>;
+            return <span className="text-sm">N/A</span>;
           }
 
           return (
@@ -258,17 +258,17 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
             <div className="flex flex-col gap-1 items-start justify-center">
               <div className="flex items-center justify-start gap-1">
                 <CandidateStatusBadge status={row.original.hr_decision} />
-                {row.original.hr_score !== undefined && row.original.hr_score !== null && (
+                {row.original.hr_score !== undefined && row.original.hr_score !== null ? (
                   <span className="text-sm font-semibold text-foreground">
                     {row.original.hr_score.toFixed(1)}/5
                   </span>
-                )}
+                ) : <span>N/A</span>}
               </div>
-              {prevStageName && (
+              {prevStageName ? (
                 <span className="text-xs text-wrap">
                   {prevStageName}
                 </span>
-              )}
+              ) : <span>N/A</span>}
             </div>
           );
         },
@@ -294,7 +294,7 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
           const stage = row.original.current_stage;
           if (!stage) {
             return (
-              <span className="text-muted-foreground text-sm italic">N/A</span>
+              <span className="text-sm">N/A</span>
             );
           }
 
@@ -459,7 +459,7 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
         cell: ({ row }) => {
           const loc = row.original.location;
           if (!loc)
-            return <span className="text-muted-foreground text-sm">N/A</span>;
+            return <span className="text-sm">N/A</span>;
 
           // Normalize to Title Case
           const normalized = toTitleCase(loc.trim());

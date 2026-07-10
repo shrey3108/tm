@@ -142,7 +142,7 @@ const RoleModal = ({ show, handleClose, onSuccess, editRoleId }: RoleModalProps)
   return (
     <Dialog open={show} onOpenChange={(open) => !open && onHide()}>
       {/* <DialogContent className="max-w-lg font-sans h-[550px] flex flex-col"> */}
-      <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-3xl md:max-w-4xl lg:max-w-5xl max-h-[90vh] flex flex-col p-0 overflow-hidden bg-card/95 backdrop-blur-xl border-muted-foreground/20 shadow-2xl rounded-2xl h-[600px]">
+      <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-3xl md:max-w-4xl lg:max-w-5xl max-h-[90vh] flex flex-col p-0 overflow-hidden bg-card/95 backdrop-blur-xl border-muted-foreground/20 shadow-2xl rounded-2xl h-150">
         <DialogHeader className="p-2 pb-2 border-b border-muted-foreground/10 bg-muted/30">
           <DialogTitle className="text-2xl font-bold">
             {isEditMode ? "Edit Role" : "Create New Role"}

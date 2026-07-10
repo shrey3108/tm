@@ -1,5 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { NativeScrollArea } from "@/components/ui/native-scroll-area";
 import { History, CheckCircle2, Calendar } from "lucide-react";
 import type { EvaluationHistoryRead } from "@/types/candidateStage";
 import { cn } from "@/lib/utils";
@@ -38,7 +38,7 @@ export function EvaluationHistoryModal({
             </div>
           </div>
         </DialogHeader>
-        <ScrollArea className="h-80">
+        <NativeScrollArea className="h-80">
           <div className="px-3 py-3 space-y-1">
             {isLoading ? (
               <div className="flex flex-col items-center justify-center py-12 gap-3">
@@ -104,7 +104,7 @@ export function EvaluationHistoryModal({
               })
             )}
           </div>
-        </ScrollArea>
+        </NativeScrollArea>
       </DialogContent>
     </Dialog>
   );

@@ -35,7 +35,7 @@ export const StageDetailDialog = ({
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-3xl md:max-w-4xl lg:max-w-5xl max-h-[90vh] flex flex-col p-0 overflow-hidden bg-card/95 backdrop-blur-xl border-muted-foreground/20 shadow-2xl rounded-2xl h-[600px]">
+            <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-3xl md:max-w-4xl lg:max-w-5xl max-h-[90vh] flex flex-col p-0 overflow-hidden bg-card/95 backdrop-blur-xl border-muted-foreground/20 shadow-2xl rounded-2xl h-150 gap-2">
                 <div className="absolute inset-0 bg-linear-to-br from-primary/5 via-background to-background -z-10" />
 
                 <DialogHeader className="pt-3 px-2 pb-2 sm:pt-4 sm:px-3">
@@ -46,8 +46,7 @@ export const StageDetailDialog = ({
 
                     </div>
                     <DialogDescription className="text-base text-muted-foreground mt-2 line-clamp-2">
-                        {template.description || "No description provided for this stage."}
-
+                        {template.description || "N/A"}
                     </DialogDescription>
                 </DialogHeader>
                 <div className="flex-1 overflow-y-auto px-6 py-4">

@@ -192,7 +192,7 @@ export default function AdminJobCriteria() {
             },
             cell: ({ row }) => (
                 <span className="truncate line-clamp-1 max-w-sm">
-                    {row.original.description || "No description"}
+                    {row.original.description || "N/A"}
                 </span>
             ),
         },

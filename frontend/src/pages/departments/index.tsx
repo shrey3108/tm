@@ -180,7 +180,7 @@ export default function AdminDepartments() {
           </div>
         );
       },
-      cell: ({ row }) => <span className="capitalize"> {row.original.description || "No description provided"}</span>,
+      cell: ({ row }) => <span className="capitalize"> {row.original.description || "N/A"}</span>,
     },
     ...(hasManagePermission
       ? [

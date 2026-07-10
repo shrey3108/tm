@@ -156,12 +156,12 @@ export function DataTable<TData, TValue>({
   });
 
   return (
-    <div className="w-full space-y-3 sm:space-y-4">
+    <div className="w-full space-y-1 sm:space-y-2">
       {searchKey && (
-        <div className="flex w-full items-stretch justify-between gap-1.5 sm:flex-row sm:items-center">
-          <div className="flex flex-1 grow items-center gap-3 max-w-full">
+        <div className="flex w-full items-stretch justify-between gap-2 sm:flex-row sm:items-center p-2 bg-muted/20 rounded-2xl border border-muted-foreground/10">
+          <div className="flex flex-1 grow items-center max-w-full gap-3">
             <div className="relative flex-1 sm:max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" />
               <Input
                 placeholder={searchPlaceholder}
                 value={searchValue ?? globalFilter ?? ""}
@@ -182,13 +182,13 @@ export function DataTable<TData, TValue>({
             )}
           </div>
           {(headerActions || totalRecords !== undefined || (totalCount !== undefined && resultCount !== undefined)) && (
-            <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+            <div className="flex flex-wrap items-center gap-2 sm:justify-end border rounded-xl bg-background/50 h-10">
               {headerActions}
               {(totalRecords !== undefined || (totalCount !== undefined && resultCount !== undefined)) && (
                 <div className="flex items-center gap-2 ml-auto sm:ml-0">
                   {entityName ? (
                     <div className="text-xs font-medium flex items-center gap-2 justify-self-center px-2">
-                      <span className="text-muted-foreground mr-1">Total</span>
+                      <span>Total</span>
                       <span className="font-bold">{totalCount ?? totalRecords}</span> {entityName}
                       {(resultCount !== undefined || searchValue) && (
                         <>
@@ -213,8 +213,8 @@ export function DataTable<TData, TValue>({
         </div>
 
       )}
-      <div className="overflow-hidden rounded-xl border border-border/70 bg-background/70 backdrop-blur-sm">
-        <Table>
+      <div className="overflow-hidden rounded-xl border border-border/70 bg-background/70 backdrop-blur-sm custom-scrollbar">
+        <Table className="custom-scrollbar">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>

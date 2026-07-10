@@ -122,7 +122,7 @@ export function JobInfoModal({ isOpen, onClose, job }: JobInfoModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={(open: boolean) => !open && onClose()}>
-      <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-3xl md:max-w-4xl lg:max-w-5xl max-h-[90vh] flex flex-col p-0 overflow-hidden bg-card/95 backdrop-blur-xl border-muted-foreground/20 shadow-2xl rounded-2xl h-[600px]">
+      <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-3xl md:max-w-4xl lg:max-w-5xl max-h-[90vh] flex flex-col p-0 overflow-hidden bg-card/95 backdrop-blur-xl border-muted-foreground/20 shadow-2xl rounded-2xl h-150 gap-2">
         <DialogHeader className="p-2 pb-1 border-b border-muted-foreground/10 bg-muted/30">
           <div className="flex flex-col items-start justify-between gap-1">
             <DialogTitle className="text-lg font-black tracking-tight text-foreground capitalize flex flex-row items-center justify-between gap-2 ">
@@ -162,7 +162,7 @@ export function JobInfoModal({ isOpen, onClose, job }: JobInfoModalProps) {
               <div className="flex flex-row items-center justify-center gap-1">
                 <span>Due Date:</span>
                 <span className="font-bold">
-                  <DateDisplay date={job.priority_end_date} fallback="No due date" />
+                  <DateDisplay date={job.priority_end_date} fallback="N/A" />
                 </span>
                 {/* priority name  */}
                 {/* {job.priority?.name && (
@@ -234,7 +234,7 @@ export function JobInfoModal({ isOpen, onClose, job }: JobInfoModalProps) {
                 </div>
               ) : (
                 <div className="text-sm text-muted-foreground italic py-1">
-                  No description provided.
+                  N/A
                 </div>
               )}
             </InfoSection>

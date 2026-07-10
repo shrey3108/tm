@@ -104,82 +104,15 @@ export const CandidateTableFilters = ({
   totalCount,
   minDate,
   showLocationFilter = true,
-  activitySearch,
-  activitySessionOptions,
   hrScoreFilter = [],
   setHrScoreFilter = () => { },
   testEmailSentFilter,
   setTestEmailSentFilter = () => { },
   isTestPaperFilterEnabled = false,
-  // job
   actions,
 }: CandidateTableFiltersProps) => {
 
   const [hoverValue, setHoverValue] = useState<number | null>(0);
-  // const res = useJobTask(job?.id)
-
-
-  // Queries for assigned task paper & predefined templates
-  /*
-  const { data: assignedPaper } = useJobAssignedTask(job?.id);
-  const { data: predefinedPapers } = useQuestionSetPapers({
-    jobId: job?.id,
-    options: { enabled: !!job?.id }
-  });
-
-  // Find matching predefined paper by comparing the task file path
-  const matchingPredefinedPaper = useMemo(() => {
-    if (!assignedPaper?.task_file_path || !predefinedPapers) return null;
-    return predefinedPapers.find(p => p.task_file_path === assignedPaper.task_file_path);
-  }, [assignedPaper?.task_file_path, predefinedPapers]);
-
-  // Hook to download the task file
-  const { refetch: downloadFile, loading: isDownloading } = useDownloadPaperTaskFile(
-    matchingPredefinedPaper?.id,
-    { enabled: false }
-  );
-
-  const handleViewTaskPaper = async () => {
-    if (!assignedPaper) {
-      toast.error("No default question paper is assigned to this job.");
-      return;
-    }
-    if (!assignedPaper.task_file_path) {
-      toast.error("The assigned question paper does not have an associated task file.");
-      return;
-    }
-    if (!matchingPredefinedPaper) {
-      toast.error("Could not find the predefined template for the assigned question paper.");
-      return;
-    }
-
-    try {
-      toast.info("Downloading task file...");
-      const { data: blob } = await downloadFile();
-      if (blob) {
-        const url = URL.createObjectURL(blob);
-        window.open(url, "_blank");
-      } else {
-        toast.error("Failed to download the task file.");
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to download the task file.");
-    }
-  };
-  */
-  // @ts-ignore
-  const _filteredActivityOptions = useMemo(() => {
-    if (!activitySessionOptions) return [];
-    if (!activitySearch.trim()) return activitySessionOptions;
-    const query = activitySearch.toLowerCase();
-    return activitySessionOptions.filter(([sessionId, dates]) => {
-      const idStr = String(sessionId).toLowerCase();
-      const startStr = dates.start_date ? format(new Date(dates.start_date), "MMM d").toLowerCase() : "";
-      const endStr = dates.end_date ? format(new Date(dates.end_date), "MMM d").toLowerCase() : "present";
-      return idStr.includes(query) || startStr.includes(query) || endStr.includes(query);
-    });
-  }, [activitySessionOptions, activitySearch]);
 
   const formattedJobOptions = useMemo(() => {
     return jobOptions.map((j) => ({
@@ -233,7 +166,7 @@ export const CandidateTableFilters = ({
         <div className="flex flex-wrap items-center gap-2 flex-1 w-full lg:w-auto">
           {/* Search Field */}
           <div className="relative w-10/12 lg:w-[320px] group">
-            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" />
             <Input
               placeholder="Search name or email…"
               value={nameFilter}
@@ -246,7 +179,7 @@ export const CandidateTableFilters = ({
           <Sheet>
             <SheetTrigger type="button" className={cn(buttonVariants({ variant: "outline" }), "rounded-xl gap-2 px-3 border border-muted-foreground/20 hover:bg-muted/10 bg-background transition-all cursor-pointer")}>
 
-              <Filter className="h-4 w-4 text-muted-foreground" />
+              <Filter className="h-4 w-4" />
               {activeFilterCount > 0 && (
                 <span className="flex items-center justify-center bg-primary text-primary-foreground text-xs font-bold rounded-full min-w-5 h-5 px-1 ml-1 animate-in zoom-in duration-200">
                   {activeFilterCount}
@@ -259,7 +192,7 @@ export const CandidateTableFilters = ({
               {/* Header */}
               <SheetHeader className="px-3 py-2 border-b border-muted/20 flex flex-row items-center justify-between shrink-0">
                 <div className="flex items-center gap-1">
-                  <Filter className="h-4.5 w-4.5 text-primary" />
+                  <Filter className="h-4.5 w-4.5" />
                   <SheetTitle className="font-semibold text-base text-foreground">
                     Filters
                   </SheetTitle>
@@ -512,22 +445,7 @@ export const CandidateTableFilters = ({
               </SheetFooter>
             </SheetContent>
           </Sheet>
-          {/* {job ? <div className="flex gap-2">
-            <Button
-              variant="outline"
-              className="rounded-xl gap-2 px-3 border border-muted-foreground/20 hover:bg-muted/10 bg-background transition-all cursor-pointer"
-              onClick={handleViewTaskPaper}
-              disabled={isDownloading}
-            >
-              {isDownloading ? (
-                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-              ) : (
-                <ExternalLink className="h-4 w-4 text-muted-foreground" />
-              )}
-            </Button>
 
-          </div> : null} */}
-          {/* Actions slot (e.g. Reanalyze All button) */}
           {actions && (
             <div className="shrink-0 flex items-center">
               {actions}
@@ -539,12 +457,12 @@ export const CandidateTableFilters = ({
 
         {/* Result Count Area (Anchored Right) */}
         <div className="shrink-0 lg:ml-auto text-xs font-medium flex items-center gap-2 p-2 border rounded-xl bg-background/50 h-10 self-start">
-          <span className="text-muted-foreground">Total</span>
-          <span className="font-bold">{totalCount}</span>
-          <span className="text-muted-foreground">Candidates</span>
-          <Separator orientation="vertical" className="h-4 mx-1" />
-          <span className="font-bold">{resultCount}</span>
-          <span className="text-muted-foreground">Candidates found</span>
+          <div className="text-xs font-medium flex items-center gap-2 justify-self-center px-2">
+            <span>Total</span>
+            <span className="font-bold">{totalCount}</span> Candidates
+            <Separator orientation="vertical" className="h-4 bg-gray-700 dark:bg-gray-300" />
+            <span className="font-bold">{resultCount}</span> Candidates found
+          </div>
         </div>
       </div>
     </div>

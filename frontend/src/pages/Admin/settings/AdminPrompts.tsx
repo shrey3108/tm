@@ -26,11 +26,11 @@ import {
     DialogTitle,
     DialogDescription,
 } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { useDebouncedValue } from "@/hooks/useDebounced";
 import { usePrompts } from "@/hooks/queries/admin/usePrompts";
 import { usePageFilters } from "@/hooks/usePageFilters";
 import ErrorDisplay from "@/components/shared/ErrorDisplay";
+import { NativeScrollArea } from "@/components/ui/native-scroll-area";
 
 
 export default function AdminPrompts() {
@@ -112,7 +112,7 @@ export default function AdminPrompts() {
             cell: ({ row }) => (
                 <div className="flex items-center gap-2">
                     <FileText className="h-4 w-4" />
-                    {row.original.name}
+                    {row.original.name || "N/A"}
                 </div>
             ),
         },
@@ -129,7 +129,7 @@ export default function AdminPrompts() {
             },
             cell: ({ row }) => (
                 <div className="max-w-md truncate">
-                    {row.original.content}
+                    {row.original.content || "N/A"}
                 </div>
             ),
         }, {
@@ -144,7 +144,7 @@ export default function AdminPrompts() {
                 )
             },
             cell: ({ row }) => (
-                <div className="max-w-125 truncate">
+                <div className="truncate">
                     <Badge variant="outline" className="capitalize">
                         {row.original.stage}
                     </Badge>
@@ -271,7 +271,7 @@ export default function AdminPrompts() {
                             </DialogHeader>
                         </div>
 
-                        <ScrollArea className="flex-1 min-h-0 w-full border-y bg-muted/5">
+                        <NativeScrollArea className="flex-1 min-h-0 w-full border-y bg-muted/5">
                             <div className="p-1">
                                 <Button className="float-right m-1 sticky top-2 bg-background border-none " size={"icon"} variant={"ghost"}
                                     onClick={handleCopy}
@@ -282,7 +282,7 @@ export default function AdminPrompts() {
                                     {selectedPrompt?.content.trim()}
                                 </pre>
                             </div>
-                        </ScrollArea>
+                        </NativeScrollArea>
                     </DialogContent>
                 </Dialog>
             </PermissionGuard>

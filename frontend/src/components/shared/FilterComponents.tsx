@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronDown } from "lucide-react";
 import { FILTER_DISPLAY_LIMIT } from "@/constants";
 import { cn } from "@/lib/utils";
-import { ScrollArea } from "@/components/ui/scroll-area"
+import { NativeScrollArea } from "@/components/ui/native-scroll-area";
 
 interface CollapsibleFilterSectionProps {
   title: ReactNode;
@@ -102,7 +102,7 @@ export function CheckboxListFilter({
 
   return (
     <>
-      <ScrollArea className="max-h-[240px] w-full pr-3 **:data-[slot=scroll-area-viewport]:max-h-[240px]">
+      <NativeScrollArea className="max-h-[240px] w-full pr-3 **:data-[slot=scroll-area-viewport]:max-h-[240px]">
         <div className="space-y-1">
           {displayedOptions.length === 0 ? (
             <div className="text-xs text-muted-foreground py-2 text-center">
@@ -129,7 +129,7 @@ export function CheckboxListFilter({
             ))
           )}
         </div>
-      </ScrollArea>
+      </NativeScrollArea>
 
       {showSearchMore && hiddenCount > 0 && !isExpanded && (
         <div className="pt-2">

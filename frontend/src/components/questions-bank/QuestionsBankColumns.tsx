@@ -138,7 +138,7 @@ export const getQuestionsBankColumns = ({
         if (!skills || skills.length === 0) {
           return (
             <div className="min-w-[160px] max-w-[220px]">
-              <span className="italic">N/A</span>
+              <span>N/A</span>
             </div>
           );
         }

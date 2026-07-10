@@ -1,10 +1,10 @@
 // import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import type { CandidateTestPaperHistoryRead, MCQItem, TaskItem } from "@/types/taskPaper";
 import { Calendar } from "lucide-react";
+import { NativeScrollArea } from "@/components/ui/native-scroll-area";
 
 interface CandidateTestPaperHistoryDialogProps {
   isOpen: boolean;
@@ -51,8 +51,8 @@ export function CandidateTestPaperHistoryDialog({
 }: CandidateTestPaperHistoryDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-3xl md:max-w-4xl lg:max-w-5xl max-h-[90vh] flex flex-col p-0 overflow-hidden bg-card/95 backdrop-blur-xl border-muted-foreground/20 shadow-2xl rounded-2xl h-[600px] gap-2">
-        <DialogHeader className="p-5 pb-0">
+      <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-3xl md:max-w-4xl lg:max-w-5xl max-h-[90vh] flex flex-col p-0 overflow-hidden bg-card/95 backdrop-blur-xl border-muted-foreground/20 shadow-2xl rounded-2xl h-150 gap-2">
+        <DialogHeader className="p-2 pb-0">
           <DialogTitle className="text-lg font-semibold">Paper Assignment History</DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">
             {candidateName ? `${candidateName} — ` : ""}
@@ -60,7 +60,7 @@ export function CandidateTestPaperHistoryDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="max-h-[420px] pr-1">
+        <NativeScrollArea className="max-h-[420px] pr-1">
           <Accordion className="space-y-1.5">
             {history.map((record, index) => {
               const questions = (record.questions ?? []).map((q) => typeof q === "string" ? q : q.question);
@@ -110,7 +110,7 @@ export function CandidateTestPaperHistoryDialog({
               );
             })}
           </Accordion>
-        </ScrollArea>
+        </NativeScrollArea>
       </DialogContent>
     </Dialog>
   );
