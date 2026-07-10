@@ -23,7 +23,7 @@ class JobBase(BaseModel):
     """
 
     processing_version: int | None = Field(None, json_schema_extra={"example": 1})
-    title: str
+    title: str = Field(..., max_length=24)
     vacancy: int | None = None
     department_id: uuid.UUID | None = None
     jd_text: str | None = None

@@ -5,7 +5,7 @@ import { DEFAULT_PASSING_THRESHOLD } from "@/constants";
 
 const jobBaseSchema = z.object({
   /** Job title (minimum 3 characters) */
-  title: nameSchema(3, "Job title"),
+  title: nameSchema(3, "Job title").max(24, "Job title must be at most 24 characters"),
   /** Number of open vacancies */
   vacancy: z.number({
     error: "Vacancy is required",
