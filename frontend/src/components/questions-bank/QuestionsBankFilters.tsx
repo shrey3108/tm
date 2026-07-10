@@ -170,10 +170,11 @@ export function QuestionsBankFilters({
           <Button
             onClick={onCreateNew}
             disabled={!selectedDeptId || !selectedPositionId}
-            className="rounded-xl px-5 font-semibold text-center h-11 gap-1.5"
+            size={"sm"}
+            className="h-9 gap-1.5"
           >
             <Plus className="h-4 w-4" />
-            Create New
+            Create Question
           </Button>
         </PermissionGuard>
       </div>

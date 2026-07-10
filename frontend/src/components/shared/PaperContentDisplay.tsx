@@ -21,7 +21,7 @@ export function PaperContentDisplay({
   return (
     <div className={cn("space-y-2 animate-in fade-in duration-300", className)}>
       {/* Questions List */}
-      <div className="space-y-2 p-2 bg-muted/5 rounded-xl border border-border/20">
+      <div className="space-y-2 bg-muted/5 rounded-xl border border-border/20">
         <h4 className="text-xs font-bold  flex items-center gap-1.5">
           <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
           Interview Questions ({questions.length})
@@ -41,7 +41,7 @@ export function PaperContentDisplay({
 
       {/* MCQs List */}
       {mcqs.length > 0 && (
-        <div className="space-y-2 p-2 rounded-xl border border-border/20 bg-muted/5">
+        <div className="space-y-2 rounded-xl border border-border/20 bg-muted/5">
           <h4 className="text-xs font-bold  flex items-center gap-1.5">
             <ListChecks className="h-4 w-4 text-primary shrink-0" />
             Multiple Choice Questions (MCQs) ({mcqs.length})
@@ -58,7 +58,7 @@ export function PaperContentDisplay({
 
       {/* Project Tasks List */}
       {project_task.length > 0 && (
-        <div className="space-y-2 p-2 rounded-xl border border-border/20 bg-muted/5">
+        <div className="space-y-2 rounded-xl border border-border/20 bg-muted/5">
           <h4 className="text-xs font-bold  flex items-center gap-1.5">
             <Loader2 className="h-4 w-4 text-violet-500 shrink-0" />
             Project Tasks ({project_task.length})

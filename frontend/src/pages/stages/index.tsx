@@ -131,13 +131,14 @@ export default function AdminJobStages() {
     const columns: ColumnDef<StageTemplate>[] = [
         {
             accessorKey: "default_order",
-            size: 8,
+            size: 5,
             meta: { overflow: 'ellipsis' },
             header: ({ column }) => (
                 <Button
                     variant="ghost"
                     onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
                     className="hover:bg-transparent p-0 font-semibold text-base"
+                    size={"sm"}
                 >
                     Order
                     <ArrowUpDown className="h-4 w-4" />
@@ -156,7 +157,7 @@ export default function AdminJobStages() {
         },
         {
             accessorKey: "name",
-            size: 17,
+            size: 10,
             meta: { overflow: 'ellipsis' },
             header: ({ column }) => (
                 <Button
@@ -169,28 +170,32 @@ export default function AdminJobStages() {
                 </Button>
             ),
             cell: ({ row }) => (
-                <span className="capitalize">{row.original.name}</span>
+                <div className="max-w-sm">
+                    <span className="capitalize truncate">{row.original.name}</span>
+                </div>
             ),
         },
         {
             accessorKey: "description",
-            size: 25,
-            meta: { overflow: 'wrap' },
+            size: 35,
+            meta: { overflow: 'ellipsis' },
             header: () => {
                 return <div className="flex items-center gap-2">
                     <span className="text-base">Description</span>
                 </div>
             },
             cell: ({ row }) => (
-                <span className="truncate line-clamp-1 max-w-sm capitalize">
-                    {row.original.description || "N/A"}
-                </span>
+                <div className="max-w-sm">
+                    <span className="capitalize text-wrap">
+                        {row.original.description || "N/A"}
+                    </span>
+                </div>
             ),
         },
         {
             accessorKey: "is_default",
-            size: 13,
-            meta: { overflow: 'ellipsis' },
+            size: 5,
+            meta: { overflow: 'wrap' },
             header: ({ column }) => (
                 <Button
                     variant="ghost"
@@ -214,7 +219,7 @@ export default function AdminJobStages() {
         },
         {
             accessorKey: "required_inputs",
-            size: 22,
+            size: 10,
             meta: { overflow: 'wrap' },
             header: () => (
                 <div className="flex items-center justify-center gap-2">
@@ -224,7 +229,7 @@ export default function AdminJobStages() {
             cell: ({ row }) => {
                 const requiredInputs = row.original.config?.required_inputs || [];
                 return (
-                    <span className="truncate line-clamp-1 max-w-sm capitalize">
+                    <span className="truncate line-clamp-1 capitalize">
                         {requiredInputs.length > 0 ? requiredInputs.join(", ") : "N/A"}
                     </span>
                 );
@@ -232,7 +237,7 @@ export default function AdminJobStages() {
         },
         {
             id: "actions",
-            size: 15,
+            size: 10,
             meta: { overflow: 'ellipsis' },
             header: () => {
                 return <div className="flex items-center justify-center gap-2">
@@ -249,7 +254,7 @@ export default function AdminJobStages() {
                                     variant="ghost"
                                     size="icon"
                                     onClick={() => handleShow(row.original)}
-                                    className="h-9 w-9 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
+                                    className="h-6 w-6 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
                                 >
                                     <Info className="h-4 w-4 shrink-0" />
                                     <span className="sr-only">Show</span>
@@ -269,7 +274,7 @@ export default function AdminJobStages() {
                                     variant="ghost"
                                     size="icon"
                                     onClick={() => handleEdit(row.original)}
-                                    className="h-9 w-9 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
+                                    className="h-6 w-6 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
                                     disabled={row.original.name === "Resume Screening"}
                                 >
                                     <Edit2 className="h-4 w-4 shrink-0" />
@@ -290,7 +295,7 @@ export default function AdminJobStages() {
                                     variant="ghost"
                                     size="icon"
                                     onClick={() => handleDeleteClick(row.original)}
-                                    className="h-9 w-9 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
+                                    className="h-6 w-6 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
                                     disabled={row.original.name === "Resume Screening"}
                                 >
                                     <Trash2 className="h-4 w-4 shrink-0" />
@@ -318,7 +323,7 @@ export default function AdminJobStages() {
                         className="gap-2"
                     >
                         <Plus className="h-4 w-4" />
-                        Add Stage
+                        Create Stage
                     </Button>
                 }
             />

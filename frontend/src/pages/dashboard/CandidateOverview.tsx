@@ -173,7 +173,7 @@ export default function CandidateOverview() {
         }
       />
 
-      <Card className="rounded-2xl border-muted-foreground/10 shadow-sm overflow-hidden bg-card/50 backdrop-blur-md p-4 flex flex-col gap-3">
+      <Card className="rounded-2xl border-muted-foreground/10 shadow-sm overflow-hidden bg-card/50 backdrop-blur-md p-2 flex flex-col gap-1.5">
         <div className="flex items-center gap-2 text-foreground font-bold">
           <User className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
           <span className="text-base text-foreground font-semibold">Candidate Information</span>
