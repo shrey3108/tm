@@ -373,6 +373,14 @@ def map_candidate_to_response(
                 if str(vr.job_id).lower() == str(mapping_job_id).lower():
                     mapping_job_name = vr.job.title if vr.job else None
                     break
+                    
+        # Fallback to candidate_stages if still not found
+        if not mapping_job_name and candidate_stages:
+            for cs in candidate_stages:
+                if cs.job_stage and cs.job_stage.job and str(cs.job_stage.job_id).lower() == str(mapping_job_id).lower():
+                    mapping_job_name = cs.job_stage.job.title
+                    break
+
 
     # Task mapping with fallback
     task_file_path = candidate.task_file_path

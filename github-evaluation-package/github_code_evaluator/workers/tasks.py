@@ -22,7 +22,7 @@ from github_code_evaluator.app.v1.services.repo import RepositoryService
 from github_code_evaluator.app.v1.core.config import settings
 from github_code_evaluator.app.v1.services.scoring import ScoringService
 from github_code_evaluator.app.v1.services.email import email_service
-from github_code_evaluator.workers.celery_app import celery_app
+from celery import shared_task
 from celery.exceptions import MaxRetriesExceededError
 
 try:
@@ -59,7 +59,7 @@ async def safe_execute_evaluation(self, eval_id: UUID, role_name: str, job_desc:
             logger.error(f"Failed to update evaluation status to failed: {inner_e}")
         raise
 
-@celery_app.task(bind=True, name="github_code_evaluator.workers.tasks.run_evaluation_task")
+@shared_task(bind=True, name="github_code_evaluator.workers.tasks.run_evaluation_task")
 def run_evaluation_task(self, evaluation_id: str, role: str, job_description: str, job_position: Optional[str] = None) -> str:
     """Async background task that executes the entire repository ingestion and evaluation pipeline."""
     return run_async(
@@ -67,7 +67,7 @@ def run_evaluation_task(self, evaluation_id: str, role: str, job_description: st
     )
 
 
-@celery_app.task(name="github_code_evaluator.workers.tasks.send_access_failure_email_task")
+@shared_task(name="github_code_evaluator.workers.tasks.send_access_failure_email_task")
 def send_access_failure_email_task(candidate_email: str, recruiter_email: str, github_url: str, grace_hours: int) -> None:
     """Background task to notify of repository access failure."""
     run_async(
@@ -80,13 +80,13 @@ def send_access_failure_email_task(candidate_email: str, recruiter_email: str, g
     )
 
 
-@celery_app.task(name="github_code_evaluator.workers.tasks.send_evaluation_failure_email_task")
+@shared_task(name="github_code_evaluator.workers.tasks.send_evaluation_failure_email_task")
 def send_evaluation_failure_email_task(candidate_email: str, recruiter_email: str, github_url: str, reason: str) -> None:
     """Background task to notify of evaluation system failure."""
     run_async(email_service.notify_evaluation_failure(candidate_email, recruiter_email, github_url, reason))
 
 
-@celery_app.task(name="github_code_evaluator.workers.tasks.send_evaluation_result_email_task")
+@shared_task(name="github_code_evaluator.workers.tasks.send_evaluation_result_email_task")
 def send_evaluation_result_email_task(
     candidate_email: str,
     recruiter_email: str,
@@ -108,7 +108,7 @@ def send_evaluation_result_email_task(
     )
 
 
-@celery_app.task(name="github_code_evaluator.workers.tasks.expire_failed_evaluations_task")
+@shared_task(name="github_code_evaluator.workers.tasks.expire_failed_evaluations_task")
 def expire_failed_evaluations_task() -> str:
     """Periodic task to scan and expire evaluations that failed cloning and grace period has elapsed."""
     return run_async(expire_failed_evaluations_coro())

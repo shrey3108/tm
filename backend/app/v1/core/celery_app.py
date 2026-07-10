@@ -67,4 +67,8 @@ celery_app.conf.beat_schedule = {
         "task": "auto_trigger_github_evaluations_task",
         "schedule": 3600.0,
     },
+    "expire-failed-evaluations-every-hour": {
+        "task": "github_code_evaluator.workers.tasks.expire_failed_evaluations_task",
+        "schedule": 3600.0,
+    },
 }

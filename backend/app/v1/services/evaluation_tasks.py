@@ -302,11 +302,21 @@ def evaluate_candidate_practical_task(
             proj_align = report.get("project_alignment") or {}
             proj_scores = proj_align.get("scores", {}) if isinstance(proj_align, dict) else {}
 
-            def get_scaled(scores_dict, cat_name):
+            global_scores = report.get("scores", {})
+
+            def get_scaled(scores_dict, cat_name, fallback_dict=None):
                 if not scores_dict or cat_name not in scores_dict:
-                    return 2.5  # fallback neutral score
+                    if fallback_dict and cat_name in fallback_dict:
+                        scores_dict = fallback_dict
+                    else:
+                        return 2.5  # fallback neutral score
                 score_obj = scores_dict.get(cat_name, {})
                 val = score_obj.get("score", 5.0) if isinstance(score_obj, dict) else float(score_obj)
+                
+                if val == 0.0 and fallback_dict and cat_name in fallback_dict:
+                    fb_obj = fallback_dict.get(cat_name, {})
+                    val = fb_obj.get("score", 5.0) if isinstance(fb_obj, dict) else float(fb_obj)
+                    
                 return round(val, 2)
 
             def get_reasoning(alignment_dict, cat_name, default_msg):
@@ -370,7 +380,7 @@ def evaluate_candidate_practical_task(
                     "evidence": []
                 },
                 "architecture (Task Skills)": {
-                    "score": get_scaled(proj_scores, "architecture"),
+                    "score": get_scaled(proj_scores, "architecture", global_scores),
                     "reasoning": get_reasoning(proj_align, "architecture", "Evaluated architectural choices for custom Task/Project skills."),
                     "confidence": 0.9,
                     "evidence": []
@@ -384,7 +394,7 @@ def evaluate_candidate_practical_task(
                     "evidence": []
                 },
                 "code_quality (Task Skills)": {
-                    "score": get_scaled(proj_scores, "code_quality"),
+                    "score": get_scaled(proj_scores, "code_quality", global_scores),
                     "reasoning": get_reasoning(proj_align, "code_quality", "Evaluated code formatting and quality for custom Task/Project skills."),
                     "confidence": 0.9,
                     "evidence": []
@@ -398,7 +408,7 @@ def evaluate_candidate_practical_task(
                     "evidence": []
                 },
                 "correctness (Task Skills)": {
-                    "score": get_scaled(proj_scores, "correctness"),
+                    "score": get_scaled(proj_scores, "correctness", global_scores),
                     "reasoning": get_reasoning(proj_align, "correctness", "Evaluated specification implementation accuracy for custom Task/Project skills."),
                     "confidence": 0.9,
                     "evidence": []
@@ -412,7 +422,7 @@ def evaluate_candidate_practical_task(
                     "evidence": []
                 },
                 "security (Task Skills)": {
-                    "score": get_scaled(proj_scores, "security"),
+                    "score": get_scaled(proj_scores, "security", global_scores),
                     "reasoning": get_reasoning(proj_align, "security", "Evaluated security practices and vulnerability exposure for custom Task/Project skills."),
                     "confidence": 0.9,
                     "evidence": []
@@ -426,7 +436,7 @@ def evaluate_candidate_practical_task(
                     "evidence": []
                 },
                 "documentation (Task Skills)": {
-                    "score": get_scaled(proj_scores, "documentation"),
+                    "score": get_scaled(proj_scores, "documentation", global_scores),
                     "reasoning": get_reasoning(proj_align, "documentation", "Evaluated code documentation, README clarity, and setup guides for custom Task/Project skills."),
                     "confidence": 0.9,
                     "evidence": []
