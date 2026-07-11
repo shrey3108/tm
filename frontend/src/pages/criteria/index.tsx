@@ -177,13 +177,13 @@ export default function AdminJobCriteria() {
                 </Button>
             ),
             cell: ({ row }) => (
-                <span className="text-foreground capitalize">{row.original.name}</span>
+                <span className="capitalize">{row.original.name}</span>
             ),
         },
         {
             id: "description",
             accessorKey: "description",
-            size: 35,
+            size: 50,
             meta: { overflow: 'ellipsis' },
             header: () => {
                 return <div className="flex items-center gap-2">
@@ -191,14 +191,14 @@ export default function AdminJobCriteria() {
                 </div>
             },
             cell: ({ row }) => (
-                <span className="truncate line-clamp-1 max-w-sm">
+                <span className="">
                     {row.original.description || "N/A"}
                 </span>
             ),
         },
         {
             accessorKey: "created_at",
-            size: 20,
+            size: 13,
             meta: { overflow: 'ellipsis' },
             header: ({ column }) => (
                 <Button
@@ -214,7 +214,7 @@ export default function AdminJobCriteria() {
         },
         {
             id: "actions",
-            size: 20,
+            size: 12,
             meta: { overflow: 'ellipsis' },
             header: () => {
                 return <div className="flex items-center justify-center gap-2">
@@ -231,7 +231,7 @@ export default function AdminJobCriteria() {
                                     variant="ghost"
                                     size="icon"
                                     onClick={() => handleOpenInfo(row.original)}
-                                    className="h-9 w-9 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
+                                    className="h-7 w-7 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
                                 >
                                     <Info className="h-4 w-4 shrink-0" />
                                     <span className="sr-only">Info</span>
@@ -252,7 +252,7 @@ export default function AdminJobCriteria() {
                                         variant="ghost"
                                         size="icon"
                                         onClick={() => handleUpdate(row.original)}
-                                        className="h-9 w-9 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
+                                        className="h-7 w-7 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
                                     >
                                         <Edit2 className="h-4 w-4 shrink-0" />
                                         <span className="sr-only">Update</span>
@@ -274,7 +274,7 @@ export default function AdminJobCriteria() {
                                         variant="ghost"
                                         size="icon"
                                         onClick={() => handleDeleteClick(row.original)}
-                                        className="h-9 w-9 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
+                                        className="h-7 w-7 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
                                     >
                                         <Trash2Icon className="h-4 w-4 shrink-0" />
                                         <span className="sr-only">Delete</span>
@@ -328,6 +328,7 @@ export default function AdminJobCriteria() {
                     totalCount={overallTotal}
                     resultCount={criteriaData.length}
                     entityName="Criteria"
+                    minWidth="min-w-[1000px]"
                 />}
 
 

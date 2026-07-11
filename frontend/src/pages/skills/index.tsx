@@ -155,7 +155,7 @@ export default function AdminSkills() {
     {
       accessorKey: "name",
       size: 30,
-      meta: { overflow: 'ellipsis' },
+      meta: { overflow: 'wrap' },
       header: ({ column }) => (
         <div>
           <Button
@@ -169,14 +169,14 @@ export default function AdminSkills() {
         </div>
       ),
       cell: ({ row }) => (
-        <div className="flex items-center gap-2 truncate ">
+        <div className="flex items-center gap-2">
           {row.original.name}
         </div>
       ),
     },
     {
       accessorKey: "description",
-      size: 35,
+      size: 45,
       meta: { overflow: 'wrap' },
       header: () => {
         return (
@@ -185,16 +185,15 @@ export default function AdminSkills() {
           </div>
         );
       },
-      cell: ({ row }) => (
-        <div className="flex items-center gap-2 truncate">
-          {row.original.description || "N/A"}
-        </div>
-      ),
+      cell: ({ row }) => {
+        const description = row.original.description ? row.original.description.length > 150 ? row.original.description.slice(0, 150) + "..." : row.original.description : "N/A";
+        return <div className="flex items-center gap-2">{description}</div>;
+      },
     },
     {
       accessorKey: "default_weightage",
       size: 10,
-      meta: { overflow: 'ellipsis' },
+      meta: { overflow: 'wrap' },
       header: () => {
         return (
           <div className="flex items-center justify-center gap-2">
@@ -204,7 +203,7 @@ export default function AdminSkills() {
       },
       cell: ({ row }) => (
         <div className="flex items-center justify-center gap-2 font-medium text-foreground">
-          {row.original.default_weightage ?? 10}
+          {row.original.default_weightage ?? "N/A"}
         </div>
       ),
     },
@@ -212,7 +211,7 @@ export default function AdminSkills() {
       ? [
         {
           id: "actions",
-          size: 25,
+          size: 15,
           meta: { overflow: 'ellipsis' },
           header: () => (
             <div className="flex items-center justify-center gap-2">
@@ -229,7 +228,7 @@ export default function AdminSkills() {
                       variant="ghost"
                       size="icon"
                       onClick={() => handleEditClick(row.original)}
-                      className="h-9 w-9 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
+                      className="h-7 w-7 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
                     >
                       <Edit2 className="h-4 w-4 shrink-0" />
                       <span className="sr-only">Edit</span>
@@ -249,7 +248,7 @@ export default function AdminSkills() {
                       variant="ghost"
                       size="icon"
                       onClick={() => handleDeleteClick(row.original)}
-                      className="h-9 w-9 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
+                      className="h-7 w-7 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
                     >
                       <Trash2Icon className="h-4 w-4 shrink-0" />
                       <span className="sr-only">Delete</span>

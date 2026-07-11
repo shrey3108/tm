@@ -62,6 +62,7 @@ interface DataTableProps<TData, TValue> {
   entityName?: string;
   rowSelection?: Record<string, boolean>;
   onRowSelectionChange?: OnChangeFn<Record<string, boolean>>;
+  minWidth?: string;
 }
 
 
@@ -88,6 +89,7 @@ export function DataTable<TData, TValue>({
   entityName,
   rowSelection,
   onRowSelectionChange,
+  minWidth = "min-w-[800px]",
 }: DataTableProps<TData, TValue>) {
 
   const [sorting, setSorting] = useState<SortingState>(initialSorting);
@@ -214,7 +216,19 @@ export function DataTable<TData, TValue>({
 
       )}
       <div className="overflow-hidden rounded-xl border border-border/70 bg-background/70 backdrop-blur-sm custom-scrollbar">
-        <Table className="custom-scrollbar">
+        <Table className={cn("table-fixed custom-scrollbar", minWidth)}>
+          <colgroup>
+            {table.getHeaderGroups()[0]?.headers.map((header) => {
+              const size = header.column.columnDef.size;
+              const hasExplicitSize = size && size !== 150;
+              return (
+                <col
+                  key={header.id}
+                  style={hasExplicitSize ? { width: `${size}%` } : undefined}
+                />
+              );
+            })}
+          </colgroup>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>

@@ -67,7 +67,7 @@ const CandidateSearchTable = ({
                   {...props}
                   variant="outline"
                   size="sm"
-                  className="h-9 w-9 p-0 rounded-xl border border-muted-foreground/10 hover:bg-gray-200/60 flex items-center justify-center shrink-0"
+                  className="h-7 w-7 p-0 rounded-xl border border-muted-foreground/10 hover:bg-gray-200/60 flex items-center justify-center shrink-0"
                   onClick={() => onShowMore(candidate)}
                 >
                   <Info className="h-4 w-4 shrink-0" />

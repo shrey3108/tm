@@ -250,6 +250,7 @@ export default function JobBoard() {
             totalCount={total}
             entityName="Jobs"
             totalRecords={total}
+            minWidth="min-w-[950px]"
           />
         </div>
 

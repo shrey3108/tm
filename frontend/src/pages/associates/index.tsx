@@ -171,60 +171,60 @@ export default function AdminAssociates() {
     },
     ...(hasManagePermission
       ? [
-          {
-            id: "actions",
-            size: 20,
-            meta: { overflow: 'ellipsis' },
-            header: () => (
-              <div className="flex items-center justify-center gap-0.5">
-                <span className="text-base">Actions</span>
-              </div>
-            ),
-            cell: ({ row }) => (
-              <div className="gap-0.5 flex items-center justify-center">
-                <HoverCard>
-                  <HoverCardTrigger
-                    render={(props) => (
-                      <Button
-                        {...props}
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleEditClick(row.original)}
-                        className="h-9 w-9 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
-                      >
-                        <Edit2 className="h-4 w-4 shrink-0" />
-                        <span className="sr-only">Edit</span>
-                      </Button>
-                    )}
-                  />
-                  <HoverCardContent className="w-fit px-3 py-1 text-xs" side="top">
-                    Edit Associate
-                  </HoverCardContent>
-                </HoverCard>
+        {
+          id: "actions",
+          size: 20,
+          meta: { overflow: 'ellipsis' },
+          header: () => (
+            <div className="flex items-center justify-center gap-0.5">
+              <span className="text-base">Actions</span>
+            </div>
+          ),
+          cell: ({ row }) => (
+            <div className="gap-0.5 flex items-center justify-center">
+              <HoverCard>
+                <HoverCardTrigger
+                  render={(props) => (
+                    <Button
+                      {...props}
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleEditClick(row.original)}
+                      className="h-7 w-7 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
+                    >
+                      <Edit2 className="h-4 w-4 shrink-0" />
+                      <span className="sr-only">Edit</span>
+                    </Button>
+                  )}
+                />
+                <HoverCardContent className="w-fit px-3 py-1 text-xs" side="top">
+                  Edit Associate
+                </HoverCardContent>
+              </HoverCard>
 
-                <HoverCard>
-                  <HoverCardTrigger
-                    render={(props) => (
-                      <Button
-                        {...props}
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDeleteClick(row.original)}
-                        className="h-9 w-9 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
-                      >
-                        <Trash2Icon className="h-4 w-4 shrink-0" />
-                        <span className="sr-only">Delete</span>
-                      </Button>
-                    )}
-                  />
-                  <HoverCardContent className="w-fit px-3 py-1 text-xs" side="top">
-                    Delete Associate
-                  </HoverCardContent>
-                </HoverCard>
-              </div>
-            ),
-          } as ColumnDef<AssociateRead>,
-        ]
+              <HoverCard>
+                <HoverCardTrigger
+                  render={(props) => (
+                    <Button
+                      {...props}
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDeleteClick(row.original)}
+                      className="h-7 w-7 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
+                    >
+                      <Trash2Icon className="h-4 w-4 shrink-0" />
+                      <span className="sr-only">Delete</span>
+                    </Button>
+                  )}
+                />
+                <HoverCardContent className="w-fit px-3 py-1 text-xs" side="top">
+                  Delete Associate
+                </HoverCardContent>
+              </HoverCard>
+            </div>
+          ),
+        } as ColumnDef<AssociateRead>,
+      ]
       : []),
   ];
 

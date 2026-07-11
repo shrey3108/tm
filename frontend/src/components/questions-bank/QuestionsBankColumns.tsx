@@ -169,7 +169,7 @@ export const getQuestionsBankColumns = ({
                     variant="ghost"
                     size="icon"
                     onClick={() => onEdit(row.original)}
-                    className="h-9 w-9 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
+                    className="h-7 w-7 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
                   >
                     <Edit2 className="h-4 w-4 shrink-0" />
                     <span className="sr-only">Edit</span>
@@ -189,7 +189,7 @@ export const getQuestionsBankColumns = ({
                     variant="ghost"
                     size="icon"
                     onClick={() => onDelete(row.original)}
-                    className="h-9 w-9 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
+                    className="h-7 w-7 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
                   >
                     <Trash2Icon className="h-4 w-4 shrink-0" />
                     <span className="sr-only">Delete</span>

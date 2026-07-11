@@ -164,7 +164,7 @@ export default function AdminJobPriorities() {
   const columns: ColumnDef<JobPriorityRead>[] = [
     {
       accessorKey: "name",
-      size: 10,
+      size: 12,
       meta: { overflow: 'ellipsis' },
       header: ({ column }) => (
         <Button
@@ -184,7 +184,7 @@ export default function AdminJobPriorities() {
     },
     {
       accessorKey: "duration_days",
-      size: 13,
+      size: 15,
       meta: { overflow: 'ellipsis' },
       header: ({ column }) => (
         <Button
@@ -205,7 +205,7 @@ export default function AdminJobPriorities() {
     },
     {
       accessorKey: "created_at",
-      size: 12,
+      size: 15,
       meta: { overflow: 'ellipsis' },
       header: ({ column }) => (
         <Button
@@ -223,7 +223,7 @@ export default function AdminJobPriorities() {
     },
     {
       accessorKey: "assigned_jobs_count",
-      size: 22,
+      size: 20,
       meta: { overflow: 'ellipsis' },
       header: ({ column }) => (
         <div className="flex justify-center">
@@ -245,7 +245,7 @@ export default function AdminJobPriorities() {
     },
     {
       accessorKey: "associate_reminder_hours",
-      size: 22,
+      size: 23,
       meta: { overflow: 'ellipsis' },
       header: ({ column }) => (
         <div className="flex justify-center">
@@ -287,7 +287,7 @@ export default function AdminJobPriorities() {
                     variant="ghost"
                     size="icon"
                     onClick={() => handleEditClick(row.original)}
-                    className="h-9 w-9 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
+                    className="h-7 w-7 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
                     disabled={row.original.assigned_jobs_count > 0}
                   >
                     <Edit2 className="h-4 w-4 shrink-0" />
@@ -309,7 +309,7 @@ export default function AdminJobPriorities() {
                     variant="ghost"
                     size="icon"
                     onClick={() => handleDeleteClick(row.original)}
-                    className="h-9 w-9 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
+                    className="h-7 w-7 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
                     disabled={row.original.assigned_jobs_count > 0}
                   >
                     <Trash2Icon className="h-4 w-4 shrink-0" />
@@ -362,6 +362,7 @@ export default function AdminJobPriorities() {
           totalCount={overallTotal}
           resultCount={priorities.length}
           entityName="Priorities"
+          minWidth="min-w-[900px]"
         />
       )}
 

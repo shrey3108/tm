@@ -131,7 +131,7 @@ export default function AdminJobStages() {
     const columns: ColumnDef<StageTemplate>[] = [
         {
             accessorKey: "default_order",
-            size: 5,
+            size: 8,
             meta: { overflow: 'ellipsis' },
             header: ({ column }) => (
                 <Button
@@ -157,7 +157,7 @@ export default function AdminJobStages() {
         },
         {
             accessorKey: "name",
-            size: 10,
+            size: 20,
             meta: { overflow: 'ellipsis' },
             header: ({ column }) => (
                 <Button
@@ -178,7 +178,7 @@ export default function AdminJobStages() {
         {
             accessorKey: "description",
             size: 35,
-            meta: { overflow: 'ellipsis' },
+            meta: { overflow: 'wrap' },
             header: () => {
                 return <div className="flex items-center gap-2">
                     <span className="text-base">Description</span>
@@ -194,8 +194,8 @@ export default function AdminJobStages() {
         },
         {
             accessorKey: "is_default",
-            size: 5,
-            meta: { overflow: 'wrap' },
+            size: 10,
+            meta: { overflow: 'ellipsis' },
             header: ({ column }) => (
                 <Button
                     variant="ghost"
@@ -219,7 +219,7 @@ export default function AdminJobStages() {
         },
         {
             accessorKey: "required_inputs",
-            size: 10,
+            size: 12,
             meta: { overflow: 'wrap' },
             header: () => (
                 <div className="flex items-center justify-center gap-2">
@@ -237,7 +237,7 @@ export default function AdminJobStages() {
         },
         {
             id: "actions",
-            size: 10,
+            size: 15,
             meta: { overflow: 'ellipsis' },
             header: () => {
                 return <div className="flex items-center justify-center gap-2">
@@ -254,7 +254,7 @@ export default function AdminJobStages() {
                                     variant="ghost"
                                     size="icon"
                                     onClick={() => handleShow(row.original)}
-                                    className="h-6 w-6 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
+                                    className="h-7 w-7 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
                                 >
                                     <Info className="h-4 w-4 shrink-0" />
                                     <span className="sr-only">Show</span>
@@ -274,7 +274,7 @@ export default function AdminJobStages() {
                                     variant="ghost"
                                     size="icon"
                                     onClick={() => handleEdit(row.original)}
-                                    className="h-6 w-6 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
+                                    className="h-7 w-7 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
                                     disabled={row.original.name === "Resume Screening"}
                                 >
                                     <Edit2 className="h-4 w-4 shrink-0" />
@@ -295,7 +295,7 @@ export default function AdminJobStages() {
                                     variant="ghost"
                                     size="icon"
                                     onClick={() => handleDeleteClick(row.original)}
-                                    className="h-6 w-6 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
+                                    className="h-7 w-7 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
                                     disabled={row.original.name === "Resume Screening"}
                                 >
                                     <Trash2 className="h-4 w-4 shrink-0" />
@@ -346,6 +346,7 @@ export default function AdminJobStages() {
                     totalCount={overallTotal}
                     resultCount={data.length}
                     entityName="Templates"
+                    minWidth="min-w-[900px]"
                 />
             }
 

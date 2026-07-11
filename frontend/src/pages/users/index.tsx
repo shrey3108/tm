@@ -206,7 +206,7 @@ export default function AdminUsers() {
                           {...props}
                           variant="ghost"
                           size="icon"
-                          className="h-9 w-9 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
+                          className="h-7 w-7 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
                           onClick={() => handleEditClick(user)}
                           disabled={currentUser && currentUser.id === user.id}
                         >
@@ -230,7 +230,7 @@ export default function AdminUsers() {
                           {...props}
                           variant="ghost"
                           size="icon"
-                          className="h-9 w-9 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
+                          className="h-7 w-7 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
                           onClick={() => handleDeleteClick(user)}
                           disabled={(currentUser && currentUser.id === user.id) || row.original.is_active}
                         >

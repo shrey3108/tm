@@ -48,7 +48,7 @@ export const getJobColumns = ({
 }: ColumnHandlers): ColumnDef<Job>[] => [
     {
       accessorKey: "title",
-      size: 25,
+      size: 22,
       meta: { overflow: 'ellipsis' },
       header: ({ column }) => {
         return (
@@ -154,118 +154,9 @@ export const getJobColumns = ({
         <DateDisplay date={row.getValue("created_at")} showIcon className="text-sm" />
       ),
     },
-    // {
-    //   accessorKey: "activity_sessions",
-    //   : "Hiring Activity",
-    //   header: () => {
-    //     return (
-    //       <div className="flex items-center gap-2">
-    //         <span className="text-base">Hiring Activity</span>
-    //       </div>
-    //     )
-    //   },
-    //   cell: ({ row }) => {
-    //     const sessions = row.original.activity_sessions || [];
-    //     const displaySessions = sessions.slice(-3).reverse(); // Show last 3 sessions // use -3 and reverse() if reverse needed
-
-    //     const remainingCount = sessions.length - 3;
-    //     const totalCandidates = row.original.total_candidates || 0;
-
-    //     return (
-    //       <div className="flex flex-col gap-0.5 min-w-[140px]">
-    //         {sessions.length === 0 ? (
-    //           <span className="text-xs text-muted-foreground italic">
-    //             No sessions
-    //           </span>
-    //         ) : (
-    //           <>
-    //             {displaySessions.map((s) => (
-    //               <div
-    //                 key={s.session_id}
-    //                 className="flex items-center text-xs"
-    //               // onClick={(e) => {
-    //               //   e.stopPropagation();
-    //               //   onSessionCandidates(row.original, s.start_date, s.end_date);
-    //               // }}
-    //               >
-    //                 <div className="flex items-center gap-1 overflow-hidden">
-    //                   {displaySessions.length > 1 && (
-    //                     <Badge
-    //                       variant="outline"
-    //                       className="h-5 px-1 py-0 text-[10px] leading-none border-primary/20 bg-primary/5"
-    //                     >
-    //                       #{s.session_id}
-    //                     </Badge>
-    //                   )}
-    //                   <span className="truncate mr-0.5">
-    //                     <DateDisplay date={s.start_date} className="text-sm" />
-    //                   </span>
-    //                 </div>
-    //                 <HoverCard>
-    //                   <HoverCardTrigger
-    //                     render={(props) => (
-    //                       <Badge
-    //                         {...props}
-    //                         variant="outline"
-    //                         className="cursor-pointer text-sm font-normal h-5 px-1.5 rounded-md border-muted-foreground/20 hover:border-primary/30 hover:bg-primary/5"
-    //                         onClick={(e) => {
-    //                           e.stopPropagation();
-    //                           onSessionCandidates(row.original, s.start_date, s.end_date as string);
-    //                         }}
-    //                       >
-    //                         <Users className="h-4 w-4" /><span className=" group-hover/session:text-primary transition-colors" >  {s.candidate_count}</span>
-    //                       </Badge>
-    //                     )}
-    //                   />
-    //  <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
-    //                     <div className="text-[14px] font-semibold text-primary">
-    //                       Candidates for this session
-    //                     </div>
-    //                   </HoverCardContent>
-    //                 </HoverCard>
-    //               </div>
-    //             ))}
-    //             {remainingCount > 0 && (
-    //               <Button
-    //                 variant="link"
-    //                 size="sm"
-    //                 className="h-auto p-0 text-primary font-semibold hover:no-underline flex justify-start w-fit group"
-    //                 onClick={() => onViewSessions(row.original)}
-    //               >
-    //                 + {remainingCount} more
-    //                 <span className="ml-1 opacity-100 group-hover:translate-x-1 transition-transform">
-    //                   →
-    //                 </span>
-    //               </Button>
-    //             )}
-    //             {sessions.length <= 3 && (
-    //               <Button
-    //                 variant="link"
-    //                 size="sm"
-    //                 className="h-auto p-0 hover:text-primary transition-colors font-medium hover:no-underline flex justify-start w-fit"
-    //                 onClick={() => onViewSessions(row.original)}
-    //               >
-    //                 View details
-    //               </Button>
-    //             )}
-    //           </>
-    //         )}
-
-    //         <div className="flex items-center gap-1.5 pt-0.5 border-t border-border/40">
-    //           <span className="text-xs font-semibold text-muted-foreground">
-    //             Total candidates:{" "}
-    //             <span className="font-medium text-foreground">
-    //               {totalCandidates}
-    //             </span>
-    //           </span>
-    //         </div>
-    //       </div>
-    //     );
-    //   },
-    // },
     {
       accessorKey: "total_candidates",
-      size: 12,
+      size: 18,
       meta: { overflow: 'ellipsis' },
       header: ({ column }) => {
         return <Button
@@ -308,7 +199,7 @@ export const getJobColumns = ({
     },
     {
       id: "actions",
-      size: 18,
+      size: 15,
       meta: { overflow: 'ellipsis' },
 
       header: () => {
@@ -328,7 +219,7 @@ export const getJobColumns = ({
                     {...props}
                     variant="outline"
                     size="sm"
-                    className="h-9 w-9 rounded-xl hover:bg-gray-200/60"
+                    className="h-7 w-7 rounded-xl hover:bg-gray-200/60"
                     onClick={() => onEdit(row.original)}
                     isLoading={loadingJobId === row.original.id}
                   >
@@ -349,7 +240,7 @@ export const getJobColumns = ({
                     {...props}
                     variant="outline"
                     size="sm"
-                    className="h-9 w-9 rounded-xl hover:bg-gray-200/60"
+                    className="h-7 w-7 rounded-xl hover:bg-gray-200/60"
                     onClick={() => onDelete(row.original)}
                     disabled={!!row.original.is_active}
                   >
@@ -373,7 +264,7 @@ export const getJobColumns = ({
                     {...props}
                     variant="outline"
                     size="icon"
-                    className="h-9 w-9 rounded-xl hover:bg-gray-200/60"
+                    className="h-7 w-7 rounded-xl hover:bg-gray-200/60"
                     onClick={() => onCandidates(row.original)}
                   >
                     <Users className="h-4 w-4" />

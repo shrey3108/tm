@@ -147,7 +147,7 @@ export default function AdminRoles() {
                           {...props}
                           variant="ghost"
                           size="icon"
-                          className="h-9 w-9 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
+                          className="h-7 w-7 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
                           onClick={() => handleEditRole(role)}
                           disabled={currentUser.role_id === role.id}
                         >
@@ -169,7 +169,7 @@ export default function AdminRoles() {
                           {...props}
                           variant="ghost"
                           size="icon"
-                          className="h-9 w-9 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
+                          className="h-7 w-7 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
                           onClick={() => roleDelete.handleDeleteClick(role)}
                           disabled={currentUser.role_id === role.id || role?.user_count > 0}
                         >

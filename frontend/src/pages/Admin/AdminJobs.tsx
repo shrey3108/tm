@@ -244,6 +244,7 @@ export default function AdminJobs() {
             totalCount={total}
             entityName="Jobs"
             totalRecords={total}
+            minWidth="min-w-[950px]"
           />
         </div>
 
