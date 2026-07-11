@@ -23,7 +23,7 @@ class JobBase(BaseModel):
     """
 
     processing_version: int | None = Field(None, json_schema_extra={"example": 1})
-    title: str = Field(..., max_length=24)
+    title: str = Field(..., max_length=100)
     vacancy: int | None = None
     department_id: uuid.UUID | None = None
     jd_text: str | None = None
@@ -62,6 +62,7 @@ class JobCreate(JobBase):
     """
 
     position_id: uuid.UUID = Field(..., description="Position is required to create a job")
+    department_id: uuid.UUID = Field(..., description="Department is required to create a job")
     skill_ids: list[uuid.UUID] = []
     associate_ids: list[uuid.UUID] = []
     skill_weightages: dict[uuid.UUID, float] | None = Field(None, description="Mapping of skill ID to its weightage")
@@ -87,7 +88,7 @@ class JobUpdate(BaseModel):
     """
 
     processing_version: int | None = Field(None, json_schema_extra={"example": 1})
-    title: str | None = None
+    title: str | None = Field(None, max_length=100)
     vacancy: int | None = None
     department_id: uuid.UUID | None = None
     jd_text: str | None = None
