@@ -1,9 +1,7 @@
 import client from "@/apis/client";
-import type { Job, JobTitle, JobTitlesGroupedListResponse, JobVersionDetail, JobsListResponse } from "@/types/job";
+import type { Job, JobTitle, JobTitlesGroupedListResponse, JobVersionDetail, JobsListResponse, JobCreate, JobUpdate } from "@/types/job";
 import type { CandidateAnalysisResponse, JobStatsResponse } from "@/types/admin";
 import type { BulkResumeUploadResponse } from "@/types/resume";
-
-type JobPayload = Record<string, unknown>;
 
 /**
  * Job service for managing job postings.
@@ -69,7 +67,7 @@ const jobService = {
    * @param data - The job data to create
    * @returns Promise resolving to the created job
    */
-  createJob: async (data: JobPayload): Promise<Job> => {
+  createJob: async (data: JobCreate): Promise<Job> => {
     const response = await client.post<Job>("/jobs", data);
     return response.data;
   },
@@ -101,7 +99,7 @@ const jobService = {
    * @param data - The updated job data
    * @returns Promise resolving to the updated job
    */
-  updateJob: async (jobId: string, data: JobPayload): Promise<Job> => {
+  updateJob: async (jobId: string, data: JobUpdate): Promise<Job> => {
     const response = await client.patch<Job>(`/jobs/${jobId}`, data);
     return response.data;
   },

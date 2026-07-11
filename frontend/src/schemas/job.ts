@@ -43,23 +43,6 @@ const jobBaseSchema = z.object({
   task_skills: z.array(z.string()).optional().nullable(),
   /** Toggle to send AI evaluation report to associate */
   send_ai_evaluation_to_associate: z.boolean().default(true),
-  /** Optional project requirement documentation PDF file (max size 5MB) */
-  // adujest as per backend api
-  project_document: z
-    .any()
-    .optional()
-    .refine(
-      (file) => !file || file instanceof File || typeof file === "string",
-      "Invalid file object"
-    )
-    .refine(
-      (file) => !file || typeof file === "string" || file.size <= 5 * 1024 * 1024,
-      "File size must be less than 5MB"
-    )
-    .refine(
-      (file) => !file || typeof file === "string" || file.type === "application/pdf",
-      "Only PDF files are allowed"
-    ),
 });
 
 /**
@@ -90,8 +73,8 @@ export const jobUpdateSchema = jobBaseSchema.partial().extend({
   skill_ids: z.array(uuidSchema("Invalid skill ID")).min(1, "Please select at least one skill").optional(),
   // associate_ids is still required to have at least 1 if provided
   associate_ids: z.array(uuidSchema("Invalid associate ID")).min(1, "Please select at least one associate").optional(),
-  position_id: uuidSchema("Please select a valid job position"),
-  priority_id: uuidSchema("Please select a valid priority"),
+  position_id: uuidSchema("Please select a valid job position").optional(),
+  priority_id: uuidSchema("Please select a valid priority").optional(),
   processing_version: z.number("Please select a valid version").int("Please enter a valid version").positive("Please enter a valid version").optional()
 });
 

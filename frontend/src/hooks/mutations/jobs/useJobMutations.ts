@@ -5,6 +5,7 @@ import { jobStageService } from "@/apis/jobStage";
 import { QUERY_KEYS } from "@/constants/queryKeys";
 import { useAppDispatch } from "@/store/hooks";
 import { startPolling } from "@/store/slices/pollingSlice";
+import type { JobCreate, JobUpdate } from "@/types/job";
 
 /**
  * Hook for creating a new job posting.
@@ -12,7 +13,7 @@ import { startPolling } from "@/store/slices/pollingSlice";
 export function useCreateJobMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: Record<string, any>) => jobService.createJob(data),
+    mutationFn: (data: JobCreate) => jobService.createJob(data),
     onSuccess: () => {
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.JOBS.LIST] });
@@ -28,7 +29,7 @@ export function useCreateJobMutation() {
 export function useUpdateJobMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ jobId, data }: { jobId: string; data: Record<string, any> }) =>
+    mutationFn: ({ jobId, data }: { jobId: string; data: JobUpdate }) =>
       jobService.updateJob(jobId, data),
     onMutate: async ({ jobId, data }) => {
       // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
