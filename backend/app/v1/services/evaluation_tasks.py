@@ -611,23 +611,36 @@ def evaluate_candidate_practical_task(
                 from app.v1.db.models.associate_evaluations import AssociateEvaluation
                 from app.v1.services.email_service import send_associate_notification_email
                 
-                # Fetch default question paper
-                stmt_job = select(CandidateTestPaper).where(
+                # First, check for a candidate-specific test paper
+                stmt_cand = select(CandidateTestPaper).where(
                     CandidateTestPaper.job_id == job.id,
-                    CandidateTestPaper.candidate_id.is_(None),
+                    CandidateTestPaper.candidate_id == candidate.id,
                 )
                 if stage.job_stage_id:
-                    stmt_job_stage = stmt_job.where(CandidateTestPaper.job_stage_config_id == stage.job_stage_id)
-                    res_job = await db.execute(stmt_job_stage)
-                    test_paper = res_job.scalar_one_or_none()
+                    res_cand = await db.execute(stmt_cand.where(CandidateTestPaper.job_stage_config_id == stage.job_stage_id))
+                    test_paper = res_cand.scalar_one_or_none()
                     if not test_paper:
-                        stmt_job_none = stmt_job.where(CandidateTestPaper.job_stage_config_id.is_(None))
-                        res_job = await db.execute(stmt_job_none)
-                        test_paper = res_job.scalar_one_or_none()
+                        res_cand = await db.execute(stmt_cand.where(CandidateTestPaper.job_stage_config_id.is_(None)))
+                        test_paper = res_cand.scalar_one_or_none()
                 else:
-                    stmt_job_none = stmt_job.where(CandidateTestPaper.job_stage_config_id.is_(None))
-                    res_job = await db.execute(stmt_job_none)
-                    test_paper = res_job.scalar_one_or_none()
+                    res_cand = await db.execute(stmt_cand.where(CandidateTestPaper.job_stage_config_id.is_(None)))
+                    test_paper = res_cand.scalar_one_or_none()
+                    
+                # Fallback to default job-level test paper if no candidate-specific paper exists
+                if not test_paper:
+                    stmt_job = select(CandidateTestPaper).where(
+                        CandidateTestPaper.job_id == job.id,
+                        CandidateTestPaper.candidate_id.is_(None),
+                    )
+                    if stage.job_stage_id:
+                        res_job = await db.execute(stmt_job.where(CandidateTestPaper.job_stage_config_id == stage.job_stage_id))
+                        test_paper = res_job.scalar_one_or_none()
+                        if not test_paper:
+                            res_job = await db.execute(stmt_job.where(CandidateTestPaper.job_stage_config_id.is_(None)))
+                            test_paper = res_job.scalar_one_or_none()
+                    else:
+                        res_job = await db.execute(stmt_job.where(CandidateTestPaper.job_stage_config_id.is_(None)))
+                        test_paper = res_job.scalar_one_or_none()
 
                 # Fetch assigned associates
                 stmt_assoc = select(Associate).join(job_associates).where(job_associates.c.job_id == job.id)

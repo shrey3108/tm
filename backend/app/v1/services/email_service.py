@@ -417,7 +417,7 @@ async def send_candidate_task_email_via_smtp(
             {guidelines_html}
 
             <div class="message">
-              Please review the questions and tasks above.There is a PDF attached that contains a Full details of Question Paper.
+              Please review the questions and tasks above. The attached PDF contains the full details of the question paper (questions and project tasks).
             </div>
           </div>
           <div class="footer">
@@ -455,7 +455,7 @@ async def send_candidate_task_email_via_smtp(
     job_name = job.title if job else "Job"
     job_position = job.position.name if job and job.position else "Position"
 
-    msg["Subject"] = f"{job_position}-{job_name} Question Paper assigned for {candidate.first_name or 'Candidate'} {candidate.last_name or ''}]"
+    msg["Subject"] = f"{job_position}-{job_name} Question Paper assigned for {candidate.first_name or 'Candidate'} {candidate.last_name or ''}".strip()
     
     msg.attach(MIMEText(html_body, "html"))
 
@@ -572,29 +572,35 @@ async def send_associate_notification_email(
         dashboard_url = f"{base_url}/dashboard/jobs/{j_slug}/candidates/{c_slug}/stages/{s_slug}"
     task_file_path = test_paper.task_file_path if test_paper else None
     external_url = None
+    file_resolved = False
+    
     if task_file_path and task_file_path.startswith(("http://", "https://")):
         external_url = task_file_path
+        file_resolved = True
     elif task_file_path and task_file_path.lower().endswith(".pdf"):
         abs_path = resolve_storage_path(task_file_path)
         if abs_path.is_file():
             attachment_path = str(abs_path)
             attachment_name = os.path.basename(task_file_path)
-    guidelines_content = None
-    if test_paper and test_paper.guideline_content:
-        guidelines_content = test_paper.guideline_content
-    elif db:
-        try:
-            from app.v1.db.models.guidelines import Guideline
-            res = await db.execute(select(Guideline.content).where(Guideline.is_default == True))
-            default_guideline = res.scalars().first()
-            if default_guideline:
-                guidelines_content = default_guideline
-        except Exception as e:
-            logger.error(f"Failed to fetch fallback guidelines for email: {e}")
-
-    else:
+            file_resolved = True
+            
+    if not file_resolved:
         # Generate PDF dynamically
         try:
+            # We fetch guidelines here to pass into the PDF if needed
+            guidelines_content = None
+            if test_paper and test_paper.guideline_content:
+                guidelines_content = test_paper.guideline_content
+            elif db:
+                try:
+                    from app.v1.db.models.guidelines import Guideline
+                    res = await db.execute(select(Guideline.content).where(Guideline.is_default == True))
+                    default_guideline = res.scalars().first()
+                    if default_guideline:
+                        guidelines_content = default_guideline
+                except Exception as e:
+                    logger.error(f"Failed to fetch fallback guidelines for email: {e}")
+
             temp_file_to_delete = generate_candidate_task_pdf_file(
                 candidate, 
                 test_paper, 
@@ -909,12 +915,20 @@ async def send_associate_reminder_email(
     job_position = "Position"
     job_department = "Department"
     if job:
-        if job.position:
-            job_position = job.position.name or "Position"
+        if getattr(job, "position", None):
+            job_position = getattr(job.position, "name", None) or job.title or "Not Specified"
         else:
-            job_position = job.title or "Position"
-        if job.department:
-            job_department = job.department.name or "Department"
+            job_position = job.title or "Not Specified"
+            
+        if getattr(job, "department", None) and getattr(job.department, "name", None):
+            job_department = job.department.name
+        elif getattr(job, "department_name", None):
+            job_department = job.department_name
+        else:
+            job_department = "Not Specified"
+            
+    if not job_department or not job_department.strip():
+        job_department = "Not Specified"
     
     subject = f"ACTION REQUIRED: Pending Evaluation for {candidate_full_name} - {job_title}"
     
@@ -948,7 +962,7 @@ async def send_associate_reminder_email(
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
           }}
           .header {{
-            background: linear-gradient(135deg, #fca5a5 0%, #f87171 100%);
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
             padding: 30px 40px;
             color: white;
             text-align: center;

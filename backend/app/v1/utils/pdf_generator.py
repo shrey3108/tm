@@ -158,7 +158,7 @@ def generate_candidate_task_pdf_file(
         if item.get("duration"): parts.append(f"{item['duration']} Mins")
         return f" ({' | '.join(parts)})" if parts else ""
     
-    def add_question(q_text, prefix):
+    def create_question_flowable(q_text, prefix):
         match = re.match(r'^\[(.*?)\] (.*)', q_text)
         if match:
             tag = sanitize_for_pdf(f"[{match.group(1)}]")
@@ -177,9 +177,12 @@ def generate_candidate_task_pdf_file(
                 ('RIGHTPADDING', (0,0), (-1,-1), 0),
                 ('BOTTOMPADDING', (0,0), (-1,-1), 10),
             ]))
-            Story.append(t)
+            return t
         else:
-            Story.append(p_text)
+            return p_text
+            
+    def add_question(q_text, prefix):
+        Story.append(create_question_flowable(q_text, prefix))
 
     if test_paper.project_task:
         tasks = test_paper.project_task if isinstance(test_paper.project_task, list) else [test_paper.project_task]
@@ -196,7 +199,17 @@ def generate_candidate_task_pdf_file(
                 if isinstance(t, dict):
                     instructions = t.get("instructions")
                     if instructions:
-                        Story.append(Paragraph(sanitize_for_pdf(instructions), normal_style))
+                        if isinstance(instructions, str):
+                            lines = instructions.split('\n')
+                            for line in lines:
+                                if line.strip():
+                                    # Add a basic bullet character
+                                    Story.append(Paragraph(f"&bull; {sanitize_for_pdf(line.strip())}", normal_style))
+                        elif isinstance(instructions, list):
+                            for item in instructions:
+                                Story.append(Paragraph(f"&bull; {sanitize_for_pdf(str(item))}", normal_style))
+                        else:
+                            Story.append(Paragraph(sanitize_for_pdf(str(instructions)), normal_style))
             Story.append(Spacer(1, 10))
 
     if test_paper.questions:
@@ -212,7 +225,10 @@ def generate_candidate_task_pdf_file(
             
     if getattr(test_paper, "mcqs", None):
         Story.append(Paragraph("<b>Multiple Choice Questions:</b>", styles['Heading2']))
+        from reportlab.platypus import KeepTogether
+        
         for i, mcq in enumerate(test_paper.mcqs):
+            mcq_block = []
             if isinstance(mcq, dict):
                 q_text = mcq.get("question", "")
                 q_text += format_meta(mcq)
@@ -220,12 +236,16 @@ def generate_candidate_task_pdf_file(
                 q_text = getattr(mcq, "question", "")
                 if hasattr(mcq, "model_dump"):
                     q_text += format_meta(mcq.model_dump())
-            add_question(q_text, f"{i+1}.")
+            
+            mcq_block.append(create_question_flowable(q_text, f"{i+1}."))
+            
             options = mcq.get("options") if isinstance(mcq, dict) else getattr(mcq, "options", [])
             for j, opt in enumerate(options):
                 prefix = chr(65 + j)  # A, B, C, D...
-                Story.append(Paragraph(f"{prefix}. {sanitize_for_pdf(opt)}", normal_style))
-            Story.append(Spacer(1, 10))
+                mcq_block.append(Paragraph(f"{prefix}. {sanitize_for_pdf(opt)}", normal_style))
+            mcq_block.append(Spacer(1, 10))
+            
+            Story.append(KeepTogether(mcq_block))
 
     if test_paper.project_task:
         Story.append(Paragraph("<b>Project Tasks:</b>", styles['Heading2']))

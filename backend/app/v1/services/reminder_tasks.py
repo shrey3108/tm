@@ -33,11 +33,14 @@ async def async_send_associate_reminders():
         from app.v1.db.models.candidate_stages import CandidateStage
         from app.v1.db.models.job_stage_configs import JobStageConfig
         
+        from app.v1.db.models.job import Job
+        
         stmt = select(AssociateEvaluation).where(
             AssociateEvaluation.status == "sent",
             AssociateEvaluation.submitted_at.is_(None)
         ).options(
-            selectinload(AssociateEvaluation.job),
+            selectinload(AssociateEvaluation.job).selectinload(Job.department),
+            selectinload(AssociateEvaluation.job).selectinload(Job.position),
             selectinload(AssociateEvaluation.associate),
             selectinload(AssociateEvaluation.candidate),
             selectinload(AssociateEvaluation.test_paper),
