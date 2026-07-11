@@ -136,7 +136,7 @@ export default function AdminDepartments() {
         </div>
         <div className="flex flex-wrap gap-2 pl-6">
           {jobNames.map((job, idx) => (
-            <Badge key={idx} variant="outline" className="border-destructive/30 text-destructive bg-destructive/5 hover:bg-destructive/10 transition-colors">
+            <Badge key={`${idx}-${job}`} variant="outline" className="border-destructive/30 text-destructive bg-destructive/5 hover:bg-destructive/10 transition-colors">
               {job}
             </Badge>
           ))}

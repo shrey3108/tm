@@ -50,7 +50,7 @@ export const useStagePipeline = ({ jobId, onChange }: UseStagePipelineOptions) =
   // Sync DB stages to local state when jobId is present
   useEffect(() => {
     if (jobId && dbStages) {
-      setStages([...dbStages].sort((a, b) => a.stage_order - b.stage_order));
+      setStages(dbStages.toSorted((a, b) => a.stage_order - b.stage_order));
     }
   }, [jobId, dbStages]);
 

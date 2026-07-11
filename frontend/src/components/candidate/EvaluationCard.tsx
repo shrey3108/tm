@@ -70,7 +70,7 @@ export function EvaluationCard({
                 )}
               <ul className="list-disc pl-5 space-y-1">
                 {listItems.map((item, idx) => (
-                  <li key={idx} className="text-sm text-foreground/80 leading-relaxed font-medium">
+                  <li key={`${idx}-${item}`} className="text-sm text-foreground/80 leading-relaxed font-medium">
                     {item}
                   </li>
                 ))}

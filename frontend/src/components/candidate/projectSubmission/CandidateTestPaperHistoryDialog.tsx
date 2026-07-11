@@ -5,6 +5,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import type { CandidateTestPaperHistoryRead, MCQItem, TaskItem } from "@/types/taskPaper";
 import { Calendar } from "lucide-react";
 import { NativeScrollArea } from "@/components/ui/native-scroll-area";
+import { DateDisplay } from "@/components/shared/DateDisplay";
 
 interface CandidateTestPaperHistoryDialogProps {
   isOpen: boolean;
@@ -13,13 +14,6 @@ interface CandidateTestPaperHistoryDialogProps {
   candidateName?: string;
 }
 
-function formatDate(dateString: string): string {
-  try {
-    return new Intl.DateTimeFormat("en-IN", { dateStyle: "medium", timeStyle: "short" }).format(new Date(dateString));
-  } catch {
-    return dateString;
-  }
-}
 
 function getTaskText(task: TaskItem | string): string {
   if (typeof task === "string") return task;
@@ -84,7 +78,7 @@ export function CandidateTestPaperHistoryDialog({
                       </div>
                       <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
                         <Calendar className="w-3 h-3 shrink-0" />
-                        <span>{formatDate(record.assigned_at)}</span>
+                        <span><DateDisplay date={record.assigned_at} /> </span>
                         {totalItems > 0 && (
                           <>
                             <span className="mx-1">·</span>

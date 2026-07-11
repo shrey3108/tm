@@ -12,16 +12,14 @@ export const adminCriteriaService = {
    * Get all available evaluation criteria.
    * @param skip - Number of records to skip
    * @param limit - Maximum number of records to return
-   * @param search - Search query
+   * @param q - Search query
    * @returns Promise resolving to a paginated response of criteria
    */
   getAllCriteria: async (
-    skip: number = 0,
-    limit: number = 100,
-    search?: string,
+    { skip = 0, limit = 10, q }: { skip?: number; limit?: number; q?: string }
   ): Promise<PaginatedResponse<CriterionRead>> => {
     const response = await apiClient.get<PaginatedResponse<CriterionRead>>(`${ADMIN_PATH}/criteria`, {
-      params: { skip, limit, q: search || undefined },
+      params: { skip, limit, q: q ? q : undefined },
     });
     return response.data;
   },

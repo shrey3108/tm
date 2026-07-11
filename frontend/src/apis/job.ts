@@ -2,6 +2,7 @@ import client from "@/apis/client";
 import type { Job, JobTitle, JobTitlesGroupedListResponse, JobVersionDetail, JobsListResponse, JobCreate, JobUpdate } from "@/types/job";
 import type { CandidateAnalysisResponse, JobStatsResponse } from "@/types/admin";
 import type { BulkResumeUploadResponse } from "@/types/resume";
+import { buildQueryParams } from "@/utils/queryParams";
 
 /**
  * Job service for managing job postings.
@@ -24,10 +25,7 @@ const jobService = {
     department_id?: string | string[],
   }): Promise<JobsListResponse> => {
     const response = await client.get<JobsListResponse>("/jobs", {
-      params: { skip, limit, ...filters },
-      paramsSerializer: {
-        indexes: null,
-      },
+      params: buildQueryParams({ skip, limit, ...filters }, { convertKeys: false }),
     });
     return response.data;
   },
@@ -43,7 +41,7 @@ const jobService = {
    */
   getJobTitles: async (q: string = ""): Promise<{ data: JobTitle[] }> => {
     const response = await client.get<{ data: JobTitle[] }>("/jobs/titles", {
-      params: { ...(q ? { q } : undefined) },
+      params: buildQueryParams({ q }, { convertKeys: false }),
     });
     return response.data;
   },
@@ -57,7 +55,7 @@ const jobService = {
    */
   searchJobs: async (query: string, skip = 0, limit = 10): Promise<JobsListResponse> => {
     const response = await client.get<JobsListResponse>("/jobs/search", {
-      params: { q: query ? query : undefined, skip, limit },
+      params: buildQueryParams({ q: query, skip, limit }, { convertKeys: false }),
     });
     return response.data;
   },
@@ -135,29 +133,19 @@ const jobService = {
     },
   ): Promise<CandidateAnalysisResponse> => {
     const response = await client.get<CandidateAnalysisResponse>(`/candidates/jobs/${jobId}`, {
-      params: {
-        ...(jdVersion !== undefined ? { jd_version: jdVersion } : undefined),
-        skip,
-        limit,
-        // ...filters,
-        ...(candidate_id !== undefined ? { candidate_id: candidate_id } : undefined),
-        ...(stage_id !== undefined ? { stage_id: stage_id } : undefined),
-        ...(filters?.query !== undefined ? { query: filters.query } : undefined),
-        ...(filters?.hr_decision !== undefined ? { hr_decision: filters.hr_decision } : undefined),
-        ...(filters?.jd_versions !== undefined ? { jd_versions: filters.jd_versions } : undefined),
-        ...(filters?.start_date !== undefined ? { start_date: filters.start_date } : undefined),
-        ...(filters?.end_date !== undefined ? { end_date: filters.end_date } : undefined),
-        ...(filters?.activity_session !== undefined ? { activity_session: filters.activity_session } : undefined),
-        ...(filters?.stage_id !== undefined ? { stage_id: filters.stage_id } : undefined),
-        ...(filters?.city !== undefined ? { city: filters.city } : undefined),
-        ...(filters?.result !== undefined ? { result: filters.result.map(r => r.replace(/ed$/, "")) } : undefined),
-        ...(filters?.hr_score !== undefined ? { hr_score: filters.hr_score } : undefined),
-        ...(filters?.test_email_sent !== undefined ? { test_email_sent: filters.test_email_sent } : undefined),
-        ...(filters?.candidate_id !== undefined ? { candidate_id: filters.candidate_id } : undefined),
-      },
-      paramsSerializer: {
-        indexes: null,
-      },
+      params: buildQueryParams(
+        {
+          jd_version: jdVersion,
+          skip,
+          limit,
+          candidate_id,
+          stage_id,
+          ...filters,
+        },
+        {
+          convertKeys: false,
+        },
+      ),
     });
     return response.data;
   },
@@ -216,9 +204,7 @@ const jobService = {
     end_date?: Date;
   }): Promise<JobStatsResponse> => {
     const response = await client.get<JobStatsResponse>(`/candidates/jobs/${jobId}/stats`, {
-      params: {
-        ...filters,
-      },
+      params: buildQueryParams(filters, { convertKeys: false }),
     });
     return response.data;
   },
@@ -230,7 +216,7 @@ const jobService = {
    */
   getJobTitlesGrouped: async (q: string = ""): Promise<JobTitlesGroupedListResponse> => {
     const response = await client.get<JobTitlesGroupedListResponse>("/jobs/titles/grouped", {
-      params: { ...(q ? { q } : undefined) },
+      params: buildQueryParams({ q }, { convertKeys: false }),
     });
     return response.data;
   },

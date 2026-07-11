@@ -4,8 +4,8 @@ import { adminCriteriaService } from "@/apis/admin";
 
 export const adminJobCriteriaLoader = async () => {
   await queryClient.fetchQuery({
-    queryKey: [QUERY_KEYS.ADMIN.CRITERIA, 0, 10, ""],
-    queryFn: () => adminCriteriaService.getAllCriteria(0, 10, ""),
+    queryKey: [QUERY_KEYS.ADMIN.CRITERIA, { skip: 0, limit: 10, q: "" }],
+    queryFn: () => adminCriteriaService.getAllCriteria({ skip: 0, limit: 10, q: "" }),
   });
   return null;
 };

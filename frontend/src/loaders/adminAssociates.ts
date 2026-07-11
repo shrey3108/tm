@@ -1,6 +1,6 @@
 import { queryClient } from "@/utils/query-client";
 import { QUERY_KEYS } from "@/constants/queryKeys";
-import { adminAssociateService } from "@/apis/admin";
+import { adminAssociateService } from "@/apis/associate";
 
 export const adminAssociatesLoader = async () => {
   await queryClient.fetchQuery({

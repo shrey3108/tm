@@ -93,7 +93,7 @@ export function CandidateTimeline({
             const isAiPending = event.ai_result?.toLowerCase().includes("pending");
 
             return (
-              <React.Fragment key={index}>
+              <React.Fragment key={`${index}-${event.job_stage_config_id}`}>
                 <TimelineCard
                   event={event}
                   isSelected={event.title === selectedStage}

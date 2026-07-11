@@ -165,7 +165,7 @@ export function CandidateTable<T extends UnifiedCandidate>({
     return [selectColumn, ...columns];
   }, [columns, showCheckboxes]);
   return (
-    <div className="w-full space-y-3">
+    <>
       <CandidateTableFilters
         nameFilter={nameFilter}
         setNameFilter={setNameFilter}
@@ -229,7 +229,7 @@ export function CandidateTable<T extends UnifiedCandidate>({
         rowSelection={rowSelection}
         onRowSelectionChange={onRowSelectionChange}
       />
-    </div>
+    </>
   );
 }
 

@@ -53,7 +53,7 @@ const CustomTooltipContent = ({ active, payload, label, activeKey }: CustomToolt
   if (filteredPayload.length === 0) return null;
 
   return (
-    <div className="bg-white dark:bg-card dark:border-border/50 p-3 rounded-xl shadow-md border border-border/50 max-h-[380px] overflow-y-auto pointer-events-auto ">
+    <div className="bg-white dark:bg-card dark:border-border/50 p-3 rounded-xl shadow-md border border-border/50 max-h-95 overflow-y-auto pointer-events-auto ">
       <p className="font-semibold mb-2 text-sm text-foreground dark:text-white">{label}</p>
 
       {filteredPayload.map((entry, index) => {
@@ -61,7 +61,7 @@ const CustomTooltipContent = ({ active, payload, label, activeKey }: CustomToolt
 
         return (
           <div
-            key={index}
+            key={`${index}-${entry.name}-${entry.value}`}
             className={cn(
               "flex justify-between items-center px-2 py-1.5 text-xs transition-colors gap-4",
               isActive ? " font-semibold " : ""
@@ -72,7 +72,7 @@ const CustomTooltipContent = ({ active, payload, label, activeKey }: CustomToolt
                 className="w-2.5 h-2.5 rounded-full"
                 style={{ backgroundColor: entry.color }}
               />
-              <span className="capitalize max-w-[120px]">{entry.name}</span>
+              <span className="capitalize max-w-30">{entry.name}</span>
             </div>
             <span className="font-mono">{entry.value}</span>
           </div>
@@ -183,7 +183,7 @@ export function StageCentricChart({ data }: StageCentricChartProps) {
                           fill="currentColor"
                           transform="rotate(-45)"
                           className="text-xs uppercase"
-                          // className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground"
+                        // className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground"
                         >
                           {payload.value.length > 15 ? payload.value.substring(0, 12) + "..." : payload.value}
                         </text>

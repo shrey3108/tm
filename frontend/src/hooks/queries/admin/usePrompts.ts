@@ -10,8 +10,8 @@ import { QUERY_CONFIG } from "@/constants/queryConfig";
  */
 export const usePrompts = (skip: number = 0, limit: number = 10, q: string = "") => {
     const res = useQuery({
-        queryKey: [QUERY_KEYS.ADMIN.PROMPTS, skip, limit, q],
-        queryFn: () => adminPromptService.getAllPrompts(skip, limit, q),
+        queryKey: [QUERY_KEYS.ADMIN.PROMPTS, { skip, limit, q }],
+        queryFn: () => adminPromptService.getAllPrompts({ skip, limit, q }),
         placeholderData: keepPreviousData,
         staleTime: QUERY_CONFIG.AI_PROMPTS.staleTime
     })

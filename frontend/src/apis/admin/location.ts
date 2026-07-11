@@ -13,10 +13,7 @@ export const adminLocationService = {
    * @param jobId - Optional job ID to filter locations by job
    */
   getAllLocations: async (
-    skip = 0,
-    limit = 100,
-    q?: string,
-    jobId?: string,
+    { skip = 0, limit = 10, q, jobId }: { skip?: number; limit?: number; q?: string; jobId?: string }
   ): Promise<PaginatedResponse<LocationRead>> => {
     const response = await apiClient.get<PaginatedResponse<LocationRead>>(
       "/locations",

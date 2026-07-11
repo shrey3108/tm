@@ -4,8 +4,8 @@ import { adminStageTemplateService } from "@/apis/admin";
 
 export const adminJobStagesLoader = async () => {
   await queryClient.fetchQuery({
-    queryKey: [QUERY_KEYS.ADMIN.STAGES, 0, 10, ""],
-    queryFn: () => adminStageTemplateService.getAllTemplates(0, 10, ""),
+    queryKey: [QUERY_KEYS.ADMIN.STAGES, { skip: 0, limit: 100, q: "" }],
+    queryFn: () => adminStageTemplateService.getAllTemplates({ skip: 0, limit: 100, q: "" }),
   });
   return null;
 };

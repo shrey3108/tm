@@ -174,7 +174,7 @@ function OverallSummaryText({ value }: { value: SummaryText }) {
       {value.map((item, idx) => {
         const [category, text] = Object.entries(item)[0];
         return (
-          <div key={idx}>
+          <div key={`${idx}-${category}`}>
             <span className="text-xs font-bold tracking-wide text-primary/80 uppercase block mb-0.5">
               {category}
             </span>
@@ -218,7 +218,7 @@ function SummaryList({
         {remainingItems.length > 0 && (
           <ul className="list-disc pl-5 space-y-1">
             {remainingItems.map((item, i) => (
-              <li key={i} className="text-sm font-medium leading-relaxed">
+              <li key={`${i}-${item}`} className="text-sm font-medium leading-relaxed">
                 {item}
               </li>
             ))}
@@ -240,7 +240,7 @@ function SummaryList({
           if (!categoryItems || categoryItems.length === 0) return null;
           const { score: catScore, remainingItems: catRemaining } = extractLeadingScore(categoryItems);
           return (
-            <div key={idx}>
+            <div key={`${idx}-${catScore}`}>
               <span className="text-xs font-bold tracking-wide text-muted-foreground/80 block mb-1">
                 {category}{catScore && (
                   <Badge variant="outline" className="ml-2 text-xs font-semibold px-1.5 py-0 normal-case">
@@ -251,7 +251,7 @@ function SummaryList({
               {catRemaining.length > 0 && (
                 <ul className="list-disc pl-5 space-y-1">
                   {catRemaining.map((item, i) => (
-                    <li key={i} className="text-sm font-medium leading-relaxed">
+                    <li key={`${i}-${item}`} className="text-sm font-medium leading-relaxed">
                       {item}
                     </li>
                   ))}

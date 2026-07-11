@@ -72,7 +72,7 @@ export function QuestionsBankSkillSelector({
     }
 
     // Sort: selected skills first
-    return [...result].sort((a, b) => {
+    return result.toSorted((a, b) => {
       const aSelected = selectedSkillIds.includes(a.id);
       const bSelected = selectedSkillIds.includes(b.id);
       if (aSelected && !bSelected) return -1;

@@ -195,9 +195,9 @@ export default function AdminUserForm() {
                         <SearchableSelect
                           value={field.value}
                           onValueChange={field.onChange}
-                          options={roles
-                            .filter((role) => role.name !== "superadmin")
-                            .map((role) => ({ id: role.id, label: role.name }))}
+                          options={roles.flatMap((role) =>
+                            role.name !== "superadmin" ? [{ id: role.id, label: role.name }] : []
+                          )}
                           placeholder="Select a role"
                           searchPlaceholder="Search roles..."
                           disabled={isLoadingRoles}

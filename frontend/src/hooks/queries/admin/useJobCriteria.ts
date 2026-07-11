@@ -10,8 +10,8 @@ import { QUERY_CONFIG } from "@/constants/queryConfig";
  */
 export const useJobCriteria = (skip: number = 0, limit: number = 10, q: string = "") => {
     const res = useQuery({
-        queryKey: [QUERY_KEYS.ADMIN.CRITERIA, skip, limit, q],
-        queryFn: () => adminCriteriaService.getAllCriteria(skip, limit, q),
+        queryKey: [QUERY_KEYS.ADMIN.CRITERIA, { skip, limit, q }],
+        queryFn: () => adminCriteriaService.getAllCriteria({ skip: 0, limit: 100, q: "" }),
         placeholderData: keepPreviousData,
         staleTime: QUERY_CONFIG.JOB_CRITERIA.staleTime
     })

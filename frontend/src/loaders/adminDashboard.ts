@@ -24,8 +24,8 @@ export const adminDashboardLoader = async () => {
 
   // Prefetch stage templates
   const stageTemplatesPromise = queryClient.fetchQuery({
-    queryKey: [QUERY_KEYS.ADMIN.STAGES, 0, 100, ""],
-    queryFn: () => adminStageTemplateService.getAllTemplates(0, 100, ""),
+    queryKey: [QUERY_KEYS.ADMIN.STAGES, { skip: 0, limit: 100, q: "" }],
+    queryFn: () => adminStageTemplateService.getAllTemplates({ skip: 0, limit: 100, q: "" }),
   });
 
   await Promise.all([dashboardPromise, jobTitlesPromise, stageTemplatesPromise]);

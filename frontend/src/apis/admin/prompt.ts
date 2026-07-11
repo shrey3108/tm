@@ -10,12 +10,12 @@ export const adminPromptService = {
    * Fetches all prompts from the admin API.
    * @returns A promise that resolves to an array of prompts.
    */
-  getAllPrompts: async (skip: number, limit: number, q?: string): Promise<PaginatedResponse<PromptRead>> => {
+  getAllPrompts: async ({ skip = 0, limit = 10, q }: { skip?: number; limit?: number; q?: string }): Promise<PaginatedResponse<PromptRead>> => {
     const response = await apiClient.get<PaginatedResponse<PromptRead>>(`${ADMIN_PATH}/prompts`, {
       params: {
         skip,
         limit,
-        q: q === "" ? undefined : q
+        q: q ? q : undefined
       }
     });
     return response.data;

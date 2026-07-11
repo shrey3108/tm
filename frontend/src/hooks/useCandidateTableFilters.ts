@@ -23,15 +23,6 @@ export interface CandidateActiveFilters {
   test_email_sent?: boolean;
 }
 
-// TODO: Remove after backend update
-const normalizeHrDecision = (val: string | null | undefined): string => {
-  if (!val) return "pending";
-  const s = val.toLowerCase().trim();
-  if (s === "approve" || s === "approved" || s === "pass" || s === "passed") return "pass";
-  if (s === "reject" || s === "rejected" || s === "fail" || s === "failed") return "fail";
-  if (s === "may be" || s === "maybe") return "may be";
-  return s;
-};
 
 export const useCandidateTableFilters = <T extends UnifiedCandidate>(
   candidates: T[],
@@ -60,8 +51,8 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
   const testEmailSentFilter = filters.test_email_sent === true
     ? "sent"
     : filters.test_email_sent === false
-    ? "not_sent"
-    : undefined;
+      ? "not_sent"
+      : undefined;
 
   const nameFilter = externalNameFilter !== undefined ? externalNameFilter : (filters.q || "");
 
@@ -210,8 +201,8 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
       }
       // HR Decision filter
       if (skip !== 'hrDecision' && hrDecisionFilter.length > 0) {
-        const decision = normalizeHrDecision(c.hr_decision);
-        if (!hrDecisionFilter.some(d => d.toLowerCase() === decision.toLowerCase())) return false;
+        const decision = c?.hr_decision;
+        if (!hrDecisionFilter.some(d => d.toLowerCase() === decision?.toLowerCase())) return false;
       }
       // Resume Screening filter
       if (skip !== 'result' && resultFilter.length > 0) {
@@ -266,8 +257,8 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
   ];
 
   const ALL_RESULT_OPTIONS = [
-    { value: "passed", label: RESUME_SCREENING_RESULT.PASS },
-    { value: "failed", label: RESUME_SCREENING_RESULT.FAIL }
+    { value: "pass", label: RESUME_SCREENING_RESULT.PASS },
+    { value: "fail", label: RESUME_SCREENING_RESULT.FAIL }
   ];
 
   const HR_DECISION_LABEL_MAP: Record<string, string> = {
@@ -313,12 +304,12 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
 
     const set = new Set<string>();
     subset.forEach(c => {
-      const d = normalizeHrDecision(c.hr_decision);
-      set.add(d);
+      const d = (c?.hr_decision)?.toLowerCase();
+      if (d) set.add(d);
     });
     // Ensure selected options are kept
     hrDecisionFilter.forEach(v => {
-      set.add(normalizeHrDecision(v));
+      set.add(v.toLowerCase());
     });
     return Array.from(set).sort().map(v => ({
       value: v === 'may be' ? 'May Be' : v,
@@ -333,9 +324,9 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
 
     const set = new Set<string>();
     subset.forEach(c => {
-      let screening = 'failed';
+      let screening = 'fail';
       if (c.pass_fail === true || String(c.pass_fail).toLowerCase() === 'pass' || (c.resume_score ?? 0) >= passingThreshold) {
-        screening = 'passed';
+        screening = 'pass';
       } else if (c.processing_status === 'processing' || c.processing_status === 'queued' || !c.is_parsed) {
         screening = 'pending';
       }
@@ -539,8 +530,8 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
 
       // HR Decision filter (multi-select)
       if (hrDecisionFilter.length > 0) {
-        const decision = normalizeHrDecision(c.hr_decision);
-        if (!hrDecisionFilter.some(d => d.toLowerCase() === decision.toLowerCase())) {
+        const decision = c?.hr_decision;
+        if (!hrDecisionFilter.some(d => d.toLowerCase() === decision?.toLowerCase())) {
           return false;
         }
       }

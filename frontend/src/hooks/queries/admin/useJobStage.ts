@@ -11,8 +11,8 @@ import { QUERY_CONFIG } from "@/constants/queryConfig";
  */
 export const useJobStage = (skip: number = 0, limit: number = 10, q: string = "") => {
     const res = useQuery({
-        queryKey: [QUERY_KEYS.ADMIN.STAGES, skip, limit, q],
-        queryFn: () => adminStageTemplateService.getAllTemplates(skip, limit, q),
+        queryKey: [QUERY_KEYS.ADMIN.STAGES, { skip, limit, q }],
+        queryFn: () => adminStageTemplateService.getAllTemplates({ skip: 0, limit: 100, q: "" }),
         placeholderData: keepPreviousData,
         staleTime: QUERY_CONFIG.JOB_STATUS.staleTime
     })

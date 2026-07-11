@@ -91,7 +91,8 @@ export function JobInfoModal({ isOpen, onClose, job }: JobInfoModalProps) {
   const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null);
   const navigate = useNavigate();
   const sortedVersions = useMemo(() => {
-    return [...(job?.job_versions || [])].sort((a, b) => b.version_num - a.version_num);
+
+    return (job?.job_versions || []).toSorted((a, b) => b.version_num - a.version_num);
   }, [job?.job_versions]);
 
   // Fetch selected version using TanStack Query

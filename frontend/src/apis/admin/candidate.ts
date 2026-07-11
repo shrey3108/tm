@@ -2,6 +2,7 @@ import apiClient from "@/apis/client";
 import type { CandidateResponse } from "@/types/resume";
 import type { StageEvaluation } from "@/types/stage";
 import type { HiringTimelineResponse } from "@/types/candidate";
+import { buildQueryParams } from "@/utils/queryParams";
 
 /**
  * Candidate Management APIs
@@ -31,7 +32,7 @@ export const adminCandidateService = {
     const response = await apiClient.get<{ data: CandidateResponse[]; total: number }>(
       `/candidates/jobs/${jobId}`,
       {
-        params: { skip, limit, ...filters },
+        params: buildQueryParams({ skip, limit, ...filters }, { convertKeys: false }),
       },
     );
     return response.data;
@@ -63,7 +64,7 @@ export const adminCandidateService = {
     const response = await apiClient.get<{ data: CandidateResponse[]; total: number }>(
       `/candidates/jobs/${jobId}/search`,
       {
-        params: { query: query ? query : undefined, skip, limit, ...filters },
+        params: buildQueryParams({ query: query ? query : undefined, skip, limit, ...filters }, { convertKeys: false }),
       },
     );
     return response.data;
@@ -94,10 +95,7 @@ export const adminCandidateService = {
     const response = await apiClient.get<{ data: CandidateResponse[]; total: number }>(
       "/candidates/search",
       {
-        params: { query: query ? query : undefined, skip, limit, ...filters },
-        paramsSerializer: {
-          indexes: null,
-        },
+        params: buildQueryParams({ query: query ? query : undefined, skip, limit, ...filters }, { convertKeys: false }),
       },
     );
     return response.data;
@@ -141,7 +139,7 @@ export const adminCandidateService = {
   ): Promise<HiringTimelineResponse> => {
     const response = await apiClient.get<HiringTimelineResponse>(
       `/candidates/${candidateId}/timeline`,
-      { params: { job_id: jobId } },
+      { params: buildQueryParams({ job_id: jobId }, { convertKeys: false }) },
     );
     return response.data;
   },

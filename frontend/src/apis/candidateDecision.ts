@@ -1,5 +1,6 @@
 import type { CandidateDecisionFormValues } from "@/schemas/candidate";
 import apiClient from "./client";
+import { buildQueryParams } from "@/utils/queryParams";
 
 export interface CandidateDecision {
   id: string;
@@ -76,10 +77,7 @@ export const candidateDecisionApi = {
   getDecisionHistory: async (candidateId: string, jobId?: string, stage_config_id?: string) => {
     const response = await apiClient.get<HrDecisionHistoryResponse>(
       `/candidates/${candidateId}/decisions`, {
-      params: {
-        job_id: jobId,
-        stage_config_id: stage_config_id
-      }
+      params: buildQueryParams({ job_id: jobId, stage_config_id }, { convertKeys: false }),
     }
     );
     return response.data;

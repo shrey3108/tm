@@ -10,8 +10,8 @@ import { QUERY_CONFIG } from "@/constants/queryConfig";
  */
 export const useAdminLocations = (skip: number = 0, limit: number = 10, q: string = "") => {
     const res = useQuery({
-        queryKey: [QUERY_KEYS.ADMIN.LOCATIONS, skip, limit, q],
-        queryFn: () => adminLocationService.getAllLocations(skip, limit, q),
+        queryKey: [QUERY_KEYS.ADMIN.LOCATIONS, { skip, limit, q }],
+        queryFn: () => adminLocationService.getAllLocations({ skip, limit, q }),
         placeholderData: keepPreviousData,
         staleTime: QUERY_CONFIG.LOCATION.staleTime
     })

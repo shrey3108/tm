@@ -98,6 +98,7 @@ export const JobCandidatesHeader = ({
           </Button>
           <div className="bg-muted/50 p-1 rounded-lg flex items-center border border-border shrink-0 h-9">
             <button
+              type="button"
               onClick={() => setViewMode("candidates")}
               className={cn(
                 "flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-200",
@@ -110,6 +111,7 @@ export const JobCandidatesHeader = ({
               Candidates
             </button>
             <button
+              type="button"
               onClick={() => setViewMode("analytics")}
               className={cn(
                 "flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-200",

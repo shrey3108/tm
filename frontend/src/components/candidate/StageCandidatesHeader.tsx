@@ -4,7 +4,6 @@ import AppPageHeader from "@/components/shared/AppPageHeader";
 import type { Job } from "@/types/job";
 import { TranscriptUpload } from "./TranscriptUpload";
 import { ProjectSubmissionDialog } from "./projectSubmission/ProjectSubmissionDialog";
-// import { SendQuestionPaperDialog } from "./projectSubmission/SendQuestionPaperDialog";
 import { CandidateTestPaperHistoryDialog } from "./projectSubmission/CandidateTestPaperHistoryDialog";
 import { useCandidateTestPaper, useCandidateTestPaperHistory } from "@/hooks/queries/taskPapers/useTaskPaperQueries";
 import { useCandidateAssociateResultsQuery } from "@/hooks/queries/candidates/useCandidateStagesQueries";
@@ -68,7 +67,6 @@ export const StageCandidatesHeader = ({
 }: StageCandidatesHeaderProps) => {
   const navigate = useNavigate();
   const [isProjectSubmissionDialogOpen, setIsProjectSubmissionDialogOpen] = useState(false);
-  // const [isSendQuestionPaperDialogOpen, setIsSendQuestionPaperDialogOpen] = useState(false);
   const [isHistoryDialogOpen, setIsHistoryDialogOpen] = useState(false);
   const activeJobStage = job?.stages?.find((s) => s.id === stageId || s.template?.name === stageName);
 
@@ -210,15 +208,6 @@ export const StageCandidatesHeader = ({
                   </span>
                 </Button>
               )}
-              {/* <SendQuestionPaperDialog
-                isOpen={isSendQuestionPaperDialogOpen}
-                onOpenChange={setIsSendQuestionPaperDialogOpen}
-                candidateName={candidateName || "Candidate"}
-                candidateId={candidateId}
-                job={job}
-                jobStageId={stageId}
-                onSuccess={onPaperChange || onSuccess}
-              /> */}
               <CandidateTestPaperHistoryDialog
                 isOpen={isHistoryDialogOpen}
                 onOpenChange={setIsHistoryDialogOpen}

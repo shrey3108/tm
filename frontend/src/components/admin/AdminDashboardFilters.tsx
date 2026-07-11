@@ -50,7 +50,7 @@ const AdminDashboardFilters = ({
 }: AdminDashboardFiltersProps) => {
 
   const formattedJobOptions = useMemo(() => {
-    const sortedJobs = [...filteredJobs].sort((a, b) => (b?.candidate_count || 0) - (a?.candidate_count || 0));
+    const sortedJobs = filteredJobs.toSorted((a, b) => (b?.candidate_count || 0) - (a?.candidate_count || 0));
     return sortedJobs.map((job) => ({
       id: job.id,
       label: job.title,

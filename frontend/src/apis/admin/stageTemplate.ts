@@ -16,14 +16,12 @@ export const adminStageTemplateService = {
    * @returns Promise resolving to a paginated response of stage templates
    */
   getAllTemplates: async (
-    skip: number = 0,
-    limit: number = 10,
-    search?: string
+    { skip = 0, limit = 10, q }: { skip?: number; limit?: number; q?: string }
   ): Promise<PaginatedResponse<StageTemplate>> => {
     const response = await apiClient.get<PaginatedResponse<StageTemplate>>(
       `${ADMIN_PATH}/stage-templates`,
       {
-        params: { skip, limit, q: search ? search : undefined },
+        params: { skip, limit, q: q ? q : undefined },
       }
     );
     return response.data;
