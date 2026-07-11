@@ -3,8 +3,8 @@ import { Layers, Loader2 } from "lucide-react";
 import { StageDetailDialog } from "@/components/admin/StageDetailDialog";
 import type { StageTemplate } from "@/types/stage";
 
-import { useStagePipeline } from "./useStagePipeline";
-import { useStageDragDrop } from "./useStageDragDrop";
+import { useStagePipeline } from "@/hooks/useStagePipeline";
+import { useStageDragDrop } from "@/hooks/useStageDragDrop";
 import { StageCard } from "./StageCard";
 import { AddStageDropdown } from "./AddStageDropdown";
 

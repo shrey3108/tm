@@ -4,7 +4,7 @@ import { formatDuration } from "@/utils/taskFormatter";
 import { cn } from "@/lib/utils";
 
 export interface ProjectTaskDisplayProps {
-  task: TaskItem | string;
+  task: TaskItem;
   variant?: "simple" | "detailed";
   titleClassName?: string;
   showTypeSuffix?: boolean;
@@ -16,15 +16,13 @@ export function ProjectTaskDisplay({
   titleClassName,
   showTypeSuffix = true,
 }: ProjectTaskDisplayProps) {
-  const isString = typeof task === "string";
-  const taskText = isString ? task : task?.task || task?.title || "";
-  const instructions = isString ? "" : task?.instructions || "";
-  const tDuration = isString ? undefined : task?.duration || task?.total_duration;
-  const subTasks = isString ? [] : task?.tasks || [];
 
-  const calculatedTotalMarks = isString
-    ? undefined
-    : (task?.total_marks || task?.tasks?.reduce((sum, st) => sum + (st.marks || 0), 0) || undefined);
+  const taskText = task?.task || task?.title || "";
+  const instructions = task?.instructions || "";
+  const tDuration = task?.duration || task?.total_duration;
+  const subTasks = task?.tasks || [];
+
+  const calculatedTotalMarks = (task?.total_marks || task?.tasks?.reduce((sum, st) => sum + (st.marks || 0), 0) || undefined);
 
   if (variant === "simple") {
     return (

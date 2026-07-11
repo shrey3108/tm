@@ -4,7 +4,7 @@
  *
  * Creation form for adding new questions with options and test cases to the Questions Bank.
  */
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { usePageFilters } from "@/hooks/usePageFilters";
 import { useForm } from "react-hook-form";
@@ -19,10 +19,6 @@ import { useJobPosition } from "@/hooks/queries/admin/useJobPosition";
 import { QuestionsBankSkillSelector } from "@/components/questions-bank/QuestionsBankSkillSelector";
 import { Form } from "@/components/ui/form";
 import { Required } from "@/components/shared/Required";
-import { PERMISSIONS, hasPermissions } from "@/lib/permissions";
-import { cn } from "@/lib/utils";
-import { useAppSelector } from "@/store/hooks";
-import { selectCurrentUser } from "@/store/slices/authSlice";
 import {
   useQuestionSetPaper,
   useQuestionSetPapers,
@@ -35,7 +31,6 @@ import {
   useUpdateProjectTaskInPaperMutation,
   useAddMCQToPaperMutation,
   useUpdateMCQInPaperMutation,
-  useUploadQuestionSetPaperMutation,
 } from "@/hooks/mutations/taskPapers/useTaskPaperMutations";
 import type { MCQItem, TaskItem, SubTaskItem, QuestionItem } from "@/types/taskPaper";
 import { mcqFormSchema } from "@/schemas/taskPaper";
@@ -48,8 +43,8 @@ import { SingleQuestionFormFields } from "@/components/questions-bank/SingleQues
 import { MCQFormFields } from "@/components/questions-bank/MCQFormFields";
 import { ProjectTaskFormFields } from "@/components/questions-bank/ProjectTaskFormFields";
 import LoadingSpinner from "@/components/shared/LoadingSpinner";
-import { SearchableSelect } from "@/components/shared/SearchableSelect";
 import { useDebouncedValue } from "@/hooks/useDebounced";
+import { QuestionsBankFilters } from "@/components/questions-bank/QuestionsBankFilters";
 
 
 
@@ -58,8 +53,7 @@ export default function QuestionsBankCreate() {
   const location = useLocation();
   const { slug } = useParams();
 
-  const user = useAppSelector(selectCurrentUser);
-  const isAllowedToManage = hasPermissions(user?.permissions, PERMISSIONS.QUESTIONS_MANAGE, "any");
+
 
   const isEditMode = !!slug && slug !== "new";
 
@@ -91,8 +85,8 @@ export default function QuestionsBankCreate() {
   const { data: positions, loading: loadingPositions } = useJobPosition({ skip: 0, limit: 10 });
 
   // Queries for Edit Mode
-  const { data: fetchedPaper, loading: loadingFetchedPaper, refetch: refetchFetchedPaper } = useQuestionSetPaper(initialPaperId);
-  const { data: allPapers = [], loading: loadingAllPapers, refetch: refetchAllPapers } = useQuestionSetPapers({
+  const { data: fetchedPaper, loading: loadingFetchedPaper } = useQuestionSetPaper(initialPaperId);
+  const { data: allPapers = [], loading: loadingAllPapers } = useQuestionSetPapers({
     options: { enabled: isEditMode && !initialPaperId }
   });
 
@@ -104,13 +98,6 @@ export default function QuestionsBankCreate() {
 
   const loadingPaper = isEditMode && (initialPaperId ? loadingFetchedPaper : loadingAllPapers);
 
-  const refetchPaper = useCallback(() => {
-    if (initialPaperId) {
-      refetchFetchedPaper();
-    } else {
-      refetchAllPapers();
-    }
-  }, [initialPaperId, refetchFetchedPaper, refetchAllPapers]);
 
   // Mutations
   const createPaperMutation = useCreateQuestionSetPaperMutation();
@@ -123,10 +110,7 @@ export default function QuestionsBankCreate() {
   const addMCQMutation = useAddMCQToPaperMutation();
   const updateMCQMutation = useUpdateMCQInPaperMutation();
 
-  const uploadMutation = useUploadQuestionSetPaperMutation();
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [isUploading, setIsUploading] = useState<boolean>(false);
 
   // Setup React Hook Form to use SkillSelectorSection
   const form = useForm({
@@ -304,58 +288,6 @@ export default function QuestionsBankCreate() {
     }
   }, [isEditMode, paperToEdit, form, initialItemType, itemIndex]);
 
-
-
-  // File Upload handlers
-  // @ts-ignore
-  const handleUploadClick = () => {
-    if (!departmentId) {
-      toast.error("Please select a department first.");
-      return;
-    }
-    if (!positionId) {
-      toast.error("Please select experience / position level first.");
-      return;
-    }
-    fileInputRef.current?.click();
-  };
-  // @ts-ignore
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!isEditMode && selectedSkillIds.length === 0) {
-      toast.error("Please select at least one skill for the new question bank.");
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-      return;
-    }
-
-    setIsUploading(true);
-    try {
-      await uploadMutation.mutateAsync({
-        departmentId,
-        positionId,
-        skillIds: isEditMode ? [] : selectedSkillIds,
-        paperType: "mixed",
-        file: file,
-      });
-      toast.success(`Successfully uploaded and triggered AI extraction for '${file.name}'!`);
-      if (!isEditMode) {
-        navigate("/dashboard/questions-bank");
-      } else {
-        refetchPaper();
-      }
-    } catch (err: unknown) {
-      toast.error(extractErrorMessage(err, `Failed to upload file.`));
-    } finally {
-      setIsUploading(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-    }
-  };
 
   // Submit/Save Action
   const handleSavePaper = async () => {
@@ -608,86 +540,25 @@ export default function QuestionsBankCreate() {
 
       <div className="mx-auto w-full space-y-2">
         {/* Unified Selector/Filter row (matching listing page style) */}
-        <div className="rounded-xl border border-border bg-card p-2 shadow-xs">
-          <div className={cn(
-            "grid grid-cols-1 sm:grid-cols-2 gap-2 w-full",
-            isAllowedToManage ? "lg:grid-cols-4" : "lg:grid-cols-3"
-          )}>
-            {/* Department Selector */}
-            <div className="flex flex-col gap-0.5 w-full">
-              <Label className="text-xs font-semibold">Select Department <Required /></Label>
-              <SearchableSelect
-                value={departmentId}
-                onValueChange={setDepartmentId}
-                options={departments?.map((dept) => ({ id: dept.id, label: dept.name })) || []}
-                placeholder="Choose a department..."
-                searchPlaceholder="Search departments..."
-                disabled={isEditMode || !departments || departments.length === 0}
-                loading={loadingDepts}
-                loadingPlaceholder="Loading departments..."
-                emptyMessage="No departments found"
-                moreText="departments"
-                onSearch={handleDeptSearch}
-                asyncLoading={isDeptSearching}
-              />
-            </div>
-
-            {/* Experience / Position Level Selector */}
-            <div className="flex flex-col gap-0.5 w-full">
-              <Label className="text-xs font-semibold">Experience / Position Level <Required /></Label>
-              <SearchableSelect
-                value={positionId}
-                onValueChange={setPositionId}
-                options={positions?.map((pos) => ({ id: pos.id, label: pos.name })) || []}
-                placeholder="Choose position level..."
-                searchPlaceholder="Search position levels..."
-                disabled={isEditMode || loadingPositions}
-                loading={loadingPositions}
-                loadingPlaceholder="Loading positions..."
-                emptyMessage="No position levels found"
-                moreText="position levels"
-              />
-            </div>
-
-            {/* Question Type Selector */}
-            <div className="flex flex-col gap-0.5 w-full">
-              <Label className="text-xs font-semibold">Question Type</Label>
-              <SearchableSelect
-                value={contentType}
-                onValueChange={(val: any) => setContentType(val)}
-                options={typeOptions.map((opt) => ({ id: opt.id, label: opt.label }))}
-                placeholder="Select type..."
-                searchPlaceholder="Search question types..."
-                disabled={isEditMode}
-                emptyMessage="No question types found"
-                moreText="question types"
-              />
-            </div>
-
-            {/* Action Upload Widget */}
-            {/* <PermissionGuard permissions={PERMISSIONS.QUESTIONS_MANAGE} hideWhenDenied>
-              <div className="flex flex-col gap-0.5 w-full">
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleFileChange}
-                  accept=".pdf,.doc,.docx"
-                  className="hidden"
-                />
-                <Label className="text-xs font-semibold invisible">Upload</Label>
-                <button
-                  type="button"
-                  onClick={handleUploadClick}
-                  disabled={!departmentId || !positionId || isUploading}
-                  className="w-full h-11 bg-input/20 hover:bg-input/30 text-sm rounded-xl px-3 justify-center font-normal text-foreground inline-flex items-center cursor-pointer transition-all border border-border/50 outline-none focus:border-border/50 gap-1.5 disabled:pointer-events-none disabled:opacity-50"
-                >
-                  <Upload className="h-4 w-4" />
-                  {isUploading ? "Uploading..." : "Upload Document"}
-                </button>
-              </div>
-            </PermissionGuard> */}
-          </div>
-        </div>
+        <QuestionsBankFilters
+          selectedDeptId={departmentId}
+          setSelectedDeptId={setDepartmentId}
+          departments={departments || null}
+          loadingDepts={loadingDepts}
+          isDeptSearching={isDeptSearching}
+          handleDeptSearch={handleDeptSearch}
+          selectedPositionId={positionId}
+          setSelectedPositionId={setPositionId}
+          positions={positions || null}
+          loadingPositions={loadingPositions}
+          selectedContentType={contentType}
+          setSelectedContentType={(val) => setContentType(val as "question" | "mcq" | "project_task")}
+          contentTypeOptions={typeOptions as any}
+          hideSkills={true}
+          hideActions={true}
+          showRequired={true}
+          disabled={isEditMode}
+        />
 
         {/* Question Form Card */}
         <div className="app-surface-card space-y-2 p-2">
@@ -766,7 +637,7 @@ export default function QuestionsBankCreate() {
         <div className="flex flex-wrap items-center justify-center gap-2 border-t pt-2">
           <Button
             onClick={handleSavePaper}
-            disabled={createPaperMutation.isPending || isUploading}
+            disabled={createPaperMutation.isPending}
             className="rounded-xl font-bold bg-primary hover:bg-primary/95 text-primary-foreground shadow-md hover:shadow-lg transition-all"
           >
             <Save className="h-4 w-4 mr-2" />
@@ -776,7 +647,7 @@ export default function QuestionsBankCreate() {
             type="button"
             variant="outline"
             onClick={() => navigate("/dashboard/questions-bank")}
-            disabled={createPaperMutation.isPending || isUploading}
+            disabled={createPaperMutation.isPending}
             className="rounded-xl font-semibold"
           >
             Cancel

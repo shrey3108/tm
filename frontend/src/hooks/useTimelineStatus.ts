@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import type { HiringTimelineResponse } from "@/types/candidate";
-import { isFailed, isStageWaiting, isPassedOrRejected } from "./timelineStatusUtils";
+import { isFailed, isStageWaiting, isPassedOrRejected } from "@/components/candidate/timeline/timelineStatusUtils";
 
 
 

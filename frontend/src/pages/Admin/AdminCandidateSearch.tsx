@@ -12,17 +12,13 @@ import type { CandidateResponse } from "@/types/resume";
 import AppPageShell from "@/components/shared/AppPageShell";
 import ErrorDisplay from "@/components/shared/ErrorDisplay";
 import PageHeader from "@/components/shared/PageHeader";
-import JobSummaryCard from "@/components/shared/JobSummaryCard";
 import CandidateSearchTable from "@/components/candidate/CandidateSearchTable";
-import QuickResumeUpload from "@/components/candidate/QuickResumeUpload";
-
 import { JobCandidatesSkeleton } from "@/components/job/candidates/JobCandidatesSkeleton";
 import type { PaginationState } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import type { CandidateActiveFilters } from "@/hooks/useCandidateTableFilters";
 import { usePageFilters } from "@/hooks/usePageFilters";
 import { useToast } from "@/components/shared/ToastProvider";
-
 import { useDeleteResumeMutation } from "@/hooks/mutations/jobs/useResumeMutation";
 import type { DateRange } from "react-day-picker";
 import { useDeleteConfirmation } from "@/hooks/useDeleteConfirmation";
@@ -153,12 +149,6 @@ export default function AdminCandidateSearch() {
         actions={
           jobId && (
             <>
-              <QuickResumeUpload
-                jobId={jobId}
-                jobTitle={job?.title}
-                onSuccess={fetchCandidates}
-                variant="default"
-              />
               <Button
                 variant="secondary"
                 onClick={() =>
@@ -174,7 +164,6 @@ export default function AdminCandidateSearch() {
         }
       />
 
-      {job && <JobSummaryCard job={job} />}
 
       {error ? (
         <ErrorDisplay message={error} onRetry={fetchCandidates} />

@@ -6,9 +6,9 @@ import { MCQQuestionDisplay } from "./MCQQuestionDisplay";
 import { ProjectTaskDisplay } from "./ProjectTaskDisplay";
 
 interface PaperContentDisplayProps {
-  questions?: (QuestionItem | string)[];
+  questions?: QuestionItem[];
   mcqs?: MCQItem[];
-  project_task?: (TaskItem | string)[];
+  project_task?: TaskItem[];
   className?: string;
 }
 

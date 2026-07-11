@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/shared/SearchableSelect";
 import PermissionGuard from "@/components/auth/PermissionGuard";
 import { PERMISSIONS } from "@/lib/permissions";
+import { Required } from "@/components/shared/Required";
 
 interface QuestionsBankFiltersProps {
   selectedDeptId: string;
@@ -19,20 +20,26 @@ interface QuestionsBankFiltersProps {
   positions: Array<{ id: string; name: string }> | null;
   loadingPositions: boolean;
 
-  selectedSkillId: string;
-  setSelectedSkillId: (id: string) => void;
-  skills: Array<{ id: string; name: string }> | null;
-  loadingSkills: boolean;
-  isSkillSearching: boolean;
-  handleSkillSearch: (query: string) => void;
-
   selectedContentType: string;
   setSelectedContentType: (type: string) => void;
 
-  hasActiveFilters: boolean;
-  clearFilters: () => void;
+  selectedSkillId?: string;
+  setSelectedSkillId?: (id: string) => void;
+  skills?: Array<{ id: string; name: string }> | null;
+  loadingSkills?: boolean;
+  isSkillSearching?: boolean;
+  handleSkillSearch?: (query: string) => void;
 
-  onCreateNew: () => void;
+  hasActiveFilters?: boolean;
+  clearFilters?: () => void;
+
+  onCreateNew?: () => void;
+
+  hideSkills?: boolean;
+  hideActions?: boolean;
+  showRequired?: boolean;
+  disabled?: boolean;
+  contentTypeOptions?: { id: string; label: string }[];
 }
 
 export function QuestionsBankFilters({
@@ -57,77 +64,86 @@ export function QuestionsBankFilters({
   hasActiveFilters,
   clearFilters,
   onCreateNew,
+  hideSkills,
+  hideActions,
+  showRequired,
+  disabled,
+  contentTypeOptions,
 }: QuestionsBankFiltersProps) {
-  const contentTypeOptions = [
+  const defaultContentTypeOptions = [
     { id: "all", label: "All Types" },
     { id: "question", label: "Default" },
     { id: "project_task", label: "Project Tasks" },
     { id: "mcq", label: "MCQs" },
   ];
 
+  const finalContentTypeOptions = contentTypeOptions || defaultContentTypeOptions;
+
   return (
     <div className="flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3 rounded-xl border border-border bg-card p-2 shadow-xs">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-1 flex-1">
         {/* Department Selector */}
         <div className="flex flex-col gap-0.5 w-full">
-          <Label className="text-xs font-semibold">Select Department</Label>
+          <Label className="text-xs font-semibold">Select Department {showRequired && <Required />}</Label>
           <SearchableSelect
             value={selectedDeptId}
             onValueChange={setSelectedDeptId}
             options={departments?.map((dept) => ({ id: dept.id, label: dept.name })) || []}
             placeholder="Choose a department..."
             searchPlaceholder="Search departments..."
-            disabled={!departments || departments.length === 0}
+            disabled={disabled || !departments || departments.length === 0}
             loading={loadingDepts}
             loadingPlaceholder="Loading departments..."
             emptyMessage="No departments found"
             moreText="departments"
             onSearch={handleDeptSearch}
             asyncLoading={isDeptSearching}
-            onClear={() => setSelectedDeptId("")}
+            onClear={showRequired ? undefined : () => setSelectedDeptId("")}
             clearLabel="Clear department filter"
           />
         </div>
 
         {/* Experience / Position Level Selector */}
         <div className="flex flex-col gap-0.5 w-full">
-          <Label className="text-xs font-semibold">Experience / Position Level</Label>
+          <Label className="text-xs font-semibold">Experience / Position Level {showRequired && <Required />}</Label>
           <SearchableSelect
             value={selectedPositionId}
             onValueChange={setSelectedPositionId}
             options={positions?.map((pos) => ({ id: pos.id, label: pos.name })) || []}
-            placeholder="All position levels"
+            placeholder={showRequired ? "Choose position level..." : "All position levels"}
             searchPlaceholder="Search position levels..."
-            disabled={loadingPositions}
+            disabled={disabled || loadingPositions}
             loading={loadingPositions}
             loadingPlaceholder="Loading positions..."
             emptyMessage="No position levels found"
             moreText="position levels"
-            onClear={() => setSelectedPositionId("")}
+            onClear={showRequired ? undefined : () => setSelectedPositionId("")}
             clearLabel="Clear position filter"
           />
         </div>
 
         {/* Skill Selector */}
-        <div className="flex flex-col gap-0.5 w-full">
-          <Label className="text-xs font-semibold">Select Skill</Label>
-          <SearchableSelect
-            value={selectedSkillId}
-            onValueChange={setSelectedSkillId}
-            options={skills?.map((skill) => ({ id: skill.id, label: skill.name })) || []}
-            placeholder="All skills"
-            searchPlaceholder="Search skills..."
-            disabled={loadingSkills || !selectedDeptId || !selectedPositionId}
-            loading={loadingSkills}
-            loadingPlaceholder="Loading skills..."
-            emptyMessage="No skills found"
-            moreText="skills"
-            onSearch={handleSkillSearch}
-            asyncLoading={isSkillSearching}
-            onClear={() => setSelectedSkillId("")}
-            clearLabel="Clear skill filter"
-          />
-        </div>
+        {!hideSkills && (
+          <div className="flex flex-col gap-0.5 w-full">
+            <Label className="text-xs font-semibold">Select Skill</Label>
+            <SearchableSelect
+              value={selectedSkillId as string}
+              onValueChange={setSelectedSkillId!}
+              options={skills?.map((skill) => ({ id: skill.id, label: skill.name })) || []}
+              placeholder="All skills"
+              searchPlaceholder="Search skills..."
+              disabled={disabled || loadingSkills || !selectedDeptId || !selectedPositionId}
+              loading={loadingSkills}
+              loadingPlaceholder="Loading skills..."
+              emptyMessage="No skills found"
+              moreText="skills"
+              onSearch={handleSkillSearch}
+              asyncLoading={isSkillSearching}
+              onClear={showRequired ? undefined : () => setSelectedSkillId && setSelectedSkillId("")}
+              clearLabel="Clear skill filter"
+            />
+          </div>
+        )}
 
         {/* Content Type Selector */}
         <div className="flex flex-col gap-0.5 w-full">
@@ -135,49 +151,52 @@ export function QuestionsBankFilters({
           <SearchableSelect
             value={selectedContentType}
             onValueChange={setSelectedContentType}
-            options={contentTypeOptions}
-            placeholder="All Types"
+            options={finalContentTypeOptions}
+            placeholder={showRequired ? "Select type..." : "All Types"}
             searchPlaceholder="Search content types..."
+            disabled={disabled}
             emptyMessage="No content types found"
-            onClear={() => setSelectedContentType("all")}
+            onClear={showRequired ? undefined : () => setSelectedContentType("all")}
             clearLabel="Clear content type filter"
           />
         </div>
       </div>
 
       {/* Action Upload Widget */}
-      <div className="flex items-end justify-end shrink-0 gap-2 xl:self-end">
-        {hasActiveFilters && (
-          <HoverCard>
-            <HoverCardTrigger delay={10} closeDelay={100}
-              render={
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-11 px-3 rounded-xl text-xs font-semibold text-muted-foreground hover:bg-gray-200/60"
-                  onClick={clearFilters}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              }
-            />
-            <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
-              Clear all filters
-            </HoverCardContent>
-          </HoverCard>
-        )}
-        <PermissionGuard permissions={PERMISSIONS.QUESTIONS_MANAGE} hideWhenDenied>
-          <Button
-            onClick={onCreateNew}
-            disabled={!selectedDeptId || !selectedPositionId}
-            size={"sm"}
-            className="h-9 gap-1.5"
-          >
-            <Plus className="h-4 w-4" />
-            Create Question
-          </Button>
-        </PermissionGuard>
-      </div>
+      {!hideActions && (
+        <div className="flex items-end justify-end shrink-0 gap-2 xl:self-end">
+          {hasActiveFilters && (
+            <HoverCard>
+              <HoverCardTrigger delay={10} closeDelay={100}
+                render={
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-11 px-3 rounded-xl text-xs font-semibold text-muted-foreground hover:bg-gray-200/60"
+                    onClick={clearFilters}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                }
+              />
+              <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
+                Clear all filters
+              </HoverCardContent>
+            </HoverCard>
+          )}
+          <PermissionGuard permissions={PERMISSIONS.QUESTIONS_MANAGE} hideWhenDenied>
+            <Button
+              onClick={onCreateNew}
+              disabled={!selectedDeptId || !selectedPositionId}
+              size={"sm"}
+              className="h-9 gap-1.5"
+            >
+              <Plus className="h-4 w-4" />
+              Create Question
+            </Button>
+          </PermissionGuard>
+        </div>
+      )}
     </div>
   );
 }

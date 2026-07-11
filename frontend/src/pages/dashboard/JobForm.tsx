@@ -10,20 +10,13 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { X } from "lucide-react";
-
 import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button"
-// BasicJobDetails,
-// JobSettingsSection,
-// CustomFieldsSection,
-// SkillSelectorSection,
-// StagePipelineSection,
 import { JobFormSkeleton } from "@/components/job/job-form/JobFormSkeleton";
 import { BasicJobDetails } from "@/components/job/job-form/BasicJobDetails";
 import { JobSettingsSection } from "@/components/job/job-form/JobSettingsSection";
 import { StagePipelineSection } from "@/components/job/job-form/StagePipelineSection";
 import { CustomFieldsSection } from "@/components/job/job-form/CustomFieldsSection";
-
 import type { SkillBase } from "@/types/skill";
 import { jobCreateSchema, type JobCreateFormValues } from "@/schemas/job";
 import AppPageShell from "@/components/shared/AppPageShell";

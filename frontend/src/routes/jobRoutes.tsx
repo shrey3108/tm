@@ -18,15 +18,7 @@ export const jobRoutes: RouteObject[] = [
     ),
     loader: adminJobsLoader,
   },
-  {
-    path: "jobs/:jobId/candidates",
-    element: (
-      <RoleRoute requiredPermissions={PERMISSIONS.CANDIDATES_ACCESS}>
-        <AdminCandidateSearch />
-      </RoleRoute>
-    ),
-    loader: adminCandidateSearchLoader,
-  },
+
   {
     path: "candidates",
     element: (

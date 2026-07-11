@@ -4,7 +4,7 @@ import { formatDuration } from "@/utils/taskFormatter";
 import { cn } from "@/lib/utils";
 
 export interface SingleQuestionDisplayProps {
-  question: QuestionItem | string;
+  question: QuestionItem;
   variant?: "simple" | "detailed";
   titleClassName?: string;
   showTypeSuffix?: boolean;
@@ -16,9 +16,9 @@ export function SingleQuestionDisplay({
   titleClassName,
   showTypeSuffix,
 }: SingleQuestionDisplayProps) {
-  const qText = typeof question === "string" ? question : question.question || "";
-  const qMarks = typeof question === "string" ? undefined : question.marks;
-  const qDuration = typeof question === "string" ? undefined : question.duration;
+  const qText = question.question || "";
+  const qMarks = question.marks;
+  const qDuration = question.duration;
 
   if (variant === "simple") {
     return (
@@ -31,7 +31,7 @@ export function SingleQuestionDisplay({
             </span>
           )}
         </div>
-        <div className="shrink-0 text-left whitespace-nowrap text-xs self-start pt-0.5">
+        <div className="shrink-0 text-left whitespace-nowrap text-xs self-start pt-0.5 ">
           Marks: {qMarks ?? "N/A"} • Duration: {qDuration !== undefined && qDuration > 0 ? `${qDuration} mins` : "N/A"}
         </div>
       </div>
