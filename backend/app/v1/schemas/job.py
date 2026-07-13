@@ -23,7 +23,7 @@ class JobBase(BaseModel):
     """
 
     processing_version: int | None = Field(None, json_schema_extra={"example": 1})
-    title: str = Field(..., max_length=100)
+    title: str = Field(..., max_length=30)
     vacancy: int | None = None
     department_id: uuid.UUID | None = None
     jd_text: str | None = None
@@ -63,8 +63,11 @@ class JobCreate(JobBase):
 
     position_id: uuid.UUID = Field(..., description="Position is required to create a job")
     department_id: uuid.UUID = Field(..., description="Department is required to create a job")
-    skill_ids: list[uuid.UUID] = []
-    associate_ids: list[uuid.UUID] = []
+    vacancy: int = Field(..., description="Vacancy is required to create a job")
+    jd_text: str = Field(..., description="JD text is required to create a job")
+    priority_id: uuid.UUID = Field(..., description="Priority is required to create a job")
+    skill_ids: list[uuid.UUID] = Field(..., min_length=1, description="At least one skill is required")
+    associate_ids: list[uuid.UUID] = Field(..., min_length=1, description="At least one associate is required")
     skill_weightages: dict[uuid.UUID, float] | None = Field(None, description="Mapping of skill ID to its weightage")
     processing_version: int | None = Field(None, description="Pin to a specific job version for matching")
     stages: list[StageInput] | None = Field(
@@ -88,7 +91,7 @@ class JobUpdate(BaseModel):
     """
 
     processing_version: int | None = Field(None, json_schema_extra={"example": 1})
-    title: str | None = Field(None, max_length=100)
+    title: str | None = Field(None, max_length=30)
     vacancy: int | None = None
     department_id: uuid.UUID | None = None
     jd_text: str | None = None

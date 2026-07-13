@@ -2,7 +2,6 @@ from ..db.models.audit_logs import AuditLog
 from ..db.models.departments import Department
 from ..db.models.candidate_skills import candidate_skills
 from ..db.models.candidates import Candidate
-from ..db.models.cover_letters import CoverLetter
 from ..db.models.files import File
 from ..db.models.hr_decisions import HrDecision
 from ..db.models.interviews import Interview
@@ -12,7 +11,6 @@ from ..db.models.jobs import Job
 from ..db.models.locations import Location
 from ..db.models.job_versions import JobVersion
 from ..db.models.permissions import Permission
-from ..db.models.recordings import Recording  # NOT USED
 from ..db.models.job_chunks import JobChunk
 from ..db.models.resume_chunks import ResumeChunk
 from ..db.models.resumes import Resume
@@ -41,12 +39,10 @@ __all__ = [
     "JobStageConfig",
     "File",
     "Resume",
-    "CoverLetter",
     "ResumeChunk",
     "JobChunk",
     "HrDecision",
     "Interview",
-    "Recording",  # NOT USED
     "Transcript",
     "AuditLog",
     "CrossJobMatch",

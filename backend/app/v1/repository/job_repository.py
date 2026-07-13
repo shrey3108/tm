@@ -12,7 +12,6 @@ from sqlalchemy.orm import selectinload
 
 from app.v1.db.models.candidates import Candidate
 from app.v1.db.models.candidate_skills import candidate_skills
-from app.v1.db.models.cover_letters import CoverLetter
 from app.v1.db.models.cross_job_matches import CrossJobMatch
 from app.v1.db.models.files import File as FileRecord
 from app.v1.db.models.hr_decisions import HrDecision
@@ -22,7 +21,6 @@ from app.v1.db.models.job_skills import job_skills
 from app.v1.db.models.job_stage_configs import JobStageConfig
 from app.v1.db.models.candidate_stages import CandidateStage
 from app.v1.db.models.jobs import Job
-from app.v1.db.models.recordings import Recording
 from app.v1.db.models.resume_chunks import ResumeChunk
 from app.v1.db.models.resume_version_results import ResumeVersionResult
 from app.v1.db.models.resumes import Resume
@@ -274,7 +272,6 @@ class JobRepository:
         # 1. Delete transient data related to this job's interviews
         job_interview_ids = select(Interview.id).where(Interview.job_id == id)
         await db.execute(delete(Transcript).where(Transcript.interview_id.in_(job_interview_ids)))
-        await db.execute(delete(Recording).where(Recording.interview_id.in_(job_interview_ids)))
         
         # 2. Delete core job-specific records
         await db.execute(delete(ResumeVersionResult).where(ResumeVersionResult.job_id == id))

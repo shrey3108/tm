@@ -51,16 +51,16 @@ class Resume(Base):
     )
 
     # FOREIGN KEYS
-    candidate_id: Mapped[uuid.UUID | None] = mapped_column(
+    candidate_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("candidates.id"),
-        nullable=True,
+        ForeignKey("candidates.id", ondelete="CASCADE"),
+        nullable=False,
     )
 
-    file_id: Mapped[uuid.UUID] = mapped_column(
+    file_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("files.id"),
-        nullable=False,
+        ForeignKey("files.id", ondelete="SET NULL"),
+        nullable=True,
     )
 
     # TIMESTAMPS

@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Text
+from sqlalchemy import DateTime, ForeignKey, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
@@ -31,6 +31,9 @@ class HrDecision(Base):
     """
 
     __tablename__ = "hr_decisions"
+    __table_args__ = (
+        UniqueConstraint("candidate_id", "stage_config_id", "user_id", name="uq_hr_decision_cand_stage_user"),
+    )
 
     # PRIMARY KEY
     id: Mapped[uuid.UUID] = mapped_column(
@@ -42,13 +45,13 @@ class HrDecision(Base):
     # FOREIGN KEYS
     candidate_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("candidates.id"),
+        ForeignKey("candidates.id", ondelete="CASCADE"),
         nullable=False,
     )
 
     stage_config_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("job_stage_configs.id"),
+        ForeignKey("job_stage_configs.id", ondelete="SET NULL"),
         nullable=True,
     )
 
@@ -60,7 +63,7 @@ class HrDecision(Base):
 
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("users.id"),
+        ForeignKey("users.id", ondelete="SET NULL"),
         nullable=False,
     )
 

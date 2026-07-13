@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import DateTime, ForeignKey, Text
+from sqlalchemy import DateTime, ForeignKey, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
@@ -34,6 +34,9 @@ class CandidateStage(Base):
     """
 
     __tablename__ = "candidate_stages"
+    __table_args__ = (
+        UniqueConstraint("candidate_id", "job_stage_id", name="uq_cand_stage"),
+    )
 
     # PRIMARY KEY
     id: Mapped[uuid.UUID] = mapped_column(

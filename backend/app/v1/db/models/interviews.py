@@ -41,19 +41,19 @@ class Interview(Base):
     # FOREIGN KEYS
     candidate_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("candidates.id"),
+        ForeignKey("candidates.id", ondelete="CASCADE"),
         nullable=False,
     )
 
     job_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("jobs.id"),
+        ForeignKey("jobs.id", ondelete="CASCADE"),
         nullable=False,
     )
 
     interviewer_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("users.id"),
+        ForeignKey("users.id", ondelete="SET NULL"),
         nullable=False,
     )
 

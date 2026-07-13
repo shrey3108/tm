@@ -16,7 +16,6 @@ from sqlalchemy.orm import selectinload
 
 from app.v1.db.models.candidate_skills import candidate_skills
 from app.v1.db.models.candidates import Candidate
-from app.v1.db.models.cover_letters import CoverLetter
 from app.v1.db.models.files import File as FileRecord
 from app.v1.db.models.job_skills import job_skills
 from app.v1.db.models.jobs import Job
@@ -28,7 +27,6 @@ from app.v1.db.models.hr_decisions import HrDecision
 from app.v1.db.models.interviews import Interview
 from app.v1.db.models.cross_job_matches import CrossJobMatch
 from app.v1.db.models.transcripts import Transcript
-from app.v1.db.models.recordings import Recording
 from app.v1.schemas.upload import ResumeRead, CandidateRead
 
 _log = logging.getLogger(__name__)
@@ -728,8 +726,8 @@ class ResumeUploadRepository:
         
         # Interviews for this job only (and their transients)
         job_interview_ids = select(Interview.id).where(Interview.candidate_id == candidate_id, Interview.job_id == job_id)
+        # Delete Transcripts linked to these interviews
         await db.execute(delete(Transcript).where(Transcript.interview_id.in_(job_interview_ids)))
-        await db.execute(delete(Recording).where(Recording.interview_id.in_(job_interview_ids)))
         await db.execute(delete(Interview).where(Interview.candidate_id == candidate_id, Interview.job_id == job_id))
 
         # Cross-job match entry for THIS job
@@ -751,9 +749,9 @@ class ResumeUploadRepository:
             await db.execute(delete(ResumeChunk).where(ResumeChunk.resume_id.in_(resume_ids_subq)))
             
             # Delete resumes and files
+            await db.execute(delete(ResumeChunk).where(ResumeChunk.candidate_id == candidate_id))
             await db.execute(delete(Resume).where(Resume.candidate_id == candidate_id))
             await db.execute(delete(FileRecord).where(FileRecord.candidate_id == candidate_id))
-            await db.execute(delete(CoverLetter).where(CoverLetter.candidate_id == candidate_id))
             await db.execute(delete(candidate_skills).where(candidate_skills.c.candidate_id == candidate_id))
             
             # Delete the person

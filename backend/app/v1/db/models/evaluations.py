@@ -3,7 +3,7 @@ import json
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import DateTime, ForeignKey, Numeric, Text
+from sqlalchemy import DateTime, ForeignKey, Numeric, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
@@ -25,6 +25,9 @@ class Evaluation(Base):
     """
 
     __tablename__ = "evaluations"
+    __table_args__ = (
+        UniqueConstraint("interview_id", "candidate_stage_id", name="uq_eval_interview_stage"),
+    )
 
     # PRIMARY KEY
     id: Mapped[uuid.UUID] = mapped_column(

@@ -676,23 +676,33 @@ Output Format Example (JSON ONLY):
                 seen_mcq_questions.add(q_text)
                 unique_mcqs.append(m)
 
-        # Select one task randomly (biased by weightage if we wanted, but let's just pick one)
-        papers_with_tasks = [p for p in papers if p.project_task and len(p.project_task) > 0]
-        if papers_with_tasks:
-            chosen_task_paper = random.choice(papers_with_tasks)
-            assigned_task = chosen_task_paper.project_task
-            assigned_file_path = chosen_task_paper.task_file_path
+        # Select exactly 1 task randomly based on weightage
+        all_tasks = []
+        for p in papers:
+            paper_skill_ids = [str(s.id) for s in p.skills]
+            paper_weight = max([skill_weights.get(sid, 0.0) for sid in paper_skill_ids] + [0.0])
+            if p.project_task:
+                for t in p.project_task:
+                    all_tasks.append({"task": t, "file_path": p.task_file_path, "weight": paper_weight})
+
+        if all_tasks:
+            random.shuffle(all_tasks)
+            all_tasks.sort(key=lambda x: x["weight"], reverse=True)
+            chosen_task = all_tasks[0]
+            assigned_task = [chosen_task["task"]]
+            assigned_file_path = chosen_task["file_path"]
         else:
             assigned_task = []
             assigned_file_path = None
         
         assigned_name = f"Randomized Question Paper ({job.title})"
 
-        # Slice the top 10 since they are already sorted by weightage descending
+        # Slice the top 10 questions since they are already sorted by weightage descending
         assigned_questions = unique_questions[:10]
         
+        # Slice the top 5 MCQs
         if unique_mcqs:
-            selected_mcqs = unique_mcqs[:10]
+            selected_mcqs = unique_mcqs[:5]
             assigned_mcqs = [m.model_dump() if hasattr(m, "model_dump") else m for m in selected_mcqs]
         else:
             assigned_mcqs = []

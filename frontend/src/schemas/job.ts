@@ -5,11 +5,11 @@ import { DEFAULT_PASSING_THRESHOLD } from "@/constants";
 
 const jobBaseSchema = z.object({
   /** Job title (minimum 3 characters) */
-  title: nameSchema(3, "Job title").max(24, "Job title must be at most 24 characters"),
+  title: nameSchema(3, "Job title").max(30, "Job title must be at most 30 characters"),
   /** Number of open vacancies */
   vacancy: z.number({
     error: "Vacancy is required",
-  }).int({ error: "Enter a valid vacancy number" }).positive({ error: "Enter a valid vacancy number" }).default(1),
+  }).int({ error: "Enter a valid vacancy number" }).positive({ error: "Enter a valid vacancy number" }),
   /** UUID of the department this job belongs to */
   department_id: uuidSchema("Please select a valid department"),
   /** Job description text (minimum 20 characters) */

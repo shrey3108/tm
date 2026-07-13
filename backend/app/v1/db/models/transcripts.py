@@ -38,14 +38,14 @@ class Transcript(Base):
     # FOREIGN KEYS
     interview_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("interviews.id"),
+        ForeignKey("interviews.id", ondelete="CASCADE"),
         nullable=False,
     )
 
-    file_id: Mapped[uuid.UUID] = mapped_column(
+    file_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("files.id"),
-        nullable=False,
+        ForeignKey("files.id", ondelete="SET NULL"),
+        nullable=True,
     )
 
     # TRANSCRIPT FIELDS

@@ -32,8 +32,7 @@ async def async_send_associate_reminders():
         # Fetch all pending associate evaluations
         from app.v1.db.models.candidate_stages import CandidateStage
         from app.v1.db.models.job_stage_configs import JobStageConfig
-        
-        from app.v1.db.models.job import Job
+        from app.v1.db.models.jobs import Job
         
         stmt = select(AssociateEvaluation).where(
             AssociateEvaluation.status == "sent",

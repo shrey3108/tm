@@ -50,7 +50,7 @@ class File(Base):
 
     candidate_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("candidates.id"),
+        ForeignKey("candidates.id", ondelete="CASCADE"),
         nullable=True,
     )
 

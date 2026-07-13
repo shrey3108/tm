@@ -11,14 +11,14 @@ role_permission = Table(
     Column(
         "permission_id",
         UUID(as_uuid=True),
-        ForeignKey("permissions.id"),
+        ForeignKey("permissions.id", ondelete="CASCADE"),
         primary_key=True,
         nullable=False,
     ),
     Column(
         "role_id",
         UUID(as_uuid=True),
-        ForeignKey("roles.id"),
+        ForeignKey("roles.id", ondelete="CASCADE"),
         primary_key=True,
         nullable=False,
     ),

@@ -37,10 +37,10 @@ class ResumeChunk(Base):
         default=UUIDHelper.generate_uuid7,
     )
 
-    # FOREIGN KEY
+    # FOREIGN KEYS
     resume_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("resumes.id"),
+        ForeignKey("resumes.id", ondelete="CASCADE"),
         nullable=False,
     )
 
