@@ -195,6 +195,7 @@ def generate_candidate_task_pdf_file(
                     
         if has_top_content:
             Story.append(Paragraph("<b>Project Instructions:</b>", styles['Heading2']))
+            seen_instructions = set()
             for t in tasks:
                 if isinstance(t, dict):
                     instructions = t.get("instructions")
@@ -202,14 +203,21 @@ def generate_candidate_task_pdf_file(
                         if isinstance(instructions, str):
                             lines = instructions.split('\n')
                             for line in lines:
-                                if line.strip():
-                                    # Add a basic bullet character
-                                    Story.append(Paragraph(f"&bull; {sanitize_for_pdf(line.strip())}", normal_style))
+                                line_stripped = line.strip()
+                                if line_stripped and line_stripped not in seen_instructions:
+                                    Story.append(Paragraph(f"&bull; {sanitize_for_pdf(line_stripped)}", normal_style))
+                                    seen_instructions.add(line_stripped)
                         elif isinstance(instructions, list):
                             for item in instructions:
-                                Story.append(Paragraph(f"&bull; {sanitize_for_pdf(str(item))}", normal_style))
+                                item_stripped = str(item).strip()
+                                if item_stripped and item_stripped not in seen_instructions:
+                                    Story.append(Paragraph(f"&bull; {sanitize_for_pdf(item_stripped)}", normal_style))
+                                    seen_instructions.add(item_stripped)
                         else:
-                            Story.append(Paragraph(sanitize_for_pdf(str(instructions)), normal_style))
+                            inst_str = str(instructions).strip()
+                            if inst_str and inst_str not in seen_instructions:
+                                Story.append(Paragraph(sanitize_for_pdf(inst_str), normal_style))
+                                seen_instructions.add(inst_str)
             Story.append(Spacer(1, 10))
 
     if test_paper.questions:
