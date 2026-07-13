@@ -250,6 +250,7 @@ export default function CandidatesStages() {
             fetchHrDecisionHistory();
             setRefetchTimeline(prev => prev + 1);
           }}
+          passing_threshold={job?.passing_threshold}
         />
       )}
       <EvaluationHistoryModal

@@ -282,7 +282,7 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
       {
         id: "current_stage",
         accessorKey: "current_stage",
-        size: 9,
+        size: 10,
         meta: { overflow: 'ellipsis' },
 
         header: () => {
@@ -444,7 +444,7 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
       {
         id: "location",
         accessorKey: "location",
-        size: 9,
+        size: 8,
         meta: { overflow: 'ellipsis' },
         header: ({ column }) => (
           <Button
