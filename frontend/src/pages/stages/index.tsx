@@ -177,7 +177,7 @@ export default function AdminJobStages() {
         },
         {
             accessorKey: "description",
-            size: 35,
+            size: 30,
             meta: { overflow: 'wrap' },
             header: () => {
                 return <div className="flex items-center gap-2">
@@ -194,16 +194,16 @@ export default function AdminJobStages() {
         },
         {
             accessorKey: "is_default",
-            size: 10,
+            size: 15,
             meta: { overflow: 'ellipsis' },
             header: ({ column }) => (
                 <Button
                     variant="ghost"
                     onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                    className="hover:bg-transparent p-0 font-semibold text-base"
+                    className="hover:bg-transparent p-0 font-semibold text-base gap-2"
                 >
-                    Default Stage
-                    <ArrowUpDown className="h-4 w-4" />
+                    <span className="truncate">Default Stage</span>
+                    <ArrowUpDown className="h-4 w-4 shrink-0" />
                 </Button>
             ),
             cell: ({ row }) => (
@@ -222,7 +222,7 @@ export default function AdminJobStages() {
             size: 12,
             meta: { overflow: 'wrap' },
             header: () => (
-                <div className="flex items-center justify-center gap-2">
+                <div className="flex items-center justify-start gap-2">
                     <span>Criteria</span>
                 </div>
             ),
