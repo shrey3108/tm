@@ -37,7 +37,6 @@ export interface CandidateTableProps<T extends UnifiedCandidate> {
   showStatusFilter?: boolean;
   onFiltersChange?: (filters: CandidateActiveFilters) => void;
   stageOptions?: { id: string; name: string }[];
-  activitySessions?: [number, { start_date: string; end_date: string }][];
   initialDateRange?: DateRange | undefined;
   rowSelection?: Record<string, boolean>;
   onRowSelectionChange?: OnChangeFn<Record<string, boolean>>;
@@ -64,7 +63,6 @@ export function CandidateTable<T extends UnifiedCandidate>({
   showLocationFilter = true,
   showStatusFilter = true,
   stageOptions: stageOptionsProp,
-  activitySessions,
   filters,
   setFilters,
   rowSelection,
@@ -104,10 +102,6 @@ export function CandidateTable<T extends UnifiedCandidate>({
     stageOptions,
     hrDecisionOptions,
     resultOptions,
-    activitySession,
-    setActivitySession,
-    activitySearch,
-    setActivitySearch,
     hrScoreFilter,
     setHrScoreFilter,
     testEmailSentFilter,
@@ -121,7 +115,6 @@ export function CandidateTable<T extends UnifiedCandidate>({
     isServerSide,
     passing_threshold,
     stageOptionsProp,
-    activitySessions,
     externalNameFilter,
     onNameFilterChange
   );
@@ -196,11 +189,6 @@ export function CandidateTable<T extends UnifiedCandidate>({
         stageOptions={stageOptions}
         hrDecisionOptions={hrDecisionOptions}
         resultOptions={resultOptions}
-        activitySession={activitySession}
-        setActivitySession={setActivitySession}
-        activitySearch={activitySearch}
-        setActivitySearch={setActivitySearch}
-        activitySessionOptions={activitySessions}
         hasActiveFilters={hasActiveFilters}
         clearFilters={clearFilters}
         resultCount={filteredCandidates.length}

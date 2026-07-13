@@ -17,7 +17,6 @@ export interface CandidateActiveFilters {
   dateRange?: DateRange | null;
   result?: string[];
   stage_id?: string[];
-  activity_session?: string[];
   q?: string;
   hr_score?: number[];
   test_email_sent?: boolean;
@@ -34,7 +33,6 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
   isServerSide = false,
   passingThreshold = DEFAULT_PASSING_THRESHOLD,
   stageOptionsProp?: { id: string; name: string }[],
-  activitySessionsData?: [number, { start_date: string; end_date: string }][],
   externalNameFilter?: string,
   onNameFilterChange?: (val: string) => void
 ) => {
@@ -46,15 +44,10 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
   const dateRange = filters.dateRange || undefined;
   const resultFilter = filters.result || [];
   const stageFilter = filters.stage_id || [];
-  const activitySessionFilter = filters.activity_session || [];
 
-  const testEmailSentFilter = filters.test_email_sent === true
-    ? "sent"
-    : filters.test_email_sent === false
-      ? "not_sent"
-      : undefined;
+  const testEmailSentFilter = filters.test_email_sent === true ? "sent" : filters.test_email_sent === false ? "not_sent" : undefined;
 
-  const nameFilter = externalNameFilter !== undefined ? externalNameFilter : (filters.q || "");
+  const nameFilter = externalNameFilter !== undefined ? externalNameFilter : ("");
 
   const setNameFilter = (val: string) => {
     if (onNameFilterChange) {
@@ -82,40 +75,12 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
   const [locationSearch, setLocationSearch] = useState("");
   const [availableJobs, setAvailableJobs] = useState<{ id: string; title: string; slug: string }[]>([]);
   const [jobSearch, setJobSearch] = useState("");
-  const [activitySearch, setActivitySearch] = useState("");
+
 
   const debouncedNameFilter = useDebouncedValue(nameFilter);
   const debouncedJobSearch = useDebouncedValue(jobSearch);
   const debouncedLocationSearch = useDebouncedValue(locationSearch);
 
-  // Handler to update activity session and sync date range in one batch
-  const handleActivitySessionChange = (ids: string[]) => {
-    const updates: Partial<CandidateActiveFilters> = {
-      activity_session: ids,
-    };
-
-    if (ids.length > 0 && activitySessionsData) {
-      let minStart: Date | null = null;
-      let maxEnd: Date | null = null;
-
-      ids.forEach((id) => {
-        const session = activitySessionsData.find(([sid]) => String(sid) === id);
-        if (session) {
-          const start = new Date(session[1].start_date);
-          const end = session[1].end_date ? new Date(session[1].end_date) : new Date();
-
-          if (!minStart || start < minStart) minStart = start;
-          if (!maxEnd || end > maxEnd) maxEnd = end;
-        }
-      });
-
-      if (minStart) {
-        updates.dateRange = { from: minStart, to: maxEnd || undefined };
-      }
-    }
-
-    setFilters(updates);
-  };
 
   const { data: jobs } = useJobTitle(debouncedJobSearch, fetchJobTitles);
   useEffect(() => {
@@ -146,7 +111,7 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
     hrDecisionFilter.length > 0 ||
     jobFilter.length > 0 ||
     resultFilter.length > 0 ||
-    activitySessionFilter.length > 0 ||
+
     stageFilter.length > 0 ||
     hrScoreFilter.length > 0 ||
     !!dateRange?.from ||
@@ -167,85 +132,7 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
     return Array.from(names);
   }, [stageFilter, candidates]);
 
-  // --- Cross-filter helper: applies all filters EXCEPT the one named by `skip` ---
-  const crossFilteredCandidates = (skip: string) => {
-    return candidates.filter((c) => {
-      // Name / email filter
-      if (skip !== 'name' && debouncedNameFilter) {
-        const fullName = `${c.first_name || ''} ${c.last_name || ''}`.toLowerCase().trim();
-        const email = (c.email || '').toLowerCase();
-        if (!fullName.includes(debouncedNameFilter.toLowerCase()) && !email.includes(debouncedNameFilter.toLowerCase())) return false;
-      }
-      // Status filter
-      if (skip !== 'status' && statusFilter.length > 0) {
-        const candidateStatus = c.processing_status || c.current_status || '';
-        if (!statusFilter.includes(candidateStatus)) return false;
-      }
-      // Location filter
-      if (skip !== 'location' && locationFilter.length > 0) {
-        const candidateLocation = (c.location || '').trim().toLowerCase();
-        if (!locationFilter.some(f => f.toLowerCase() === candidateLocation)) return false;
-      }
-      // Job filter
-      if (skip !== 'job' && jobFilter.length > 0) {
-        if (!jobFilter.includes(c.applied_job_id || '')) return false;
-      }
-      // Date range filter
-      if (skip !== 'date') {
-        const rawDate = c.applied_at || c.created_at;
-        if (rawDate && (dateRange?.from || dateRange?.to)) {
-          const d = new Date(rawDate);
-          if (dateRange.from && d < startOfDay(dateRange.from)) return false;
-          if (dateRange.to && d > endOfDay(dateRange.to)) return false;
-        }
-      }
-      // HR Decision filter
-      if (skip !== 'hrDecision' && hrDecisionFilter.length > 0) {
-        const decision = c?.hr_decision;
-        if (!hrDecisionFilter.some(d => d.toLowerCase() === decision?.toLowerCase())) return false;
-      }
-      // Resume Screening filter
-      if (skip !== 'result' && resultFilter.length > 0) {
-        let candidateResult = 'fail';
-        if (c.pass_fail === true || String(c.pass_fail).toLowerCase() === 'pass' || (c.resume_score ?? 0) >= passingThreshold) {
-          candidateResult = 'pass';
-        } else if (c.processing_status === 'processing' || c.processing_status === 'queued' || !c.is_parsed) {
-          candidateResult = 'pending';
-        }
-        if (!resultFilter.includes(candidateResult)) return false;
-      }
-      // Stage filter — match by name (stages are deduplicated by name across jobs)
-      if (skip !== 'stage' && stageFilter.length > 0) {
-        const candidateStageName = (c.current_stage?.template_name || '').trim().toLowerCase();
-        const candidateStageId = c.current_stage?.job_stage_id || '';
-        // Match if the candidate's stage ID is directly selected OR if the stage name matches a selected stage's name
-        const matchesById = stageFilter.includes(candidateStageId);
-        const matchesByName = selectedStageNames.some(n => n === candidateStageName);
-        if (!matchesById && !matchesByName) return false;
-      }
-      // Activity session filter
-      if (skip !== 'activity' && activitySessionFilter.length > 0) {
-        const candidateSessionId = String((c as any).activity_session_id || '');
-        if (!activitySessionFilter.includes(candidateSessionId)) return false;
-      }
-      // Score rating filter
-      if (skip !== 'hrScore' && hrScoreFilter.length > 0) {
-        const score = c.hr_score ?? null;
-        if (score === null || !hrScoreFilter.includes(score)) return false;
-      }
-      // Test paper filter
-      if (skip !== 'test_email_sent' && testEmailSentFilter) {
 
-        if (c.test_email_sent !== undefined) {
-
-          const isSent = c.test_email_sent === true
-          const filterSent = testEmailSentFilter === "sent";
-          if (isSent !== filterSent) return false;
-        }
-      }
-      return true;
-    });
-  };
 
   // Full static option sets — shown on initial load when no cross-filtering is needed
 
@@ -261,128 +148,40 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
     { value: "fail", label: RESUME_SCREENING_RESULT.FAIL }
   ];
 
-  const HR_DECISION_LABEL_MAP: Record<string, string> = {
-    pass: HR_DECISION_OPTIONS.PASS,
-    "may be": HR_DECISION_OPTIONS.MAY_BE,
-    fail: HR_DECISION_OPTIONS.FAIL,
-    pending: HR_DECISION_OPTIONS.PENDING,
-  };
-
-  const RESULT_LABEL_MAP: Record<string, string> = {
-    passed: RESUME_SCREENING_RESULT.PASS,
-    failed: RESUME_SCREENING_RESULT.FAIL,
-    pending: HR_DECISION_OPTIONS.PENDING,
-  };
 
 
-  // Memoized job options: show all initially, then narrow by cross-filtering when filters are active
   const jobOptions = useMemo(() => {
     let baseOptions = availableJobs;
-
-    if (isAnyFilterActive) {
-      const subset = crossFilteredCandidates('job');
-      const set = new Set<string>();
-      subset.forEach((c) => {
-        if (c.applied_job_id) set.add(c.applied_job_id);
-      });
-      // Filter availableJobs to only include those that have candidates in the current subset, or are currently selected
-      baseOptions = availableJobs.filter(j => set.has(j.id) || jobFilter.includes(j.id));
-    }
-
     if (!jobSearch.trim()) return baseOptions;
     const query = jobSearch.toLowerCase();
     return baseOptions.filter(j =>
       j.title.toLowerCase().includes(query)
     );
-  }, [availableJobs, jobSearch, isAnyFilterActive, candidates, debouncedNameFilter, statusFilter, locationFilter, hrDecisionFilter, dateRange, resultFilter, stageFilter, activitySessionFilter, hrScoreFilter, jobFilter, passingThreshold]);
+  }, [availableJobs, jobSearch]);
 
-
-  // --- Dynamic option sets: full static set on initial load, cross-filtered after ---
-  const hrDecisionOptions = useMemo(() => {
-    if (!isAnyFilterActive) return ALL_HR_DECISION_OPTIONS;
-    const subset = crossFilteredCandidates('hrDecision');
-
-    const set = new Set<string>();
-    subset.forEach(c => {
-      const d = (c?.hr_decision)?.toLowerCase();
-      if (d) set.add(d);
-    });
-    // Ensure selected options are kept
-    hrDecisionFilter.forEach(v => {
-      set.add(v.toLowerCase());
-    });
-    return Array.from(set).sort().map(v => ({
-      value: v === 'may be' ? 'May Be' : v,
-      label: HR_DECISION_LABEL_MAP[v] || v,
-    }));
-  }, [candidates, isAnyFilterActive, debouncedNameFilter, statusFilter, locationFilter, jobFilter, dateRange, resultFilter, stageFilter, activitySessionFilter, hrScoreFilter, hrDecisionFilter, passingThreshold]);
-
-
-  const resultOptions = useMemo(() => {
-    if (!isAnyFilterActive) return ALL_RESULT_OPTIONS;
-    const subset = crossFilteredCandidates('result');
-
-    const set = new Set<string>();
-    subset.forEach(c => {
-      let screening = 'fail';
-      if (c.pass_fail === true || String(c.pass_fail).toLowerCase() === 'pass' || (c.resume_score ?? 0) >= passingThreshold) {
-        screening = 'pass';
-      } else if (c.processing_status === 'processing' || c.processing_status === 'queued' || !c.is_parsed) {
-        screening = 'pending';
-      }
-      set.add(screening);
-    });
-    // Ensure selected options are kept
-    resultFilter.forEach(v => {
-      set.add(v);
-    });
-    return Array.from(set).sort().map(v => ({
-      value: v,
-      label: RESULT_LABEL_MAP[v] || v,
-    }));
-  }, [candidates, isAnyFilterActive, debouncedNameFilter, statusFilter, locationFilter, jobFilter, dateRange, hrDecisionFilter, stageFilter, activitySessionFilter, hrScoreFilter, resultFilter, passingThreshold]);
-
+  const hrDecisionOptions = ALL_HR_DECISION_OPTIONS;
+  const resultOptions = ALL_RESULT_OPTIONS;
 
   const statusOptions = useMemo(() => {
-    const subset = isAnyFilterActive ? crossFilteredCandidates('status') : candidates;
     const set = new Set<string>();
-
-    subset.forEach((c) => {
+    candidates.forEach((c) => {
       const s = c.processing_status || c.current_status;
       if (s) set.add(s);
     });
-    // Ensure selected options are kept
-    statusFilter.forEach(s => {
-      set.add(s);
-    });
     return Array.from(set).sort();
-  }, [candidates, isAnyFilterActive, debouncedNameFilter, locationFilter, jobFilter, dateRange, hrDecisionFilter, resultFilter, stageFilter, activitySessionFilter, hrScoreFilter, statusFilter, passingThreshold]);
+  }, [candidates]);
 
   const locationOptions = useMemo(() => {
-    if (!isAnyFilterActive) {
-      return fetchedLocations;
-    }
-    const subset = crossFilteredCandidates('location');
-
-    const set = new Set<string>();
-    subset.forEach((c) => {
-      const loc = (c.location || '').trim();
-      if (loc) set.add(toTitleCase(loc));
-    });
-    // Ensure selected options are kept
-    locationFilter.forEach(loc => {
-      set.add(toTitleCase(loc));
-    });
-    let options = Array.from(set).sort();
+    let options = fetchedLocations;
     if (locationSearch) {
       const query = locationSearch.toLowerCase();
       options = options.filter(o => o.toLowerCase().includes(query));
     }
     return options;
-  }, [fetchedLocations, candidates, isAnyFilterActive, locationSearch, debouncedNameFilter, statusFilter, jobFilter, dateRange, hrDecisionFilter, resultFilter, stageFilter, activitySessionFilter, hrScoreFilter, locationFilter, passingThreshold]);
+  }, [fetchedLocations, locationSearch]);
 
   const stageOptions = useMemo(() => {
-    if (!isAnyFilterActive && stageOptionsProp && stageOptionsProp.length > 0) {
+    if (stageOptionsProp && stageOptionsProp.length > 0) {
       // Deduplicate stageOptionsProp by name
       const seen = new Map<string, { id: string; name: string }>();
       stageOptionsProp.forEach(s => {
@@ -393,54 +192,16 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
       });
       return Array.from(seen.values());
     }
-    const subset = isAnyFilterActive ? crossFilteredCandidates('stage') : candidates;
 
-    // Deduplicate by normalized stage name so identical stages from different jobs
-    // (e.g. "HR Round" appearing in 3 jobs) only show once in the filter dropdown.
-    // We keep one representative id per unique name and collect all matching IDs.
-    const nameMap = new Map<string, { id: string; name: string; order: number; allIds: string[] }>();
-    subset.forEach((c) => {
+    const nameMap = new Map<string, { id: string; name: string; order: number }>();
+    candidates.forEach((c) => {
       const id = c.current_stage?.job_stage_id;
       const name = c.current_stage?.template_name;
       const order = c.current_stage?.order ?? 0;
       if (id && name) {
         const key = name.trim().toLowerCase();
-        const existing = nameMap.get(key);
-        if (existing) {
-          if (!existing.allIds.includes(id)) existing.allIds.push(id);
-        } else {
-          nameMap.set(key, { id, name, order, allIds: [id] });
-        }
-      }
-    });
-
-    if (stageOptionsProp && stageOptionsProp.length > 0) {
-      // Deduplicate stageOptionsProp by name, keep only those present in subset or selected
-      const activeNames = new Set(nameMap.keys());
-      const selectedIds = new Set(stageFilter);
-      const seen = new Map<string, { id: string; name: string }>();
-      stageOptionsProp.forEach(s => {
-        const key = s.name.trim().toLowerCase();
-        if (!seen.has(key) && (activeNames.has(key) || selectedIds.has(s.id))) {
-          seen.set(key, s);
-        }
-      });
-      return Array.from(seen.values());
-    }
-
-    // Fallback: ensure selected stages are still present
-    stageFilter.forEach(id => {
-      const candidateWithStage = candidates.find(c => c.current_stage?.job_stage_id === id);
-      if (candidateWithStage?.current_stage) {
-        const name = candidateWithStage.current_stage.template_name || '';
-        const key = name.trim().toLowerCase();
         if (!nameMap.has(key)) {
-          nameMap.set(key, {
-            id,
-            name,
-            order: candidateWithStage.current_stage.order ?? 0,
-            allIds: [id]
-          });
+          nameMap.set(key, { id, name, order });
         }
       }
     });
@@ -448,7 +209,7 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
     return Array.from(nameMap.values())
       .sort((a, b) => a.order - b.order || a.name.localeCompare(b.name))
       .map(({ id, name }) => ({ id, name }));
-  }, [candidates, stageOptionsProp, isAnyFilterActive, debouncedNameFilter, statusFilter, locationFilter, jobFilter, dateRange, hrDecisionFilter, resultFilter, activitySessionFilter, hrScoreFilter, stageFilter, passingThreshold]);
+  }, [candidates, stageOptionsProp]);
 
   const isTechnicalPracticalRoundSelected = useMemo(() => {
     return stageFilter.some((id) => {
@@ -561,15 +322,7 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
         if (!matchesById && !matchesByName) return false;
       }
 
-      // Activity session filter (multi-select)
-      if (activitySessionFilter.length > 0) {
-        // Assuming candidate has an activity_session_id or similar field. 
-        // Based on useJobCandidates, it seems we might need to check if the candidate's creation date 
-        // falls within the session range if session_id is not directly on the candidate.
-        // However, for now let's assume session_id is a field.
-        const candidateSessionId = String((c as any).activity_session_id || "");
-        if (!activitySessionFilter.includes(candidateSessionId)) return false;
-      }
+
 
       // Score rating filter (multi-select)
       if (hrScoreFilter.length > 0) {
@@ -590,7 +343,7 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
 
       return true;
     });
-  }, [candidates, debouncedNameFilter, statusFilter, locationFilter, hrDecisionFilter, jobFilter, dateRange, resultFilter, stageFilter, selectedStageNames, activitySessionFilter, hrScoreFilter, testEmailSentFilter, isServerSide]);
+  }, [candidates, debouncedNameFilter, statusFilter, locationFilter, hrDecisionFilter, jobFilter, dateRange, resultFilter, stageFilter, selectedStageNames, hrScoreFilter, testEmailSentFilter, isServerSide]);
 
   const hasActiveFilters = isAnyFilterActive;
 
@@ -605,7 +358,6 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
       dateRange: undefined,
       result: [],
       stage_id: [],
-      activity_session: [],
       hr_score: [],
       test_email_sent: undefined,
     });
@@ -643,10 +395,6 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
     hasActiveFilters,
     clearFilters,
     availableJobs,
-    activitySession: activitySessionFilter,
-    setActivitySession: handleActivitySessionChange,
-    activitySearch,
-    setActivitySearch,
     hrScoreFilter,
     setHrScoreFilter,
     testEmailSentFilter,
