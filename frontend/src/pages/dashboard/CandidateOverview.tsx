@@ -1,5 +1,5 @@
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { ArrowLeft, User, Mail, Phone, Briefcase } from "lucide-react";
+import { ArrowLeft, User, Mail, Phone, Briefcase, ArrowUpDown } from "lucide-react";
 import {
   useResolvedJobAndCandidate,
   useCandidateTimelineQuery,
@@ -9,32 +9,31 @@ import AppPageShell from "@/components/shared/AppPageShell";
 import AppPageHeader from "@/components/shared/AppPageHeader";
 import LoadingSpinner from "@/components/shared/LoadingSpinner";
 import { slugify } from "@/utils/slug";
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from "@/components/ui/table";
+import { DataTable } from "@/components/shared/DataTable";
+import type { ColumnDef } from "@tanstack/react-table";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import CandidateStatusBadge from "@/components/shared/CandidateStatusBadge";
 import { Button } from "@/components/ui/button";
 import type { TimelineEvent } from "@/types/candidate";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { AssociateEvaluationsDialog } from "@/components/candidate/timeline/AssociateEvaluationsDialog";
 
-interface StageRowProps {
+
+function AssociateResultCell({
+  event,
+  jobSlug,
+  candidateNameSlug,
+}: {
   event: TimelineEvent;
   jobSlug: string;
   candidateNameSlug: string;
-  isFutureStage: boolean;
-}
-
-function StageRow({ event, jobSlug, candidateNameSlug, isFutureStage }: StageRowProps) {
+}) {
   const navigate = useNavigate();
   const { data: associateResults } = useCandidateAssociateResultsQuery(event.stage_id);
-
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  // instead of navigating to the stage, open dialog just for associate result only
+  // @ts-ignore
   const handleNavigate = () => {
     navigate(
       `/dashboard/jobs/${jobSlug}/candidates/${candidateNameSlug}/stages/${slugify(
@@ -45,61 +44,30 @@ function StageRow({ event, jobSlug, candidateNameSlug, isFutureStage }: StageRow
 
   const hasAssociates = associateResults && associateResults.total_associates > 0;
 
-  return (
-    <TableRow className="hover:bg-muted/50 transition-colors border-b border-border/50">
-      <TableCell className="p-2 text-sm text-foreground">{event.title}</TableCell>
-      <TableCell className="p-2">
-        {event.ai_result && !isFutureStage ? (
-          <div
-            onClick={handleNavigate}
-            className="cursor-pointer flex items-center gap-2 w-fit hover:opacity-80 transition-opacity"
+  if (hasAssociates) {
+    return (
+      <>
+        <div
+          onClick={() => setIsDialogOpen(true)}
+          className="cursor-pointer flex items-center gap-2 w-fit hover:opacity-80 transition-opacity "
+        >
+          <Badge
+            variant="outline"
+            className="bg-blue-50/50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400 border-blue-200/50 text-xs px-2 py-0.5"
           >
-            <CandidateStatusBadge status={event.ai_result} />
-            {event.score !== null && event.score !== undefined && (
-              <span className="font-bold">
-                {event.score.toFixed(1)}
-                {event.title === "Resume Screening" ? "%" : "/5"}
-              </span>
-            )}
-          </div>
-        ) : (
-          <span className="text-muted-foreground text-xs font-medium">N/A</span>
-        )}
-      </TableCell>
-      <TableCell className="p-2">
-        {event.hr_decision && !isFutureStage ? (
-          <div
-            onClick={handleNavigate}
-            className="cursor-pointer flex items-center gap-2 w-fit hover:opacity-80 transition-opacity"
-          >
-            <CandidateStatusBadge status={event.hr_decision} />
-            {event.hr_score !== null && event.hr_score !== undefined && (
-              <span className="font-bold">{event.hr_score.toFixed(1)}/5</span>
-            )}
-          </div>
-        ) : (
-          <span className="text-muted-foreground text-xs font-medium">N/A</span>
-        )}
-      </TableCell>
-      <TableCell className="p-2">
-        {hasAssociates ? (
-          <div
-            onClick={handleNavigate}
-            className="cursor-pointer flex items-center gap-2 w-fit hover:opacity-80 transition-opacity"
-          >
-            <Badge
-              variant="outline"
-              className="bg-blue-50/50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400 border-blue-200/50 text-xs px-2 py-0.5"
-            >
-              {associateResults.submitted_count}/{associateResults.total_associates} Evaluated
-            </Badge>
-          </div>
-        ) : (
-          <span className="text-muted-foreground text-xs font-medium">-</span>
-        )}
-      </TableCell>
-    </TableRow>
-  );
+            {associateResults.submitted_count}/{associateResults.total_associates} Evaluated
+          </Badge>
+        </div>
+        <AssociateEvaluationsDialog
+          isOpen={isDialogOpen}
+          onOpenChange={setIsDialogOpen}
+          associateResults={associateResults}
+        />
+      </>
+    );
+  }
+
+  return <span className="text-muted-foreground text-xs font-medium">-</span>;
 }
 
 export default function CandidateOverview() {
@@ -155,6 +123,103 @@ export default function CandidateOverview() {
 
   const candidateDisplayName = `${candidate.first_name || ""} ${candidate.last_name || ""}`.trim();
   const stagesEvents = timelineData?.events.filter((e) => e.event_type === "stage") || [];
+
+  const columns: ColumnDef<TimelineEvent>[] = [
+    {
+      id: "order",
+      size: 8,
+      accessorFn: (_, index) => index,
+      header: ({ column }) => (
+        <div>
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="hover:bg-transparent p-0 font-semibold text-base gap-1"
+          >
+            Order
+            <ArrowUpDown className="h-4 w-4" />
+          </Button>
+        </div>
+      ),
+      cell: ({ row }) => (
+        <div className="text-sm text-center font-medium">{row.index + 1}</div>
+      ),
+    },
+    {
+      accessorKey: "title",
+      header: "Stage Name",
+      size: 32,
+      cell: ({ row }) => <span className="text-sm px-1">{row.original.title}</span>,
+    },
+    {
+      id: "aiResult",
+      header: "AI Result",
+      size: 20,
+      cell: ({ row }) => {
+        const event = row.original;
+        const isFutureStage = currentStageIndex !== -1 && row.index > currentStageIndex;
+
+        if (event.ai_result && !isFutureStage) {
+          return (
+            <div
+              onClick={() => navigate(`/dashboard/jobs/${jobSlug}/candidates/${candidateName}/stages/${slugify(event.title || "Resume Screening")}`)}
+              className="cursor-pointer flex items-center gap-2 w-fit hover:opacity-80 transition-opacity px-1"
+            >
+              <CandidateStatusBadge status={event.ai_result} />
+              {event.score !== null && event.score !== undefined && (
+                <span className="font-bold">
+                  {event.score.toFixed(1)}
+                  {event.title === "Resume Screening" ? "%" : "/5"}
+                </span>
+              )}
+            </div>
+          );
+        }
+        return <span className="text-muted-foreground text-xs font-medium px-1">N/A</span>;
+      },
+    },
+    {
+      id: "hrResult",
+      header: "HR Result",
+      size: 20,
+      cell: ({ row }) => {
+        const event = row.original;
+        const isFutureStage = currentStageIndex !== -1 && row.index > currentStageIndex;
+
+        if (event.hr_decision && !isFutureStage) {
+          return (
+            <div
+              onClick={() => navigate(`/dashboard/jobs/${jobSlug}/candidates/${candidateName}/stages/${slugify(event.title || "Resume Screening")}`)}
+              className="cursor-pointer flex items-center gap-2 w-fit hover:opacity-80 transition-opacity px-1"
+            >
+              <CandidateStatusBadge status={event.hr_decision} />
+              {event.hr_score !== null && event.hr_score !== undefined && (
+                <span className="font-bold">{event.hr_score.toFixed(1)}/5</span>
+              )}
+            </div>
+          );
+        }
+        return <span className="text-muted-foreground text-xs font-medium px-1">N/A</span>;
+      },
+    },
+    {
+      id: "associateResult",
+      header: "Associate Result",
+      size: 20,
+      cell: ({ row }) => {
+        return (
+          <div className="px-1">
+            <AssociateResultCell
+              event={row.original}
+              jobSlug={jobSlug || ""}
+              candidateNameSlug={candidateName || ""}
+            />
+          </div>
+        );
+      },
+    },
+  ];
+
 
   return (
     <AppPageShell width="wide">
@@ -226,40 +291,22 @@ export default function CandidateOverview() {
         </div>
       </Card>
 
-      <Card className="rounded-2xl border-muted-foreground/10 shadow-sm overflow-hidden bg-card/50 backdrop-blur-md py-1 gap-2">
-        <CardContent className="p-0">
-          {stagesEvents.length === 0 ? (
-            <div className="p-4 text-center text-sm text-muted-foreground italic">
-              No recruitment stages found for this candidate.
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/30 border-b border-border/50 font-semibold text-base">
-                  <TableHead className="p-2 text-left">Stage Name</TableHead>
-                  <TableHead className="p-2 text-left">AI Result</TableHead>
-                  <TableHead className="p-2 text-left">HR Result</TableHead>
-                  <TableHead className="p-2 text-left">Associate Result</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {stagesEvents.map((event, index) => {
-                  const isFutureStage = currentStageIndex !== -1 && index > currentStageIndex;
-                  return (
-                    <StageRow
-                      key={event.stage_id || event.title}
-                      event={event}
-                      jobSlug={jobSlug || ""}
-                      candidateNameSlug={candidateName || ""}
-                      isFutureStage={isFutureStage}
-                    />
-                  );
-                })}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+
+      {stagesEvents.length === 0 ? (
+        <div className="p-4 text-center text-sm text-muted-foreground italic">
+          No recruitment stages found for this candidate.
+        </div>
+      ) : (
+        <DataTable
+          columns={columns}
+          data={stagesEvents}
+          isServerSide={false}
+          minWidth="min-w-full"
+          showPagination={false}
+          emptyMessage=" No recruitment stages found for this candidate."
+        />
+      )}
+
     </AppPageShell>
   );
 }

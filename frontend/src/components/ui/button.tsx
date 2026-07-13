@@ -57,7 +57,7 @@ function Button({
       disabled={isLoading || props.disabled}
       {...props}
     >
-      <span className={cn("flex items-center justify-center gap-2", isLoading && "opacity-0 invisible")}>
+      <span className={cn("flex items-center justify-center gap-1", isLoading && "opacity-0 invisible")}>
         {children}
       </span>
       {isLoading && (

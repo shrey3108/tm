@@ -63,6 +63,7 @@ interface DataTableProps<TData, TValue> {
   rowSelection?: Record<string, boolean>;
   onRowSelectionChange?: OnChangeFn<Record<string, boolean>>;
   minWidth?: string;
+  showPagination?: boolean;
 }
 
 
@@ -90,6 +91,7 @@ export function DataTable<TData, TValue>({
   rowSelection,
   onRowSelectionChange,
   minWidth = "min-w-[800px]",
+  showPagination = true
 }: DataTableProps<TData, TValue>) {
 
   const [sorting, setSorting] = useState<SortingState>(initialSorting);
@@ -289,7 +291,7 @@ export function DataTable<TData, TValue>({
       </div>
 
       {/* Pagination Controls */}
-      <div className="flex flex-col items-center justify-center gap-3 py-2 sm:flex-row sm:gap-4">
+      {showPagination ? <div className="flex flex-col items-center justify-center gap-3 py-2 sm:flex-row sm:gap-4">
         <div className="flex w-full flex-wrap items-center justify-center gap-3 sm:w-auto sm:gap-5 lg:gap-6">
           <div className="flex items-center space-x-2">
             <p className={cn("text-sm font-medium", !data.length && "text-muted-foreground")}>Rows per page</p>
@@ -361,7 +363,7 @@ export function DataTable<TData, TValue>({
             </Button>
           </div>
         </div>
-      </div>
+      </div> : null}
     </div>
   );
 }
