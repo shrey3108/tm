@@ -4,7 +4,7 @@
  *
  * Creation form for adding new questions with options and test cases to the Questions Bank.
  */
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useReducer, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { usePageFilters } from "@/hooks/usePageFilters";
 import { useForm } from "react-hook-form";
@@ -32,7 +32,15 @@ import {
   useAddMCQToPaperMutation,
   useUpdateMCQInPaperMutation,
 } from "@/hooks/mutations/taskPapers/useTaskPaperMutations";
-import type { MCQItem, TaskItem, SubTaskItem, QuestionItem } from "@/types/taskPaper";
+import type { MCQItem, TaskItem, QuestionItem } from "@/types/taskPaper";
+import {
+  questionReducer,
+  questionInitialState,
+  mcqReducer,
+  mcqInitialState,
+  projectTaskReducer,
+  projectTaskInitialState,
+} from "@/reducer/questionsBankReducers";
 import { mcqFormSchema } from "@/schemas/taskPaper";
 import { questionFormSchema, projectTaskSchema } from "@/schemas/question";
 import { extractErrorMessage } from "@/utils/error";
@@ -128,27 +136,18 @@ export default function QuestionsBankCreate() {
   const itemIndex = useMemo(() => {
     return initialItemIndex !== undefined ? Number(initialItemIndex) : 0;
   }, [initialItemIndex]);
-  const [questionText, setQuestionText] = useState<string>("");
-  const [questionMarks, setQuestionMarks] = useState<number | "">("");
-  const [questionHours, setQuestionHours] = useState<number | "">("");
-  const [questionMinutes, setQuestionMinutes] = useState<number | "">("");
-  const [mcqQuestion, setMCQQuestion] = useState<string>("");
-  const [mcqOptions, setMCQOptions] = useState<string[]>(["", ""]);
-  const [mcqAnswer, setMCQAnswer] = useState<string>("");
-  const [mcqMarks, setMCqMarks] = useState<number | "">("");
-  const [mcqHours, setMCqHours] = useState<number | "">("");
-  const [mcqMinutes, setMCqMinutes] = useState<number | "">("");
-  const [taskDescription, setTaskDescription] = useState<string>("");
-  const [taskInstructions, setTaskInstructions] = useState<string>("");
-  const [taskHours, setTaskHours] = useState<number | "">("");
-  const [taskMinutes, setTaskMinutes] = useState<number | "">("");
-  const [projectTasks, setProjectTasks] = useState<SubTaskItem[]>([]);
+
+  // Reducer-based state for each question type
+  const [questionState, questionDispatch] = useReducer(questionReducer, questionInitialState);
+  const [mcqState, mcqDispatch] = useReducer(mcqReducer, mcqInitialState);
+  const [taskState, taskDispatch] = useReducer(projectTaskReducer, projectTaskInitialState);
+
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Clear validation errors when changing content type or options length
   useEffect(() => {
     setErrors({});
-  }, [contentType, mcqOptions.length]);
+  }, [contentType, mcqState.options.length]);
 
   // Sync backend paper state to local Form in Edit Mode
   useEffect(() => {
@@ -158,128 +157,96 @@ export default function QuestionsBankCreate() {
 
       let itemSkillIds = paperToEdit.skills?.map((s) => s.id) || paperToEdit.task_skills || [];
 
+      /** Helper: build MCQ reducer state from an MCQItem */
+      const resetMCQFromItem = (mcq: { question?: string; options?: string[]; answer?: string; marks?: number; duration?: number; skill_ids?: string[] }) => {
+        const rawOptions = mcq.options || [];
+        const answerText = mcq.answer || "";
+        const answerIndex = rawOptions.indexOf(answerText);
+        const answerLetter = answerIndex !== -1 ? String.fromCharCode(65 + answerIndex) : "A";
+        const mDur = mcq.duration || 0;
+        mcqDispatch({
+          type: "RESET",
+          payload: {
+            question: mcq.question || "",
+            options: rawOptions,
+            answer: answerLetter,
+            marks: mcq.marks || "",
+            hours: Math.floor(mDur / 60) || "",
+            minutes: mDur % 60 || "",
+          },
+        });
+        if (mcq.skill_ids && mcq.skill_ids.length > 0) {
+          itemSkillIds = mcq.skill_ids;
+        }
+      };
+
+      /** Helper: build Project Task reducer state from a TaskItem or string */
+      const resetTaskFromItem = (task: any) => {
+        if (typeof task === "string") {
+          taskDispatch({ type: "RESET", payload: { description: task, instructions: "", hours: "", minutes: "", tasks: [] } });
+        } else {
+          const dur = task?.duration || task?.total_duration || 0;
+          taskDispatch({
+            type: "RESET",
+            payload: {
+              description: task?.task || "",
+              instructions: task?.instructions || "",
+              hours: Math.floor(dur / 60) || "",
+              minutes: dur % 60 || "",
+              tasks: task?.tasks || [],
+            },
+          });
+          if (task?.skill_ids && task?.skill_ids.length > 0) {
+            itemSkillIds = task.skill_ids;
+          }
+        }
+      };
+
+      /** Helper: build Question reducer state from a QuestionItem or string */
+      const resetQuestionFromItem = (q: any) => {
+        if (typeof q === "string") {
+          questionDispatch({ type: "RESET", payload: { text: q, marks: "", hours: "", minutes: "" } });
+        } else {
+          const qDur = q?.duration || 0;
+          questionDispatch({
+            type: "RESET",
+            payload: {
+              text: q?.question || "",
+              marks: q?.marks || "",
+              hours: Math.floor(qDur / 60) || "",
+              minutes: qDur % 60 || "",
+            },
+          });
+          if (q?.skill_ids && q?.skill_ids.length > 0) {
+            itemSkillIds = q.skill_ids;
+          }
+        }
+      };
+
       // Determine content type and pre-populate
       if (initialItemType) {
         setContentType(initialItemType);
         if (initialItemType === "mcq" && paperToEdit.mcqs && paperToEdit.mcqs[itemIndex]) {
-          const mcq = paperToEdit.mcqs[itemIndex];
-          setMCQQuestion(mcq.question || "");
-
-          const rawOptions = mcq.options || [];
-          setMCQOptions(rawOptions);
-
-          const answerText = mcq.answer || "";
-          const answerIndex = rawOptions.indexOf(answerText);
-          const answerLetter = answerIndex !== -1 ? String.fromCharCode(65 + answerIndex) : "A";
-          setMCQAnswer(answerLetter);
-          setMCqMarks(mcq.marks || "");
-          const mDur = mcq.duration || 0;
-          setMCqHours(Math.floor(mDur / 60) || "");
-          setMCqMinutes(mDur % 60 || "");
-          if (mcq.skill_ids && mcq.skill_ids.length > 0) {
-            itemSkillIds = mcq.skill_ids;
-          }
+          resetMCQFromItem(paperToEdit.mcqs[itemIndex]);
         } else if (initialItemType === "project_task" && paperToEdit.project_task && paperToEdit.project_task[itemIndex]) {
-          const task = paperToEdit.project_task[itemIndex];
-          if (typeof task === "string") {
-            setTaskDescription(task);
-            setTaskInstructions("");
-            setTaskHours("");
-            setTaskMinutes("");
-            setProjectTasks([]);
-          } else {
-            setTaskDescription((task)?.task || "");
-            setTaskInstructions((task)?.instructions || "");
-            const dur = (task)?.duration || (task)?.total_duration || 0;
-            setTaskHours(Math.floor(dur / 60) || "");
-            setTaskMinutes(dur % 60 || "");
-            setProjectTasks((task)?.tasks || []);
-            if ((task)?.skill_ids && (task)?.skill_ids.length > 0) {
-              itemSkillIds = (task)?.skill_ids;
-            }
-          }
+          resetTaskFromItem(paperToEdit.project_task[itemIndex]);
         } else if (initialItemType === "question" && paperToEdit.questions && paperToEdit.questions[itemIndex]) {
-          const q = paperToEdit.questions[itemIndex];
-          if (typeof q === "string") {
-            setQuestionText(q);
-            setQuestionMarks("");
-            setQuestionHours("");
-            setQuestionMinutes("");
-          } else {
-            setQuestionText((q)?.question || "");
-            setQuestionMarks((q)?.marks || "");
-            const qDur = (q)?.duration || 0;
-            setQuestionHours(Math.floor(qDur / 60) || "");
-            setQuestionMinutes(qDur % 60 || "");
-            if ((q)?.skill_ids && (q)?.skill_ids.length > 0) {
-              itemSkillIds = (q).skill_ids;
-            }
-          }
+          resetQuestionFromItem(paperToEdit.questions[itemIndex]);
         }
       } else {
         if (paperToEdit.mcqs && paperToEdit.mcqs.length > 0) {
           setContentType("mcq");
-          const mcq = paperToEdit.mcqs[0];
-          setMCQQuestion(mcq.question || "");
-
-          const rawOptions = mcq.options || [];
-          setMCQOptions(rawOptions);
-
-          const answerText = mcq.answer || "";
-          const answerIndex = rawOptions.indexOf(answerText);
-          const answerLetter = answerIndex !== -1 ? String.fromCharCode(65 + answerIndex) : "A";
-          setMCQAnswer(answerLetter);
-          setMCqMarks(mcq.marks || "");
-          const mDur = mcq.duration || 0;
-          setMCqHours(Math.floor(mDur / 60) || "");
-          setMCqMinutes(mDur % 60 || "");
-          if (mcq.skill_ids && mcq.skill_ids.length > 0) {
-            itemSkillIds = mcq.skill_ids;
-          }
+          resetMCQFromItem(paperToEdit.mcqs[0]);
         } else if (paperToEdit.project_task && paperToEdit.project_task.length > 0) {
           setContentType("project_task");
-          const task = paperToEdit.project_task[0];
-          if (typeof task === "string") {
-            setTaskDescription(task);
-            setTaskInstructions("");
-            setTaskHours("");
-            setTaskMinutes("");
-            setProjectTasks([]);
-          } else {
-            setTaskDescription((task)?.task || "");
-            setTaskInstructions((task)?.instructions || "");
-            const dur = (task)?.duration || (task)?.total_duration || 0;
-            setTaskHours(Math.floor(dur / 60) || "");
-            setTaskMinutes(dur % 60 || "");
-            setProjectTasks((task)?.tasks || []);
-            if ((task)?.skill_ids && (task).skill_ids.length > 0) {
-              itemSkillIds = (task).skill_ids;
-            }
-          }
+          resetTaskFromItem(paperToEdit.project_task[0]);
         } else {
           setContentType("question");
           const q = paperToEdit.questions?.[0];
           if (q) {
-            if (typeof q === "string") {
-              setQuestionText(q);
-              setQuestionMarks("");
-              setQuestionHours("");
-              setQuestionMinutes("");
-            } else {
-              setQuestionText((q as any).question || "");
-              setQuestionMarks((q as any).marks || "");
-              const qDur = (q as any).duration || 0;
-              setQuestionHours(Math.floor(qDur / 60) || "");
-              setQuestionMinutes(qDur % 60 || "");
-              if ((q as any).skill_ids && (q as any).skill_ids.length > 0) {
-                itemSkillIds = (q as any).skill_ids;
-              }
-            }
+            resetQuestionFromItem(q);
           } else {
-            setQuestionText("");
-            setQuestionMarks("");
-            setQuestionHours("");
-            setQuestionMinutes("");
+            questionDispatch({ type: "RESET", payload: questionInitialState });
           }
         }
       }
@@ -307,13 +274,13 @@ export default function QuestionsBankCreate() {
     // Validate content based on selected type
     let questionTextPayload: QuestionItem | string = "";
     if (contentType === "question") {
-      const qHours = questionHours === "" ? 0 : Number(questionHours);
-      const qMins = questionMinutes === "" ? 0 : Number(questionMinutes);
+      const qHours = questionState.hours === "" ? 0 : Number(questionState.hours);
+      const qMins = questionState.minutes === "" ? 0 : Number(questionState.minutes);
       const duration = qHours * 60 + qMins;
 
       const result = questionFormSchema.safeParse({
-        question: questionText,
-        marks: questionMarks === "" ? undefined : Number(questionMarks),
+        question: questionState.text,
+        marks: questionState.marks === "" ? undefined : Number(questionState.marks),
         hours: qHours,
         minutes: qMins,
       });
@@ -330,8 +297,8 @@ export default function QuestionsBankCreate() {
         return;
       }
       questionTextPayload = {
-        question: questionText.trim(),
-        marks: Number(questionMarks),
+        question: questionState.text.trim(),
+        marks: Number(questionState.marks),
         duration,
         skill_ids: selectedSkillIds,
       };
@@ -339,15 +306,15 @@ export default function QuestionsBankCreate() {
 
     let mcqItemPayload: MCQItem | null = null;
     if (contentType === "mcq") {
-      const mHours = mcqHours === "" ? 0 : Number(mcqHours);
-      const mMins = mcqMinutes === "" ? 0 : Number(mcqMinutes);
+      const mHours = mcqState.hours === "" ? 0 : Number(mcqState.hours);
+      const mMins = mcqState.minutes === "" ? 0 : Number(mcqState.minutes);
       const duration = mHours * 60 + mMins;
 
       const result = mcqFormSchema.safeParse({
-        question: mcqQuestion,
-        options: mcqOptions,
-        answer: mcqAnswer,
-        marks: mcqMarks === "" ? undefined : Number(mcqMarks),
+        question: mcqState.question,
+        options: mcqState.options,
+        answer: mcqState.answer,
+        marks: mcqState.marks === "" ? undefined : Number(mcqState.marks),
         hours: mHours,
         minutes: mMins,
       });
@@ -367,14 +334,14 @@ export default function QuestionsBankCreate() {
         return;
       }
 
-      const answerIndex = mcqAnswer.charCodeAt(0) - 65;
-      const answerText = mcqOptions[answerIndex] || "";
+      const answerIndex = mcqState.answer.charCodeAt(0) - 65;
+      const answerText = mcqState.options[answerIndex] || "";
 
       mcqItemPayload = {
-        question: mcqQuestion.trim(),
-        options: mcqOptions.map((opt) => opt.trim()),
+        question: mcqState.question.trim(),
+        options: mcqState.options.map((opt) => opt.trim()),
         answer: answerText.trim(),
-        marks: Number(mcqMarks),
+        marks: Number(mcqState.marks),
         duration,
         skill_ids: selectedSkillIds,
       };
@@ -383,11 +350,11 @@ export default function QuestionsBankCreate() {
     let projectTaskItemPayload: TaskItem | null = null;
     if (contentType === "project_task") {
       const result = projectTaskSchema.safeParse({
-        project_task: taskDescription,
-        instructions: taskInstructions,
-        hours: taskHours,
-        minutes: taskMinutes,
-        tasks: projectTasks,
+        project_task: taskState.description,
+        instructions: taskState.instructions,
+        hours: taskState.hours,
+        minutes: taskState.minutes,
+        tasks: taskState.tasks,
       });
 
       if (!result.success) {
@@ -402,20 +369,20 @@ export default function QuestionsBankCreate() {
         return;
       }
 
-      const duration = (Number(taskHours) || 0) * 60 + (Number(taskMinutes) || 0);
+      const duration = (Number(taskState.hours) || 0) * 60 + (Number(taskState.minutes) || 0);
 
       projectTaskItemPayload = {
-        task: taskDescription.trim(),
-        instructions: taskInstructions.trim(),
-        title: taskDescription.trim(),
-        description: taskDescription.trim(),
+        task: taskState.description.trim(),
+        instructions: taskState.instructions.trim(),
+        title: taskState.description.trim(),
+        description: taskState.description.trim(),
         duration,
-        tasks: projectTasks.map((t) => ({
+        tasks: taskState.tasks.map((t) => ({
           name: t.name,
           description: t.description || undefined,
           marks: t.marks,
         })),
-        total_marks: projectTasks.reduce((sum, t) => sum + (t.marks || 0), 0),
+        total_marks: taskState.tasks.reduce((sum, t) => sum + (t.marks || 0), 0),
         total_duration: duration,
         skill_ids: selectedSkillIds,
       };
@@ -566,14 +533,14 @@ export default function QuestionsBankCreate() {
             {/* Dynamic fields based on Question Type */}
             {contentType === "question" && (
               <SingleQuestionFormFields
-                questionText={questionText}
-                onQuestionChange={setQuestionText}
-                marks={questionMarks}
-                onMarksChange={setQuestionMarks}
-                hours={questionHours}
-                onHoursChange={setQuestionHours}
-                minutes={questionMinutes}
-                onMinutesChange={setQuestionMinutes}
+                questionText={questionState.text}
+                onQuestionChange={(v) => questionDispatch({ type: "SET_TEXT", payload: v })}
+                marks={questionState.marks}
+                onMarksChange={(v) => questionDispatch({ type: "SET_MARKS", payload: v })}
+                hours={questionState.hours}
+                onHoursChange={(v) => questionDispatch({ type: "SET_HOURS", payload: v })}
+                minutes={questionState.minutes}
+                onMinutesChange={(v) => questionDispatch({ type: "SET_MINUTES", payload: v })}
                 errors={errors}
                 onClearError={(field) => setErrors((prev) => ({ ...prev, [field]: "" }))}
               />
@@ -581,18 +548,18 @@ export default function QuestionsBankCreate() {
 
             {contentType === "mcq" && (
               <MCQFormFields
-                mcqQuestion={mcqQuestion}
-                onMCQQuestionChange={setMCQQuestion}
-                mcqOptions={mcqOptions}
-                onMCQOptionsChange={setMCQOptions}
-                mcqAnswer={mcqAnswer}
-                onMCQAnswerChange={setMCQAnswer}
-                marks={mcqMarks}
-                onMarksChange={setMCqMarks}
-                hours={mcqHours}
-                onHoursChange={setMCqHours}
-                minutes={mcqMinutes}
-                onMinutesChange={setMCqMinutes}
+                mcqQuestion={mcqState.question}
+                onMCQQuestionChange={(v) => mcqDispatch({ type: "SET_QUESTION", payload: v })}
+                mcqOptions={mcqState.options}
+                onMCQOptionsChange={(v) => mcqDispatch({ type: "SET_OPTIONS", payload: v })}
+                mcqAnswer={mcqState.answer}
+                onMCQAnswerChange={(v) => mcqDispatch({ type: "SET_ANSWER", payload: v })}
+                marks={mcqState.marks}
+                onMarksChange={(v) => mcqDispatch({ type: "SET_MARKS", payload: v })}
+                hours={mcqState.hours}
+                onHoursChange={(v) => mcqDispatch({ type: "SET_HOURS", payload: v })}
+                minutes={mcqState.minutes}
+                onMinutesChange={(v) => mcqDispatch({ type: "SET_MINUTES", payload: v })}
                 errors={errors}
                 onClearError={(field) => setErrors((prev) => ({ ...prev, [field]: "" }))}
               />
@@ -600,16 +567,16 @@ export default function QuestionsBankCreate() {
 
             {contentType === "project_task" && (
               <ProjectTaskFormFields
-                taskDescription={taskDescription}
-                onDescriptionChange={setTaskDescription}
-                taskInstructions={taskInstructions}
-                onInstructionsChange={setTaskInstructions}
-                hours={taskHours}
-                onHoursChange={setTaskHours}
-                minutes={taskMinutes}
-                onMinutesChange={setTaskMinutes}
-                tasks={projectTasks}
-                onTasksChange={setProjectTasks}
+                taskDescription={taskState.description}
+                onDescriptionChange={(v) => taskDispatch({ type: "SET_DESCRIPTION", payload: v })}
+                taskInstructions={taskState.instructions}
+                onInstructionsChange={(v) => taskDispatch({ type: "SET_INSTRUCTIONS", payload: v })}
+                hours={taskState.hours}
+                onHoursChange={(v) => taskDispatch({ type: "SET_HOURS", payload: v })}
+                minutes={taskState.minutes}
+                onMinutesChange={(v) => taskDispatch({ type: "SET_MINUTES", payload: v })}
+                tasks={taskState.tasks}
+                onTasksChange={(v) => taskDispatch({ type: "SET_TASKS", payload: v })}
                 errors={errors}
                 onClearError={(field) => setErrors((prev) => ({ ...prev, [field]: "" }))}
               />

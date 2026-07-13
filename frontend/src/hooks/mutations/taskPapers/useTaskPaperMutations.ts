@@ -49,12 +49,22 @@ export function useCreateQuestionSetPaperMutation() {
   return useMutation({
     mutationFn: (data: QuestionSetPaperCreate) =>
       taskService.createQuestionSetPaper(data),
-    onSuccess: () => {
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.fetchQuery({
+          queryKey: [QUERY_KEYS.TASK_PAPERS.LIST],
+          queryFn: () => taskService.getQuestionSetPapers()
+        }),
+        queryClient.fetchQuery({
+          queryKey: [QUERY_KEYS.TASK_PAPERS.ALL_CONTENT],
+          queryFn: () => taskService.getAllQuestionsAndTasks()
+        })
+      ]);
       queryClient.invalidateQueries({
-        queryKey: [QUERY_KEYS.TASK_PAPERS.LIST],
+        queryKey: [QUERY_KEYS.TASK_PAPERS.LIST]
       });
       queryClient.invalidateQueries({
-        queryKey: [QUERY_KEYS.TASK_PAPERS.ALL_CONTENT],
+        queryKey: [QUERY_KEYS.TASK_PAPERS.ALL_CONTENT]
       });
     },
   });
@@ -184,7 +194,6 @@ export function useDeleteJobDefaultTestPaperMutation() {
     onSuccess: (_data, param) => {
       const jobId = typeof param === "string" ? param : param.jobId;
       const jobStageId = typeof param === "string" ? undefined : param.jobStageId;
-      
       queryClient.setQueryData(
         [QUERY_KEYS.JOBS.TASK_ASSIGNED, jobId, jobStageId],
         null
