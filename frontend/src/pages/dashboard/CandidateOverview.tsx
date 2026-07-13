@@ -11,7 +11,7 @@ import LoadingSpinner from "@/components/shared/LoadingSpinner";
 import { slugify } from "@/utils/slug";
 import { DataTable } from "@/components/shared/DataTable";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import CandidateStatusBadge from "@/components/shared/CandidateStatusBadge";
 import { Button } from "@/components/ui/button";
