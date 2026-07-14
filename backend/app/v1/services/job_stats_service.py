@@ -223,14 +223,14 @@ class JobStatsService:
         self, db: AsyncSession, job_id: uuid.UUID, start_date: datetime | None, end_date: datetime | None
     ) -> dict[str, int]:
         """
-        Count how many unique candidates are in each stage for this job.
-        Deduplicates by email.
+        Count how many candidates are currently active/pending in each pipeline stage.
+        Uses the exact same logic as CandidateQueryService to resolve a candidate's 'current' stage.
         """
-        # 1. Subquery to find the "current" stage record ID for each candidate in this job.
-        # Logic:
-        #   - We prefer the highest order non-pending stage.
-        #   - If all are pending, we prefer the lowest order pending stage (the first stage).
-        
+        from app.v1.db.models.candidate_stages import CandidateStage
+        from app.v1.db.models.job_stage_configs import JobStageConfig
+        from app.v1.db.models.stage_templates import StageTemplate
+        from app.v1.db.models.cross_job_matches import CrossJobMatch
+
         # Filters for native and cross-match
         native_filter = Candidate.applied_job_id == job_id
         cross_filter = CrossJobMatch.matched_job_id == job_id
@@ -242,7 +242,6 @@ class JobStatsService:
             native_filter = and_(native_filter, Candidate.created_at <= end_date)
             cross_filter = and_(cross_filter, CrossJobMatch.created_at <= end_date)
 
-        # Deduplication subquery: Map each unique person (email) to their latest application record in this job context
         unique_candidates_subq = (
             select(
                 func.coalesce(Candidate.email, func.cast(Candidate.id, Text)).label("unique_id"),
@@ -258,57 +257,37 @@ class JobStatsService:
             )
             .order_by(
                 func.coalesce(Candidate.email, func.cast(Candidate.id, Text)),
-                case((Candidate.applied_job_id == job_id, 0), else_=1), # Prefer native record
+                case((Candidate.applied_job_id == job_id, 0), else_=1),
                 Candidate.created_at.desc()
             )
             .subquery()
         )
 
-        # 2. Subquery to find the "best order" for these representative candidate records
-        best_order_subq = (
+        latest_stage_subq = (
             select(
                 CandidateStage.candidate_id,
-                func.coalesce(
-                    func.max(
-                        case(
-                            (
-                                CandidateStage.status != "pending",
-                                JobStageConfig.stage_order,
-                            ),
-                            else_=None,
-                        )
-                    ),
-                ).label("best_order"),
+                JobStageConfig.template_id,
+                CandidateStage.status
             )
-            .select_from(CandidateStage)
             .join(JobStageConfig, CandidateStage.job_stage_id == JobStageConfig.id)
             .where(JobStageConfig.job_id == job_id)
             .where(CandidateStage.candidate_id.in_(select(unique_candidates_subq.c.representative_candidate_id)))
-            .group_by(CandidateStage.candidate_id)
+            .distinct(CandidateStage.candidate_id)
+            .order_by(
+                CandidateStage.candidate_id,
+                case(
+                    (CandidateStage.status == "active", 2),
+                    (CandidateStage.status != "pending", 1),
+                    else_=0
+                ).desc(),
+                case(
+                    (CandidateStage.status != "pending", JobStageConfig.stage_order),
+                    else_=-JobStageConfig.stage_order
+                ).desc()
+            )
             .subquery()
         )
 
-        # 2. Fetch the stage records
-        stmt = (
-            select(StageTemplate.name, CandidateStage.status)
-            .select_from(CandidateStage)
-            .join(JobStageConfig, CandidateStage.job_stage_id == JobStageConfig.id)
-            .join(StageTemplate, JobStageConfig.template_id == StageTemplate.id)
-            .join(
-                best_order_subq,
-                and_(
-                    best_order_subq.c.candidate_id == CandidateStage.candidate_id,
-                    best_order_subq.c.best_order == JobStageConfig.stage_order,
-                ),
-            )
-            .where(JobStageConfig.job_id == job_id)
-            .order_by(CandidateStage.candidate_id, CandidateStage.started_at.desc())
-        )
-
-        rows = await db.execute(stmt)
-
-        # 3. Build the flat result dictionary
-        # Initialize all stages with 0 for both active and completed
         all_stages_res = await db.execute(
             select(StageTemplate.name)
             .select_from(JobStageConfig)
@@ -316,18 +295,26 @@ class JobStatsService:
             .where(JobStageConfig.job_id == job_id)
             .order_by(JobStageConfig.stage_order)
         )
-
+        
         final_stats: dict[str, int] = {}
         for name in all_stages_res.scalars().all():
             final_stats[name] = 0
 
-        # 4. Fill with actual counts (only for current active/pending candidates)
-        for name, status in rows.all():
-            if status in ("pending", "active"):
-                if name in final_stats:
-                    final_stats[name] += 1
-                else:
-                    final_stats[name] = 1  # Fallback for unexpected stages
+        stmt = (
+            select(StageTemplate.name, func.count().label('cnt'))
+            .select_from(latest_stage_subq)
+            .join(StageTemplate, latest_stage_subq.c.template_id == StageTemplate.id)
+            .where(latest_stage_subq.c.status.notin_(["failed", "skipped"]))
+            .group_by(StageTemplate.name)
+        )
+        
+        rows = await db.execute(stmt)
+        for name, count in rows.all():
+            if name in final_stats:
+                final_stats[name] += count
+            else:
+                final_stats[name] = count
+
         return final_stats
 
     async def _get_hr_decision_stats(
@@ -352,7 +339,7 @@ class JobStatsService:
         # Total unique candidates in pool (deduplicated by email)
         total_unique_stmt = select(
             func.count(func.distinct(func.coalesce(Candidate.email, func.cast(Candidate.id, Text))))
-        ).join(Resume, Resume.candidate_id == Candidate.id).where(
+        ).where(
             and_(
                 or_(
                     native_filter,
@@ -360,7 +347,7 @@ class JobStatsService:
                         select(CrossJobMatch.candidate_id).where(cross_filter)
                     )
                 ),
-                Resume.parsed.is_(True)
+                or_(Candidate.email.is_(None), ~Candidate.email.like('%@processing.local%'))
             )
         )
         total_candidates = await db.scalar(total_unique_stmt) or 0
@@ -414,7 +401,7 @@ class JobStatsService:
                 d_key = str(row.decision).lower().strip().replace(" ", "") 
                 counts[d_key] = counts.get(d_key, 0) + row.cnt
 
-        decided_total = sum(counts.values())
+        decided_total = sum(cnt for k, cnt in counts.items() if k != "pending")
 
         return JobHRDecisionStats(
             total_candidates=total_candidates,
@@ -508,32 +495,120 @@ class JobStatsService:
         )
         stage_configs = stage_configs_res.scalars().all()
 
+        # Re-use the latest_stage logic to accurately know how many candidates 
+        # are currently at or past each stage
+        from app.v1.db.models.candidates import Candidate
+        from app.v1.db.models.candidate_stages import CandidateStage
+        from app.v1.db.models.cross_job_matches import CrossJobMatch
+        
+        native_filter = Candidate.applied_job_id == job_id
+        cross_filter = CrossJobMatch.matched_job_id == job_id
+        if start_date:
+            native_filter = and_(native_filter, Candidate.created_at >= start_date)
+            cross_filter = and_(cross_filter, CrossJobMatch.created_at >= start_date)
+        if end_date:
+            native_filter = and_(native_filter, Candidate.created_at <= end_date)
+            cross_filter = and_(cross_filter, CrossJobMatch.created_at <= end_date)
+
+        unique_candidates_subq = (
+            select(
+                func.coalesce(Candidate.email, func.cast(Candidate.id, Text)).label("unique_id"),
+                Candidate.id.label("representative_candidate_id")
+            )
+            .distinct(func.coalesce(Candidate.email, func.cast(Candidate.id, Text)))
+            .outerjoin(CrossJobMatch, CrossJobMatch.candidate_id == Candidate.id)
+            .where(
+                and_(
+                    or_(native_filter, cross_filter),
+                    or_(Candidate.email.is_(None), ~Candidate.email.like('%@processing.local%'))
+                )
+            )
+            .order_by(
+                func.coalesce(Candidate.email, func.cast(Candidate.id, Text)),
+                case((Candidate.applied_job_id == job_id, 0), else_=1),
+                Candidate.created_at.desc()
+            )
+            .subquery()
+        )
+        
+        latest_stage_subq = (
+            select(
+                CandidateStage.candidate_id,
+                JobStageConfig.template_id,
+                CandidateStage.job_stage_id,
+                CandidateStage.status,
+                JobStageConfig.stage_order
+            )
+            .join(JobStageConfig, CandidateStage.job_stage_id == JobStageConfig.id)
+            .where(JobStageConfig.job_id == job_id)
+            .where(CandidateStage.candidate_id.in_(select(unique_candidates_subq.c.representative_candidate_id)))
+            .distinct(CandidateStage.candidate_id)
+            .order_by(
+                CandidateStage.candidate_id,
+                case(
+                    (CandidateStage.status == "active", 2),
+                    (CandidateStage.status != "pending", 1),
+                    else_=0
+                ).desc(),
+                case(
+                    (CandidateStage.status != "pending", JobStageConfig.stage_order),
+                    else_=-JobStageConfig.stage_order
+                ).desc()
+            )
+            .subquery()
+        )
+
         stage_details: dict[str, JobStageDetails] = {}
 
         for config in stage_configs:
             stage_name = config.template.name
             is_resume_screening = (config.stage_order == 1 or stage_name == "Resume Screening")
             
-            # HR Decisions for this stage
-            hr_stmt = (
-                select(func.lower(HrDecision.decision), func.count())
-                .where(HrDecision.job_id == job_id)
-                .group_by(func.lower(HrDecision.decision))
-            )
-            
+            # HR Decisions for this stage (latest per candidate)
             if is_resume_screening:
-                # Include both explicit Stage 0 and NULL stage_config_id (Legacy/Default)
-                hr_stmt = hr_stmt.where(
-                    or_(
-                        HrDecision.stage_config_id == config.id,
-                        HrDecision.stage_config_id.is_(None)
-                    )
+                stage_filter = or_(
+                    HrDecision.stage_config_id == config.id,
+                    HrDecision.stage_config_id.is_(None)
                 )
             else:
-                hr_stmt = hr_stmt.where(HrDecision.stage_config_id == config.id)
+                stage_filter = HrDecision.stage_config_id == config.id
+                
+            latest_decisions_stage_subq = (
+                select(
+                    HrDecision.candidate_id,
+                    func.lower(HrDecision.decision).label("decision")
+                )
+                .where(HrDecision.job_id == job_id)
+                .where(stage_filter)
+                .order_by(
+                    HrDecision.candidate_id,
+                    HrDecision.decided_at.desc()
+                )
+                .distinct(HrDecision.candidate_id)
+                .subquery()
+            )
+
+            hr_stmt = (
+                select(latest_decisions_stage_subq.c.decision, func.count())
+                .group_by(latest_decisions_stage_subq.c.decision)
+            )
                 
             hr_rows = await db.execute(hr_stmt)
             hr_counts = {str(d).lower().strip(): cnt for d, cnt in hr_rows.all() if d}
+            
+            # Calculate total candidates at or past this stage
+            if is_resume_screening:
+                stage_cands_stmt = select(func.count(func.distinct(unique_candidates_subq.c.representative_candidate_id)))
+            else:
+                stage_cands_stmt = select(func.count()).select_from(latest_stage_subq).where(latest_stage_subq.c.stage_order >= config.stage_order)
+            
+            total_stage_cands = await db.scalar(stage_cands_stmt) or 0
+            
+            # Infer pending by subtracting explicit non-pending decisions from total candidates in stage
+            explicit_pending = hr_counts.get("pending", 0)
+            decided = sum(cnt for k, cnt in hr_counts.items() if k != "pending")
+            inferred_pending = max(total_stage_cands - decided - explicit_pending, 0)
+            hr_counts["pending"] = explicit_pending + inferred_pending
 
             # AI Results for this stage
             ai_counts: dict[str, int] = {"passed": 0, "failed": 0, "pending": 0}
