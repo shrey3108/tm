@@ -11,35 +11,6 @@ import type {
   QuestionItem,
 } from "@/types/taskPaper";
 
-/**
- * Hook to upload a new predefined question set paper template.
- */
-export function useUploadQuestionSetPaperMutation() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({
-      departmentId,
-      positionId,
-      skillIds,
-      paperType,
-      file,
-    }: {
-      departmentId: string;
-      positionId: string;
-      skillIds: string[];
-      paperType: "normal" | "mcq" | "task" | "mixed";
-      file: File;
-    }) => taskService.uploadQuestionSetPaper({ departmentId, positionId, skillIds, paperType, file }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: [QUERY_KEYS.TASK_PAPERS.LIST],
-      });
-      queryClient.invalidateQueries({
-        queryKey: [QUERY_KEYS.TASK_PAPERS.ALL_CONTENT],
-      });
-    },
-  });
-}
 
 /**
  * Hook to manually create a new predefined question set paper.
@@ -51,21 +22,15 @@ export function useCreateQuestionSetPaperMutation() {
       taskService.createQuestionSetPaper(data),
     onSuccess: async () => {
       await Promise.all([
-        queryClient.fetchQuery({
+        queryClient.invalidateQueries({
           queryKey: [QUERY_KEYS.TASK_PAPERS.LIST],
-          queryFn: () => taskService.getQuestionSetPapers()
+          refetchType: "all",
         }),
-        queryClient.fetchQuery({
+        queryClient.invalidateQueries({
           queryKey: [QUERY_KEYS.TASK_PAPERS.ALL_CONTENT],
-          queryFn: () => taskService.getAllQuestionsAndTasks()
+          refetchType: "all",
         })
       ]);
-      queryClient.invalidateQueries({
-        queryKey: [QUERY_KEYS.TASK_PAPERS.LIST]
-      });
-      queryClient.invalidateQueries({
-        queryKey: [QUERY_KEYS.TASK_PAPERS.ALL_CONTENT]
-      });
     },
   });
 }

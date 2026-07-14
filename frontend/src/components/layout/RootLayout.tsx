@@ -21,6 +21,7 @@ export const RootLayout = () => {
                         <Outlet />
                     </Suspense>
                     <BackgroundPollingManager />
+                    {/* Enable Devtool by uncommenting bellow line */}
                     <ReactQueryDevtools initialIsOpen={false} />
                 </QueryClientProvider>
             </ToastProvider>

@@ -172,7 +172,7 @@ export function QuestionsBankFilters({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-11 px-3 rounded-xl text-xs font-semibold text-muted-foreground hover:bg-gray-200/60"
+                    className="h-8 px-3 rounded-xl text-xs font-semibold text-muted-foreground hover:bg-gray-200/60"
                     onClick={clearFilters}
                   >
                     <X className="h-4 w-4" />

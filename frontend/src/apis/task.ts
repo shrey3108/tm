@@ -118,39 +118,6 @@ export const taskService = {
     return new Blob([response.data], { type: contentType });
   },
 
-  /**
-   * Uploads a predefined test paper file (PDF or Word) for a specific department, position level, and skills.
-   */
-  uploadQuestionSetPaper: async ({
-    departmentId,
-    positionId,
-    skillIds,
-    paperType,
-    file,
-  }: {
-    departmentId: string;
-    positionId: string;
-    skillIds: string[];
-    paperType: "normal" | "mcq" | "task" | "mixed";
-    file: File;
-  }): Promise<QuestionSetPaperRead[]> => {
-    const formData = new FormData();
-    formData.append("department_id", departmentId);
-    formData.append("position_id", positionId);
-    formData.append("skill_ids", JSON.stringify(skillIds));
-    formData.append("paper_type", paperType);
-    formData.append("task_file", file);
-    const response = await client.post<QuestionSetPaperRead[]>(
-      "/task-papers/upload",
-      formData,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      }
-    );
-    return response.data;
-  },
 
   /**
    * Manually creates a new question set paper.

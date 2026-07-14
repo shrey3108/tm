@@ -20,7 +20,6 @@ import { useDebouncedValue } from "@/hooks/useDebounced";
 import { extractErrorMessage } from "@/utils/error";
 import { useDepartment } from "@/hooks/queries/admin/useDepartment";
 import { useJobPosition } from "@/hooks/queries/admin/useJobPosition";
-// import { useSkill } from "@/hooks/queries/admin/useSkill";
 import { slugify } from "@/utils/slug";
 
 // Sub-components

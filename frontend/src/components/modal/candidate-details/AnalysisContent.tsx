@@ -53,7 +53,7 @@ export function AnalysisContent({
       {/* Summary Sections */}
       <div className="grid grid-cols-1 gap-3">
         <section className="space-y-2">
-          <Card className="text-muted-foreground text-base leading-relaxed p-2 gap-1">
+          <Card className="text-base leading-relaxed p-2 gap-1">
             <h3 className="text-lg font-medium tracking-tight flex items-center gap-2 text-foreground">
               Strength Summary
             </h3>
@@ -62,7 +62,7 @@ export function AnalysisContent({
         </section>
 
         <section className="space-y-2">
-          <Card className="text-muted-foreground text-base leading-relaxed p-2 gap-1">
+          <Card className="text-base leading-relaxed p-2 gap-1">
             <h3 className="text-lg font-medium tracking-tight flex items-center gap-2 text-foreground">
               Experience Alignment
             </h3>

@@ -47,7 +47,7 @@ export const useCandidateTableFilters = <T extends UnifiedCandidate>(
 
   const testEmailSentFilter = filters.test_email_sent === true ? "sent" : filters.test_email_sent === false ? "not_sent" : undefined;
 
-  const nameFilter = externalNameFilter !== undefined ? externalNameFilter : ("");
+  const nameFilter = externalNameFilter !== undefined ? externalNameFilter : (filters.q || "");
 
   const setNameFilter = (val: string) => {
     if (onNameFilterChange) {
