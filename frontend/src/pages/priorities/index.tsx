@@ -206,7 +206,7 @@ export default function AdminJobPriorities() {
     {
       accessorKey: "created_at",
       size: 15,
-      meta: { overflow: 'ellipsis' },
+      meta: { overflow: 'wrap' },
       header: ({ column }) => (
         <Button
           variant="ghost"

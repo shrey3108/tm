@@ -57,7 +57,7 @@ export const getQuestionsBankColumns = ({
           const totalDuration = item.rawData.duration;
 
           return (
-            <div className="min-w-[400px] whitespace-pre-wrap wrap-break-word space-y-1">
+            <div className="whitespace-pre-wrap wrap-break-word space-y-1">
               <div className="text-foreground">{item.content}</div>
               {tasks.length > 0 && (
                 <div className="flex items-center gap-1.5 text-[10px] font-bold">
@@ -79,7 +79,7 @@ export const getQuestionsBankColumns = ({
           const duration = item.rawData.duration;
 
           return (
-            <div className="min-w-[400px] whitespace-pre-wrap wrap-break-word space-y-1">
+            <div className="whitespace-pre-wrap wrap-break-word space-y-1">
               <div className="text-foreground">{item.content}</div>
               {(marks !== undefined || (duration !== undefined && duration > 0)) && (
                 <div className="flex items-center gap-1.5 text-[10px] font-bold">
@@ -100,7 +100,7 @@ export const getQuestionsBankColumns = ({
         }
 
         return (
-          <div className="min-w-[400px] whitespace-pre-wrap wrap-break-word">
+          <div className="whitespace-pre-wrap wrap-break-word">
             {row.original.content}
           </div>
         );

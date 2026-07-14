@@ -4,7 +4,7 @@
  *
  * Question library dashboard for organizing, viewing, and selecting test questions.
  */
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { usePageFilters } from "@/hooks/usePageFilters";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -20,7 +20,6 @@ import { useDebouncedValue } from "@/hooks/useDebounced";
 import { extractErrorMessage } from "@/utils/error";
 import { useDepartment } from "@/hooks/queries/admin/useDepartment";
 import { useJobPosition } from "@/hooks/queries/admin/useJobPosition";
-// import { useSkill } from "@/hooks/queries/admin/useSkill";
 import { slugify } from "@/utils/slug";
 
 // Sub-components
@@ -28,7 +27,7 @@ import { QuestionsBankFilters } from "@/components/questions-bank/QuestionsBankF
 import { QuestionsBankModals } from "@/components/questions-bank/QuestionsBankModals";
 import { getQuestionsBankColumns, type FlatItem } from "@/components/questions-bank/QuestionsBankColumns";
 import { DataTable } from "@/components/shared/DataTable";
-import LoadingSpinner from "@/components/shared/LoadingSpinner";
+import type { PaginationState } from "@tanstack/react-table";
 
 /** Default filter values for the QuestionsBank page. */
 const questionsBankDefaults = {
@@ -36,6 +35,9 @@ const questionsBankDefaults = {
   selectedPositionId: "",
   selectedSkillId: "",
   selectedContentType: "all",
+  pageIndex: 0,
+  pageSize: 10,
+  search: "",
 };
 
 export default function QuestionsBank() {
@@ -43,48 +45,54 @@ export default function QuestionsBank() {
 
   // Persisted filters via Redux + sessionStorage
   const { filters, setFilter, setFilters, resetFilters } = usePageFilters("questionsBank", questionsBankDefaults);
-  const { selectedDeptId, selectedPositionId, selectedSkillId, selectedContentType } = filters;
+  const { selectedDeptId, selectedPositionId, selectedSkillId, selectedContentType, pageIndex, pageSize, search } = filters;
 
-  // Transient search inputs (not persisted)
   const [deptSearch, setDeptSearch] = useState<string>("");
-  // const [skillSearch, setSkillSearch] = useState<string>("");
 
-  // Debounce search query for backend API calls
+
+  const debouncedSearch = useDebouncedValue(search);
   const debouncedDeptSearch = useDebouncedValue(deptSearch);
-  // const debouncedSkillSearch = useDebouncedValue(skillSearch);
 
-  // Fetch departments list
   const { data: departments, loading: loadingDepts } = useDepartment({ skip: 0, limit: 100, q: debouncedDeptSearch });
   const isDeptSearching = deptSearch !== debouncedDeptSearch;
   const handleDeptSearch = useCallback((query: string) => setDeptSearch(query), []);
 
-  // Fetch skills list (commented out to build skill filter using table's content displayed skills)
-  // const { data: skills, loading: loadingSkills } = useSkill(0, 100, debouncedSkillSearch);
-  // const isSkillSearching = skillSearch !== debouncedSkillSearch;
-  // const handleSkillSearch = useCallback((query: string) => setSkillSearch(query), []);
 
   const hasActiveFilters = useMemo(() => {
     return (
       selectedPositionId !== "" ||
       selectedSkillId !== "" ||
       selectedContentType !== "all" ||
-      selectedDeptId !== ""
+      selectedDeptId !== "" ||
+      search !== ""
     );
-  }, [selectedPositionId, selectedSkillId, selectedContentType, selectedDeptId]);
+  }, [selectedPositionId, selectedSkillId, selectedContentType, selectedDeptId, search]);
 
   const clearFilters = useCallback(() => {
     resetFilters();
   }, [resetFilters]);
 
+  const getPaperType = (type: string) => {
+    if (type === "question") return "normal";
+    if (type === "project_task") return "task";
+    if (type === "mcq") return "mcq";
+    return undefined;
+  };
+
   // Fetch predefined Question Set Papers
   const {
     data: questionPapers = [],
+    total,
     loading: loadingPapers,
     refetch: refetchPapers,
   } = useQuestionSetPapers({
     departmentId: selectedDeptId || undefined,
     positionId: selectedPositionId || undefined,
-    // skillId: selectedSkillId || undefined,
+    skillId: selectedSkillId || undefined,
+    paperType: getPaperType(selectedContentType),
+    q: debouncedSearch,
+    skip: pageIndex * pageSize,
+    limit: pageSize,
     options: {
       enabled: !!selectedDeptId && !!selectedPositionId,
     },
@@ -195,19 +203,34 @@ export default function QuestionsBank() {
   const isSkillSearching = false;
   const handleSkillSearch = useCallback(() => { }, []);
 
-  // Client-side filtering by content type and skill
-  const filteredFlatItems = useMemo(() => {
-    let items = flatItems;
-    if (selectedSkillId) {
-      items = items.filter((item) =>
-        item.skills?.some((s) => s.id === selectedSkillId)
-      );
+  // No client-side filtering needed anymore as it's done by the API.
+  const filteredFlatItems = flatItems;
+
+  const handleSearchChange = (value: string) => {
+    setFilters({
+      search: value,
+      pageIndex: 0,
+    });
+  };
+
+  const setPagination = (val: PaginationState | ((prev: PaginationState) => PaginationState)) => {
+    const currentPagination = { pageIndex: filters.pageIndex, pageSize: filters.pageSize };
+    const nextPagination = typeof val === "function" ? val(currentPagination) : val;
+    setFilters({
+      pageIndex: nextPagination.pageIndex,
+      pageSize: nextPagination.pageSize,
+    });
+  };
+
+  const [overallTotal, setOverallTotal] = useState(0);
+
+  useEffect(() => {
+    if (!debouncedSearch && total !== overallTotal) {
+      queueMicrotask(() => {
+        setOverallTotal(total);
+      });
     }
-    if (selectedContentType !== "all") {
-      items = items.filter((item) => item.type === selectedContentType);
-    }
-    return items;
-  }, [flatItems, selectedSkillId, selectedContentType]);
+  }, [total, debouncedSearch, overallTotal]);
 
   // Modal states and handlers (only delete modal is kept)
   const [activeModal, setActiveModal] = useState<"delete" | null>(null);
@@ -317,8 +340,6 @@ export default function QuestionsBank() {
               </div>
             </div>
           </div>
-        ) : loadingPapers ? (
-          <LoadingSpinner message="Loading question set papers..." />
         ) : (
           <div className="space-y-6 animate-in fade-in duration-300">
             <DataTable
@@ -326,12 +347,19 @@ export default function QuestionsBank() {
               data={filteredFlatItems}
               loading={loadingPapers}
               searchKey="content"
-              searchPlaceholder="Filter by content..."
-              emptyMessage="No questions, tasks, or MCQs found."
-              totalCount={flatItems.length}
+              searchPlaceholder="Search question papers..."
+              searchValue={search}
+              onSearchChange={handleSearchChange}
+              isServerSide={true}
+              pageIndex={pageIndex}
+              pageSize={pageSize}
+              pageCount={Math.ceil(total / pageSize)}
+              onPaginationChange={setPagination}
+              totalRecords={total}
+              totalCount={overallTotal}
               resultCount={filteredFlatItems.length}
-              totalRecords={filteredFlatItems.length}
-              entityName="Question"
+              emptyMessage="No questions, tasks, or MCQs found."
+              entityName="Question Papers"
             />
           </div>
         )}

@@ -43,7 +43,7 @@ export const SkillSelectorSection = ({
 
   const debouncedSearch = useDebouncedValue(skillSearch);
 
-  const { data: skills, loading: isLoading, refetch: refetchSkills } = useSkill({ skip: 0, limit: 100, q: debouncedSearch });
+  const { data: skills, loading: isLoading, refetch: refetchSkills } = useSkill({ skip: 0, limit: 500, q: debouncedSearch });
 
   const allSkills = useMemo(() => {
     const uniqueMap = new Map<string, SkillRead>();

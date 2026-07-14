@@ -50,11 +50,11 @@ export function CandidatesDistributionChart({ stats }: CandidatesDistributionCha
 
   return (
     <div className="w-full animate-in fade-in zoom-in-95 duration-700">
-      <ChartContainer config={chartConfig} className="w-full min-h-25 max-h-75">
+      <ChartContainer config={chartConfig} className="w-full">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={data}
-            margin={{ top: 20, right: 30, left: 30, bottom: 50 }}
+            margin={{ top: 35, right: 30, left: 30, bottom: 50 }}
             className='[&_.recharts-cartesian-grid-horizontal>line]:[stroke-dasharray:0]'
           >
             <defs>
@@ -244,7 +244,7 @@ export function StagesBarChart({ stages, onStageClick, selectedStage }: StagesBa
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={data}
-            margin={{ top: 20, right: 30, left: 30, bottom: 50 }}
+            margin={{ top: 35, right: 30, left: 30, bottom: 50 }}
             className='[&_.recharts-cartesian-grid-horizontal>line]:[stroke-dasharray:0]'
           >
             <defs>
@@ -426,7 +426,7 @@ export function LocationBarChart({ locations }: LocationBarChartProps) {
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={data}
-            margin={{ top: 20, right: 30, left: 30, bottom: 50 }}
+            margin={{ top: 35, right: 30, left: 30, bottom: 50 }}
             className='[&_.recharts-cartesian-grid-horizontal>line]:[stroke-dasharray:0]'
           >
             <defs>

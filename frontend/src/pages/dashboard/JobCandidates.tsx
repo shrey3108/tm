@@ -114,7 +114,6 @@ export default function JobCandidates() {
     deleteError,
     deleteMessage,
     jobStats,
-    activitySession
   } = useJobCandidates(jobSlug, pageIndex, pageSize, {
     query: filters.q,
     hr_decision: filters.hr_decision,
@@ -312,7 +311,6 @@ export default function JobCandidates() {
                       onPaginationChange={setPagination}
                       pageCount={Math.ceil(totalCandidates / pageSize)}
                       total={totalCandidates}
-                      activitySessions={activitySession}
                       filters={filters}
                       setFilters={handleSetFilters}
                       rowSelection={rowSelection}

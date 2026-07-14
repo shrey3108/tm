@@ -11,35 +11,6 @@ import type {
   QuestionItem,
 } from "@/types/taskPaper";
 
-/**
- * Hook to upload a new predefined question set paper template.
- */
-export function useUploadQuestionSetPaperMutation() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({
-      departmentId,
-      positionId,
-      skillIds,
-      paperType,
-      file,
-    }: {
-      departmentId: string;
-      positionId: string;
-      skillIds: string[];
-      paperType: "normal" | "mcq" | "task" | "mixed";
-      file: File;
-    }) => taskService.uploadQuestionSetPaper({ departmentId, positionId, skillIds, paperType, file }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: [QUERY_KEYS.TASK_PAPERS.LIST],
-      });
-      queryClient.invalidateQueries({
-        queryKey: [QUERY_KEYS.TASK_PAPERS.ALL_CONTENT],
-      });
-    },
-  });
-}
 
 /**
  * Hook to manually create a new predefined question set paper.
@@ -49,13 +20,17 @@ export function useCreateQuestionSetPaperMutation() {
   return useMutation({
     mutationFn: (data: QuestionSetPaperCreate) =>
       taskService.createQuestionSetPaper(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: [QUERY_KEYS.TASK_PAPERS.LIST],
-      });
-      queryClient.invalidateQueries({
-        queryKey: [QUERY_KEYS.TASK_PAPERS.ALL_CONTENT],
-      });
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: [QUERY_KEYS.TASK_PAPERS.LIST],
+          refetchType: "all",
+        }),
+        queryClient.invalidateQueries({
+          queryKey: [QUERY_KEYS.TASK_PAPERS.ALL_CONTENT],
+          refetchType: "all",
+        })
+      ]);
     },
   });
 }
@@ -184,7 +159,6 @@ export function useDeleteJobDefaultTestPaperMutation() {
     onSuccess: (_data, param) => {
       const jobId = typeof param === "string" ? param : param.jobId;
       const jobStageId = typeof param === "string" ? undefined : param.jobStageId;
-      
       queryClient.setQueryData(
         [QUERY_KEYS.JOBS.TASK_ASSIGNED, jobId, jobStageId],
         null

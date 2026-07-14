@@ -53,7 +53,7 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
       {
         id: "candidate",
         size: 16,
-        meta: { overflow: 'ellipsis' },
+        meta: { overflow: 'wrap' },
         accessorFn: (row) =>
           `${row.first_name || ""} ${row.last_name || ""}`.trim(),
         header: ({ column }) => (
@@ -89,7 +89,7 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
               <span className="text-wrap break-all">
                 {c.email || "N/A"}
               </span>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 flex-wrap">
                 <span className="text-wrap">
                   {c.phone || "N/A"}
                 </span>
@@ -118,7 +118,7 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
             id: "job_context",
             accessorKey: "applied_job_id",
             size: 8,
-            meta: { overflow: 'ellipsis' },
+            meta: { overflow: 'wrap' },
 
             header: () => {
               return <div className="flex items-center justify-between">
@@ -131,7 +131,7 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
               if (!jobId || !jobName) return <span className="text-sm">N/A</span>;
               const slug = slugify(jobName);
               return (
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 flex-wrap">
                   <Link
                     to={`/dashboard/jobs/${slug}/candidates`}
                     state={{ state: { jobId: jobId } }}
@@ -151,7 +151,7 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
         id: "result",
         accessorKey: "resume_score",
         size: 10,
-        meta: { overflow: 'ellipsis' },
+        meta: { overflow: 'wrap' },
         header: ({ column }) => (
           <Button
             variant="ghost"
@@ -193,7 +193,7 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
 
           return (
             <div className="flex flex-col gap-1.5">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className=" text-sm">{score.toFixed(2)}%</span>
                 <HoverCard>
                   <HoverCardTrigger delay={10} closeDelay={10}>
@@ -230,7 +230,7 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
         id: "hr_decision",
         accessorKey: "hr_decision",
         size: 10,
-        meta: { overflow: 'ellipsis' },
+        meta: { overflow: 'wrap' },
         header: ({ column }) => (
           <Button
             variant="ghost"
@@ -256,7 +256,7 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
 
           return (
             <div className="flex flex-col gap-1 items-start justify-center">
-              <div className="flex items-center justify-start gap-1">
+              <div className="flex items-center justify-start gap-1 flex-wrap">
                 <CandidateStatusBadge status={row.original.hr_decision} />
                 {row.original.hr_score !== undefined && row.original.hr_score !== null ? (
                   <span className="text-sm font-semibold text-foreground">
@@ -282,8 +282,8 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
       {
         id: "current_stage",
         accessorKey: "current_stage",
-        size: 9,
-        meta: { overflow: 'ellipsis' },
+        size: 11,
+        meta: { overflow: 'wrap' },
 
         header: () => {
           return <div className="flex items-center justify-between">
@@ -383,7 +383,7 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
           };
 
           return (
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-0.5">
               {/* LinkedIn links */}
               {liLinks.length > 0 ? (
                 liLinks.map((url, idx) => renderLink(url, `li-${idx}`))
@@ -420,7 +420,7 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
       {
         id: "applied_at",
         size: 8,
-        meta: { overflow: 'ellipsis' },
+        meta: { overflow: 'wrap' },
         accessorFn: (row) => row.applied_at || row.created_at,
         header: ({ column }) => (
           <Button
@@ -444,8 +444,8 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
       {
         id: "location",
         accessorKey: "location",
-        size: 9,
-        meta: { overflow: 'ellipsis' },
+        size: 7,
+        meta: { overflow: 'wrap' },
         header: ({ column }) => (
           <Button
             variant="ghost"
@@ -464,7 +464,7 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
           // Normalize to Title Case
           const normalized = toTitleCase(loc.trim());
           return (
-            <div className="flex items-center text-sm text-wrap" >
+            <div className="flex items-center text-sm text-wrap flex-wrap" >
               <span>{normalized}</span>
             </div>
           );
@@ -476,11 +476,11 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
         ? [
           {
             id: "actions",
-            size: 12,
-            meta: { overflow: 'visible' },
+            size: !showJobContext ? 12 : 8,
+            meta: { overflow: 'wrap' },
             header: () => <div className="text-center text-base">Actions</div>,
             cell: ({ row }: { row: { original: T } }) => (
-              <div className="flex items-center justify-center gap-2">
+              <div className="flex items-center justify-center gap-0.5 flex-wrap">
                 {renderActions(row.original)}
               </div>
             ),

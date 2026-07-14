@@ -428,7 +428,7 @@ class CandidateQueryService:
         seen_emails = set()
         
         for c in direct_candidates:
-            resp = map_candidate_to_response(c, target_job_id=job_id, focus_stage_id=stage_id)
+            resp = map_candidate_to_response(c, target_job_id=job_id)
             
             # If candidate applied for a different job originally, they are fundamentally a cross-match
             # We must override their score/analysis with the cross_job_matches data for this target job.
@@ -495,7 +495,7 @@ class CandidateQueryService:
                 seen_emails.add(cand_email)
 
             # Map candidate normally
-            resp = map_candidate_to_response(xm.candidate, target_job_id=job_id, focus_stage_id=stage_id)
+            resp = map_candidate_to_response(xm.candidate, target_job_id=job_id)
 
             # Apply hr_decision filter in-memory for cross-matches if needed
             if hr_decision:

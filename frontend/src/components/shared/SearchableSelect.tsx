@@ -243,7 +243,7 @@ export function SearchableSelect({
         className={cn("p-2 min-w-(--anchor-width) w-max max-w-[min(calc(100vw-1rem),400px)]", contentClassName)}
         alignItemWithTrigger={false}
       >
-        {(search || options.length >= displayLimit) && (
+        {(search || options.length > displayLimit) && (
           <div className="px-1 pb-2">
             <div className="relative">
               {asyncLoading ? (

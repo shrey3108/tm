@@ -298,12 +298,7 @@ export const useJobCandidates = (
     return new Date(Math.min(...dates));
   }, [candidates]);
 
-  const activitySession = useMemo(() => {
-    if (!job?.activity_sessions) return [];
-    const map = new Map<number, { start_date: string; end_date: string }>();
-    job.activity_sessions.forEach((s) => map.set(s.session_id, { start_date: s.start_date, end_date: s.end_date || "" }));
-    return Array.from(map);
-  }, [job]);
+
 
   const {
     showModal: showDeleteModal,
@@ -361,6 +356,5 @@ export const useJobCandidates = (
     isDeleting,
     deleteError,
     deleteMessage,
-    activitySession
   };
 };

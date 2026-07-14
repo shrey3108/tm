@@ -1,4 +1,4 @@
-import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
 import { ArrowLeft, User, Mail, Phone, Briefcase, ArrowUpDown } from "lucide-react";
 import {
   useResolvedJobAndCandidate,
@@ -153,7 +153,7 @@ export default function CandidateOverview() {
     },
     {
       id: "aiResult",
-      header: "AI Result",
+      header: () => <span className="text-left">AI Result</span>,
       size: 20,
       cell: ({ row }) => {
         const event = row.original;
@@ -161,10 +161,8 @@ export default function CandidateOverview() {
 
         if (event.ai_result && !isFutureStage) {
           return (
-            <div
-              onClick={() => navigate(`/dashboard/jobs/${jobSlug}/candidates/${candidateName}/stages/${slugify(event.title || "Resume Screening")}`)}
-              className="cursor-pointer flex items-center gap-2 w-fit hover:opacity-80 transition-opacity px-1"
-            >
+            <Link to={`/dashboard/jobs/${jobSlug}/candidates/${candidateName}/stages/${slugify(event.title || "Resume Screening")}`}
+              className="cursor-pointer flex items-center justify-start gap-2 hover:opacity-80 transition-opacity" >
               <CandidateStatusBadge status={event.ai_result} />
               {event.score !== null && event.score !== undefined && (
                 <span className="font-bold">
@@ -172,15 +170,16 @@ export default function CandidateOverview() {
                   {event.title === "Resume Screening" ? "%" : "/5"}
                 </span>
               )}
-            </div>
+            </Link>
+
           );
         }
-        return <span className="text-muted-foreground text-xs font-medium px-1">N/A</span>;
+        return <span className="text-xs font-medium ">N/A</span>;
       },
     },
     {
       id: "hrResult",
-      header: "HR Result",
+      header: () => <span className="text-left">HR Result</span>,
       size: 20,
       cell: ({ row }) => {
         const event = row.original;
@@ -188,18 +187,17 @@ export default function CandidateOverview() {
 
         if (event.hr_decision && !isFutureStage) {
           return (
-            <div
-              onClick={() => navigate(`/dashboard/jobs/${jobSlug}/candidates/${candidateName}/stages/${slugify(event.title || "Resume Screening")}`)}
-              className="cursor-pointer flex items-center gap-2 w-fit hover:opacity-80 transition-opacity px-1"
-            >
+            <Link to={`/dashboard/jobs/${jobSlug}/candidates/${candidateName}/stages/${slugify(event.title || "Resume Screening")}`}
+              className="cursor-pointer flex items-center justify-start gap-2 hover:opacity-80 transition-opacity" >
+
               <CandidateStatusBadge status={event.hr_decision} />
               {event.hr_score !== null && event.hr_score !== undefined && (
                 <span className="font-bold">{event.hr_score.toFixed(1)}/5</span>
               )}
-            </div>
+            </Link>
           );
         }
-        return <span className="text-muted-foreground text-xs font-medium px-1">N/A</span>;
+        return <span className="text-xs font-medium ">N/A</span>;
       },
     },
     {

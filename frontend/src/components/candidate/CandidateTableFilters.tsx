@@ -60,11 +60,6 @@ interface CandidateTableFiltersProps {
     title: string;
     slug: string;
   }[];
-  activitySession: string[];
-  setActivitySession: (value: string[]) => void;
-  activitySearch: string;
-  setActivitySearch: (value: string) => void;
-  activitySessionOptions?: [number, { start_date: string; end_date: string }][];
   hrScoreFilter?: number[];
   setHrScoreFilter?: (value: number[]) => void;
   testEmailSentFilter?: string;
