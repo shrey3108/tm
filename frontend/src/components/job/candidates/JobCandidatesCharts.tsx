@@ -9,15 +9,8 @@ import { ProgressBarChart } from "@/components/shared/Progressbar";
 import { ResultPieChart } from "@/components/shared/ResultPieChart";
 import type { JobStatsResponse } from "@/types/admin";
 import { CHART_TEXTS } from "@/constants";
-import { ChevronDown, X } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { X, Filter } from "lucide-react";
+import { SearchableSelect } from "@/components/shared/SearchableSelect";
 import { Button } from "@/components/ui/button";
 import type { JobCandidatesStatsProps } from "./JobCandidatesStats";
 
@@ -106,34 +99,18 @@ export function JobCandidatesCharts({
     );
   }
 
-  const stagesList = [...Object.keys(jobStats?.stages || {})];
+  const stagesList = ["All Stages", ...Object.keys(jobStats?.stages || {})];
   const StageSelector = (
-    <DropdownMenu>
-      <DropdownMenuTrigger className="inline-flex items-center justify-between gap-2 h-10 px-3 w-50 rounded-xl border text-sm font-medium cursor-pointer select-none transition-all truncate">
-        <span className="truncate">{selectedStage ?? "Resume Screening"}</span>
-        <ChevronDown className="h-4 w-4 opacity-60 shrink-0" />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="center">
-        <DropdownMenuGroup>
-          <DropdownMenuLabel className="text-xs uppercase tracking-wider text-muted-foreground px-2 py-1.5">
-            Stages
-          </DropdownMenuLabel>
-          {stagesList.map((stage) => {
-            return (
-              <DropdownMenuCheckboxItem
-                checked={stage === selectedStage}
-                key={stage}
-                className="rounded-lg my-0.5 capitalize"
-                onClick={() => handleStageClick(stage)}
-                onSelect={(e) => e.preventDefault()}
-              >
-                {stage}
-              </DropdownMenuCheckboxItem>
-            );
-          })}
-        </DropdownMenuGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <SearchableSelect
+      value={selectedStage || ""}
+      onValueChange={setSelectedStage}
+      options={stagesList.map((stage) => ({ id: stage, label: stage }))}
+      placeholder="All Stages"
+      onClear={() => setSelectedStage(null)}
+      clearLabel="Clear stage filter"
+      icon={<Filter className="h-4 w-4 opacity-60" />}
+      triggerClassName="inline-flex items-center justify-between gap-2 h-10 px-3 w-50 rounded-xl border text-sm font-medium cursor-pointer select-none transition-all truncate"
+    />
   );
 
   const obj: {
@@ -192,9 +169,21 @@ export function JobCandidatesCharts({
         isRefreshing && "opacity-60 transition-opacity duration-300",
       )}
     >
+
+      {/* Priority Timeline Section */}
+      <div className="group overflow-hidden relative w-full p-0.5 sm:col-span-2 animate-in fade-in slide-in-from-top-4 duration-1000">
+        <div className="flex items-center justify-between gap-6 mb-2 border-b border-muted-foreground/10 pb-4">
+          <h4 className="font-black text-lg text-foreground tracking-tight capitalize">
+            {CHART_TEXTS.priorityTimeline.label}
+          </h4>
+          <div className="flex-1 flex items-center justify-end animate-in fade-in slide-in-from-right-2 duration-500">
+            <ProgressBarChart priorityTimeline={jobStats?.priority_timeline || null} />
+          </div>
+        </div>
+      </div>
       {/* Stage filter indicator */}
       {selectedStage && (
-        <div className="sm:col-span-2 animate-in fade-in slide-in-from-top-2 duration-300">
+        <div className="sm:col-span-2">
           <div className="inline-flex items-center gap-1 p-1 rounded-lg bg-primary/10 border border-primary/20 text-sm font-semibold text-primary">
             <span>Filtering by stage:</span>
             <span className="font-black">{selectedStage}</span>
@@ -210,17 +199,6 @@ export function JobCandidatesCharts({
           </div>
         </div>
       )}
-      {/* Priority Timeline Section */}
-      <div className="group overflow-hidden relative w-full p-0.5 sm:col-span-2 animate-in fade-in slide-in-from-top-4 duration-1000">
-        <div className="flex items-center justify-between gap-6 mb-2 border-b border-muted-foreground/10 pb-4">
-          <h4 className="font-black text-lg text-foreground tracking-tight capitalize">
-            {CHART_TEXTS.priorityTimeline.label}
-          </h4>
-          <div className="flex-1 flex items-center justify-end animate-in fade-in slide-in-from-right-2 duration-500">
-            <ProgressBarChart priorityTimeline={jobStats?.priority_timeline || null} />
-          </div>
-        </div>
-      </div>
       {obj.map(({ chart, title, takeFullSpace, action, haveBorder }) => (
         <div
           className={cn(
@@ -230,7 +208,7 @@ export function JobCandidatesCharts({
           )}
           key={title}
         >
-          <div className="flex items-center justify-between gap-1 mb-2 border-b border-muted-foreground/10 pb-4">
+          <div className="flex items-center justify-between gap-1 border-b border-muted-foreground/10 pb-2">
             <div>
               <h4 className="font-black text-lg text-foreground tracking-tight capitalize">
                 {title}
