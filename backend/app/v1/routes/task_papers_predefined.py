@@ -431,6 +431,17 @@ async def get_question_set_papers(
     if q:
         query = query.where(QuestionSetPaper.name.ilike(f"%{q}%"))
         
+    # Exclude empty papers (no questions, mcqs, tasks, or uploaded file)
+    from sqlalchemy import or_, func
+    query = query.where(
+        or_(
+            func.jsonb_array_length(QuestionSetPaper.questions) > 0,
+            func.jsonb_array_length(QuestionSetPaper.mcqs) > 0,
+            func.jsonb_array_length(QuestionSetPaper.project_task) > 0,
+            QuestionSetPaper.task_file_path.isnot(None)
+        )
+    )
+        
     # Get total count before pagination
     count_query = select(func.count()).select_from(query.subquery())
     total = (await db.execute(count_query)).scalar() or 0
