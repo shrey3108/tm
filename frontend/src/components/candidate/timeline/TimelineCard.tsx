@@ -67,7 +67,7 @@ export const TimelineCard = React.memo(function TimelineCard({
         )}
       >
         {/* Title + current badge */}
-        <div className="space-y-1 min-h-[38px]">
+        <div className="space-y-1 min-h-1/3">
           <div className="flex items-center justify-between gap-2">
             <HoverCard>
               <HoverCardTrigger>
@@ -111,7 +111,7 @@ export const TimelineCard = React.memo(function TimelineCard({
         </div>
 
         {/* AI result + HR decision */}
-        <div className="pt-1.5 border-t border-border mt-auto">
+        <div className="pt-1.5 border-t border-border">
           <div className="flex flex-col gap-2 min-h-[54px]">
             {event.ai_result && (
               <div className="flex items-center justify-start gap-2">

@@ -326,6 +326,7 @@ export default function AssignAssociatePage() {
               type="button"
               variant="outline"
               className="h-10 rounded-xl font-semibold gap-2 mt-2"
+              onClick={() => navigate(-1)}
             >
               Cancel
             </Button>

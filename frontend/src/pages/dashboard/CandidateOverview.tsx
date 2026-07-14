@@ -18,7 +18,11 @@ import { Button } from "@/components/ui/button";
 import type { TimelineEvent } from "@/types/candidate";
 import { useMemo, useState } from "react";
 import { AssociateEvaluationsDialog } from "@/components/candidate/timeline/AssociateEvaluationsDialog";
-
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card"
 
 function AssociateResultCell({
   event,
@@ -187,14 +191,21 @@ export default function CandidateOverview() {
 
         if (event.hr_decision && !isFutureStage) {
           return (
-            <Link to={`/dashboard/jobs/${jobSlug}/candidates/${candidateName}/stages/${slugify(event.title || "Resume Screening")}`}
-              className="cursor-pointer flex items-center justify-start gap-2 hover:opacity-80 transition-opacity" >
+            <HoverCard >
+              <HoverCardTrigger delay={100} closeDelay={50}>
+                <Link to={`/dashboard/jobs/${jobSlug}/candidates/${candidateName}/stages/${slugify(event.title || "Resume Screening")}`}
+                  className="cursor-pointer flex items-center justify-start gap-2 hover:opacity-80 transition-opacity" >
 
-              <CandidateStatusBadge status={event.hr_decision} />
-              {event.hr_score !== null && event.hr_score !== undefined && (
-                <span className="font-bold">{event.hr_score.toFixed(1)}/5</span>
-              )}
-            </Link>
+                  <CandidateStatusBadge status={event.hr_decision} />
+                  {event.hr_score !== null && event.hr_score !== undefined && (
+                    <span className="font-bold">{event.hr_score.toFixed(1)}/5</span>
+                  )}
+                </Link></HoverCardTrigger>
+              <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
+                <p>{"Hr note here"}</p>
+              </HoverCardContent>
+            </HoverCard>
+
           );
         }
         return <span className="text-xs font-medium ">N/A</span>;

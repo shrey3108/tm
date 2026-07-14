@@ -110,7 +110,7 @@ export const JobTableFilters = ({
                   ? "border-primary/40 bg-primary/10 text-primary hover:bg-primary/10 hover:text-primary"
                   : "border-input text-muted-foreground"
               )}
-            // contentClassName="min-w-[160px]"
+            // contentClassName="min-w-40"
             />
           )}
 

@@ -129,7 +129,7 @@ export const getQuestionsBankColumns = ({
       size: 22,
       meta: { overflow: 'wrap' },
       header: () => (
-        <div className="flex items-center gap-2 min-w-[160px]">
+        <div className="flex items-center gap-2 min-w-40">
           <span className="">Skills</span>
         </div>
       ),
@@ -137,13 +137,13 @@ export const getQuestionsBankColumns = ({
         const skills = row.original.skills;
         if (!skills || skills.length === 0) {
           return (
-            <div className="min-w-[160px] max-w-[220px]">
+            <div className="min-w-40 min-w-55">
               <span>N/A</span>
             </div>
           );
         }
         return (
-          <div className="min-w-[160px] max-w-[220px]">
+          <div className="min-w-40 min-w-55">
             <SkillsBadgeList skills={row.original.skills} maxVisible={2} />
           </div>
         );
