@@ -23,7 +23,7 @@ class JobBase(BaseModel):
     """
 
     processing_version: int | None = Field(None, json_schema_extra={"example": 1})
-    title: str = Field(..., max_length=30)
+    title: str = Field(..., max_length=100)
     vacancy: int | None = None
     department_id: uuid.UUID | None = None
     jd_text: str | None = None
@@ -91,7 +91,7 @@ class JobUpdate(BaseModel):
     """
 
     processing_version: int | None = Field(None, json_schema_extra={"example": 1})
-    title: str | None = Field(None, max_length=30)
+    title: str | None = Field(None, max_length=100)
     vacancy: int | None = None
     department_id: uuid.UUID | None = None
     jd_text: str | None = None

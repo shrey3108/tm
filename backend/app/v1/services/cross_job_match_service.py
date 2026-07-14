@@ -220,12 +220,13 @@ class CrossJobMatchService:
                             
                             # Also save as a ResumeVersionResult for consistent history tracking
                             from app.v1.db.models.resume_version_results import ResumeVersionResult
+                            llm_score = float(analysis_data.get("match_percentage") or 0.0)
                             versioned = ResumeVersionResult(
                                 resume_id=resume_id,
                                 job_id=job.id,
                                 job_version_number=job.version,
-                                resume_score=match_row.match_score,
-                                pass_fail="passed" if float(match_row.match_score) >= (job.passing_threshold or 70.0) else "failed",
+                                resume_score=llm_score,
+                                pass_fail="pass" if llm_score >= float(job.passing_threshold or 70.0) else "fail",
                                 analysis_data=analysis_data,
                             )
                             db2.add(versioned)
@@ -392,12 +393,13 @@ class CrossJobMatchService:
                             match_row.match_analysis = analysis_data
                             flag_modified(match_row, "match_analysis")
                             
+                            llm_score = float(analysis_data.get("match_percentage") or 0.0)
                             versioned = ResumeVersionResult(
                                 resume_id=resume.id,
                                 job_id=job_id,
                                 job_version_number=job.version,
-                                resume_score=match_row.match_score,
-                                pass_fail="passed" if score_val >= (job.passing_threshold or 70.0) else "failed",
+                                resume_score=llm_score,
+                                pass_fail="pass" if llm_score >= float(job.passing_threshold or 70.0) else "fail",
                                 analysis_data=analysis_data,
                             )
                             db2.add(versioned)
