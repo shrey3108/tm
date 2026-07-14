@@ -51,7 +51,7 @@ export function EvaluationHistoryModal({
                   <History className="h-8 w-8 text-muted-foreground/40" />
                 </div>
                 <h4 className="text-lg font-bold">No History Found</h4>
-                <p className="text-sm text-muted-foreground max-w-[240px]">
+                <p className="text-sm text-muted-foreground max-w-60">
                   There are no previous evaluation attempts for this candidate in this stage.
                 </p>
               </div>

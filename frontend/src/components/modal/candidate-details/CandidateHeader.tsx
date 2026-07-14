@@ -32,7 +32,7 @@ export function CandidateHeader({ candidate, activeTab, setActiveTab, passing_th
           <span className="text-sm font-bold sm:text-sm md:text-xl ">
             Candidate Profile
           </span>
-          <span className="text-lg font-black tracking-tight text-foreground sm:text-sm md:text-xl ">
+          <span className="text-lg font-bold tracking-tight text-foreground sm:text-sm md:text-xl ">
             {candidate.first_name}{" "}
             {candidate.last_name}
           </span>

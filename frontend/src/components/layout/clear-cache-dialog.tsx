@@ -89,7 +89,7 @@ export function ClearCacheDialog({ open, onOpenChange }: ClearCacheDialogProps) 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-3xl md:max-w-4xl lg:max-w-5xl max-h-[90vh] flex flex-col p-0 overflow-hidden bg-card/95 backdrop-blur-xl border-muted-foreground/20 shadow-2xl rounded-2xl h-150 gap-2">
         <DialogHeader className="p-2 pb-1 border-b border-muted-foreground/10 bg-muted/30">
-          <DialogTitle className="text-xl font-black tracking-tight text-foreground capitalize">Clear System Cache</DialogTitle>
+          <DialogTitle className="text-xl font-bold tracking-tight text-foreground capitalize">Clear System Cache</DialogTitle>
           {/* <DialogDescription className="text-sm">
             Select specific cache keys to clear or clear the entire system cache.
           </DialogDescription> */}
@@ -149,7 +149,7 @@ export function ClearCacheDialog({ open, onOpenChange }: ClearCacheDialogProps) 
                 ))}
               </div>
             ) : (
-              <div className="flex flex-col h-full min-h-[300px] items-center justify-center text-center gap-2">
+              <div className="flex flex-col h-full min-h-75 items-center justify-center text-center gap-2">
                 <div className="p-4 rounded-full bg-muted/20">
                   <Search className="h-8 w-8 text-muted-foreground/40" />
                 </div>

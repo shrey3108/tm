@@ -56,6 +56,7 @@ export interface TimelineEvent {
   hr_decision?: string | null;
   metadata?: Record<string, any> | null;
   associate_marks?: Associate_Marks[]
+  hr_decision_notes?: string[]
 }
 
 export interface HiringTimelineResponse {

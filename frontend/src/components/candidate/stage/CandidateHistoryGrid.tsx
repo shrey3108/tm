@@ -37,7 +37,7 @@ export function CandidateHistoryGrid({
             <div className="h-6 w-6 rounded-xl bg-primary/10 flex items-center justify-center">
               <History className="h-4 w-4 text-primary" />
             </div>
-            <span className="text-sm font-black  text-muted-foreground">
+            <span className="text-sm font-bold text-muted-foreground">
               Decision History
             </span>
           </div>
@@ -56,7 +56,7 @@ export function CandidateHistoryGrid({
             <div className="h-6 w-6 rounded-xl bg-primary/10 flex items-center justify-center">
               <FileText className="h-4 w-4 " />
             </div>
-            <span className="text-sm font-black  text-muted-foreground">
+            <span className="text-sm font-bold  text-muted-foreground">
               Recent Transcripts
             </span>
           </div>
@@ -69,7 +69,7 @@ export function CandidateHistoryGrid({
                 className="w-full h-auto flex flex-col items-start p-2 rounded-lg hover:bg-accent transition-colors text-left"
               >
                 <div className="flex flex-col items-start gap-1">
-                  <span className="text-[10px] font-black text-muted-foreground leading-none">
+                  <span className="text-[10px] font-bold text-muted-foreground leading-none">
                     Transcript #{index + 1}
                   </span>
                   <div className="flex items-center gap-1.5 text-xs text-muted-foreground">

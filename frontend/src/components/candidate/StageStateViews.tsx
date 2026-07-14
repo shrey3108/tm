@@ -16,7 +16,7 @@ export function PollingState() {
         </div>
       </div>
       <div className="text-center space-y-1">
-        <h3 className="text-xl font-black uppercase tracking-tight">AI Analysis in Progress</h3>
+        <h3 className="text-xl font-medium uppercase tracking-tight">AI Analysis in Progress</h3>
         <p className="text-muted-foreground max-w-xs mx-auto">
           Your request has been queued and is now being analyzed. Results will be available shortly.
         </p>
@@ -48,7 +48,7 @@ export function EmptyState({ error, isFailed, onRetry, isRetrying }: EmptyStateP
           <AlertCircle className="h-10 w-10" />
         </div>
         <div className="space-y-2">
-          <h3 className="text-xl font-black uppercase tracking-tight text-destructive">
+          <h3 className="text-xl font-bold uppercase tracking-tight text-destructive">
             Evaluation Failed
           </h3>
           <p className="text-muted-foreground text-sm leading-relaxed max-w-xs mx-auto">
@@ -75,7 +75,7 @@ export function EmptyState({ error, isFailed, onRetry, isRetrying }: EmptyStateP
         <FileText className="h-10 w-10 text-muted-foreground" />
       </div>
       <div>
-        <h3 className="text-xl font-black uppercase tracking-tight">No Evaluation Data</h3>
+        <h3 className="text-xl font-bold uppercase tracking-tight">No Evaluation Data</h3>
 
       </div>
     </div>
@@ -95,7 +95,7 @@ export function SubmittedState({ githubUrl, onEvaluate, isEvaluating }: Submitte
         <GithubLogo className="h-10 w-10" />
       </div>
       <div className="space-y-2">
-        <h3 className="text-xl font-black uppercase tracking-tight text-primary">
+        <h3 className="text-xl font-bold uppercase tracking-tight text-primary">
           Repository Submitted
         </h3>
         <p className="text-muted-foreground text-sm leading-relaxed max-w-xs mx-auto">

@@ -109,14 +109,14 @@ export function CrossMatchView({ resumeId, onClose }: CrossMatchViewProps) {
       size: 20,
       meta: { overflow: 'ellipsis' },
       cell: ({ row }) => (
-        <div className="flex items-center gap-1.5 min-w-[140px]">
+        <div className="flex items-center gap-1.5 min-w-35">
           <div className="w-20 h-1.5 bg-muted rounded-full overflow-hidden">
             <div
               className="h-full bg-blue-600 rounded-full"
               style={{ width: `${row.original.match_score}%` }}
             />
           </div>
-          <span className="font-black text-blue-600 tracking-tight text-xs">
+          <span className="font-bold text-blue-600 tracking-tight text-xs">
             {row.original.match_score}%
           </span>
         </div>

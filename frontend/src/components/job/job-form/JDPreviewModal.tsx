@@ -31,7 +31,7 @@ export function JDPreviewModal({ isOpen, onOpenChange, versionId }: JDPreviewMod
                     </DialogTitle>
                 </DialogHeader>
 
-                <div className="relative min-h-[300px] flex-1 overflow-hidden">
+                <div className="relative min-h-75 flex-1 overflow-hidden">
                     {isPreviewLoading ? (
                         <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-background/50 backdrop-blur-[2px] z-10">
                             <Loader2 className="h-8 w-8 animate-spin text-primary" />

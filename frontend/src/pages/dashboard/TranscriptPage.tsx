@@ -44,7 +44,7 @@ export default function TranscriptPage() {
             <FileText className="h-10 w-10 text-muted-foreground" />
           </div>
           <div>
-            <h3 className="text-xl font-black uppercase tracking-tight">Transcript Not Found</h3>
+            <h3 className="text-xl font-bold uppercase tracking-tight">Transcript Not Found</h3>
             <Button variant="ghost" onClick={() => navigate(-1)} className="mt-4">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Go Back
@@ -70,7 +70,7 @@ export default function TranscriptPage() {
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div>
-              <h1 className="text-2xl font-black tracking-tight uppercase">
+              <h1 className="text-2xl font-bold tracking-tight uppercase">
                 {candidateName ? `${candidateName}'s Transcript` : "Interview Transcript"}
               </h1>
               <p className="text-muted-foreground text-sm font-medium">
@@ -83,35 +83,7 @@ export default function TranscriptPage() {
 
         {/* Content Section */}
         <div className="flex gap-2">
-          {/* Sidebar Info */}
-          {/* <div className="lg:col-span-1 space-y-6">
-            <Card className="rounded-3xl border-primary/10 shadow-lg bg-muted/20">
-              <CardContent className="p-6 space-y-6">
-                <div className="space-y-2">
-                  <span className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Metadata</span>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="font-bold text-muted-foreground">ID</span>
-                      <span className="font-mono text-[10px] bg-background px-2 py-0.5 rounded border">{transcript.id.split('-')[0]}...</span>
-                    </div>
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="font-bold text-muted-foreground">Status</span>
-                      <Badge className="bg-green-500 hover:bg-green-600 font-bold">Processed</Badge>
-                    </div>
-                  </div>
-                </div>
 
-                <div className="pt-6 border-t border-primary/5 space-y-4">
-                  <span className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">AI Insights</span>
-                  <div className="space-y-2">
-                    <p className="text-xs font-medium text-muted-foreground leading-relaxed">
-                      This transcript was processed using advanced speech-to-text models and analyzed for key evaluation criteria.
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div> */}
 
           {/* Dialogue Feed */}
           <div className="space-y-2">
@@ -132,7 +104,7 @@ export default function TranscriptPage() {
                   </div>
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-black uppercase">
+                      <span className="text-xs font-bold uppercase">
                         {turn.speaker}
                       </span>
                     </div>

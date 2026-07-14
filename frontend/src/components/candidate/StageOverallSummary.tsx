@@ -90,7 +90,7 @@ export function StageOverallSummary({ data }: StageOverallSummaryProps) {
     <Accordion>
       <AccordionItem>
         <AccordionTrigger className={"hover:no-underline px-2 py-2"}> <div className=" flex flex-wrap gap-4 items-center justify-between">
-          <h2 className="text-sm font-black tracking-tight">Overall Summary</h2>
+          <h2 className="text-sm tracking-tight">Overall Summary</h2>
           <div className="flex gap-3">
             <Badge className="px-2 h-8" variant="outline">
               <span className="font-semibold">{data.percentage}%</span>
@@ -109,7 +109,7 @@ export function StageOverallSummary({ data }: StageOverallSummaryProps) {
             {/* Overall Summary Section */}
             {data.overall_summary && (
               <div>
-                <span className="text-sm font-black text-muted-foreground tracking-wide block mb-1 uppercase">Summary</span>
+                <span className="text-sm font-medium tracking-wide block mb-1 uppercase">Summary</span>
                 <OverallSummaryText value={data.overall_summary} />
               </div>
             )}
@@ -208,7 +208,7 @@ function SummaryList({
     const { score, remainingItems } = extractLeadingScore(items as string[]);
     return (
       <div className={className}>
-        <span className={`text-sm font-black tracking-wide block mb-2 uppercase ${titleColor}`}>
+        <span className={`text-sm font-medium tracking-wide block mb-2 uppercase ${titleColor}`}>
           {title}{score && (
             <Badge variant="outline" className="ml-2 text-xs font-semibold px-1.5 py-0 normal-case">
               {score}
@@ -231,7 +231,7 @@ function SummaryList({
   // Categorized format: array of { "JD Alignment": ["item1", "item2"], ... }
   return (
     <div className={className}>
-      <span className={`text-base font-black tracking-wide block mb-2 uppercase ${titleColor}`}>
+      <span className={`text-base font-medium tracking-wide block mb-2 uppercase ${titleColor}`}>
         {title}
       </span>
       <div className="space-y-3">

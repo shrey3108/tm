@@ -125,7 +125,7 @@ export const getJobColumns = ({
       },
       cell: ({ row }) => (
         <PermissionGuard permissions={PERMISSIONS.JOBS_MANAGE} hideWhenDenied>
-          <div className="flex items-center justify-center gap-3 max-w-[100px] ">
+          <div className="flex items-center justify-center gap-3 max-w-25 ">
             <JobStatus
               job={row.original}
               onToggleStatus={() => onToggleStatus(row.original)}
@@ -189,7 +189,7 @@ export const getJobColumns = ({
         )
       },
       cell: ({ row }) => (
-        <div className="min-w-40 min-w-55">
+        <div className="min-w-40 max-w-55">
           <SkillsBadgeList
             skills={row.original.skills}
             maxVisible={2}

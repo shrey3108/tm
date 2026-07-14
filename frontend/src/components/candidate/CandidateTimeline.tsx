@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { Clock, ChevronRight } from "lucide-react";
 import { useCandidateTimelineQuery } from "@/hooks/queries/candidates";
-import type { TimelineEvent } from "@/types/candidate";
+import type { TimelineEvent } from "@/types/timeline";
 import type { Job } from "@/types/job";
 import type { CandidateAnalysis } from "@/types/admin";
 import { useNavigate } from "react-router-dom";
@@ -77,7 +77,7 @@ export function CandidateTimeline({
   return (
     <div className={cn("w-full py-2", className)}>
       <div className="px-4 mb-2 flex justify-between items-center">
-        <h3 className="text-xs font-black text-muted-foreground flex items-center gap-2 w-full">
+        <h3 className="text-xs text-muted-foreground flex items-center gap-2 w-full">
           <Clock className="h-3 w-3" />
           Hiring Journey Timeline
         </h3>

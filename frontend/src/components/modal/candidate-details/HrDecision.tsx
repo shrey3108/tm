@@ -21,7 +21,7 @@ export function HrDecision({ decision }: HrDecisionProps) {
   return (
     <section className="px-4 py-2 rounded-2xl bg-primary/5 border border-primary/10 space-y-2">
       <div className="flex items-center justify-between">
-        <h3 className="text-xs font-black uppercase text-primary flex items-center gap-2">
+        <h3 className="text-xs font-bold uppercase text-primary flex items-center gap-2">
           <MessageSquare className="h-4 w-4" />
           HR Decision
         </h3>

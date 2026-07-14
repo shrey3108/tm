@@ -135,7 +135,7 @@ export function NavUser() {
       </SidebarMenu>
 
       <Dialog open={isLogoutDialogOpen} onOpenChange={setIsLogoutDialogOpen}>
-        <DialogContent className="sm:max-w-[400px] rounded-[2rem] p-6 border-none ring-1 ring-border/50 shadow-2xl">
+        <DialogContent className="sm:max-w-100 rounded-[2rem] p-6 border-none ring-1 ring-border/50 shadow-2xl">
           <DialogHeader className="gap-3">
             <div className="h-12 w-12 rounded-2xl bg-red-50 dark:bg-red-950/30 flex items-center justify-center text-red-500 mx-auto">
               <LogOut className="h-6 w-6" />

@@ -45,7 +45,7 @@ export const getQuestionsBankColumns = ({
       size: 44,
       meta: { overflow: 'wrap' },
       header: () => (
-        <div className="min-w-[400px] ">
+        <div className="min-w-100">
           <span className="text-base">Content</span>
         </div>
       ),
@@ -137,13 +137,13 @@ export const getQuestionsBankColumns = ({
         const skills = row.original.skills;
         if (!skills || skills.length === 0) {
           return (
-            <div className="min-w-40 min-w-55">
+            <div className="min-w-40 max-w-55">
               <span>N/A</span>
             </div>
           );
         }
         return (
-          <div className="min-w-40 min-w-55">
+          <div className="min-w-40 max-w-55">
             <SkillsBadgeList skills={row.original.skills} maxVisible={2} />
           </div>
         );

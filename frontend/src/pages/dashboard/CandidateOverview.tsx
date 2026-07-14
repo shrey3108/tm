@@ -15,7 +15,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import CandidateStatusBadge from "@/components/shared/CandidateStatusBadge";
 import { Button } from "@/components/ui/button";
-import type { TimelineEvent } from "@/types/candidate";
+import type { TimelineEvent } from "@/types/timeline";
 import { useMemo, useState } from "react";
 import { AssociateEvaluationsDialog } from "@/components/candidate/timeline/AssociateEvaluationsDialog";
 import {
@@ -202,7 +202,7 @@ export default function CandidateOverview() {
                   )}
                 </Link></HoverCardTrigger>
               <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
-                <p>{"Hr note here"}</p>
+                <p>{event.hr_decision_notes}</p>
               </HoverCardContent>
             </HoverCard>
 

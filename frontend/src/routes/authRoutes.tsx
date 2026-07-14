@@ -4,7 +4,7 @@ import PublicRoute from "@/components/auth/PublicRoute";
 
 const LoginPage = lazy(() => import("@/pages/Auth/LoginPage"));
 const RegisterPage = lazy(() => import("@/pages/Auth/RegisterPage"));
-const AssociateReviewPage = lazy(() => import("@/pages/Public/AssociateReviewPage"));
+
 
 export const authRoutes: RouteObject[] = [
   {
@@ -22,9 +22,5 @@ export const authRoutes: RouteObject[] = [
         <LoginPage />
       </PublicRoute>
     ),
-  },
-  {
-    path: "associate-reviews/:token",
-    element: <AssociateReviewPage />,
   },
 ];

@@ -51,7 +51,7 @@ export function AnalysisContent({
   return (
     <div className="space-y-1">
       {/* Summary Sections */}
-      <div className="grid grid-cols-1 gap-3">
+      <div className="grid grid-cols-1 gap-2">
         <section className="space-y-2">
           <Card className="text-base leading-relaxed p-2 gap-1">
             <h3 className="text-lg font-medium tracking-tight flex items-center gap-2 text-foreground">
@@ -100,7 +100,7 @@ export function AnalysisContent({
         )}
 
       {/* Skills & Extraordinary Points */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-2">
         <section className="space-y-2">
           <h3 className="text-lg font-medium tracking-tight flex items-center gap-2 text-foreground">
             <AlertCircle className="h-5 w-5" />

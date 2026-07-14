@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { useCandidateAssociateResultsQuery } from "@/hooks/queries/candidates/useCandidateStagesQueries";
 
 import { isEventCompleted, isEventOngoing, isEventPending } from "./timelineStatusUtils";
-import type { TimelineEvent } from "@/types/candidate";
+import type { TimelineEvent } from "@/types/timeline";
 import {
   HoverCard,
   HoverCardContent,
@@ -52,7 +52,7 @@ export const TimelineCard = React.memo(function TimelineCard({
       <Card
         onClick={isDisabled ? undefined : onClick}
         className={cn(
-          "flex min-w-[230px] flex-col p-2.5 gap-1.5 shrink-0 border transition-all",
+          "flex min-w-57.5 flex-col p-2.5 gap-1.5 shrink-0 border transition-all",
           isDisabled
             ? "opacity-50 cursor-not-allowed border-muted-foreground/10 bg-card"
             : cn(
@@ -73,7 +73,7 @@ export const TimelineCard = React.memo(function TimelineCard({
               <HoverCardTrigger>
                 <h4
                   className={cn(
-                    "font-black text-xs text-wrap line-clamp-1",
+                    " text-xs text-wrap line-clamp-1",
                     isSelected
                       ? "text-black font-bold dark:text-white"
                       : pending
@@ -89,7 +89,7 @@ export const TimelineCard = React.memo(function TimelineCard({
             {isActuallyActive && (
               <Badge
                 variant="secondary"
-                className="text-[10px] px-1.5 py-0 h-4 bg-primary/20 text-primary border-primary/30 font-black uppercase tracking-tighter whitespace-nowrap"
+                className="text-[10px] px-1.5 py-0 h-4 bg-primary/20 text-primary border-primary/30 font-bold uppercase tracking-tighter whitespace-nowrap"
               >
                 Current
               </Badge>
@@ -112,7 +112,7 @@ export const TimelineCard = React.memo(function TimelineCard({
 
         {/* AI result + HR decision */}
         <div className="pt-1.5 border-t border-border">
-          <div className="flex flex-col gap-2 min-h-[54px]">
+          <div className="flex flex-col gap-2 min-h-13.5">
             {event.ai_result && (
               <div className="flex items-center justify-start gap-2">
                 <span className="text-xs font-bold uppercase tracking-tight text-foreground/60">

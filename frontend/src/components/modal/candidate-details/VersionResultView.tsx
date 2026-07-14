@@ -111,7 +111,7 @@ export function VersionResultView({
         </div>
 
         <div className="flex items-center gap-3 bg-muted/40 p-1.5 rounded-xl border border-muted-foreground/10 px-3.5 sm:mr-1">
-          <span className="text-[10px] font-black uppercase text-muted-foreground tracking-wider whitespace-nowrap">
+          <span className="text-xs font-bold uppercase text-muted-foreground">
             Select Version:
           </span>
           <SearchableSelect
@@ -126,7 +126,7 @@ export function VersionResultView({
         </div>
       </div>
 
-      <div className="relative min-h-[400px]">
+      <div className="relative min-h-100">
         <div className="animate-in fade-in duration-700">
           {activeResult.analysis ? (
             <AnalysisContent
@@ -141,7 +141,7 @@ export function VersionResultView({
                 <History className="h-8 w-8 text-muted-foreground/30" />
               </div>
               <h4 className="text-sm font-bold text-foreground mb-1">Detailed Analysis Archived</h4>
-              <p className="text-xs text-muted-foreground italic max-w-[280px]">
+              <p className="text-xs text-muted-foreground italic max-w-70">
                 Archived analysis breakdown for JD Version {activeResult.version} is not available in the current history.
               </p>
             </div>

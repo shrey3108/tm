@@ -16,7 +16,7 @@ interface AnalysisTabsProps {
  * inside the candidate details modal.
  */
 export function AnalysisTabs({ activeTab, setActiveTab }: AnalysisTabsProps) {
-  const commonStyle = "h-8 rounded-lg px-2 text-sm font-black tracking-wider transition-all";
+  const commonStyle = "h-8 rounded-lg px-2 text-sm font-bold tracking-wider transition-all";
   const activeStyle = "bg-muted-foreground/15 dark:bg-muted-foreground/25 text-foreground shadow-sm";
   return (
     <div className="grid w-full grid-cols-2 gap-1 rounded-xl border border-muted-foreground/5 bg-background/50 p-1 sm:flex lg:w-auto">

@@ -173,7 +173,7 @@ export function JobCandidatesCharts({
       {/* Priority Timeline Section */}
       <div className="group overflow-hidden relative w-full p-0.5 sm:col-span-2 animate-in fade-in slide-in-from-top-4 duration-1000">
         <div className="flex items-center justify-between gap-6 mb-2 border-b border-muted-foreground/10 pb-4">
-          <h4 className="font-black text-lg text-foreground tracking-tight capitalize">
+          <h4 className="font-bold text-lg text-foreground tracking-tight capitalize">
             {CHART_TEXTS.priorityTimeline.label}
           </h4>
           <div className="flex-1 flex items-center justify-end animate-in fade-in slide-in-from-right-2 duration-500">
@@ -186,7 +186,7 @@ export function JobCandidatesCharts({
         <div className="sm:col-span-2">
           <div className="inline-flex items-center gap-1 p-1 rounded-lg bg-primary/10 border border-primary/20 text-sm font-semibold text-primary">
             <span>Filtering by stage:</span>
-            <span className="font-black">{selectedStage}</span>
+            <span className="font-bold">{selectedStage}</span>
             <Button
               onClick={() => setSelectedStage(null)}
               variant={"ghost"}
@@ -210,7 +210,7 @@ export function JobCandidatesCharts({
         >
           <div className="flex items-center justify-between gap-1 border-b border-muted-foreground/10 pb-2">
             <div>
-              <h4 className="font-black text-lg text-foreground tracking-tight capitalize">
+              <h4 className="font-bold text-lg text-foreground tracking-tight capitalize">
                 {title}
               </h4>
               {/* <p className="text-sm text-muted-foreground font-medium">{description}</p> */}

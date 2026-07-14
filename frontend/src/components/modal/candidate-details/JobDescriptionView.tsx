@@ -54,7 +54,7 @@ export function JobDescriptionView({
                 <FileText className="h-5.5 w-5.5" />
               </div>
               <div className="flex min-w-0 flex-col">
-                <h4 className="wrap-break-word text-base font-black tracking-tight sm:text-lg">
+                <h4 className="wrap-break-word text-base font-bold tracking-tight sm:text-lg">
                   {selectedVersionData.title}
                 </h4>
                 <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-none">
@@ -87,7 +87,7 @@ export function JobDescriptionView({
                 </div>
               )}
               {appliedVersionNumber === selectedVersionData.version_number && (
-                <div className="flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-[9px] font-black tracking-wider text-primary border border-primary/20 whitespace-nowrap">
+                <div className="flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-[9px] font-bold tracking-wider text-primary border border-primary/20 whitespace-nowrap">
                   <div className="h-1 w-1 rounded-full bg-primary animate-pulse" />
                   USED FOR ANALYSIS
                 </div>

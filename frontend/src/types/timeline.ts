@@ -3,6 +3,8 @@
  * Matches backend schemas in timeline.py.
  */
 
+import type { Associate_Marks } from "./candidate";
+
 export interface AssociateMarkEntry {
   /** A single associate's weighted evaluation result for a stage. */
   associate_name: string;
@@ -10,24 +12,23 @@ export interface AssociateMarkEntry {
 }
 
 export interface TimelineEvent {
-  /** Event type: 'stage' or 'decision' */
-  event_type: string;
-  event_date?: string | null;
+  event_type: "stage" | "decision";
+  event_date: string | Date;
   title: string;
   description?: string | null;
   result?: string | null;
-  ai_result?: string | null;
-  hr_decision?: string | null;
   score?: number | null;
-  ai_score?: number | null;
-  hr_score?: number | null;
+  ai_score?: number;
+  hr_score?: number;
   stage_id?: string | null;
   stage_name?: string | null;
   job_id?: string | null;
   job_stage_config_id?: string | null;
+  ai_result?: string | null;
+  hr_decision?: string | null;
   metadata?: Record<string, any> | null;
-  /** Associate evaluation marks (name: marks out of 5) for github+question round stages */
-  associate_marks: AssociateMarkEntry[];
+  associate_marks?: Associate_Marks[]
+  hr_decision_notes?: string[]
 }
 
 export interface HiringTimelineResponse {

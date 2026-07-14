@@ -50,6 +50,7 @@ export function ResumeScreeningView({
           Show More
         </Button>
       </div>
+
       <AnalysisContent
         candidate={candidateData}
         showAllSkills={showAllSkills}
@@ -59,7 +60,9 @@ export function ResumeScreeningView({
         {latestDecision && latestDecision.decision.toLowerCase() !== "may be" && (
           <HrDecision decision={latestDecision} />
         )}
-        <DecisionHistory decisions={filteredHistory as HrDecisionHistoryItem[]} />
+        <div className="mt-2">
+          <DecisionHistory decisions={filteredHistory as HrDecisionHistoryItem[]} />
+        </div>
       </AnalysisContent>
     </div>
   );

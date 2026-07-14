@@ -20,9 +20,9 @@ export function DecisionHistory({ decisions }: DecisionHistoryProps) {
   }
 
   return (
-    <section className="space-y-3">
+    <section className="space-y-3 gap-2">
       <div className="flex items-center justify-between px-1">
-        <h3 className="text-sm font-black uppercase tracking-widest text-foreground flex items-center gap-2">
+        <h3 className="text-sm font-bold uppercase tracking-widest text-foreground flex items-center gap-2">
           <History className="h-4 w-4" />
           HR Decision History
         </h3>
