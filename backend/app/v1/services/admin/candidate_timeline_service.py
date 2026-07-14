@@ -352,6 +352,7 @@ class CandidateTimelineService:
                 target_ev["result"] = dec.decision
                 target_ev["hr_score"] = float(dec.score) if dec.score is not None else None
                 if dec.notes:
+                    target_ev["hr_decision_notes"] = dec.notes
                     note_text = f" HR Notes: {dec.notes}"
                     if note_text not in (target_ev["description"] or ""):
                         target_ev["description"] = (target_ev["description"] or "") + note_text

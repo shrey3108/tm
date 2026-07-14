@@ -75,19 +75,24 @@ async def async_send_associate_reminders():
                     stage_name = evaluation.candidate_stage.job_stage.template.name
 
                 # Send email
-                await send_associate_reminder_email(
-                    associate_name=evaluation.associate.name,
-                    associate_email=evaluation.associate.email,
-                    candidate=evaluation.candidate,
-                    test_paper=evaluation.test_paper,
-                    review_token=evaluation.review_token,
-                    job=evaluation.job,
-                    stage_name=stage_name,
-                )
-                
-                # Update DB
-                evaluation.last_reminder_sent_at = now
-                count += 1
+                try:
+                    await send_associate_reminder_email(
+                        associate_name=evaluation.associate.name,
+                        associate_email=evaluation.associate.email,
+                        candidate=evaluation.candidate,
+                        test_paper=evaluation.test_paper,
+                        review_token=evaluation.review_token,
+                        job=evaluation.job,
+                        stage_name=stage_name,
+                    )
+                    
+                    # Update DB only if successful
+                    evaluation.last_reminder_sent_at = now
+                    count += 1
+                except Exception as e:
+                    logger.error(f"Failed to send reminder for evaluation {evaluation.id}: {str(e)}")
+                    # Continue to the next evaluation without updating the timestamp
+                    continue
                 
         if count > 0:
             await db.commit()
