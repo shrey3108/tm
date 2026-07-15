@@ -121,9 +121,27 @@ def _parse_all_items(test_paper: CandidateTestPaper) -> list[dict]:
                         st_name = st.get("name") or f"Sub-task {si + 1}"
                         st_desc = st.get("description") or ""
                         st_marks = st.get("marks")
-                        display = st_name
+                        
+                        display = f"Task- {st_name}"
                         if st_desc:
                             display += f"\n{st_desc}"
+                        
+                        # Emit a separate header item for the project title and description on the first subtask
+                        if si == 0:
+                            title_prefix = str(t.get("title") or t.get("task") or f"Project Task {idx + 1}")
+                            header = title_prefix
+                            desc = t.get("description")
+                            if desc and str(desc).strip().lower() != title_prefix.strip().lower():
+                                header += f"\nDescription: {str(desc)}"
+                                
+                            items.append({
+                                "item_type": "task",
+                                "question_text": header,
+                                "max_marks": None,
+                                "skill_ids": None,
+                                "is_header": True,
+                            })
+                            
                         items.append({
                             "item_type": "task",
                             "question_text": display,
@@ -498,14 +516,24 @@ def _render_form_html(
             continue
         section_title = type_titles[item_type]
         rows: list[str] = []
+        display_idx = 1
         for idx, it in enumerate(type_items):
             # Use the global index across ALL items so the form field name
             # matches the order in ``items`` (which submit_review_form iterates).
             global_idx = items.index(it)
+            is_header = it.get("is_header", False)
             raw_text = it["question_text"]
             # Escape each line, then join with <br> to preserve newlines.
             escaped_lines = [html.escape(line) for line in raw_text.split("\n")]
             display_html = "<br>".join(escaped_lines)
+            
+            if is_header:
+                rows.append(f"""
+                <div class="question-row" style="background-color: transparent; border: none; padding-bottom: 0;">
+                  <div class="question-text" style="font-weight: 700; color: #1f2937;">{display_html}</div>
+                </div>""")
+                continue
+                
             max_marks = it["max_marks"]
             max_label = f" / {max_marks:g}" if max_marks is not None else ""
             
@@ -520,7 +548,7 @@ def _render_form_html(
 
             rows.append(f"""
             <div class="question-row">
-              <div class="question-text">{idx + 1}. {display_html}</div>
+              <div class="question-text">{display_idx}. {display_html}</div>
               <div class="mark-input">
                 <input type="number" name="marks_{global_idx}" min="0"
                        {f'max="{max_marks:g}"' if max_marks is not None else ''}
@@ -528,6 +556,7 @@ def _render_form_html(
                 <span class="max-label">{max_label}</span>
               </div>
             </div>""")
+            display_idx += 1
         sections_html_parts.append(f"""
         <div class="questions-section">
           <div class="questions-title">{html.escape(section_title)} — Enter Marks Awarded</div>
@@ -776,7 +805,7 @@ def _render_dbd_form_html(
     average_score = (total_score / valid_scores) if valid_scores > 0 else 0.0
     
     # Hiring decision row
-    decisions = ["Select", "Hold", "Reject"]
+    decisions = ["Pass", "May Be", "Reject"]
     decision_options = '<option value="">Select</option>'
     for dec in decisions:
         selected = "selected" if saved_decision == dec else ""

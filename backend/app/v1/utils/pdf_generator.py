@@ -262,13 +262,13 @@ def generate_candidate_task_pdf_file(
         for t in tasks:
             if isinstance(t, dict):
                 # New nested format handling
-                title = t.get("title") or t.get("task") or t.get("content", "Untitled Project")
-                title = str(title) + format_meta(t)
+                original_title = str(t.get("title") or t.get("task") or t.get("content", "Untitled Project"))
+                title = original_title + format_meta(t)
                 Story.append(Paragraph(f"<b>{sanitize_for_pdf(title)}</b>", styles['Heading3']))
                 
                 desc = t.get("description")
-                if desc:
-                    Story.append(Paragraph(f"<b>Description:</b> {sanitize_for_pdf(desc)}", desc_style))
+                if desc and str(desc).strip().lower() != original_title.strip().lower():
+                    Story.append(Paragraph(f"<b>Description:</b> {sanitize_for_pdf(str(desc))}", desc_style))
                     
                 subtasks = t.get("tasks")
                 if subtasks and isinstance(subtasks, list):
