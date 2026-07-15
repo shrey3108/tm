@@ -7,6 +7,7 @@ import {
     DialogFooter,
 } from "@/components/ui/dialog";
 import type { StageTemplate } from "@/types/stage";
+import { Badge } from "@/components/ui/badge";
 
 
 interface StageDetailDialogProps {
@@ -48,6 +49,13 @@ export const StageDetailDialog = ({
                     <DialogDescription className="text-base text-muted-foreground mt-2 line-clamp-2">
                         {template.description || "N/A"}
                     </DialogDescription>
+                    {config?.is_dbd_enabled && (
+                        <div className="mt-2">
+                            <Badge variant="secondary" className="text-xs bg-primary/10 text-primary hover:bg-primary/20 border-primary/20">
+                                DBD Form Enabled
+                            </Badge>
+                        </div>
+                    )}
                 </DialogHeader>
                 <div className="flex-1 overflow-y-auto px-6 py-4">
                     <h3 className="text-base font-semibold text-foreground mb-3">Evaluation Criteria</h3>

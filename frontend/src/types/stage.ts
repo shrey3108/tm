@@ -37,6 +37,8 @@ export interface DefaultConfig {
   evaluation_criteria: (EvaluationCriterionConfig | string)[];
   required_inputs?: StagesRequiredInputs[];
   is_panel_interview?: boolean | null;
+  /** Whether the DBD form is enabled for this stage */
+  is_dbd_enabled?: boolean | null;
   [key: string]: any;
 }
 

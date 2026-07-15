@@ -48,6 +48,12 @@ export interface AssociateReviewResult {
   /** Weighted result converted to a scale of 5: (weighted_total / weighted_max) * 5 */
   weighted_result_out_of_5: number | null;
   review_token?: string;
+  /** DBD dynamic criteria scores */
+  dbd_scores: Record<string, any>[] | null;
+  /** DBD hiring decision */
+  dbd_hiring_decision: string | null;
+  /** DBD note remarks */
+  dbd_remarks: string | null;
 }
 
 export interface AssociateResultsResponse {

@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import {
   Dialog,
   DialogContent,
@@ -53,47 +54,81 @@ export function AssociateEvaluationsDialog({
                     <TableHead className="p-2 h-auto">Sent At</TableHead>
                     <TableHead className="p-2 h-auto">Submitted At</TableHead>
                     <TableHead className="p-2 h-auto">Status / Result</TableHead>
-                    <TableHead className="p-2 h-auto text-right ">Marks</TableHead>
+                    <TableHead className="p-2 h-auto text-right">Marks</TableHead>
+                    <TableHead className="p-2 h-auto">DBD Decision</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody className="text-xs">
                   {associateResults.reviews.map((r) => (
-                    <TableRow key={r.id} className="border-b border-gray-200 dark:border-gray-800">
-                      <TableCell className="p-2 text-gray-900 dark:text-white">
-                        <div>{r.associate_name}</div>
-                        {/* <div className="text-xs  font-normal">{r.associate_email}</div> */}
-                      </TableCell>
-                      <TableCell className="p-2 ">
-                        <DateDisplay date={r.sent_at} showTime={true} className="text-xs" />
-                      </TableCell>
-                      <TableCell className="p-2 ">
-                        {r.submitted_at ? (
-                          <DateDisplay date={r.submitted_at} showTime={true} className="text-xs" />
-                        ) : (
-                          <span className="text-xs">Pending</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="p-2">
-                        <CandidateStatusBadge status={r.result || r.status} />
-                      </TableCell>
-                      <TableCell className="p-2 text-right">
-                        <div className="flex flex-col items-end gap-1">
-                          {r.weighted_result_out_of_5 !== null && r.weighted_result_out_of_5 !== undefined ? (
-                            <span className="font-bold text-gray-900 dark:text-white">{r.weighted_result_out_of_5.toFixed(1)}/5</span>
+                    <Fragment key={r.id}>
+                      <TableRow className="border-b border-gray-200 dark:border-gray-800">
+                        <TableCell className="p-2 text-gray-900 dark:text-white">
+                          <div>{r.associate_name}</div>
+                          {/* <div className="text-xs  font-normal">{r.associate_email}</div> */}
+                        </TableCell>
+                        <TableCell className="p-2">
+                          <DateDisplay date={r.sent_at} showTime={true} className="text-xs" />
+                        </TableCell>
+                        <TableCell className="p-2">
+                          {r.submitted_at ? (
+                            <DateDisplay date={r.submitted_at} showTime={true} className="text-xs" />
                           ) : (
-                            <span className="">-</span>
+                            <span className="text-xs">Pending</span>
                           )}
-                          {r.review_token && r.submitted_at && <Link
-                            to={resolveAssociateViewUrl(r.review_token!)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs text-gray-900 dark:text-white underline font-semibold cursor-pointer"
-                          >
-                            View Marks
-                          </Link>}
-                        </div>
-                      </TableCell>
-                    </TableRow>
+                        </TableCell>
+                        <TableCell className="p-2">
+                          <CandidateStatusBadge status={r.result || r.status} />
+                        </TableCell>
+                        <TableCell className="p-2 text-right">
+                          <div className="flex flex-col items-end gap-1">
+                            {r.weighted_result_out_of_5 !== null && r.weighted_result_out_of_5 !== undefined ? (
+                              <span className="font-bold text-gray-900 dark:text-white">{r.weighted_result_out_of_5.toFixed(1)}/5</span>
+                            ) : (
+                              <span className="">-</span>
+                            )}
+                            {r.review_token && r.submitted_at && <Link
+                              to={resolveAssociateViewUrl(r.review_token!)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-gray-900 dark:text-white underline font-semibold cursor-pointer"
+                            >
+                              View Marks
+                            </Link>}
+                          </div>
+                        </TableCell>
+                        <TableCell className="p-2">
+                          {r.dbd_hiring_decision ? (
+                            <CandidateStatusBadge status={r.dbd_hiring_decision} />
+                          ) : (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                      {(r.dbd_scores || r.dbd_remarks) && (
+                        <TableRow className="border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-zinc-900/30">
+                          <TableCell colSpan={6} className="p-2 text-xs">
+                            <div className="flex flex-col gap-1.5 pl-2 border-l-2 border-primary/30">
+                              {r.dbd_scores && r.dbd_scores.length > 0 && (
+                                <div className="flex flex-wrap gap-1.5 items-center">
+                                  <span className="font-semibold text-muted-foreground text-[10px] uppercase tracking-wider mr-1">DBD Scores:</span>
+                                  {r.dbd_scores.map((score, i) => (
+                                    <span key={i} className="inline-flex items-center px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">
+                                      {score.name}: {score.score}/5
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                              {r.dbd_remarks && (
+                                <div className="flex items-start gap-1">
+                                  <span className="font-semibold text-muted-foreground text-[10px] uppercase tracking-wider mr-1 shrink-0">Remarks:</span>
+                                  <p className="text-foreground/80 italic">"{r.dbd_remarks}"</p>
+                                </div>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </Fragment>
                   ))}
                 </TableBody>
               </Table>

@@ -108,6 +108,34 @@ export default function AdminJobStages() {
         }
     };
 
+    const handleDbdToggle = async (template: StageTemplate, isChecked: boolean) => {
+        try {
+            const config = template.config || (template as any).default_config || {};
+            const criteriaIds = config.evaluation_criteria?.flatMap((item: any) => {
+                const val = typeof item === "string"
+                    ? item
+                    : (item && typeof item === "object" && "id" in item ? item.id : "");
+                return val ? [val] : [];
+            }) || config.criteria_ids || [];
+
+            await updateStageMutation.mutateAsync({
+                id: template.id,
+                data: {
+                    default_config: {
+                        is_active: config.is_active ?? true,
+                        required_inputs: config.required_inputs || [],
+                        criteria_ids: criteriaIds,
+                        is_dbd_enabled: isChecked,
+                    }
+                } as any
+            });
+            toast.success("Stage template updated successfully");
+        } catch (error) {
+            const errorMessage = extractErrorMessage(error, "Failed to update stage template");
+            toast.error(errorMessage);
+        }
+    };
+
     const handleDeleteClick = (template: StageTemplate) => {
         setSelectedTemplate(template);
         setIsDeleteOpen(true);
@@ -218,6 +246,41 @@ export default function AdminJobStages() {
             ),
         },
         {
+            accessorKey: "config.is_dbd_enabled",
+            size: 15,
+            meta: { overflow: 'ellipsis' },
+            header: ({ column }) => (
+                <Button
+                    variant="ghost"
+                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                    className="hover:bg-transparent p-0 font-semibold text-base gap-2 flex items-center justify-center w-full"
+                >
+                    <span className="truncate ">DBD</span>
+                    <ArrowUpDown className="h-4 w-4 shrink-0" />
+                </Button>
+            ),
+            cell: ({ row }) => {
+                const config = row.original.config || (row.original as any).default_config;
+                return (
+                    <div className="flex items-center justify-center gap-2">
+                        <Switch
+                            checked={config?.is_dbd_enabled ?? false}
+                            onCheckedChange={(isChecked) => handleDbdToggle(row.original, isChecked)}
+                            size="sm"
+                            disabled={row.original.name === "Resume Screening"}
+                        />
+                    </div>
+                );
+            },
+            sortingFn: (rowA, rowB) => {
+                const configA = rowA.original.config || (rowA.original as any).default_config;
+                const configB = rowB.original.config || (rowB.original as any).default_config;
+                const valA = configA?.is_dbd_enabled ? 1 : 0;
+                const valB = configB?.is_dbd_enabled ? 1 : 0;
+                return valA - valB;
+            },
+        },
+        {
             accessorKey: "required_inputs",
             size: 12,
             meta: { overflow: 'wrap' },
@@ -229,7 +292,7 @@ export default function AdminJobStages() {
             cell: ({ row }) => {
                 const requiredInputs = row.original.config?.required_inputs || [];
                 return (
-                    <span className="truncate line-clamp-1 capitalize">
+                    <span className="line-clamp-2 capitalize">
                         {requiredInputs.length > 0 ? requiredInputs.join(", ") : "N/A"}
                     </span>
                 );

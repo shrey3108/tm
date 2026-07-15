@@ -68,6 +68,7 @@ export default function AdminJobStageForm() {
                 criteria_ids: [],
                 is_active: true,
                 required_inputs: [],
+                is_dbd_enabled: false,
             },
             is_default: false,
             default_order: 0,
@@ -77,7 +78,7 @@ export default function AdminJobStageForm() {
     const defaultConfig = useWatch({
         control: form.control,
         name: "default_config",
-        defaultValue: { criteria_ids: [], is_active: true, required_inputs: [] },
+        defaultValue: { criteria_ids: [], is_active: true, required_inputs: [], is_dbd_enabled: false },
     });
 
     const selectedCriteriaIds = (defaultConfig?.criteria_ids as string[]) || [];
@@ -109,6 +110,7 @@ export default function AdminJobStageForm() {
                     }) || [],
                     is_active: config?.is_active ?? true,
                     required_inputs: config?.required_inputs || [],
+                    is_dbd_enabled: config?.is_dbd_enabled ?? false,
                 },
                 is_default: is_default || false,
                 default_order: default_order ?? 0,
@@ -273,7 +275,7 @@ export default function AdminJobStageForm() {
                                 )}
                             />
 
-                            <div className="grid grid-cols-2 gap-2">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                                 <FormField
                                     control={form.control}
                                     name="default_config.is_active"
@@ -309,6 +311,27 @@ export default function AdminJobStageForm() {
                                             <FormControl>
                                                 <Switch
                                                     checked={field.value}
+                                                    onCheckedChange={field.onChange}
+                                                />
+                                            </FormControl>
+                                        </FormItem>
+                                    )}
+                                />
+
+                                <FormField
+                                    control={form.control}
+                                    name="default_config.is_dbd_enabled"
+                                    render={({ field }) => (
+                                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-2 shadow-sm">
+                                            <div className="space-y-0.5">
+                                                <FormLabel>Enable DBD Form</FormLabel>
+                                                {/* <FormDescription>
+                                                Indicate if the DBD evaluation form is enabled for this stage.
+                                            </FormDescription> */}
+                                            </div>
+                                            <FormControl>
+                                                <Switch
+                                                    checked={field.value ?? false}
                                                     onCheckedChange={field.onChange}
                                                 />
                                             </FormControl>

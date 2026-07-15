@@ -11,6 +11,7 @@ const stageTemplateBaseSchema = z.object({
     is_active: z.boolean().default(true),
     required_inputs: z.array(z.enum(["resume", "transcript", "question", "github"])).min(1, "At least one stage requirement is required"),
     criteria_ids: z.array(z.string()).min(1, "At least one evaluation criterion must be selected"),
+    is_dbd_enabled: z.boolean().default(false),
   }),
   /** Whether this stage is automatically assigned to new jobs */
   is_default: z.boolean().default(false),
