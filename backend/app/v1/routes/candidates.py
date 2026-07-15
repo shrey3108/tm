@@ -218,7 +218,9 @@ async def create_candidate_decision(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail="Internal server error")
+        import traceback
+        error_details = traceback.format_exc()
+        raise HTTPException(status_code=500, detail=error_details)
 
 
 @router.get("/{candidate_id}/decisions", response_model=HRDecisionHistoryResponse)
