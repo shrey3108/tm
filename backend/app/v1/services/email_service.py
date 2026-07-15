@@ -546,7 +546,13 @@ async def send_associate_notification_email(
         if job.position:
             job_position = job.position.name or "Position"
 
-    job_info_str = f" for the <strong>{job_title}</strong> position" if job_title else ""
+    job_info_str = ""
+    if job_title and job_position and job_position != "Position":
+        job_info_str = f" for the <strong>{html.escape(job_title)}</strong> (<strong>{html.escape(job_position)}</strong>) position"
+    elif job_title:
+        job_info_str = f" for the <strong>{html.escape(job_title)}</strong> position"
+    elif job_position and job_position != "Position":
+        job_info_str = f" for the <strong>{html.escape(job_position)}</strong> position"
     candidate_full_name = f"{candidate.first_name or 'Candidate'} {candidate.last_name or ''}".strip()
     
     # Use provided workdrive link or fallback to default

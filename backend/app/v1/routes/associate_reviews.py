@@ -716,6 +716,10 @@ def _render_form_html(
       <div class="info-box candidate-box">
         <div class="box-title">Candidate Details</div>
         <div class="info-row">
+          <div class="info-label">Interviewer Name:</div>
+          <div class="info-value">{html.escape(associate_name)}</div>
+        </div>
+        <div class="info-row">
           <div class="info-label">Candidate Name:</div>
           <div class="info-value">{html.escape(candidate_full_name)}</div>
         </div>
@@ -939,6 +943,10 @@ def _render_dbd_form_html(
 
       <div class="info-box candidate-box">
         <div class="box-title">Candidate Details</div>
+        <div class="info-row">
+          <div class="info-label">Interviewer Name:</div>
+          <div class="info-value">{html.escape(associate_name)}</div>
+        </div>
         <div class="info-row">
           <div class="info-label">Candidate Name:</div>
           <div class="info-value">{html.escape(candidate_full_name)}</div>

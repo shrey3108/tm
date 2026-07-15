@@ -75,7 +75,8 @@ def evaluate_candidate_transcript_task(candidate_stage_id_str: str):
                         selectinload(CandidateStage.job_stage).options(
                             selectinload(JobStageConfig.job).options(
                                 selectinload(Job.associates)
-                            )
+                            ),
+                            selectinload(JobStageConfig.template)
                         ),
                         selectinload(CandidateStage.candidate)
                     ).where(CandidateStage.id == candidate_stage_id)
@@ -117,7 +118,7 @@ def evaluate_candidate_transcript_task(candidate_stage_id_str: str):
                                     review_token=evaluation.review_token,
                                     db=db,
                                     stage_job_id=stage.job_stage.job_id,
-                                    stage_name=stage.job_stage.config.get("name", "Technical + HR Panel Interview")
+                                    stage_name=stage.job_stage.template.name if stage.job_stage and stage.job_stage.template else "Candidate Evaluation"
                                 )
                             await db.commit()
                             logger.info(f"Automatically sent DBD evaluation emails for stage {candidate_stage_id}")
