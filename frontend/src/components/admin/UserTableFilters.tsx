@@ -57,7 +57,7 @@ export const UserTableFilters = ({
         <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 " />
       </div>
 
-      <div className="grid grid-cols-2 lg:flex lg:flex-wrap lg:items-center gap-1 min-w-0">
+      <div className="grid grid-cols-3  lg:flex lg:flex-wrap lg:items-center gap-1 min-w-0">
 
 
         {/* Status Dropdown */}
@@ -71,7 +71,7 @@ export const UserTableFilters = ({
           onClear={() => setStatusFilter([])}
           clearLabel="Clear statuses"
           triggerClassName={cn(
-            "w-fit inline-flex items-center gap-2 h-9 px-2 rounded-xl border text-sm font-medium cursor-pointer select-none transition-colors",
+            "w-full sm:w-fit inline-flex items-center gap-2 h-9 px-2 rounded-xl border text-sm cursor-pointer select-none transition-colors",
             statusFilter.length > 0
               ? "border-primary/40 bg-primary/5 text-foreground hover:bg-primary/5 hover:text-foreground"
               : "border-input bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground"
@@ -92,7 +92,7 @@ export const UserTableFilters = ({
             clearLabel="Clear roles"
             icon={<UserCheck className="h-3.5 w-3.5 opacity-60" />}
             triggerClassName={cn(
-              "w-fit inline-flex items-center gap-2 h-9 px-2 rounded-xl border text-sm font-medium cursor-pointer select-none transition-colors",
+              "w-full sm:w-fit inline-flex items-center gap-2 h-9 px-2 rounded-xl border text-sm cursor-pointer select-none transition-colors",
               roleFilter.length > 0
                 ? "border-primary/40 bg-primary/5 text-foreground hover:bg-primary/5 hover:text-foreground"
                 : "border-input bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground"

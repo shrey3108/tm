@@ -1,5 +1,5 @@
 import type { PriorityTimeline } from "@/types/admin";
-import { Calendar, Clock, Timer, AlertCircle } from "lucide-react";
+import { Calendar, Timer, AlertCircle } from "lucide-react";
 import DateDisplay from "@/components/shared/DateDisplay";
 import { cn } from "@/lib/utils";
 import { PRIORITY_TIMELINE_COLOR } from "@/constants";
@@ -46,7 +46,7 @@ export function ProgressBarChart({ priorityTimeline }: ProgressBarChartProps) {
                             </span>
                             <span className="text-muted-foreground font-light">to</span>
                             <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-md">
-                                <Clock className="w-3.5 h-3.5 text-orange-500/60" />
+                                <Calendar className="w-3.5 h-3.5 text-orange-500/60" />
                                 <DateDisplay date={priorityTimeline.due_date} className="text-xs md:text-sm" />
                             </span>
                         </div>

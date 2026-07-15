@@ -184,7 +184,7 @@ export default function AdminJobPriorities() {
     },
     {
       accessorKey: "duration_days",
-      size: 15,
+      size: 17,
       meta: { overflow: 'ellipsis' },
       header: ({ column }) => (
         <Button
@@ -238,14 +238,14 @@ export default function AdminJobPriorities() {
         </div>
       ),
       cell: ({ row }) => (
-        <div className="text-center ">
+        <div className="text-center">
           {row.original.assigned_jobs_count ?? "N/A"}
         </div>
       ),
     },
     {
       accessorKey: "associate_reminder_hours",
-      size: 23,
+      size: 26,
       meta: { overflow: 'ellipsis' },
       header: ({ column }) => (
         <div className="flex justify-center">
@@ -260,14 +260,14 @@ export default function AdminJobPriorities() {
         </div>
       ),
       cell: ({ row }) => (
-        <div className="text-center ">
+        <div className="text-center">
           {row.original.associate_reminder_hours ?? "N/A"}
         </div>
       ),
     },
     {
       id: "actions",
-      size: 15,
+      size: 10,
       meta: { overflow: 'ellipsis' },
       header: () => (
         <div className="flex items-center justify-center gap-2">

@@ -139,6 +139,7 @@ export default function JobCandidatesBarChart({ isAnimationActive = true, data: 
                             className="text-[10px] sm:text-xs font-medium text-muted-foreground"
                             allowDecimals={false}
                             domain={[0, 5]}
+                            ticks={[0, 1, 2, 3, 4, 5]}
                         >
                             <Label value="Scores"
                                 angle={-90}

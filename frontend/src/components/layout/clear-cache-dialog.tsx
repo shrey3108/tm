@@ -124,7 +124,7 @@ export function ClearCacheDialog({ open, onOpenChange }: ClearCacheDialogProps) 
             )}
           </div>
 
-          <NativeScrollArea className="flex-1 rounded-xl border border-muted-foreground/10 bg-muted/20 p-1 shadow-inner overflow-hidden">
+          <NativeScrollArea className="flex-1 rounded-xl border border-muted-foreground/10 bg-muted/20 p-1 shadow-inner">
             {loading ? (
               <div className="flex h-full  items-center justify-center">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />

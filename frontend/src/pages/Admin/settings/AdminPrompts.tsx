@@ -247,7 +247,7 @@ export default function AdminPrompts() {
                                 onClear={() => handleStageChange([])}
                                 clearLabel="Clear selection"
                                 triggerClassName={cn(
-                                    "h-10 w-[150px] border text-xs font-medium select-none bg-background hover:bg-muted/50 hover:text-foreground",
+                                    "h-10 w-[150px] border select-none bg-background hover:bg-muted/50 hover:text-foreground",
                                     selectedStages.length > 0
                                         ? "border-primary/40 bg-primary/10 text-primary hover:bg-primary/10 hover:text-primary"
                                         : "border-input text-muted-foreground"

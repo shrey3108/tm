@@ -78,7 +78,7 @@ export const JobTableFilters = ({
             onClear={() => setStatusFilter([])}
             clearLabel="Clear statuses"
             triggerClassName={cn(
-              "h-10 w-[130px] border font-medium select-none bg-background hover:bg-muted/50 hover:text-foreground",
+              "h-10 w-[130px] border select-none bg-background hover:bg-muted/50 hover:text-foreground ",
               statusFilter.length > 0
                 ? "border-primary/40 bg-primary/10 text-primary hover:bg-primary/10 hover:text-primary"
                 : "border-input text-muted-foreground"
@@ -105,7 +105,7 @@ export const JobTableFilters = ({
                   : `${selected.slice(0, FILTER_DISPLAY_LIMIT).map((s) => s.label).join(", ")} and ${selected.length - FILTER_DISPLAY_LIMIT} more`
               }
               triggerClassName={cn(
-                "h-10 w-[160px] border font-medium select-none bg-background hover:bg-muted/50 hover:text-foreground",
+                "h-10 w-[160px] border select-none bg-background hover:bg-muted/50 hover:text-foreground",
                 departmentFilter.length > 0
                   ? "border-primary/40 bg-primary/10 text-primary hover:bg-primary/10 hover:text-primary"
                   : "border-input text-muted-foreground"

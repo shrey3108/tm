@@ -108,7 +108,7 @@ export const SkillSelectorSection = ({
   };
   return (
     <div className="app-surface-card space-y-6 p-4 sm:p-5">
-      <Accordion defaultValue={["skill-selector"]} className="border-none bg-transparent">
+      <Accordion defaultValue={["skill-selector"]} className="border-none bg-transparent rounded-none">
         <AccordionItem value="skill-selector" className="border-none bg-transparent">
           <div className="flex items-center justify-between pb-4">
             <AccordionTrigger className="hover:no-underline p-0 border-none bg-transparent hover:bg-transparent flex-1 flex items-center justify-between">

@@ -170,7 +170,7 @@ export function MCQFormFields({
             placeholder="Select correct option"
             searchPlaceholder="Search option..."
             aria-invalid={!!errors.answer}
-            triggerClassName="h-10 text-sm font-semibold rounded-4xl"
+            triggerClassName="h-10 text-sm rounded-4xl"
           />
           {errors.answer && (
             <p className="text-xs font-medium text-destructive">{errors.answer}</p>

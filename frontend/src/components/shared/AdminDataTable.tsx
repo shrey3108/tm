@@ -102,7 +102,7 @@ function AdminDataTable<T>({
   };
 
   return (
-    <Card className={`${className}`}>
+    <Card className={cn(className, "p-0")}>
       <CardContent className="pt-0 px-0">
         {/* If error and data exists, show a smaller alert above the table */}
         {error && data.length > 0 && (
@@ -117,7 +117,7 @@ function AdminDataTable<T>({
               {columns.map((column, index) => (
                 <TableHead
                   key={index}
-                  className={column.className}
+                  className={cn(column.className, "bg-muted")}
                   style={column.width ? { width: column.width, ...column.style } : column.style}
                 >
                   {column.header}
@@ -141,7 +141,7 @@ function AdminDataTable<T>({
               </TableRow>
             ) : (
               data.map((item) => (
-                <TableRow key={getRowKey(item)}>
+                <TableRow key={getRowKey(item)} className="even:bg-muted/20 odd:bg-muted/30 hover:bg-muted/40">
                   {columns.map((column, index) => {
                     const overflow = column.overflow ?? 'ellipsis';
                     return (

@@ -238,7 +238,7 @@ export function DataTable<TData, TValue>({
                   return (
                     <TableHead
                       key={header.id}
-                      className="px-1 font-semibold text-base"
+                      className="px-1 font-semibold text-base bg-muted/90 whitespace-normal"
                       style={header.column.columnDef.size && header.column.columnDef.size !== 150 ? { width: `${header.column.columnDef.size}%` } : undefined}
                     >
                       {header.isPlaceholder
@@ -260,7 +260,7 @@ export function DataTable<TData, TValue>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
-                  className={loading ? "opacity-50 pointer-events-none transition-opacity" : "transition-opacity"}
+                  className={loading ? "opacity-50 pointer-events-none transition-opacity" : "even:bg-muted/20 odd:bg-muted/30 transition-colors hover:bg-muted/40"}
                 >
                   {row.getVisibleCells().map((cell) => {
                     const overflow = (cell.column.columnDef.meta as any)?.overflow ?? 'ellipsis';

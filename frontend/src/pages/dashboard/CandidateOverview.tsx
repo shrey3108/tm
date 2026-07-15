@@ -131,7 +131,7 @@ export default function CandidateOverview() {
   const columns: ColumnDef<TimelineEvent>[] = [
     {
       id: "order",
-      size: 8,
+      size: 10,
       accessorFn: (_, index) => index,
       header: ({ column }) => (
         <div>
@@ -140,7 +140,7 @@ export default function CandidateOverview() {
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
             className="hover:bg-transparent p-0 font-semibold text-base gap-1"
           >
-            Order
+            Stage No.
             <ArrowUpDown className="h-4 w-4" />
           </Button>
         </div>
@@ -152,7 +152,7 @@ export default function CandidateOverview() {
     {
       accessorKey: "title",
       header: "Stage Name",
-      size: 32,
+      size: 30,
       cell: ({ row }) => <span className="text-sm px-1">{row.original.title}</span>,
     },
     {
