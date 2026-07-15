@@ -621,6 +621,24 @@ async def send_associate_notification_email(
     # Since we are using detailed html, we don't need the summary row in the notification email header.
 
 
+    if stage_name:
+        eval_intro_text = f"You have been assigned to evaluate the candidate for the <strong>{html.escape(stage_name)}</strong> stage:"
+        review_instruction_text = "After reviewing the candidate's performance, please click the button below to open the review form and submit your evaluation."
+    elif github_url and test_paper:
+        eval_intro_text = "You have been assigned to evaluate the GitHub repository and question paper for"
+        review_instruction_text = "After reviewing the candidate's GitHub repository and question paper, please click the button below to open the review form and submit your marks for each question."
+    elif github_url:
+        eval_intro_text = "You have been assigned to evaluate the GitHub repository for"
+        review_instruction_text = "After reviewing the candidate's GitHub repository, please click the button below to open the review form and submit your evaluation."
+    elif test_paper:
+        eval_intro_text = "You have been assigned to evaluate the question paper for"
+        review_instruction_text = "After reviewing the candidate's question paper, please click the button below to open the review form and submit your marks for each question."
+    else:
+        eval_intro_text = "You have been assigned to evaluate the candidate"
+        review_instruction_text = "After reviewing the candidate, please click the button below to open the review form and submit your evaluation."
+
+    eval_intro_html = f"{eval_intro_text} <strong>{html.escape(candidate_full_name)}</strong>{job_info_str}."
+
     # 3. Build HTML body (questions/tasks are in the attached PDF, not in the email body)
     html_body = f"""
     <html>
@@ -770,8 +788,7 @@ async def send_associate_notification_email(
           <div class="content">
             <div class="greeting">Hello {html.escape(associate_name)},</div>
             <div class="message">
-              You have been assigned to evaluate the GitHub repository and question paper for
-              <strong>{html.escape(candidate_full_name)}</strong>{job_info_str}.
+              {eval_intro_html}
             </div>
 
             <div class="candidate-info-box">
@@ -815,9 +832,7 @@ async def send_associate_notification_email(
             <div class="review-form-box">
               <div class="review-form-title">📝 Submit Your Evaluation</div>
               <div class="review-form-text">
-                After reviewing the candidate's GitHub repository and question paper,
-                please click the button below to open the review form and submit your marks
-                for each question.
+                {review_instruction_text}
               </div>
               <a href="{html.escape(review_form_url)}" class="review-form-button" target="_blank">
                 Open Review Form
@@ -827,8 +842,8 @@ async def send_associate_notification_email(
             </div>
 
             <div class="message">
-              {f"Please review the candidate's GitHub repository using the link above." if github_url else ""}
-              The attached PDF contains the full details of the question paper (questions and project tasks).
+              {f"Please review the candidate's GitHub repository using the link above.<br>" if github_url else ""}
+              {f"The attached PDF contains the full details of the question paper (questions and project tasks)." if attachment_path or external_url else ""}
             </div>
           </div>
           <div class="footer">

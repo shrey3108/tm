@@ -28,6 +28,7 @@ from app.v1.core.config import settings
 from app.v1.db.models.associate_evaluations import AssociateEvaluation
 from app.v1.db.models.candidate_test_paper import CandidateTestPaper
 from app.v1.db.models.candidate_stages import CandidateStage
+from app.v1.db.models.job_stage_configs import JobStageConfig
 from app.v1.db.models.jobs import Job
 from app.v1.db.session import get_db
 
@@ -269,7 +270,12 @@ async def serve_review_form(token: uuid.UUID, db: AsyncSession = Depends(get_db)
             submit_url = f"{settings.APP_BASE_URL.rstrip('/')}/api/v1/associate-reviews/{token}/submit"
             is_submitted = (evaluation.status == "submitted")
             
+            stage_name = "Stage Evaluation"
+            if evaluation.candidate_stage and evaluation.candidate_stage.job_stage and evaluation.candidate_stage.job_stage.template:
+                stage_name = evaluation.candidate_stage.job_stage.template.name or "Stage Evaluation"
+
             return HTMLResponse(content=_render_dbd_form_html(
+                stage_name=stage_name,
                 associate_name=evaluation.associate.name if evaluation.associate else "Reviewer",
                 candidate_full_name=candidate_full_name,
                 job_title=job_title,
@@ -722,6 +728,7 @@ def _render_form_html(
 
 
 def _render_dbd_form_html(
+    stage_name: str,
     associate_name: str,
     candidate_full_name: str,
     job_title: str,
@@ -889,7 +896,7 @@ def _render_dbd_form_html(
 <body>
   <div class="container">
     <div class="header">
-      <h1>Technical + HR Panel Evaluation</h1>
+      <h1>{html.escape(stage_name)}</h1>
     </div>
     <div class="content">
       <div class="greeting">Hello {html.escape(associate_name)},</div>
