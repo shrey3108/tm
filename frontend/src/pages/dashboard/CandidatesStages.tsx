@@ -246,6 +246,7 @@ export default function CandidatesStages() {
                   showChart={showChart}
                   onShowChartChange={setShowChart}
                   isDbdEnabled={isDbdEnabled}
+                  dbdAssociates={dbdAssociates}
                 />
                 {showChart && (
                   <div className="w-full flex justify-center bg-card/30 p-4 sm:p-6 pb-4 rounded-2xl border border-border/50 animate-in fade-in duration-300">

@@ -46,6 +46,7 @@ interface StageEvaluationViewProps {
   onShowChartChange: (show: boolean) => void;
   candidate: CandidateAnalysis | null | undefined;
   isDbdEnabled?: boolean;
+  dbdAssociates?: { key: string; label: string }[];
 }
 
 export interface ChartDataPoint {
@@ -151,7 +152,8 @@ export function StageEvaluationView({
   onShowChartChange,
   job,
   candidate,
-  isDbdEnabled
+  isDbdEnabled,
+  dbdAssociates
 }: StageEvaluationViewProps) {
   const { data: assignedPaper } = useCandidateTestPaper(candidateId);
   /*
@@ -188,15 +190,15 @@ export function StageEvaluationView({
   const canTakeDecision = !latestHrDecision || latestHrDecision.includes("may be") || latestHrDecision === "maybe";
   const jobSlug = slugify(job?.title);
   const isShowChartButtonVisible = 
-    isDbdEnabled ||
-    (requiredInputs
+    (isDbdEnabled ? (!!dbdAssociates && dbdAssociates.length >= 2) : false) ||
+    (!isDbdEnabled && (requiredInputs
       ? (requiredInputs.includes("question") || requiredInputs.includes("github"))
       : (stageName && (
         stageName.toLowerCase().includes("technical") ||
         stageName.toLowerCase().includes("practical") ||
         stageName.toLowerCase().includes("coding") ||
         stageName.toLowerCase().includes("test")
-      )));
+      ))));
   return (
     <>
       <div className="flex items-center justify-end px-4 mb-2 gap-3">

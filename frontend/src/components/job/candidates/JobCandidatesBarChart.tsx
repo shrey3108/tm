@@ -3,7 +3,7 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Rectangle, ResponsiveContai
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 import { CHART_COLORS } from "@/constants";
 import { useIsMobile } from '@/hooks/use-mobile';
-import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/hover-card';
+import { toTitleCase } from '@/lib/utils';
 
 
 interface ChartDataPoint {
@@ -74,7 +74,7 @@ export default function JobCandidatesBarChart({ isAnimationActive = true, data: 
                                 top: 20,
                                 right: 20,
                                 left: 30,
-                                bottom: isMobile ? 110 : 130
+                                bottom: isMobile ? 75 : 85
                             }}
                             className='[&_.recharts-cartesian-grid-horizontal>line]:[stroke-dasharray:0]'
                         >
@@ -134,33 +134,34 @@ export default function JobCandidatesBarChart({ isAnimationActive = true, data: 
                                 tickMargin={12}
                                 axisLine={false}
                                 interval={0}
-                                className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground"
+                                height={isMobile ? 75 : 85}
+                                className="text-[10px] sm:text-xs font-normal text-muted-foreground"
                                 tick={(props) => {
                                     const { x, y, payload } = props;
-                                    const maxLength = isMobile ? 15 : 20;
-                                    const truncatedValue = payload.value.length > maxLength
-                                        ? payload.value.substring(0, maxLength - 3) + "..."
-                                        : payload.value;
+                                    if (!payload || !payload.value) return null;
+
+                                    const value = String(payload.value);
+
+                                    const formattedValue = toTitleCase(value);
+
+                                    const words = formattedValue.split(' ');
+
                                     return (
                                         <g transform={`translate(${x},${y})`}>
-                                            <HoverCard >
-                                                <HoverCardTrigger delay={0} closeDelay={0}>
-                                                    <text
-                                                        x={0}
-                                                        y={0}
-                                                        dy={14}
-                                                        textAnchor="end"
-                                                        fill="currentColor"
-                                                        transform="rotate(-45)"
-                                                        className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground"
-                                                    >
-                                                        {truncatedValue}
-                                                    </text>
-                                                </HoverCardTrigger>
-                                                <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
-                                                    <p className="text-xs">{payload.value}</p>
-                                                </HoverCardContent>
-                                            </HoverCard>
+                                            <text
+                                                x={0}
+                                                y={0}
+                                                dy={12}
+                                                textAnchor="middle"
+                                                fill="currentColor"
+                                                className="text-[10px] sm:text-xs font-normal text-muted-foreground fill-muted-foreground"
+                                            >
+                                                {words.map((word, idx) => (
+                                                    <tspan key={idx} x={0} dy={idx === 0 ? 0 : 12}>
+                                                        {word}
+                                                    </tspan>
+                                                ))}
+                                            </text>
                                         </g>
                                     );
                                 }}
@@ -168,8 +169,8 @@ export default function JobCandidatesBarChart({ isAnimationActive = true, data: 
                                 <Label
                                     value="Criteria"
                                     position="insideBottom"
-                                    offset={isMobile ? -85 : -105}
-                                    className="fill-muted-foreground text-[10px] sm:text-xs font-bold uppercase tracking-wider"
+                                    offset={isMobile ? -15 : -5}
+                                    className="fill-muted-foreground text-[10px] sm:text-xs font-normal tracking-wider"
                                 />
                             </XAxis>
                             <YAxis

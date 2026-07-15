@@ -55,7 +55,7 @@ export function AssociateEvaluationsDialog({
                     <TableHead className="p-2 h-auto">Submitted At</TableHead>
                     <TableHead className="p-2 h-auto">Status / Result</TableHead>
                     <TableHead className="p-2 h-auto text-right">Marks</TableHead>
-                    <TableHead className="p-2 h-auto">DBD Decision</TableHead>
+                    {/* <TableHead className="p-2 h-auto">DBD Decision</TableHead>   */}
                   </TableRow>
                 </TableHeader>
                 <TableBody className="text-xs">
@@ -81,11 +81,29 @@ export function AssociateEvaluationsDialog({
                         </TableCell>
                         <TableCell className="p-2 text-right">
                           <div className="flex flex-col items-end gap-1">
-                            {r.weighted_result_out_of_5 !== null && r.weighted_result_out_of_5 !== undefined ? (
-                              <span className="font-bold text-gray-900 dark:text-white">{r.weighted_result_out_of_5.toFixed(1)}/5</span>
-                            ) : (
-                              <span className="">-</span>
-                            )}
+                            {(() => {
+                              if (r.weighted_result_out_of_5 !== null && r.weighted_result_out_of_5 !== undefined) {
+                                return (
+                                  <span className="font-bold text-gray-900 dark:text-white">
+                                    {r.weighted_result_out_of_5.toFixed(1)}/5
+                                  </span>
+                                );
+                              }
+                              if (r.dbd_scores && r.dbd_scores.length > 0) {
+                                const validScores = r.dbd_scores
+                                  .map((s) => s.score)
+                                  .filter((score): score is number => score !== null && score !== undefined);
+                                if (validScores.length > 0) {
+                                  const avg = validScores.reduce((sum, val) => sum + val, 0) / validScores.length;
+                                  return (
+                                    <span className="font-bold text-gray-900 dark:text-white">
+                                      {avg.toFixed(1)}/5
+                                    </span>
+                                  );
+                                }
+                              }
+                              return <span className="">-</span>;
+                            })()}
                             {r.review_token && r.submitted_at && <Link
                               to={resolveAssociateViewUrl(r.review_token!)}
                               target="_blank"
@@ -96,15 +114,15 @@ export function AssociateEvaluationsDialog({
                             </Link>}
                           </div>
                         </TableCell>
-                        <TableCell className="p-2">
+                        {/* <TableCell className="p-2">
                           {r.dbd_hiring_decision ? (
                             <CandidateStatusBadge status={r.dbd_hiring_decision} />
                           ) : (
                             <span className="text-xs text-muted-foreground">—</span>
                           )}
-                        </TableCell>
+                        </TableCell> */}
                       </TableRow>
-                      {(r.dbd_scores || r.dbd_remarks) && (
+                      {/* {(r.dbd_scores || r.dbd_remarks) && (
                         <TableRow className="border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-zinc-900/30">
                           <TableCell colSpan={6} className="p-2 text-xs">
                             <div className="flex flex-col gap-1.5 pl-2 border-l-2 border-primary/30">
@@ -127,7 +145,7 @@ export function AssociateEvaluationsDialog({
                             </div>
                           </TableCell>
                         </TableRow>
-                      )}
+                      )} */}
                     </Fragment>
                   ))}
                 </TableBody>

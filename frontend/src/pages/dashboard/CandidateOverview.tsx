@@ -1,5 +1,5 @@
 import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
-import { ArrowLeft, User, Mail, Phone, Briefcase, ArrowUpDown } from "lucide-react";
+import { ArrowLeft, User, Mail, Phone, Briefcase, ArrowUpDown, MessageCircle } from "lucide-react";
 import {
   useResolvedJobAndCandidate,
   useCandidateTimelineQuery,
@@ -191,20 +191,27 @@ export default function CandidateOverview() {
 
         if (event.hr_decision && !isFutureStage) {
           return (
-            <HoverCard >
-              <HoverCardTrigger delay={100} closeDelay={50}>
-                <Link to={`/dashboard/jobs/${jobSlug}/candidates/${candidateName}/stages/${slugify(event.title || "Resume Screening")}`}
-                  className="cursor-pointer flex items-center justify-start gap-2 hover:opacity-80 transition-opacity" >
+            <div className="flex items-center justify-start">
+              <Link to={`/dashboard/jobs/${jobSlug}/candidates/${candidateName}/stages/${slugify(event.title || "Resume Screening")}`}
+                className="cursor-pointer flex items-center justify-start gap-2 hover:opacity-80 transition-opacity" >
 
-                  <CandidateStatusBadge status={event.hr_decision} />
-                  {event.hr_score !== null && event.hr_score !== undefined && (
-                    <span className="font-bold">{event.hr_score.toFixed(1)}/5</span>
+                <CandidateStatusBadge status={event.hr_decision} />
+                {event.hr_score !== null && event.hr_score !== undefined && (
+                  <span className="font-bold">{event.hr_score.toFixed(1)}/5</span>
+                )}
+
+              </Link>
+              <HoverCard>
+                <HoverCardTrigger delay={100} closeDelay={50}>
+                  {event.hr_decision_notes && (
+                    <MessageCircle className="h-4 w-5 ml-2 cursor-pointer" />
                   )}
-                </Link></HoverCardTrigger>
-              <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
-                <p>{event.hr_decision_notes}</p>
-              </HoverCardContent>
-            </HoverCard>
+                </HoverCardTrigger>
+                <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
+                  <p>{event.hr_decision_notes}</p>
+                </HoverCardContent>
+              </HoverCard>
+            </div>
 
           );
         }

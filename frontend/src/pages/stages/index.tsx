@@ -186,7 +186,7 @@ export default function AdminJobStages() {
         {
             accessorKey: "name",
             size: 20,
-            meta: { overflow: 'ellipsis' },
+            meta: { overflow: 'wrap' },
             header: ({ column }) => (
                 <Button
                     variant="ghost"
@@ -198,8 +198,8 @@ export default function AdminJobStages() {
                 </Button>
             ),
             cell: ({ row }) => (
-                <div className="max-w-sm">
-                    <span className="capitalize truncate">{row.original.name}</span>
+                <div>
+                    <span className="capitalize">{row.original.name}</span>
                 </div>
             ),
         },
