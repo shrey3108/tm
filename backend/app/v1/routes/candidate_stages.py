@@ -58,7 +58,29 @@ async def get_candidate_stage_evaluation(
     if not stage:
         raise HTTPException(status_code=404, detail="Candidate stage not found")
 
-    if stage.status in ("processing", "queued", "submitted", "active", "pending"):
+    dbd_res = await db.execute(
+        select(AssociateEvaluation).where(AssociateEvaluation.candidate_stage_id == id)
+    )
+    dbd_evals = dbd_res.scalars().all()
+    
+    dbd_results = []
+    for de in dbd_evals:
+        avg_score = None
+        if de.dbd_scores:
+            scores = [float(s.get("score")) for s in de.dbd_scores if s.get("score") is not None]
+            if scores:
+                avg_score = round(sum(scores) / len(scores), 2)
+                
+        dbd_results.append({
+            "associate_id": de.associate_id,
+            "status": de.status,
+            "submitted_at": de.submitted_at,
+            "dbd_scores": de.dbd_scores,
+            "dbd_hiring_decision": de.dbd_hiring_decision,
+            "average_score": avg_score
+        })
+
+    if stage.status in ("processing", "queued", "submitted"):
         from fastapi.responses import JSONResponse
         return JSONResponse(
             status_code=202, 
@@ -73,6 +95,7 @@ async def get_candidate_stage_evaluation(
             content={"status": "processing", "detail": "Evaluation is currently processing"}
         )
 
+    # Fetch the evaluation record if it exists
     res = await db.execute(
         select(Evaluation)
         .where(Evaluation.candidate_stage_id == id)
@@ -83,28 +106,45 @@ async def get_candidate_stage_evaluation(
     if not evaluation:
         if stage.status == "failed" and isinstance(stage.evaluation_data, dict) and "error" in stage.evaluation_data:
             # Construct a mock Evaluation dict with the error details conforming to EvaluationRead
-            return {
-                "id": id,  # Use stage id as a dummy evaluation id
-                "candidate_stage_id": id,
-                "attempt_number": 1,
-                "overall_score": 0.0,
-                "result": "pending",
-                "status": "failed",
-                "error_message": stage.evaluation_data.get('error'),
-                "structured_evaluation_data": {},  # maps to evaluation_data schema field
-                "created_at": stage.completed_at or stage.started_at or datetime.now(timezone.utc),
-                "highlights": {
+            return EvaluationRead(
+                id=id,
+                candidate_stage_id=id,
+                attempt_number=1,
+                overall_score=0.0,
+                result="pending",
+                status="failed",
+                error_message=stage.evaluation_data.get('error'),
+                structured_evaluation_data={},
+                created_at=stage.completed_at or stage.started_at or datetime.now(timezone.utc),
+                highlights={
                     "overall_summary": f"Evaluation Failed: {stage.evaluation_data.get('error')}",
                     "recommendation": f"Failed with status: {stage.evaluation_data.get('status', 'unknown')}",
                     "strengths": [],
                     "weaknesses": [],
                     "suggested_followups": []
-                }
-            }
+                },
+                dbd_results=dbd_results
+            )
             
+        if dbd_results:
+            # If we have DBD results but no evaluation record yet, return a mock Evaluation with the results!
+            return EvaluationRead(
+                id=id,
+                candidate_stage_id=id,
+                attempt_number=1,
+                overall_score=0.0,
+                result="pending",
+                status=stage.status,
+                structured_evaluation_data={},
+                created_at=stage.started_at or datetime.now(timezone.utc),
+                dbd_results=dbd_results
+            )
+
         raise HTTPException(status_code=404, detail="Evaluation not found for this candidate stage")
         
-    return evaluation
+    eval_read = EvaluationRead.model_validate(evaluation)
+    eval_read.dbd_results = dbd_results
+    return eval_read
 
 from fastapi.responses import HTMLResponse
 

@@ -22,6 +22,7 @@ class EvaluationRead(BaseModel):
     highlights: Optional[Dict[str, Any]] = None
     jd_skills: Optional[list[str]] = None
     project_required_skills: Optional[list[str]] = None
+    dbd_results: Optional[list[Dict[str, Any]]] = None
     
     @model_validator(mode="after")
     def handle_errors(self) -> "EvaluationRead":

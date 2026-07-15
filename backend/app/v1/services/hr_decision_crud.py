@@ -75,6 +75,35 @@ async def create_decision_impl(
             if stage_zero_id:
                 stage_config_id = stage_zero_id
 
+    # Upsert Logic: Check if this user already has a decision for this candidate and stage
+    existing_user_query = select(HrDecision).where(
+        HrDecision.candidate_id == candidate_id,
+        HrDecision.user_id == user_id,
+    )
+    if stage_config_id:
+        existing_user_query = existing_user_query.where(HrDecision.stage_config_id == stage_config_id)
+    else:
+        existing_user_query = existing_user_query.where(HrDecision.stage_config_id.is_(None))
+        
+    existing_decision = (await db.execute(existing_user_query)).scalars().first()
+    
+    if existing_decision:
+        # Treat POST as UPSERT -> call update
+        from app.v1.schemas.hr_decision import HRDecisionUpdate
+        update_data = HRDecisionUpdate(
+            decision=decision_data.decision,
+            notes=decision_data.notes,
+            score=decision_data.score,
+            stage_config_id=decision_data.stage_config_id,
+            job_id=decision_data.job_id
+        )
+        return await update_decision_impl(
+            db=db,
+            decision_id=existing_decision.id,
+            decision_data=update_data,
+            user_id=user_id,
+        )
+
     # Check "May Be" decision limit (only 1 per candidate per stage)
     if decision_data.decision == "May Be":
         query = select(func.count(HrDecision.id)).where(

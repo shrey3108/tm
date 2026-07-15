@@ -121,8 +121,7 @@ def _parse_all_items(test_paper: CandidateTestPaper) -> list[dict]:
                         st_name = st.get("name") or f"Sub-task {si + 1}"
                         st_desc = st.get("description") or ""
                         st_marks = st.get("marks")
-                        title_prefix = t.get("title") or t.get("task") or f"Project Task {idx + 1}"
-                        display = f"[{title_prefix}] {st_name}"
+                        display = st_name
                         if st_desc:
                             display += f"\n{st_desc}"
                         items.append({
