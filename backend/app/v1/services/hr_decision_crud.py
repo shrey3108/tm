@@ -3,6 +3,7 @@ from datetime import datetime
 from sqlalchemy import select, func, or_, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
+from sqlalchemy.exc import IntegrityError
 
 from app.v1.db.models.hr_decisions import HrDecision
 from app.v1.db.models.candidates import Candidate
@@ -127,7 +128,14 @@ async def create_decision_impl(
     )
 
     db.add(hr_decision)
-    await db.flush() # Flush to get ID, but don't commit yet
+    try:
+        await db.flush() # Flush to get ID, but don't commit yet
+    except IntegrityError as e:
+        if "uq_hr_decision_cand_stage_user" in str(e):
+            raise ValueError(
+                "You have already submitted a decision for this candidate in this stage. Please use the update functionality instead."
+            )
+        raise
     await db.refresh(hr_decision)
 
     logger.info(
