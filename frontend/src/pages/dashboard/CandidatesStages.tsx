@@ -4,7 +4,7 @@
  *
  * Dashboard view mapping candidate progression across different pipeline stages.
  */
-import { useState, useEffect, lazy, Suspense } from "react";
+import { useState, useEffect, useMemo, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import AppPageShell from "@/components/shared/AppPageShell";
 import { ActionButtons } from "@/components/modal/candidate-details/ActionButtons";
@@ -23,6 +23,7 @@ import LoadingSpinner from "@/components/shared/LoadingSpinner";
 import { JobInfoModal } from "@/components/modal/JobInfoModal";
 
 const JobCandidatesBarChart = lazy(() => import("@/components/job/candidates/JobCandidatesBarChart"))
+const DbdCompareBarChart = lazy(() => import("@/components/job/candidates/DbdCompareBarChart"))
 
 /**
  * The main page component for viewing and managing a candidate's progress through interview stages.
@@ -84,6 +85,7 @@ export default function CandidatesStages() {
     requiredInputs,
     stageStatus,
     githubUrl,
+    isDbdEnabled,
   } = useCandidatesStages();
 
   const [showChart, setShowChart] = useState(false);
@@ -94,7 +96,66 @@ export default function CandidatesStages() {
 
   const isResumeScreening = currentStage === "Resume Screening";
 
-  const chartData = evaluation?.evaluation_data ? getChartData(evaluation.evaluation_data) : [];
+
+  const associateNameMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    if (associateResults?.reviews) {
+      associateResults.reviews.forEach((r) => {
+        map[r.associate_id] = r.associate_name;
+      });
+    }
+    return map;
+  }, [associateResults]);
+
+  // Prepare base AI chart data
+  const aiChartData = useMemo(() => {
+    return evaluation?.evaluation_data ? getChartData(evaluation.evaluation_data) : [];
+  }, [evaluation]);
+
+  // Prepare combined AI & DBD chart data and associate list
+  const { combinedChartData, dbdAssociates } = useMemo(() => {
+    if (!evaluation) return { combinedChartData: [], dbdAssociates: [] };
+
+    // Get base AI chart data
+    const baseData = evaluation.evaluation_data ? getChartData(evaluation.evaluation_data) : [];
+
+    // Map base data to a record for easy lookups and updates
+    const skillsMap: Record<string, any> = {};
+    baseData.forEach((point) => {
+      skillsMap[point.name] = { ...point };
+    });
+
+    const activeAssociates: { key: string; label: string }[] = [];
+
+    // Combine with dbd_results if available
+    if (evaluation.dbd_results && evaluation.dbd_results.length > 0) {
+      evaluation.dbd_results.forEach((dbdRes, idx) => {
+        if (dbdRes.status === "submitted" && dbdRes.dbd_scores) {
+          const assocName = associateNameMap[dbdRes.associate_id] || `Associate ${idx + 1}`;
+          const assocKey = `associate_${idx}`;
+          activeAssociates.push({ key: assocKey, label: assocName });
+
+          dbdRes.dbd_scores.forEach((scoreObj) => {
+            const criterionName = scoreObj.name || scoreObj.criterion;
+            if (!criterionName) return;
+
+            const normalizedKey = criterionName.replace(/_/g, " ").toUpperCase();
+            if (!skillsMap[normalizedKey]) {
+              skillsMap[normalizedKey] = {
+                name: normalizedKey,
+                jd: 0,
+                project: 0,
+              };
+            }
+            skillsMap[normalizedKey][assocKey] = scoreObj.score ?? 0;
+          });
+        }
+      });
+    }
+
+    const sortedData = Object.values(skillsMap).sort((a, b) => a.name.localeCompare(b.name));
+    return { combinedChartData: sortedData, dbdAssociates: activeAssociates };
+  }, [evaluation, associateNameMap]);
 
   return (
     <AppPageShell width="full">
@@ -184,15 +245,27 @@ export default function CandidatesStages() {
                   requiredInputs={requiredInputs}
                   showChart={showChart}
                   onShowChartChange={setShowChart}
+                  isDbdEnabled={isDbdEnabled}
                 />
                 {showChart && (
-                  <Suspense fallback={<LoadingSpinner message="Loading charts..." fullPage={true} />}>
-                    <div className="w-full flex justify-center bg-card/30 p-3 rounded-2xl border border-border/50 animate-in fade-in duration-300">
-                      <div className="w-full min-h-25 max-h-75">
-                        <JobCandidatesBarChart data={chartData.length > 0 ? chartData : undefined} />
-                      </div>
+                  <div className="w-full flex justify-center bg-card/30 p-4 sm:p-6 pb-4 rounded-2xl border border-border/50 animate-in fade-in duration-300">
+                    <div className="w-full">
+                      {isDbdEnabled ? (
+                        <Suspense fallback={<LoadingSpinner message="Loading comparison chart..." fullPage={true} />}>
+                          <DbdCompareBarChart
+                            data={combinedChartData.length > 0 ? combinedChartData : undefined}
+                            associates={dbdAssociates}
+                          />
+                        </Suspense>
+                      ) : (
+                        <Suspense fallback={<LoadingSpinner message="Loading skills chart..." fullPage={true} />}>
+                          <JobCandidatesBarChart
+                            data={aiChartData.length > 0 ? aiChartData : undefined}
+                          />
+                        </Suspense>
+                      )}
                     </div>
-                  </Suspense>
+                  </div>
                 )}
               </>
             ) : (

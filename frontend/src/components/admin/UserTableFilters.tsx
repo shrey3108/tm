@@ -52,7 +52,7 @@ export const UserTableFilters = ({
           placeholder="Search name or email..."
           value={searchFilter}
           onChange={(e) => setSearchFilter(e.target.value)}
-          className="pl-10 h-10 rounded-xl text-base w-full bg-background"
+          className="pl-10 h-10 rounded-xl text-base w-full bg-background font-normal"
         />
         <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 " />
       </div>
@@ -71,7 +71,7 @@ export const UserTableFilters = ({
           onClear={() => setStatusFilter([])}
           clearLabel="Clear statuses"
           triggerClassName={cn(
-            "w-full sm:w-fit inline-flex items-center gap-2 h-9 px-2 rounded-xl border text-sm cursor-pointer select-none transition-colors",
+            "w-full sm:w-fit inline-flex items-center gap-2 h-9 px-2 rounded-xl border text-sm cursor-pointer select-none transition-colors font-normal",
             statusFilter.length > 0
               ? "border-primary/40 bg-primary/5 text-foreground hover:bg-primary/5 hover:text-foreground"
               : "border-input bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground"
@@ -92,7 +92,7 @@ export const UserTableFilters = ({
             clearLabel="Clear roles"
             icon={<UserCheck className="h-3.5 w-3.5 opacity-60" />}
             triggerClassName={cn(
-              "w-full sm:w-fit inline-flex items-center gap-2 h-9 px-2 rounded-xl border text-sm cursor-pointer select-none transition-colors",
+              "w-full sm:w-fit inline-flex items-center gap-2 h-9 px-2 rounded-xl border text-sm cursor-pointer select-none transition-colors font-normal",
               roleFilter.length > 0
                 ? "border-primary/40 bg-primary/5 text-foreground hover:bg-primary/5 hover:text-foreground"
                 : "border-input bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground"
@@ -106,13 +106,13 @@ export const UserTableFilters = ({
           "flex items-center gap-1.5 px-1.5 h-9 rounded-xl border text-sm transition-colors w-fit",
           dateRange?.from
             ? "border-primary/40 bg-primary/5 text-foreground"
-            : "border-input bg-background/50 text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+            : "border-input bg-background/50 text-muted-foreground"
         )}>
           <Popover>
             <PopoverTrigger
               className={cn(
-                "inline-flex items-center h-7 px-2 text-xs font-normal rounded-md bg-transparent hover:bg-transparent focus-visible:outline-none transition-colors",
-                !dateRange?.from && "text-muted-foreground hover:text-foreground text-sm"
+                "inline-flex items-center justify-between w-full h-full font-normal rounded-md bg-transparent focus-visible:outline-none",
+                !dateRange?.from && "text-muted-foreground text-sm"
               )}
             >
               <CalendarIcon className="mr-2 h-3.5 w-3.5" />
@@ -125,7 +125,7 @@ export const UserTableFilters = ({
                   format(dateRange.from, "LLL dd, y")
                 )
               ) : (
-                <span className="text-xs">Created date range</span>
+                <span className="text-xs font-normal">Created date range</span>
               )}
             </PopoverTrigger>
             <PopoverContent

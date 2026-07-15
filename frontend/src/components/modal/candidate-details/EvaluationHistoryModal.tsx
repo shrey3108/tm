@@ -31,7 +31,7 @@ export function EvaluationHistoryModal({
               <History className="h-4 w-4 text-primary" />
             </div>
             <div>
-              <DialogTitle className="text-2xl font-black uppercase tracking-tight">Evaluation History</DialogTitle>
+              <DialogTitle className="text-2xl font-bold uppercase tracking-tight">Evaluation History</DialogTitle>
               <DialogDescription className="text-sm font-medium text-muted-foreground">
                 View previous AI evaluation attempts for this stage.
               </DialogDescription>

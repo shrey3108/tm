@@ -44,7 +44,8 @@ interface StageEvaluationViewProps {
   requiredInputs?: string[];
   showChart: boolean;
   onShowChartChange: (show: boolean) => void;
-  candidate: CandidateAnalysis | null | undefined
+  candidate: CandidateAnalysis | null | undefined;
+  isDbdEnabled?: boolean;
 }
 
 export interface ChartDataPoint {
@@ -149,7 +150,8 @@ export function StageEvaluationView({
   showChart,
   onShowChartChange,
   job,
-  candidate
+  candidate,
+  isDbdEnabled
 }: StageEvaluationViewProps) {
   const { data: assignedPaper } = useCandidateTestPaper(candidateId);
   /*
@@ -185,9 +187,32 @@ export function StageEvaluationView({
   const latestHrDecision = hrDecisionHistory[0]?.decision.toLowerCase();
   const canTakeDecision = !latestHrDecision || latestHrDecision.includes("may be") || latestHrDecision === "maybe";
   const jobSlug = slugify(job?.title);
+  const isShowChartButtonVisible = 
+    isDbdEnabled ||
+    (requiredInputs
+      ? (requiredInputs.includes("question") || requiredInputs.includes("github"))
+      : (stageName && (
+        stageName.toLowerCase().includes("technical") ||
+        stageName.toLowerCase().includes("practical") ||
+        stageName.toLowerCase().includes("coding") ||
+        stageName.toLowerCase().includes("test")
+      )));
   return (
     <>
       <div className="flex items-center justify-end px-4 mb-2 gap-3">
+        {isShowChartButtonVisible && (
+          <div className="flex items-center gap-2 mr-2 bg-muted/20 px-3 py-1 rounded-xl border border-border/50 shadow-sm transition-all duration-200">
+            <span className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground select-none">
+              <AreaChart className="h-3.5 w-3.5 text-primary animate-in fade-in" />
+              Show Chart
+            </span>
+            <Switch
+              checked={showChart}
+              onCheckedChange={onShowChartChange}
+              size="sm"
+            />
+          </div>
+        )}
         {((requiredInputs
           ? (requiredInputs.includes("question") || requiredInputs.includes("github"))
           : (stageName && (
@@ -197,49 +222,37 @@ export function StageEvaluationView({
             stageName.toLowerCase().includes("test")
           )))
         ) && (
-            <>
-              <div className="flex items-center gap-2 mr-2 bg-muted/20 px-3 py-1 rounded-xl border border-border/50 shadow-sm transition-all duration-200">
-                <span className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground select-none">
-                  <AreaChart className="h-3.5 w-3.5 text-primary animate-in fade-in" />
-                  Show Chart
-                </span>
-                <Switch
-                  checked={showChart}
-                  onCheckedChange={onShowChartChange}
-                  size="sm"
+          <>
+            {isGithubUploaded && githubUrl && (
+              <HoverCard>
+                <HoverCardTrigger delay={10} closeDelay={10}
+                  render={(props) => (
+                    <Button
+                      {...props}
+                      variant="ghost"
+                      size="icon-sm"
+                      className="rounded-lg"
+                      onClick={(e) => {
+                        if (props.onClick) props.onClick(e);
+                        window.open(githubUrl, "_blank");
+                      }}
+                    >
+                      <GithubLogo className="h-4 w-4" />
+                    </Button>
+                  )}
                 />
-              </div>
-
-              {isGithubUploaded && githubUrl && (
-                <HoverCard>
-                  <HoverCardTrigger delay={10} closeDelay={10}
-                    render={(props) => (
-                      <Button
-                        {...props}
-                        variant="ghost"
-                        size="icon-sm"
-                        className="rounded-lg"
-                        onClick={(e) => {
-                          if (props.onClick) props.onClick(e);
-                          window.open(githubUrl, "_blank");
-                        }}
-                      >
-                        <GithubLogo className="h-4 w-4" />
-                      </Button>
-                    )}
-                  />
-                  <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
-                    Github Submmited link
-                  </HoverCardContent>
-                </HoverCard>
-              )}
-              {assignedPaper && (
-                <CandidateAssignPaperButton candidate={candidate} job={job} jobSlug={jobSlug} variant="ghost"
-                  size="icon-sm"
-                  className="rounded-lg" iconClassName="h-4 w-4" />
-              )}
-            </>
-          )}
+                <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
+                  Github Submmited link
+                </HoverCardContent>
+              </HoverCard>
+            )}
+            {assignedPaper && (
+              <CandidateAssignPaperButton candidate={candidate} job={job} jobSlug={jobSlug} variant="ghost"
+                size="icon-sm"
+                className="rounded-lg" iconClassName="h-4 w-4" />
+            )}
+          </>
+        )}
 
         {canTakeDecision && (
           <Button

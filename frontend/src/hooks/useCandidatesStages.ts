@@ -76,7 +76,6 @@ export function useCandidatesStages() {
   // 2. Fetch job-specific stages using query
   const { data: jobStagesRaw } = useJobStagesQuery(job?.id);
   const stages = useMemo(() => {
-    // const stageNames = [{ stage: "Resume Screening", id: "resume-screening" }];
     const stageNames = [];
     if (jobStagesRaw) {
       stageNames.push(
@@ -85,6 +84,15 @@ export function useCandidatesStages() {
     }
     return stageNames;
   }, [jobStagesRaw]);
+
+  const currentJobStage = useMemo(() => {
+    if (!jobStagesRaw || !configId) return null;
+    return jobStagesRaw.find((js) => js.id === configId);
+  }, [jobStagesRaw, configId]);
+
+  const isDbdEnabled = useMemo(() => {
+    return currentJobStage?.config?.is_dbd_enabled ?? false;
+  }, [currentJobStage]);
 
   // Sync currentStage with URL params
   useEffect(() => {
@@ -594,5 +602,6 @@ export function useCandidatesStages() {
     requiredInputs: candidateStage?.required_inputs,
     stageStatus: candidateStage?.status,
     githubUrl: taskMetadata?.task_file_path || candidateData?.task_file_path || candidate?.task_file_path,
+    isDbdEnabled,
   };
 }

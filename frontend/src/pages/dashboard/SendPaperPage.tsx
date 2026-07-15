@@ -396,6 +396,7 @@ export default function SendPaperPage() {
                       state: { job, candidateId, candidateName, stageId: jobStageId },
                     });
                   }
+                  navigate(-1);
                 }}
                 disabled={sendEmailMutation.isPending || sendBulkEmailMutation.isPending}
               >

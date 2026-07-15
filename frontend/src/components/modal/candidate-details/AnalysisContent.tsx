@@ -57,7 +57,9 @@ export function AnalysisContent({
             <h3 className="text-lg font-medium tracking-tight flex items-center gap-2 text-foreground">
               Strength Summary
             </h3>
-            {analysis?.strength_summary || "No summary available."}
+            <span className="font-normal">
+              {analysis?.strength_summary || "No summary available."}
+            </span>
           </Card>
         </section>
 
@@ -66,8 +68,10 @@ export function AnalysisContent({
             <h3 className="text-lg font-medium tracking-tight flex items-center gap-2 text-foreground">
               Experience Alignment
             </h3>
-            {analysis?.experience_alignment ||
-              "No alignment details available."}
+            <span className="font-normal">
+              {analysis?.experience_alignment ||
+                "No alignment details available."}
+            </span>
           </Card>
         </section>
       </div>
@@ -154,7 +158,7 @@ export function AnalysisContent({
           <h3 className="text-lg font-medium tracking-tight flex items-center gap-2 text-foreground">
             Extraordinary Points
           </h3>
-          <ul className="list-disc sm:pl-4">
+          <ul className="list-disc pl-4">
             {analysis?.extraordinary_points &&
               analysis.extraordinary_points.length > 0 ? (
               analysis.extraordinary_points.map((point, idx) => (

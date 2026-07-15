@@ -399,7 +399,7 @@ export const CandidateTableFilters = ({
                 <CollapsibleFilterSection
                   title={
                     <span className="flex items-center gap-2">
-                      Applied Date Range
+                      Uploaded Date Range
                       {dateRange?.from && (
                         <span className="text-xs bg-primary/10 text-primary font-bold px-2 py-0.5 rounded-full truncate">
                           {format(dateRange.from, "MMM d")}

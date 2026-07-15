@@ -46,6 +46,28 @@ export interface EvaluationRead {
   highlights: Highlight;
   jd_skills?: string[] | null;
   project_required_skills?: string[] | null;
+  dbd_results?: DbdResult[] | null;
+}
+
+/**
+ * DBD evaluation score for a specific criterion.
+ */
+export interface DbdScore {
+  criterion?: string;
+  name?: string;
+  score: number | null;
+}
+
+/**
+ * DBD evaluation results for an associate.
+ */
+export interface DbdResult {
+  associate_id: string;
+  status: string;
+  submitted_at: string | null;
+  dbd_scores: DbdScore[] | null;
+  dbd_hiring_decision: string | null;
+  average_score: number | null;
 }
 
 /**
@@ -117,7 +139,7 @@ export interface SendToAssociatesResponse {
   message: string;
   candidate_stage_id: string;
   candidate_name: string;
-  github_url: string;
+  github_url?: string | null;
   paper_id?: string | null;
   paper_name?: string | null;
   sent_to: AssociateEmailResult[];

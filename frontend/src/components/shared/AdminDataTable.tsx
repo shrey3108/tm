@@ -134,7 +134,7 @@ function AdminDataTable<T>({
             ) : data.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={columns.length} className="h-24 text-center">
-                  <div className="py-4 text-muted">
+                  <div className="py-4">
                     <h5 className="fw-bold">{emptyMessage}</h5>
                   </div>
                 </TableCell>

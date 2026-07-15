@@ -75,7 +75,7 @@ export const JobCandidatesHeader = ({
           {job?.version != null ? (
             <Badge
               variant="secondary"
-              className="rounded-full px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider"
+              className="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"
             >
               v{job.processing_version ? job.processing_version : job.version}
             </Badge>
@@ -96,12 +96,12 @@ export const JobCandidatesHeader = ({
           >
             {buttonLabel}
           </Button>
-          <div className="bg-muted/50 p-1 rounded-lg flex items-center border border-border shrink-0 h-9">
+          <div className="bg-muted/50 px-2 rounded-lg flex items-center border border-border shrink-0 h-9">
             <button
               type="button"
               onClick={() => setViewMode("candidates")}
               className={cn(
-                "flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-200",
+                "flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm font-medium transition-all duration-200",
                 viewMode === "candidates"
                   ? "bg-background text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
@@ -114,7 +114,7 @@ export const JobCandidatesHeader = ({
               type="button"
               onClick={() => setViewMode("analytics")}
               className={cn(
-                "flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-200",
+                "flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm font-medium transition-all duration-200",
                 viewMode === "analytics"
                   ? "bg-background text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
@@ -127,7 +127,7 @@ export const JobCandidatesHeader = ({
           <Button
             variant="secondary"
             size="sm"
-            className="h-9 rounded-xl border border-muted-foreground/10 px-4 shrink-0"
+            className="h-9 rounded-xl border border-muted-foreground/10 px-2 shrink-0"
             onClick={onInfoClick}
           >
             JD

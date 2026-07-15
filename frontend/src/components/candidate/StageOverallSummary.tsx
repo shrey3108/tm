@@ -146,6 +146,7 @@ export function StageOverallSummary({ data }: StageOverallSummaryProps) {
               title="Suggest Followups"
               items={data.followups || []}
               className="pt-3 border-t border-primary/10"
+              titleColor=""
             />
           )}
         </AccordionContent>

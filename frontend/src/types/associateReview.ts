@@ -1,7 +1,4 @@
-/**
- * Type definitions for associate evaluation reviews and results.
- * Matches backend schemas in associate_review.py.
- */
+import type { DbdScore } from "./candidateStage";
 
 export interface QuestionMark {
   /** Type of item: 'question', 'mcq', or 'task' */
@@ -49,7 +46,7 @@ export interface AssociateReviewResult {
   weighted_result_out_of_5: number | null;
   review_token?: string;
   /** DBD dynamic criteria scores */
-  dbd_scores: Record<string, any>[] | null;
+  dbd_scores: DbdScore[] | null;
   /** DBD hiring decision */
   dbd_hiring_decision: string | null;
   /** DBD note remarks */

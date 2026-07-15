@@ -145,7 +145,7 @@ export default function AdminDashboard() {
               error={error ? error.message : null}
               onRetry={refetch}
               rowKey="job_id"
-              emptyMessage="No job data available for the selected filters."
+              emptyMessage="No job data available."
               className="border-0 shadow-none"
             />
           </div>
