@@ -6,14 +6,7 @@ from github_code_evaluator.app.v1.core.logging_config import setup_logging
 # Setup unified logging to file
 setup_logging()
 
-# Check if we are running in the context of the main app and can share its celery_app instance
 celery_app = None
-if "app.v1.core.celery_app" in sys.modules:
-    try:
-        from app.v1.core.celery_app import celery_app as main_celery_app
-        celery_app = main_celery_app
-    except ImportError:
-        pass
 
 if celery_app is None:
     celery_app = Celery(

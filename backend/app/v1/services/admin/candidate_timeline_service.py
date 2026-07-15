@@ -245,15 +245,24 @@ class CandidateTimelineService:
                 j_id = stage.job_stage.job_id if stage.job_stage else None
                 sw_map = skill_weightages_by_job.get(j_id, {}) if j_id else {}
                 for ae in stage_assoc_evals:
-                    if ae.status == "submitted" and ae.marks:
-                        result_5 = self._compute_weighted_result_out_of_5(
-                            ae.marks, sw_map
-                        )
-                        associate_marks.append({
-                            "associate_name": ae.associate.name if ae.associate else "Unknown",
-                            "marks": result_5,
-                            "result": ae.result,
-                        })
+                    if ae.status == "submitted":
+                        if ae.dbd_scores:
+                            valid_scores = [s.get("score") for s in ae.dbd_scores if isinstance(s, dict) and s.get("score") is not None]
+                            avg_score = sum(valid_scores) / len(valid_scores) if valid_scores else 0.0
+                            associate_marks.append({
+                                "associate_name": ae.associate.name if ae.associate else "Unknown",
+                                "marks": round(avg_score, 2),
+                                "result": ae.dbd_hiring_decision or "submitted",
+                            })
+                        elif ae.marks:
+                            result_5 = self._compute_weighted_result_out_of_5(
+                                ae.marks, sw_map
+                            )
+                            associate_marks.append({
+                                "associate_name": ae.associate.name if ae.associate else "Unknown",
+                                "marks": result_5,
+                                "result": ae.result,
+                            })
 
             event_key = f"stage_{stage.id}"
             events_map[event_key] = {

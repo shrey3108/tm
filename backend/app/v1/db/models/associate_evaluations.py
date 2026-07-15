@@ -71,10 +71,10 @@ class AssociateEvaluation(Base):
         nullable=False,
     )
 
-    test_paper_id: Mapped[uuid.UUID] = mapped_column(
+    test_paper_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("candidate_test_papers.id", ondelete="CASCADE"),
-        nullable=False,
+        nullable=True,
     )
 
     candidate_id: Mapped[uuid.UUID] = mapped_column(
@@ -137,6 +137,23 @@ class AssociateEvaluation(Base):
     result: Mapped[Optional[str]] = mapped_column(
         Text,
         nullable=True,
+    )
+    
+    # DBD Form Specific Fields
+    dbd_scores: Mapped[Optional[list[dict]]] = mapped_column(
+        JSONB,
+        nullable=True,
+        comment="Stores 9 criteria dynamic scores for DBD form"
+    )
+    dbd_hiring_decision: Mapped[Optional[str]] = mapped_column(
+        Text,
+        nullable=True,
+        comment="Hiring decision from DBD form"
+    )
+    dbd_remarks: Mapped[Optional[str]] = mapped_column(
+        Text,
+        nullable=True,
+        comment="Note remarks from DBD form"
     )
 
     # RELATIONSHIPS

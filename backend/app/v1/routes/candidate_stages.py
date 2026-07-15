@@ -58,7 +58,7 @@ async def get_candidate_stage_evaluation(
     if not stage:
         raise HTTPException(status_code=404, detail="Candidate stage not found")
 
-    if stage.status in ("processing", "queued", "submitted"):
+    if stage.status in ("processing", "queued", "submitted", "active", "pending"):
         from fastapi.responses import JSONResponse
         return JSONResponse(
             status_code=202, 
@@ -135,6 +135,15 @@ async def get_candidate_stage_evaluation_report(
     jd_skills = eval_data.get("JD Skills", [])
     project_skills = eval_data.get("Project requirements skills", [])
     
+    is_flat_structure = not jd_skills and not project_skills
+    flat_skills = []
+    if is_flat_structure:
+        for k, v in eval_data.items():
+            if k in ["alignment_review", "strengths", "weaknesses", "suggested_followups", "summary"]:
+                continue
+            if isinstance(v, dict) and "score" in v:
+                flat_skills.append({k: v})
+    
     def render_column(items, category_class):
         html_output = ""
         for item in items:
@@ -159,6 +168,30 @@ async def get_candidate_stage_evaluation_report(
                 </div>
                 '''
         return html_output
+
+    columns_html = ""
+    if is_flat_structure:
+        columns_html = f"""
+        <div class="columns">
+            <div class="column">
+                <h2 class="column-header">Evaluation Criteria</h2>
+                {render_column(flat_skills, "accordion-flat")}
+            </div>
+        </div>
+        """
+    else:
+        columns_html = f"""
+        <div class="columns">
+            <div class="column">
+                <h2 class="column-header">Job Description Alignment</h2>
+               {render_column(jd_skills, "accordion-jd")}
+            </div>
+            <div class="column">
+                <h2 class="column-header">Project Task Alignment</h2>
+                {render_column(project_skills, "accordion-project")}
+            </div>
+        </div>
+        """
 
     html_content = f"""
     <!DOCTYPE html>
@@ -250,20 +283,11 @@ async def get_candidate_stage_evaluation_report(
     <body>
         <div class="container">
             <div class="header-banner">
-                <h1 class="header-title">AI Code Evaluation Report</h1>
+                <h1 class="header-title">AI Evaluation Report</h1>
                 <div class="score-badge">Overall Score: {evaluation.overall_score}/5.0</div>
             </div>
             
-            <div class="columns">
-                <div class="column">
-                    <h2 class="column-header">Job Description Alignment</h2>
-                   {render_column(jd_skills, "accordion-jd")}
-                </div>
-                <div class="column">
-                    <h2 class="column-header">Project Task Alignment</h2>
-                    {render_column(project_skills, "accordion-project")}
-                </div>
-            </div>
+            {columns_html}
         </div>
     </body>
     </html>
@@ -783,7 +807,11 @@ async def send_paper_to_associates(
             res_job = await db.execute(stmt_job)
             test_paper = res_job.scalar_one_or_none()
 
-    if not test_paper:
+    is_dbd_enabled = False
+    if stage.job_stage and stage.job_stage.template and stage.job_stage.template.config:
+        is_dbd_enabled = stage.job_stage.template.config.get("is_dbd_enabled", False)
+
+    if not test_paper and not is_dbd_enabled:
         raise HTTPException(
             status_code=400,
             detail="No default question paper found for this job stage. Please assign a question paper first.",
@@ -812,7 +840,7 @@ async def send_paper_to_associates(
             evaluation = AssociateEvaluation(
                 candidate_stage_id=stage.id,
                 associate_id=associate.id,
-                test_paper_id=test_paper.id,
+                test_paper_id=test_paper.id if test_paper else None,
                 candidate_id=candidate.id,
                 job_id=stage.job_stage.job_id if stage.job_stage else candidate.applied_job_id,
             )
@@ -1119,6 +1147,9 @@ async def get_associate_results(
                 weighted_total=weighted_total,
                 weighted_max=weighted_max_total,
                 weighted_result_out_of_5=weighted_result_out_of_5,
+                dbd_scores=ev.dbd_scores,
+                dbd_hiring_decision=ev.dbd_hiring_decision,
+                dbd_remarks=ev.dbd_remarks,
             )
         )
 

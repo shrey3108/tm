@@ -62,6 +62,68 @@ def evaluate_candidate_transcript_task(candidate_stage_id_str: str):
                 logger.info(f"Starting AI evaluation for stage {candidate_stage_id}")
                 result = await evaluation_service.evaluate_candidate_stage(db, candidate_stage_id)
                 logger.info(f"Evaluation completed for stage {candidate_stage_id}")
+                
+                # Check for DBD automation
+                try:
+                    from sqlalchemy import select
+                    from sqlalchemy.orm import selectinload
+                    from app.v1.db.models.candidate_stages import CandidateStage
+                    from app.v1.db.models.job_stage_configs import JobStageConfig
+                    from app.v1.db.models.jobs import Job
+                    
+                    stmt = select(CandidateStage).options(
+                        selectinload(CandidateStage.job_stage).options(
+                            selectinload(JobStageConfig.job).options(
+                                selectinload(Job.associates)
+                            )
+                        ),
+                        selectinload(CandidateStage.candidate)
+                    ).where(CandidateStage.id == candidate_stage_id)
+                    
+                    stage_res = await db.execute(stmt)
+                    stage = stage_res.scalar_one_or_none()
+                    
+                    if stage and stage.job_stage and stage.job_stage.config:
+                        is_dbd_enabled = stage.job_stage.config.get("is_dbd_enabled", False)
+                        if is_dbd_enabled and stage.job_stage.job and stage.job_stage.job.associates:
+                            from app.v1.db.models.associate_evaluations import AssociateEvaluation
+                            from app.v1.services.email_service import send_associate_notification_email
+                            
+                            for associate in stage.job_stage.job.associates:
+                                # Check if already assigned
+                                exist_stmt = select(AssociateEvaluation).where(
+                                    AssociateEvaluation.candidate_stage_id == stage.id,
+                                    AssociateEvaluation.associate_id == associate.id
+                                )
+                                exist_res = await db.execute(exist_stmt)
+                                if exist_res.scalar_one_or_none():
+                                    continue
+                                
+                                evaluation = AssociateEvaluation(
+                                    candidate_stage_id=stage.id,
+                                    associate_id=associate.id,
+                                    test_paper_id=None,
+                                    candidate_id=stage.candidate_id,
+                                    job_id=stage.job_stage.job_id
+                                )
+                                db.add(evaluation)
+                                await db.flush() # get review_token
+                                
+                                await send_associate_notification_email(
+                                    associate_name=associate.name,
+                                    associate_email=associate.email,
+                                    candidate=stage.candidate,
+                                    test_paper=None,
+                                    review_token=evaluation.review_token,
+                                    db=db,
+                                    stage_job_id=stage.job_stage.job_id,
+                                    stage_name=stage.job_stage.config.get("name", "Technical + HR Panel Interview")
+                                )
+                            await db.commit()
+                            logger.info(f"Automatically sent DBD evaluation emails for stage {candidate_stage_id}")
+                except Exception as dbd_err:
+                    logger.error(f"Failed to auto-send DBD emails: {dbd_err}")
+                
                 return result
             except Exception as e:
                 logger.error(f"Evaluation task failed for stage {candidate_stage_id}: {e}")

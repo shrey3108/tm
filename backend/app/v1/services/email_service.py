@@ -584,7 +584,7 @@ async def send_associate_notification_email(
             attachment_name = os.path.basename(task_file_path)
             file_resolved = True
             
-    if not file_resolved:
+    if not file_resolved and test_paper is not None:
         # Generate PDF dynamically
         try:
             # We fetch guidelines here to pass into the PDF if needed

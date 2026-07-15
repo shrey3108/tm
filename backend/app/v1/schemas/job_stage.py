@@ -24,6 +24,7 @@ class StageConfig(BaseModel):
         description="Criteria names or IDs for evaluation"
     )
     is_panel_interview: Optional[bool] = Field(None, description="Whether this is a panel interview")
+    is_dbd_enabled: Optional[bool] = Field(None, description="Whether the DBD form is enabled for this stage")
 
     model_config = ConfigDict(extra="allow")
 

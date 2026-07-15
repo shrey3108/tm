@@ -48,6 +48,9 @@ class AssociateReviewResult(BaseModel):
     weighted_total: Optional[float] = Field(None, description="Skill-weighted total awarded marks (0-100 scale)")
     weighted_max: Optional[float] = Field(None, description="Skill-weighted max marks (100 when computable)")
     weighted_result_out_of_5: Optional[float] = Field(None, description="Weighted result converted to a scale of 5: (weighted_total / weighted_max) * 5")
+    dbd_scores: Optional[list[dict]] = Field(None, description="DBD dynamic criteria scores")
+    dbd_hiring_decision: Optional[str] = Field(None, description="DBD hiring decision")
+    dbd_remarks: Optional[str] = Field(None, description="DBD note remarks")
 
 
 class AssociateResultsResponse(BaseModel):

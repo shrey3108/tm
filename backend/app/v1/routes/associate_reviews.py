@@ -27,6 +27,7 @@ from sqlalchemy.orm import selectinload
 from app.v1.core.config import settings
 from app.v1.db.models.associate_evaluations import AssociateEvaluation
 from app.v1.db.models.candidate_test_paper import CandidateTestPaper
+from app.v1.db.models.candidate_stages import CandidateStage
 from app.v1.db.models.jobs import Job
 from app.v1.db.session import get_db
 
@@ -167,7 +168,11 @@ async def _load_evaluation(db: AsyncSession, token: uuid.UUID) -> AssociateEvalu
         .options(
             selectinload(AssociateEvaluation.test_paper),
             selectinload(AssociateEvaluation.candidate),
-            selectinload(AssociateEvaluation.candidate_stage),
+            selectinload(AssociateEvaluation.candidate_stage).options(
+                selectinload(CandidateStage.job_stage).options(
+                    selectinload(JobStageConfig.template)
+                )
+            ),
             selectinload(AssociateEvaluation.associate),
             selectinload(AssociateEvaluation.job).options(
                 selectinload(Job.department),
@@ -203,6 +208,39 @@ def _candidate_full_name(candidate) -> str:
     return f"{candidate.first_name or 'Candidate'} {candidate.last_name or ''}".strip()
 
 
+async def _fetch_dbd_criteria_names(db: AsyncSession, stage_config) -> list[str]:
+    """Fetch criteria names for DBD form, either from JSON or relational tables."""
+    if not stage_config:
+        return []
+        
+    config = stage_config.config or {}
+    saved_active = config.get("active_criteria", [])
+    
+    if saved_active:
+        return [c.get("name", "Unknown") for c in saved_active if c.get("is_active", True)]
+        
+    if not stage_config.template_id:
+        return []
+        
+    from sqlalchemy import select, and_
+    from app.v1.db.models.criteria import Criterion
+    from app.v1.db.models.stage_template_criteria import StageTemplateCriterion
+    
+    stmt = (
+        select(Criterion.name)
+        .join(StageTemplateCriterion, StageTemplateCriterion.criterion_id == Criterion.id)
+        .where(
+            and_(
+                StageTemplateCriterion.template_id == stage_config.template_id,
+                StageTemplateCriterion.is_active == True,
+            )
+        )
+        .order_by(Criterion.name)
+    )
+    result = await db.execute(stmt)
+    return [row[0] for row in result.all()]
+
+
 # ---------------------------------------------------------------------------
 # 1. GET — Serve the HTML review form
 # ---------------------------------------------------------------------------
@@ -214,10 +252,36 @@ async def serve_review_form(token: uuid.UUID, db: AsyncSession = Depends(get_db)
 
     test_paper = evaluation.test_paper
     if test_paper is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="The question paper for this review could no longer be found.",
-        )
+        is_dbd_enabled = False
+        if evaluation.candidate_stage and evaluation.candidate_stage.job_stage and evaluation.candidate_stage.job_stage.template and evaluation.candidate_stage.job_stage.template.config:
+             is_dbd_enabled = evaluation.candidate_stage.job_stage.template.config.get("is_dbd_enabled", False)
+        
+        if not is_dbd_enabled:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="The question paper for this review could no longer be found.",
+            )
+        else:
+            criteria_names = await _fetch_dbd_criteria_names(db, evaluation.candidate_stage.job_stage)
+                    
+            candidate_full_name = _candidate_full_name(evaluation.candidate) if evaluation.candidate else "Candidate"
+            job_title, department_name, position_name = _resolve_job_info(evaluation.job)
+            submit_url = f"{settings.APP_BASE_URL.rstrip('/')}/api/v1/associate-reviews/{token}/submit"
+            is_submitted = (evaluation.status == "submitted")
+            
+            return HTMLResponse(content=_render_dbd_form_html(
+                associate_name=evaluation.associate.name if evaluation.associate else "Reviewer",
+                candidate_full_name=candidate_full_name,
+                job_title=job_title,
+                department_name=department_name,
+                position_name=position_name,
+                criteria=criteria_names,
+                submit_url=submit_url,
+                is_submitted=is_submitted,
+                saved_scores=evaluation.dbd_scores,
+                saved_decision=evaluation.dbd_hiring_decision,
+                saved_remarks=evaluation.dbd_remarks
+            ))
 
     items = _parse_all_items(test_paper)
     candidate = evaluation.candidate
@@ -286,10 +350,40 @@ async def submit_review_form(
 
     test_paper = evaluation.test_paper
     if test_paper is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="The question paper for this review could no longer be found.",
-        )
+        # Check if it's a DBD evaluation
+        is_dbd_enabled = False
+        if evaluation.candidate_stage and evaluation.candidate_stage.job_stage and evaluation.candidate_stage.job_stage.config:
+             is_dbd_enabled = evaluation.candidate_stage.job_stage.config.get("is_dbd_enabled", False)
+        
+        if not is_dbd_enabled:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="The question paper for this review could no longer be found.",
+            )
+        
+        # Process DBD form
+        form = await request.form()
+        criteria_names = await _fetch_dbd_criteria_names(db, evaluation.candidate_stage.job_stage if evaluation.candidate_stage else None)
+            
+        dbd_scores = []
+        for i, c_name in enumerate(criteria_names):
+            score_val = form.get(f"dbd_score_{i}")
+            score_float = None
+            try:
+                if score_val is not None and str(score_val).strip():
+                    score_float = float(str(score_val).strip())
+            except ValueError:
+                pass
+            dbd_scores.append({"criterion": c_name, "score": score_float})
+            
+        evaluation.dbd_scores = dbd_scores
+        evaluation.dbd_hiring_decision = form.get("dbd_hiring_decision")
+        evaluation.dbd_remarks = form.get("dbd_remarks")
+        
+        evaluation.submitted_at = datetime.now(timezone.utc)
+        evaluation.status = "submitted"
+        await db.commit()
+        return RedirectResponse(url=f"/api/v1/associate-reviews/{token}", status_code=303)
 
     items = _parse_all_items(test_paper)
     form = await request.form()
@@ -615,6 +709,223 @@ def _render_form_html(
       </div>
 
       <form method="POST" action="{html.escape(submit_url)}">
+        {items_html}
+        {submit_section_html}
+      </form>
+    </div>
+    <div class="footer">
+      August Infotech &mdash; www.augustinfotech.com
+    </div>
+  </div>
+</body>
+</html>"""
+
+
+def _render_dbd_form_html(
+    associate_name: str,
+    candidate_full_name: str,
+    job_title: str,
+    department_name: str,
+    position_name: str,
+    criteria: list[str],
+    submit_url: str,
+    is_submitted: bool = False,
+    saved_scores: list[dict] = None,
+    saved_decision: str = None,
+    saved_remarks: str = None,
+) -> str:
+    # Build rows for criteria
+    rows: list[str] = []
+    options = ["1", "1.5", "2", "2.5", "3", "3.5", "4", "4.5", "5"]
+    
+    total_score = 0.0
+    valid_scores = 0
+    
+    for i, crit in enumerate(criteria):
+        saved_val = ""
+        disabled_attr = ""
+        if is_submitted and saved_scores and i < len(saved_scores):
+            score_val = saved_scores[i].get("score")
+            if score_val is not None:
+                saved_val = str(score_val)
+                total_score += float(score_val)
+                valid_scores += 1
+            disabled_attr = "disabled"
+            
+        options_html = '<option value="">Select</option>'
+        for opt in options:
+            selected = "selected" if saved_val == opt or saved_val == str(float(opt)) else ""
+            options_html += f'<option value="{opt}" {selected}>{opt}</option>'
+            
+        rows.append(f"""
+        <div class="question-row">
+          <div class="question-text">{i + 1}. {html.escape(crit)}</div>
+          <div class="mark-input">
+            <select name="dbd_score_{i}" style="padding: 6px; border-radius: 4px; border: 1px solid #d1d5db;" {disabled_attr} required>
+                {options_html}
+            </select>
+          </div>
+        </div>""")
+
+    average_score = (total_score / valid_scores) if valid_scores > 0 else 0.0
+    
+    # Hiring decision row
+    decisions = ["Select", "Hold", "Reject"]
+    decision_options = '<option value="">Select</option>'
+    for dec in decisions:
+        selected = "selected" if saved_decision == dec else ""
+        decision_options += f'<option value="{dec}" {selected}>{dec}</option>'
+        
+    rows.append(f"""
+    <div class="question-row" style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-top: 20px;">
+      <div class="question-text" style="font-weight: 600;">Hiring Decision <span style="color:red;">*</span></div>
+      <div class="mark-input">
+        <select name="dbd_hiring_decision" style="padding: 8px; border-radius: 4px; border: 1px solid #d1d5db; width: 150px; font-weight:600;" {'disabled' if is_submitted else ''} required>
+            {decision_options}
+        </select>
+      </div>
+    </div>""")
+    
+    # Remarks row
+    saved_rem = saved_remarks or ""
+    rows.append(f"""
+    <div style="margin-top: 15px;">
+        <div style="font-weight: 600; margin-bottom: 8px;">Note / Remarks:</div>
+        <textarea name="dbd_remarks" rows="4" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #d1d5db; font-family: inherit;" {'disabled' if is_submitted else ''}>{html.escape(saved_rem)}</textarea>
+    </div>
+    """)
+    
+    items_html = chr(10).join(rows)
+
+    submit_section_html = ""
+    score_box_html = ""
+    
+    if is_submitted:
+        score_box_html = f"""
+        <div class="score-box" style="margin:20px auto; border: 3px solid #bac7de; background: #f9fafb; border-radius: 8px; padding: 10px;">
+          <div style="font-size:18px; font-weight:700; color:#111827; margin-bottom:12px;">Final Result</div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+            <span style="font-weight:600; color:#1f2937;">Average Score:</span>
+            <span style="color:#4b5563; font-weight: 600; font-size: 16px;">{average_score:.2f} / 5</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-weight:600; color:#1f2937;">Decision:</span>
+            <span style="display:inline-block; padding: 4px 16px; border-radius: 20px; font-weight:700; font-size:14px; color:#fff; background-color:{'#10b981' if saved_decision == 'Select' else ('#f59e0b' if saved_decision == 'Hold' else '#ef4444')};">{html.escape(saved_decision or 'N/A')}</span>
+          </div>
+        </div>"""
+    else:
+        submit_section_html = """
+        <div class="submit-row">
+          <button type="submit" class="submit-btn">Submit Evaluation</button>
+        </div>"""
+
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DBD Associate Review Form</title>
+  <style>
+    * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+    body {{
+      font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      background-color: #f4f6f9;
+      color: #333;
+      padding: 20px;
+    }}
+    .container {{
+      max-width: 720px;
+      margin: 20px auto;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      overflow: hidden;
+      border: 1px solid #eef2f6;
+    }}
+    .header {{
+      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+      padding: 28px;
+      text-align: center;
+      color: #fff;
+    }}
+    .header h1 {{ font-size: 22px; font-weight: 700; }}
+    .content {{ padding: 30px; }}
+    .greeting {{ font-size: 17px; font-weight: 600; margin-bottom: 8px; color: #111827; }}
+    .subtext {{ font-size: 14px; color: #6b7280; margin-bottom: 24px; }}
+    .info-box {{
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 20px;
+    }}
+    .candidate-box {{
+      background: #f9fafb;
+      border: 3px solid #bac7de;
+    }}
+    .box-title {{ font-weight: 600; color: #1f2937; margin-bottom: 8px; font-size: 14px; }}
+    .info-row {{ display: flex; margin-bottom: 8px; font-size: 14px; }}
+    .info-label {{ font-weight: 600; color: #1f2937; min-width: 150px; }}
+    .info-value {{ color: #4b5563; flex: 1; }}
+    .question-row {{
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 0; border-bottom: 1px solid #f3f4f6; gap: 16px;
+    }}
+    .question-text {{
+      flex: 1; min-width: 0; font-size: 14px; line-height: 1.6; color: #374151;
+    }}
+    .mark-input {{ display: flex; align-items: center; gap: 6px; flex-shrink: 0; }}
+    .submit-row {{ margin-top: 28px; text-align: center; }}
+    .submit-btn {{
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: #fff; border: none; padding: 14px 40px; border-radius: 8px;
+      font-size: 16px; font-weight: 600; cursor: pointer;
+    }}
+    .submit-btn:hover {{ opacity: 0.9; }}
+    .footer {{
+      background: #f9fafb; padding: 16px 30px; text-align: center;
+      font-size: 12px; color: #9ca3af; border-top: 1px solid #eef2f6;
+    }}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Technical + HR Panel Evaluation</h1>
+    </div>
+    <div class="content">
+      <div class="greeting">Hello {html.escape(associate_name)},</div>
+      <div class="subtext">
+        {
+          "This evaluation has already been submitted. You can review your scores and final decision below." if is_submitted 
+          else "Please review the candidate below, select a score for each criteria (1 to 5), and provide your final hiring decision."
+        }
+      </div>
+
+      {score_box_html if is_submitted else ""}
+
+      <div class="info-box candidate-box">
+        <div class="box-title">Candidate Details</div>
+        <div class="info-row">
+          <div class="info-label">Candidate Name:</div>
+          <div class="info-value">{html.escape(candidate_full_name)}</div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">Job Role:</div>
+          <div class="info-value">{html.escape(job_title) or 'N/A'}</div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">Department:</div>
+          <div class="info-value">{html.escape(department_name)}</div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">Position:</div>
+          <div class="info-value">{html.escape(position_name)}</div>
+        </div>
+      </div>
+
+      <form method="POST" action="{html.escape(submit_url)}">
+        <div style="font-size: 16px; font-weight: 600; color: #111827; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #eef2f6; margin-top: 30px;">
+          Evaluation Criteria
+        </div>
         {items_html}
         {submit_section_html}
       </form>
