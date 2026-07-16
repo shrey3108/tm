@@ -141,10 +141,7 @@ async def trigger_github_evaluation(
                     eval_id = None
                 
                 if response.status_code == 409:
-                    if eval_id:
-                        logger.info(f"Repository already submitted. Re-using evaluation ID: {eval_id}")
-                    else:
-                        raise HTTPException(status_code=409, detail=error_msg)
+                    raise HTTPException(status_code=409, detail=error_msg)
                 else:
                     stage.status = "failed"
                     stage.evaluation_data = {
