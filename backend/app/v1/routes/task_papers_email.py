@@ -107,6 +107,19 @@ async def send_test_paper_email(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"CandidateTestPaper with ID {email_data.paper_id} not found.",
         )
+
+    # Check if the paper has any questions, MCQs, project tasks, or a task file path
+    if (
+        not paper.questions 
+        and not paper.project_task 
+        and not getattr(paper, "mcqs", None) 
+        and not paper.task_file_path
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot send an empty question paper. Please assign questions or a project task to the paper first.",
+        )
+
     if paper.candidate_id != candidate.id:
         job_id = await get_candidate_active_job_id(db, candidate)
         if not (paper.candidate_id is None and paper.job_id == job_id):
@@ -230,6 +243,18 @@ async def send_bulk_test_paper_email(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"CandidateTestPaper with ID {email_data.paper_id} not found.",
+        )
+
+    # Check if the paper has any questions, MCQs, project tasks, or a task file path
+    if (
+        not paper.questions 
+        and not paper.project_task 
+        and not getattr(paper, "mcqs", None) 
+        and not paper.task_file_path
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot send an empty question paper. Please assign questions or a project task to the paper first.",
         )
 
     if not email_data.candidate_ids and not email_data.candidate_emails:
