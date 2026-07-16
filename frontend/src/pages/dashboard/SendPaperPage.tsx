@@ -88,10 +88,12 @@ export default function SendPaperPage() {
     loading: loadingCandidateAssigned,
     refetch: refetchCandidateAssigned,
   } = useCandidateTestPaper(
-    isBulkMode
-      ? bulkProbeCandidateId
-      : (candidateId ? candidateId : undefined),
-    jobStageId
+    {
+      candidateId: isBulkMode
+        ? bulkProbeCandidateId
+        : (candidateId ? candidateId : undefined),
+      jobId: job?.id
+    }
   );
 
   const {

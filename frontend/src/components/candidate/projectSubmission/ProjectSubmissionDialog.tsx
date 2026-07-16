@@ -111,7 +111,7 @@ export function ProjectSubmissionDialog({
       toast.error(errorMsg || "Failed to submit details. Please try again.");
     }
   };
-  const { data: assignedPaper } = useCandidateTestPaper(candidateId);
+  const { data: assignedPaper } = useCandidateTestPaper({ candidateId });
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>

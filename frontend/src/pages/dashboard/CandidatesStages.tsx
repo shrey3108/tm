@@ -116,14 +116,14 @@ export default function CandidatesStages() {
   const { combinedChartData, dbdAssociates } = useMemo(() => {
     if (!evaluation) return { combinedChartData: [], dbdAssociates: [] };
 
-    // Get base AI chart data
-    const baseData = evaluation.evaluation_data ? getChartData(evaluation.evaluation_data) : [];
+    // Get base AI chart data // no need of ai data because dbd criteria != stage criteria
+    // const baseData = evaluation.evaluation_data ? getChartData(evaluation.evaluation_data) : [];
 
     // Map base data to a record for easy lookups and updates
     const skillsMap: Record<string, any> = {};
-    baseData.forEach((point) => {
-      skillsMap[point.name] = { ...point };
-    });
+    // baseData.forEach((point) => {
+    //   skillsMap[point.name] = { ...point };
+    // });
 
     const activeAssociates: { key: string; label: string }[] = [];
 

@@ -252,14 +252,21 @@ export const taskService = {
    * Retrieves the details of a paper currently assigned to a candidate.
    */
   getCandidateTestPaper: async (
-    candidateId: string,
-    jobStageId?: string
+    {
+      candidateId,
+      jobStageId,
+      job_id
+    }: {
+      candidateId: string | null | undefined;
+      jobStageId?: string;
+      job_id?: string;
+    }
   ): Promise<CandidateTestPaperRead | null> => {
     try {
       const response = await client.get<CandidateTestPaperRead>(
         `/task-papers/assigned/${candidateId}`,
         {
-          params: { job_stage_id: jobStageId },
+          params: { job_stage_id: jobStageId, job_id },
         }
       );
       return response.data;
