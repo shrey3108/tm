@@ -60,12 +60,12 @@ export default function JobCandidatesBarChart({ isAnimationActive = true, data: 
         );
     };
 
-    const minWidth = displayData ? displayData.length * (isMobile ? 50 : 65) : 0;
+    const minWidth = displayData ? displayData.length * (isMobile ? 75 : 95) : 0;
 
     return (
         <div className="w-full overflow-x-auto custom-scrollbar animate-in fade-in zoom-in-95 duration-700">
             <div style={{ minWidth: minWidth ? `${minWidth}px` : '100%', width: '100%' }}>
-                <ChartContainer config={chartConfig} className="w-full aspect-auto h-[360px] sm:h-[440px]">
+                <ChartContainer config={chartConfig} className="w-full aspect-auto h-90 sm:h-110">
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart
                             data={displayData}
@@ -74,7 +74,7 @@ export default function JobCandidatesBarChart({ isAnimationActive = true, data: 
                                 top: 20,
                                 right: 20,
                                 left: 30,
-                                bottom: isMobile ? 75 : 85
+                                bottom: isMobile ? 45 : 55
                             }}
                             className='[&_.recharts-cartesian-grid-horizontal>line]:[stroke-dasharray:0]'
                         >
@@ -142,8 +142,7 @@ export default function JobCandidatesBarChart({ isAnimationActive = true, data: 
 
                                     const value = String(payload.value);
 
-                                    const formattedValue = toTitleCase(value);
-
+                                    const formattedValue = toTitleCase(value)
                                     const words = formattedValue.split(' ');
 
                                     return (
@@ -166,10 +165,10 @@ export default function JobCandidatesBarChart({ isAnimationActive = true, data: 
                                     );
                                 }}
                             >
-                                <Label
-                                    value="Criteria"
+                                <Label value="Criteria"
+                                    // angle={-90}
                                     position="insideBottom"
-                                    offset={isMobile ? -15 : -5}
+                                    style={{ textAnchor: "middle" }}
                                     className="fill-muted-foreground text-[10px] sm:text-xs font-normal tracking-wider"
                                 />
                             </XAxis>
@@ -180,7 +179,7 @@ export default function JobCandidatesBarChart({ isAnimationActive = true, data: 
                                 className="text-[10px] sm:text-xs font-medium text-muted-foreground"
                                 allowDecimals={false}
                                 domain={[0, 5]}
-                                ticks={[0, 1, 2, 3, 4, 5]}
+                                ticks={[1, 2, 3, 4, 5]}
                             >
                                 <Label value="Scores"
                                     angle={-90}

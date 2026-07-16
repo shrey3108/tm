@@ -31,7 +31,7 @@ export default function AdminDashboard() {
   const { data: jobs } = useJobTitle("", true);
   // Fetch stage templates
   const { data: stagesData } = useJobStage(0, 100, "");
-  const stages = useMemo(() => stagesData.map(t => ({ name: t.name })), [stagesData]);
+  const stages = useMemo(() => stagesData.toSorted((a, b) => (a?.default_order || 0) - (b?.default_order || 1)).map(t => ({ name: t.name })), [stagesData]);
 
   // Fetch dashboard summary and hiring report
   const { analytics, report, loading, error, refetch } = useAdminDashboardData();

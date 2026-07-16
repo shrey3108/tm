@@ -13,6 +13,8 @@ import { useDebouncedValue } from "@/hooks/useDebounced";
 import { useSkill } from "@/hooks/queries/admin/useSkill";
 import { Button } from "@/components/ui/button";
 import CreateSkillModal from "@/components/modal/CreateSkillModal";
+import { Label } from "@/components/ui/label";
+import { Required } from "@/components/shared/Required";
 
 interface QuestionsBankSkillSelectorProps {
   initialSelectedSkills?: SkillRead[];
@@ -89,9 +91,10 @@ export function QuestionsBankSkillSelector({
   return (
     <div className="space-y-0.5 pt-0.5">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
-        <p className="text-xs text-muted-foreground font-medium">
+        <Label className="text-sm font-semibold">Associated Tech Stack Skills <Required /></Label>
+        {/* <p className="text-xs text-muted-foreground font-medium">
           {placeholderMessage}
-        </p>
+        </p> */}
         <Button
           onClick={() => setShowModal(true)}
           variant="outline"

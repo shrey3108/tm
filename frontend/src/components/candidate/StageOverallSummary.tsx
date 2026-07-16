@@ -98,8 +98,8 @@ export function StageOverallSummary({ data }: StageOverallSummaryProps) {
             </Badge>
             <Badge className="px-2 h-8" variant="outline">
               <span>
-                Stage Score <span className="font-semibold">{data.stage_score.toFixed(2)}</span>
-                <span className="text-muted-foreground">/5.0</span>
+                Stage Score <span className="font-semibold">{data.stage_score.toFixed(1)}</span>
+                <span>/5.0</span>
               </span>
             </Badge>
           </div>

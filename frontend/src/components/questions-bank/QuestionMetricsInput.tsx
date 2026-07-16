@@ -31,9 +31,9 @@ export function QuestionMetricsInput({
   durationError,
   onClearMarksError,
   onClearDurationError,
-  marksPlaceholder = "10",
-  hoursPlaceholder = "0",
-  minutesPlaceholder = "30",
+  marksPlaceholder = "00",
+  hoursPlaceholder = "00",
+  minutesPlaceholder = "00",
   disabled = false,
 }: QuestionMetricsInputProps) {
   return (

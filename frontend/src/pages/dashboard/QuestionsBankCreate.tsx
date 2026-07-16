@@ -546,7 +546,6 @@ export default function QuestionsBankCreate() {
         {/* Skills Selector Card */}
         <div className="app-surface-card space-y-2 p-2">
           <div className="space-y-1">
-            <Label className="text-sm font-semibold">Associated Tech Stack Skills <Required /></Label>
             <div className="w-full">
               <Form {...form}>
                 <QuestionsBankSkillSelector

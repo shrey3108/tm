@@ -60,7 +60,7 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
           <Button
             variant="ghost"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="hover:bg-transparent p-0 text-base font-semibold "
+            className="hover:bg-transparent p-0 text-base font-semibold whitespace-nowrap"
           >
             Candidate
             <ArrowUpDown className="h-4 w-4" />
@@ -121,7 +121,7 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
             meta: { overflow: 'wrap' },
 
             header: () => {
-              return <div className="flex items-center justify-between">
+              return <div className="flex items-center justify-between whitespace-nowrap">
                 <span className="text-base">Job</span>
               </div>
             },
@@ -156,7 +156,7 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
           <Button
             variant="ghost"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="hover:bg-transparent p-0 text-base font-semibold "
+            className="hover:bg-transparent p-0 text-base font-semibold whitespace-nowrap"
           >
             AI Result
             <ArrowUpDown className="h-4 w-4" />
@@ -235,7 +235,7 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
           <Button
             variant="ghost"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="hover:bg-transparent p-0 text-base font-semibold "
+            className="hover:bg-transparent p-0 text-base font-semibold whitespace-nowrap"
           >
             HR Decision
             <ArrowUpDown className="h-4 w-4" />
@@ -286,7 +286,7 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
         meta: { overflow: 'wrap' },
 
         header: () => {
-          return <div className="flex items-center justify-between">
+          return <div className="flex items-center justify-between whitespace-nowrap">
             <span className="text-base">Stages</span>
           </div>
         },
@@ -317,7 +317,7 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
         meta: { overflow: 'visible' },
 
         header: () => {
-          return <div className="flex items-center justify-between">
+          return <div className="flex items-center justify-between whitespace-nowrap">
             <span className="text-base">Socials</span>
           </div>
         },
@@ -426,7 +426,7 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
           <Button
             variant="ghost"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="hover:bg-transparent p-0 text-base font-semibold "
+            className="hover:bg-transparent p-0 text-base font-semibold whitespace-nowrap"
           >
             Applied At
             <ArrowUpDown className="h-4 w-4" />
@@ -450,7 +450,7 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
           <Button
             variant="ghost"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="hover:bg-transparent p-0 text-base font-semibold "
+            className="hover:bg-transparent p-0 text-base font-semibold whitespace-nowrap"
           >
             Location
             <ArrowUpDown className="h-4 w-4" />
@@ -478,7 +478,7 @@ export const useCandidateTableColumns = <T extends UnifiedCandidate>({
             id: "actions",
             size: !showJobContext ? 12 : 8,
             meta: { overflow: 'wrap' },
-            header: () => <div className="text-center text-base">Actions</div>,
+            header: () => <div className="text-center text-base whitespace-nowrap">Actions</div>,
             cell: ({ row }: { row: { original: T } }) => (
               <div className="flex items-center justify-center gap-0.5 flex-wrap">
                 {renderActions(row.original)}

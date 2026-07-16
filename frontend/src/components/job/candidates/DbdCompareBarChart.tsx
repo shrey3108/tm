@@ -3,6 +3,7 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Rectangle, ResponsiveContai
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 import { CHART_COLORS } from "@/constants";
 import { useIsMobile } from '@/hooks/use-mobile';
+import { toTitleCase } from '@/lib/utils';
 
 export interface DbdCompareChartDataPoint {
     name: string;
@@ -86,7 +87,7 @@ export default function DbdCompareBarChart({
     return (
         <div className="w-full overflow-x-auto custom-scrollbar animate-in fade-in zoom-in-95 duration-700">
             <div style={{ minWidth: minWidth ? `${minWidth}px` : '100%', width: '100%' }}>
-                <ChartContainer config={dynamicConfig} className="w-full aspect-auto h-[360px] sm:h-[440px]">
+                <ChartContainer config={dynamicConfig} className="w-full aspect-auto h-90 sm:h-110">
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart
                             data={displayData}
@@ -173,20 +174,15 @@ export default function DbdCompareBarChart({
                                 tickMargin={12}
                                 axisLine={false}
                                 interval={0}
-                                height={isMobile ? 55 : 65}
+                                height={isMobile ? 75 : 85}
+                                className="text-[10px] sm:text-xs font-normal text-muted-foreground"
                                 tick={(props) => {
                                     const { x, y, payload } = props;
                                     if (!payload || !payload.value) return null;
 
                                     const value = String(payload.value);
 
-                                    // Format to Title Case (no all-caps)
-                                    const formattedValue = value
-                                        .toLowerCase()
-                                        .split(' ')
-                                        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-                                        .join(' ');
-
+                                    const formattedValue = toTitleCase(value)
                                     const words = formattedValue.split(' ');
 
                                     return (
@@ -208,7 +204,14 @@ export default function DbdCompareBarChart({
                                         </g>
                                     );
                                 }}
-                            />
+                            >
+                                <Label value="Scores"
+                                    // angle={-90}
+                                    position="insideBottom"
+                                    style={{ textAnchor: "middle" }}
+                                    className="fill-muted-foreground text-[10px] sm:text-xs font-normal tracking-wider"
+                                />
+                            </XAxis>
                             <YAxis
                                 tickLine={false}
                                 axisLine={false}
@@ -216,7 +219,7 @@ export default function DbdCompareBarChart({
                                 className="text-[10px] sm:text-xs font-medium text-muted-foreground"
                                 allowDecimals={false}
                                 domain={[0, 5]}
-                                ticks={[0, 1, 2, 3, 4, 5]}
+                                ticks={[1, 2, 3, 4, 5]}
                             >
                                 <Label value="Scores"
                                     angle={-90}

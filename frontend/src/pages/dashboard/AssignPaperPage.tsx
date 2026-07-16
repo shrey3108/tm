@@ -63,6 +63,7 @@ import { TotalMarks } from "@/components/shared/question/TotalMarks";
 import { TotalDuration } from "@/components/shared/question/TotalDuration";
 import { extractErrorMessage } from "@/utils/error";
 import { Required } from "@/components/shared/Required";
+import { Label } from "@/components/ui/label";
 
 export type QuestionType = "question" | "mcq" | "project_task"
 
@@ -726,9 +727,7 @@ export default function AssignPaperPage() {
             <label className="text-sm font-bold text-foreground flex items-center gap-1">
               Select Terms & Conditions Template <Required />
             </label>
-            <p className="text-xs text-muted-foreground">
-              Select a custom terms & conditions template to attach and send along with candidate test papers.
-            </p>
+
             <SearchableSelect
               value={selectedGuidelineId}
               onValueChange={setSelectedGuidelineId}
@@ -1297,7 +1296,6 @@ export default function AssignPaperPage() {
               <Form {...form}>
                 <QuestionsBankSkillSelector
                   initialSelectedSkills={[]}
-                  placeholderMessage="Select stacks/skills to link to this question/task."
                 />
               </Form>
               {errors.skill_ids && (
