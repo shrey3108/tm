@@ -288,7 +288,6 @@ def generate_candidate_task_pdf_file(
 
     if guideline_content:
         Story.append(Spacer(1, 20))
-        Story.append(Paragraph("<b>Terms & Conditions:</b>", styles['Heading2']))
         
         # Simple markdown to ReportLab HTML-like tags
         gc_safe = sanitize_for_pdf(guideline_content)
@@ -296,7 +295,7 @@ def generate_candidate_task_pdf_file(
         gc_safe = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', gc_safe)
         
         lines = gc_safe.split('\n')
-        in_list = False
+        guideline_flowables = []
         for line in lines:
             stripped = line.strip()
             if not stripped:
@@ -304,15 +303,27 @@ def generate_candidate_task_pdf_file(
             
             if stripped.startswith(('- ', '* ', '· ')):
                 bullet_text = stripped[2:]
-                Story.append(Paragraph(f"• {bullet_text}", normal_style))
+                guideline_flowables.append(Paragraph(f"• {bullet_text}", normal_style))
             elif stripped.startswith(('#')):
                 # headings
                 header_text = stripped.lstrip('#').strip()
-                Story.append(Spacer(1, 10))
-                Story.append(Paragraph(f"<b>{header_text}</b>", styles['Heading3']))
+                guideline_flowables.append(Spacer(1, 10))
+                guideline_flowables.append(Paragraph(f"<b>{header_text}</b>", styles['Heading3']))
             else:
-                Story.append(Paragraph(stripped, normal_style))
+                guideline_flowables.append(Paragraph(stripped, normal_style))
                 
+        if guideline_flowables:
+            from reportlab.platypus import KeepTogether
+            # Keep the title and the first paragraph together
+            Story.append(KeepTogether([
+                Paragraph("<b>Terms & Conditions:</b>", styles['Heading2']),
+                guideline_flowables[0]
+            ]))
+            # Add the rest
+            Story.extend(guideline_flowables[1:])
+        else:
+            Story.append(Paragraph("<b>Terms & Conditions:</b>", styles['Heading2']))
+
         Story.append(Spacer(1, 10))
 
     doc_rl.build(Story)
