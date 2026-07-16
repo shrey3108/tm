@@ -49,6 +49,7 @@ async def assign_test_paper_to_candidate(
 async def get_candidate_test_paper(
     candidate_id: uuid.UUID,
     job_stage_id: Optional[uuid.UUID] = Query(None, description="Optional job stage configuration ID"),
+    job_id: Optional[uuid.UUID] = Query(None, description="Optional job ID"),
     db: AsyncSession = Depends(get_db),
     user: UserRead = Depends(check_permission("candidates:access")),
 ):
@@ -75,10 +76,16 @@ async def get_candidate_test_paper(
         # Fallback to job-level default question paper!
         candidate = await db.get(Candidate, candidate_id)
         if candidate:
-            job_id = await get_candidate_active_job_id(db, candidate)
-            if job_id:
+            resolved_job_id = job_id
+            if not resolved_job_id and active_stage_id:
+                stage_config = await db.get(JobStageConfig, active_stage_id)
+                if stage_config:
+                    resolved_job_id = stage_config.job_id
+            if not resolved_job_id:
+                resolved_job_id = await get_candidate_active_job_id(db, candidate)
+            if resolved_job_id:
                 stmt_job = select(CandidateTestPaper).where(
-                    CandidateTestPaper.job_id == job_id,
+                    CandidateTestPaper.job_id == resolved_job_id,
                     CandidateTestPaper.candidate_id.is_(None)
                 )
                 if active_stage_id:
@@ -91,7 +98,7 @@ async def get_candidate_test_paper(
                         paper = res_job.scalar_one_or_none()
                 else:
                     # No active stage resolved: try job's first question stage, then NULL fallback
-                    auto_stage_id = await get_job_first_question_stage_config_id(db, job_id)
+                    auto_stage_id = await get_job_first_question_stage_config_id(db, resolved_job_id)
                     if auto_stage_id:
                         stmt_job_auto = stmt_job.where(CandidateTestPaper.job_stage_config_id == auto_stage_id)
                         res_job = await db.execute(stmt_job_auto)

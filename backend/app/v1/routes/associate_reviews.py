@@ -226,37 +226,21 @@ def _candidate_full_name(candidate) -> str:
     return f"{candidate.first_name or 'Candidate'} {candidate.last_name or ''}".strip()
 
 
+HARDCODED_DBD_CRITERIA = [
+    "Ethics & Confidence",
+    "Technical Skills",
+    "Communication Skills",
+    "Listening Skill",
+    "Detail Oriented",
+    "Attitude & Behavior",
+    "Smartness",
+    "Positivity",
+    "Professionalism",
+]
+
 async def _fetch_dbd_criteria_names(db: AsyncSession, stage_config) -> list[str]:
-    """Fetch criteria names for DBD form, either from JSON or relational tables."""
-    if not stage_config:
-        return []
-        
-    config = stage_config.config or {}
-    saved_active = config.get("active_criteria", [])
-    
-    if saved_active:
-        return [c.get("name", "Unknown") for c in saved_active if c.get("is_active", True)]
-        
-    if not stage_config.template_id:
-        return []
-        
-    from sqlalchemy import select, and_
-    from app.v1.db.models.criteria import Criterion
-    from app.v1.db.models.stage_template_criteria import StageTemplateCriterion
-    
-    stmt = (
-        select(Criterion.name)
-        .join(StageTemplateCriterion, StageTemplateCriterion.criterion_id == Criterion.id)
-        .where(
-            and_(
-                StageTemplateCriterion.template_id == stage_config.template_id,
-                StageTemplateCriterion.is_active == True,
-            )
-        )
-        .order_by(Criterion.name)
-    )
-    result = await db.execute(stmt)
-    return [row[0] for row in result.all()]
+    """Fetch criteria names for DBD form."""
+    return HARDCODED_DBD_CRITERIA
 
 
 # ---------------------------------------------------------------------------
@@ -395,18 +379,7 @@ async def submit_review_form(
         
         # Process DBD form
         form = await request.form()
-        criteria_names = [
-            "Ethics & Confidence",
-            "Technical Skills",
-            "Communication Skills",
-            "Listening Skill",
-            "Detail Oriented",
-            "Attitude & Behavior",
-            "Smartness",
-            "Positivity",
-            "Professionalism",
-            "Can take challenges?",
-        ]
+        criteria_names = HARDCODED_DBD_CRITERIA
             
         dbd_scores = []
         for i, c_name in enumerate(criteria_names):
