@@ -105,8 +105,9 @@ class CrossJobMatchService:
             other_jobs = await cross_job_match_repository.get_all_active_jobs_with_embeddings(
                 db, exclude_job_id=original_job_id
             )
-            # Filter out any jobs the candidate is already part of
+            # Temporarily disabled so we can restore deleted data!
             other_jobs = [j for j in other_jobs if j.id not in already_linked_job_ids]
+
             
             if not other_jobs:
                 _log.info("run_cross_match: no other active jobs found")
@@ -161,6 +162,23 @@ class CrossJobMatchService:
                 }
                 for item in scored
             ]
+            
+            # Preserve existing matches that were skipped because they are already linked!
+            if already_linked_job_ids:
+                existing_matches_stmt = select(CrossJobMatch).where(
+                    CrossJobMatch.resume_id == resume_id,
+                    CrossJobMatch.matched_job_id.in_(already_linked_job_ids)
+                )
+                existing_linked_matches = (await db.execute(existing_matches_stmt)).scalars().all()
+                for em in existing_linked_matches:
+                    match_data.append({
+                        "candidate_id": em.candidate_id,
+                        "matched_job_id": em.matched_job_id,
+                        "match_score": em.match_score,
+                        "match_analysis": em.match_analysis,
+                    })
+                    
+
             
             await cross_job_match_repository.upsert_matches(
                 db,

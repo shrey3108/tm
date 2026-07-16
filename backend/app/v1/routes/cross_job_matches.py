@@ -103,6 +103,10 @@ async def get_cross_job_matches(
             selectinload(CrossJobMatch.matched_job).selectinload(Job.skills),
             selectinload(CrossJobMatch.matched_job).selectinload(Job.stages).selectinload(JobStageConfig.template),
             selectinload(CrossJobMatch.matched_job).selectinload(Job.versions),
+            selectinload(CrossJobMatch.matched_job).selectinload(Job.associates),
+            selectinload(CrossJobMatch.matched_job).selectinload(Job.department),
+            selectinload(CrossJobMatch.matched_job).selectinload(Job.priority),
+            selectinload(CrossJobMatch.matched_job).selectinload(Job.position),
         )
         .where(CrossJobMatch.candidate_id == candidate_id)
         .order_by(CrossJobMatch.match_score.desc())

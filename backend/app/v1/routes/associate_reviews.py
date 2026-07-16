@@ -858,7 +858,7 @@ def _render_dbd_form_html(
           </div>
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <span style="font-weight:600; color:#1f2937;">Decision:</span>
-            <span style="display:inline-block; padding: 4px 16px; border-radius: 20px; font-weight:700; font-size:14px; color:#fff; background-color:{'#10b981' if saved_decision == 'Select' else ('#f59e0b' if saved_decision == 'Hold' else '#ef4444')};">{html.escape(saved_decision or 'N/A')}</span>
+            <span style="display:inline-block; padding: 4px 16px; border-radius: 20px; font-weight:700; font-size:14px; color:#fff; background-color:{'#10b981' if saved_decision in ('Select', 'Hire') else ('#f59e0b' if saved_decision == 'Hold' else '#ef4444')};">{html.escape(saved_decision or 'N/A')}</span>
           </div>
         </div>"""
     else:
