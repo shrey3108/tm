@@ -4,7 +4,7 @@
  *
  * Evaluation setup page for selecting, assigning, and customizing test papers for candidates.
  */
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useReducer } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useResolvedJobAndCandidate } from "@/hooks/queries/candidates/useCandidateStagesQueries";
 import { useQuery } from "@tanstack/react-query";
@@ -37,16 +37,22 @@ import { useJobAssignedTask } from "@/hooks/queries/jobs/useJobTask";
 import { useAllQuestionsAndTasks } from "@/hooks/queries/taskPapers/useTaskPaperQueries";
 import { useAssignTestPaperMutation, useDeleteJobDefaultTestPaperMutation } from "@/hooks/mutations/taskPapers/useTaskPaperMutations";
 import { taskService } from "@/apis/task";
-import type { MCQItem, TaskItem, SubTaskItem, QuestionItem } from "@/types/taskPaper";
+import type { MCQItem, TaskItem, QuestionItem } from "@/types/taskPaper";
 import { mcqFormSchema } from "@/schemas/taskPaper";
 import { questionFormSchema, projectTaskSchema } from "@/schemas/question";
 import { useForm } from "react-hook-form";
 import { Form } from "@/components/ui/form";
 import { QuestionsBankSkillSelector } from "@/components/questions-bank/QuestionsBankSkillSelector";
+import {
+  questionReducer,
+  questionInitialState,
+  mcqReducer,
+  mcqInitialState,
+  projectTaskReducer,
+  projectTaskInitialState,
+} from "@/reducer/questionsBankReducers";
 
-import { SingleQuestionFormFields } from "@/components/questions-bank/SingleQuestionFormFields";
-import { MCQFormFields } from "@/components/questions-bank/MCQFormFields";
-import { ProjectTaskFormFields } from "@/components/questions-bank/ProjectTaskFormFields";
+import { QuestionContentFormFields } from "@/components/questions-bank/QuestionContentFormFields";
 import { CustomPaperItemEditor } from "@/components/questions-bank/CustomPaperItemEditor";
 import LoadingSpinner from "@/components/shared/LoadingSpinner";
 import { MCQQuestionDisplay } from "@/components/shared/MCQQuestionDisplay";
@@ -57,6 +63,8 @@ import { TotalMarks } from "@/components/shared/question/TotalMarks";
 import { TotalDuration } from "@/components/shared/question/TotalDuration";
 import { extractErrorMessage } from "@/utils/error";
 import { Required } from "@/components/shared/Required";
+
+export type QuestionType = "question" | "mcq" | "project_task"
 
 export default function AssignPaperPage() {
   const navigate = useNavigate();
@@ -239,11 +247,28 @@ export default function AssignPaperPage() {
 
   // Helper to check if any inputs in the question creation draft are not empty
   const hasActiveCreationDraft = () => {
-    return (
-      questionText.trim() !== "" ||
-      mcqQuestion.trim() !== "" ||
-      taskDescription.trim() !== ""
-    );
+    const isQuestionDirty =
+      questionState.text.trim() !== "" ||
+      questionState.marks !== "" ||
+      questionState.hours !== "" ||
+      questionState.minutes !== "";
+
+    const isMCQDirty =
+      mcqState.question.trim() !== "" ||
+      mcqState.options.some((opt) => opt.trim() !== "") ||
+      mcqState.answer !== "" ||
+      mcqState.marks !== "" ||
+      mcqState.hours !== "" ||
+      mcqState.minutes !== "";
+
+    const isTaskDirty =
+      taskState.description.trim() !== "" ||
+      taskState.instructions.trim() !== "" ||
+      taskState.hours !== "" ||
+      taskState.minutes !== "" ||
+      taskState.tasks.length > 0;
+
+    return isQuestionDirty || isMCQDirty || isTaskDirty;
   };
 
   // State for inline editing of custom items
@@ -379,31 +404,17 @@ export default function AssignPaperPage() {
   ]);
 
   // Draft Custom Item states
-  const [contentType, setContentType] = useState<"question" | "mcq" | "project_task">("question");
+  const [contentType, setContentType] = useState<QuestionType>("question");
 
-  const [questionText, setQuestionText] = useState<string>("");
-  const [questionMarks, setQuestionMarks] = useState<number | "">("");
-  const [questionHours, setQuestionHours] = useState<number | "">("");
-  const [questionMinutes, setQuestionMinutes] = useState<number | "">("");
-
-  const [mcqQuestion, setMCQQuestion] = useState<string>("");
-  const [mcqOptions, setMCQOptions] = useState<string[]>(["", ""]);
-  const [mcqAnswer, setMCQAnswer] = useState<string>("");
-  const [mcqMarks, setMCqMarks] = useState<number | "">("");
-  const [mcqHours, setMCqHours] = useState<number | "">("");
-  const [mcqMinutes, setMCqMinutes] = useState<number | "">("");
-
-  const [taskDescription, setTaskDescription] = useState<string>("");
-  const [taskInstructions, setTaskInstructions] = useState<string>("");
-  const [taskHours, setTaskHours] = useState<number | "">("");
-  const [taskMinutes, setTaskMinutes] = useState<number | "">("");
-  const [projectTasks, setProjectTasks] = useState<SubTaskItem[]>([]);
+  const [questionState, questionDispatch] = useReducer(questionReducer, questionInitialState);
+  const [mcqState, mcqDispatch] = useReducer(mcqReducer, mcqInitialState);
+  const [taskState, taskDispatch] = useReducer(projectTaskReducer, projectTaskInitialState);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     setErrors({});
-  }, [contentType, mcqOptions.length]);
+  }, [contentType, mcqState.options.length]);
 
   // Toggle checks
   const toggleQuestionSelection = (item: QuestionItem) => {
@@ -448,15 +459,15 @@ export default function AssignPaperPage() {
         ...prev,
         skill_ids: "At least one skill is required.",
       }));
-      toast.error("Please select at least one skill/stack.");
-      return;
+      // toast.error("Please select at least one skill/stack.");
+      // return;
     }
     if (contentType === "question") {
       const result = questionFormSchema.safeParse({
-        question: questionText,
-        marks: questionMarks === "" ? undefined : Number(questionMarks),
-        hours: questionHours === "" ? 0 : Number(questionHours),
-        minutes: questionMinutes === "" ? 0 : Number(questionMinutes),
+        question: questionState.text,
+        marks: questionState.marks === "" ? undefined : Number(questionState.marks),
+        hours: questionState.hours === "" ? 0 : Number(questionState.hours),
+        minutes: questionState.minutes === "" ? 0 : Number(questionState.minutes),
       });
 
       if (!result.success) {
@@ -464,32 +475,29 @@ export default function AssignPaperPage() {
         result.error.issues.forEach((issue) => {
           newErrors[issue.path.join(".")] = issue.message;
         });
-        setErrors(newErrors);
+        setErrors((prev) => ({ ...prev, ...newErrors }));
         return;
       }
 
       const newItem: QuestionItem = {
-        question: questionText.trim(),
-        marks: Number(questionMarks),
-        duration: (Number(questionHours) || 0) * 60 + (Number(questionMinutes) || 0),
+        question: questionState.text.trim(),
+        marks: Number(questionState.marks),
+        duration: (Number(questionState.hours) || 0) * 60 + (Number(questionState.minutes) || 0),
         skill_ids: selectedSkillIds,
       };
 
       setCustomQuestions((prev) => [...prev, newItem]);
-      setQuestionText("");
-      setQuestionMarks("");
-      setQuestionHours("");
-      setQuestionMinutes("");
+      questionDispatch({ type: "RESET", payload: questionInitialState });
       form.setValue("skill_ids", []);
       toast.success("Added custom normal question.");
     } else if (contentType === "mcq") {
       const result = mcqFormSchema.safeParse({
-        question: mcqQuestion,
-        options: mcqOptions,
-        answer: mcqAnswer,
-        marks: mcqMarks === "" ? undefined : Number(mcqMarks),
-        hours: mcqHours === "" ? 0 : Number(mcqHours),
-        minutes: mcqMinutes === "" ? 0 : Number(mcqMinutes),
+        question: mcqState.question,
+        options: mcqState.options,
+        answer: mcqState.answer,
+        marks: mcqState.marks === "" ? undefined : Number(mcqState.marks),
+        hours: mcqState.hours === "" ? 0 : Number(mcqState.hours),
+        minutes: mcqState.minutes === "" ? 0 : Number(mcqState.minutes),
       });
 
       if (!result.success) {
@@ -501,38 +509,33 @@ export default function AssignPaperPage() {
             newErrors[issue.path.join(".")] = issue.message;
           }
         });
-        setErrors(newErrors);
+        setErrors((prev) => ({ ...prev, ...newErrors }));
         return;
       }
 
-      const answerIndex = mcqAnswer.charCodeAt(0) - 65;
-      const answerText = mcqOptions[answerIndex] || "";
+      const answerIndex = mcqState.answer.charCodeAt(0) - 65;
+      const answerText = mcqState.options[answerIndex] || "";
 
       const newItem: MCQItem = {
-        question: mcqQuestion.trim(),
-        options: mcqOptions.map((o) => o.trim()),
+        question: mcqState.question.trim(),
+        options: mcqState.options.map((o) => o.trim()),
         answer: answerText.trim(),
-        marks: Number(mcqMarks),
-        duration: (Number(mcqHours) || 0) * 60 + (Number(mcqMinutes) || 0),
+        marks: Number(mcqState.marks),
+        duration: (Number(mcqState.hours) || 0) * 60 + (Number(mcqState.minutes) || 0),
         skill_ids: selectedSkillIds,
       };
 
       setCustomMCQs((prev) => [...prev, newItem]);
-      setMCQQuestion("");
-      setMCQOptions(["", ""]);
-      setMCQAnswer("");
-      setMCqMarks("");
-      setMCqHours("");
-      setMCqMinutes("");
+      mcqDispatch({ type: "RESET", payload: mcqInitialState });
       form.setValue("skill_ids", []);
       toast.success("Added custom MCQ question.");
     } else if (contentType === "project_task") {
       const result = projectTaskSchema.safeParse({
-        project_task: taskDescription,
-        instructions: taskInstructions,
-        hours: taskHours,
-        minutes: taskMinutes,
-        tasks: projectTasks,
+        project_task: taskState.description,
+        instructions: taskState.instructions,
+        hours: taskState.hours,
+        minutes: taskState.minutes,
+        tasks: taskState.tasks,
       });
 
       if (!result.success) {
@@ -540,34 +543,30 @@ export default function AssignPaperPage() {
         result.error.issues.forEach((issue) => {
           newErrors[issue.path.join(".")] = issue.message;
         });
-        setErrors(newErrors);
+        setErrors((prev) => ({ ...prev, ...newErrors }));
         return;
       }
 
-      const duration = (Number(taskHours) || 0) * 60 + (Number(taskMinutes) || 0);
+      const duration = (Number(taskState.hours) || 0) * 60 + (Number(taskState.minutes) || 0);
 
       const newItem: TaskItem = {
-        task: taskDescription.trim(),
-        instructions: taskInstructions.trim(),
-        title: taskDescription.trim(),
-        description: taskDescription.trim(),
+        task: taskState.description.trim(),
+        instructions: taskState.instructions.trim(),
+        title: taskState.description.trim(),
+        description: taskState.description.trim(),
         duration,
-        tasks: projectTasks.map((t) => ({
+        tasks: taskState.tasks.map((t) => ({
           name: t.name,
           description: t.description || undefined,
           marks: t.marks,
         })),
-        total_marks: projectTasks.reduce((sum, t) => sum + (t.marks || 0), 0),
+        total_marks: taskState.tasks.reduce((sum, t) => sum + (t.marks || 0), 0),
         total_duration: duration,
         skill_ids: selectedSkillIds,
       };
 
       setCustomTasks((prev) => [...prev, newItem]);
-      setTaskDescription("");
-      setTaskInstructions("");
-      setTaskHours("");
-      setTaskMinutes("");
-      setProjectTasks([]);
+      taskDispatch({ type: "RESET", payload: projectTaskInitialState });
       form.setValue("skill_ids", []);
       toast.success("Added custom project task.");
     }
@@ -1281,56 +1280,17 @@ export default function AssignPaperPage() {
 
           {/* Form Content */}
           <div className="bg-muted/10 p-1.5 rounded-lg border border-border/30">
-            {contentType === "question" && (
-              <SingleQuestionFormFields
-                questionText={questionText}
-                onQuestionChange={setQuestionText}
-                marks={questionMarks}
-                onMarksChange={setQuestionMarks}
-                hours={questionHours}
-                onHoursChange={setQuestionHours}
-                minutes={questionMinutes}
-                onMinutesChange={setQuestionMinutes}
-                errors={errors}
-                onClearError={(field) => setErrors((prev) => ({ ...prev, [field]: "" }))}
-              />
-            )}
-
-            {contentType === "mcq" && (
-              <MCQFormFields
-                mcqQuestion={mcqQuestion}
-                onMCQQuestionChange={setMCQQuestion}
-                mcqOptions={mcqOptions}
-                onMCQOptionsChange={setMCQOptions}
-                mcqAnswer={mcqAnswer}
-                onMCQAnswerChange={setMCQAnswer}
-                marks={mcqMarks}
-                onMarksChange={setMCqMarks}
-                hours={mcqHours}
-                onHoursChange={setMCqHours}
-                minutes={mcqMinutes}
-                onMinutesChange={setMCqMinutes}
-                errors={errors}
-                onClearError={(field) => setErrors((prev) => ({ ...prev, [field]: "" }))}
-              />
-            )}
-
-            {contentType === "project_task" && (
-              <ProjectTaskFormFields
-                taskDescription={taskDescription}
-                onDescriptionChange={setTaskDescription}
-                taskInstructions={taskInstructions}
-                onInstructionsChange={setTaskInstructions}
-                hours={taskHours}
-                onHoursChange={setTaskHours}
-                minutes={taskMinutes}
-                onMinutesChange={setTaskMinutes}
-                tasks={projectTasks}
-                onTasksChange={setProjectTasks}
-                errors={errors}
-                onClearError={(field) => setErrors((prev) => ({ ...prev, [field]: "" }))}
-              />
-            )}
+            <QuestionContentFormFields
+              contentType={contentType}
+              questionState={questionState}
+              questionDispatch={questionDispatch}
+              mcqState={mcqState}
+              mcqDispatch={mcqDispatch}
+              taskState={taskState}
+              taskDispatch={taskDispatch}
+              errors={errors}
+              onClearError={(field) => setErrors((prev) => ({ ...prev, [field]: "" }))}
+            />
 
             {/* Skills Selector Section */}
             <div className="mt-4 p-2 bg-background rounded-lg border border-border/50">
@@ -1365,12 +1325,13 @@ export default function AssignPaperPage() {
             size="sm"
             className="h-9 font-bold "
             onClick={handleAssign}
-            disabled={assignMutation.isPending}
+            disabled={assignMutation.isPending || hasActiveCreationDraft()}
           >
             <Save className="h-4 w-4" />
             Assign Paper
           </Button>
         </div>
+        <p className="text-xs font-medium text-yellow-500 text-center mt-2">{hasActiveCreationDraft() ? "Please add or clear the draft question first before assigning" : " "}</p>
       </div>
     </AppPageShell>
   );

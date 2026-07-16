@@ -155,7 +155,7 @@ export function StageEvaluationView({
   isDbdEnabled,
   dbdAssociates
 }: StageEvaluationViewProps) {
-  const { data: assignedPaper } = useCandidateTestPaper(candidateId);
+  const { data: assignedPaper } = useCandidateTestPaper({ candidateId });
   /*
    const { refetch: downloadFile, loading: isDownloading } = useDownloadCandidateAssignedTaskFile(
      assignedPaper ? candidateId : null,

@@ -126,13 +126,18 @@ export const useQuestionSetPaper = (paperId: string | null | undefined) => {
 /**
  * Hook to retrieve the test paper currently assigned to a candidate.
  */
-export const useCandidateTestPaper = (
-  candidateId: string | null | undefined,
-  _jobStageId?: string // TODO: Temporarily disabled, will enable when backend fix the issue
-) => {
+export const useCandidateTestPaper = ({
+  candidateId,
+
+  jobId
+}: {
+  candidateId: string | null | undefined;
+  jobStageId?: string;
+  jobId?: string
+}) => {
   const res = useQuery({
-    queryKey: [QUERY_KEYS.TASK_PAPERS.ASSIGNED, candidateId],
-    queryFn: () => taskService.getCandidateTestPaper(candidateId!), // pass jobStageId again when backend fix issue
+    queryKey: [QUERY_KEYS.TASK_PAPERS.ASSIGNED, candidateId, jobId],
+    queryFn: () => taskService.getCandidateTestPaper({ candidateId, job_id: jobId }), // pass jobStageId again when backend fix issue
     enabled: !!candidateId,
     staleTime: QUERY_CONFIG.TASK_PAPER.staleTime,
   });
@@ -152,7 +157,7 @@ export const useCandidatesTestPapers = (candidateIds: (string | null | undefined
   const results = useQueries({
     queries: (candidateIds || []).map((id) => ({
       queryKey: [QUERY_KEYS.TASK_PAPERS.ASSIGNED, id],
-      queryFn: () => taskService.getCandidateTestPaper(id!),
+      queryFn: () => taskService.getCandidateTestPaper({ candidateId: id }),
       enabled: !!id,
       staleTime: QUERY_CONFIG.TASK_PAPER.staleTime,
     })),

@@ -95,7 +95,7 @@ export const StageCandidatesHeader = ({
   //   : false;
 
   // const { data: assignedPaper } = useCandidateTestPaper(candidateId, stageId); // TODO: Temporarily disabled, will enable when backend fix the issue
-  const { data: assignedPaper } = useCandidateTestPaper(candidateId);
+  const { data: assignedPaper } = useCandidateTestPaper({ candidateId });
   // console.log(assignedPaper);
   const { data: paperHistory } = useCandidateTestPaperHistory(
     (showQuestion || showGithub) ? candidateId : null,

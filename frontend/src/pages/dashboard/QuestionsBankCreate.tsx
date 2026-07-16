@@ -47,9 +47,7 @@ import { extractErrorMessage } from "@/utils/error";
 import { slugify } from "@/utils/slug";
 
 // Form field components
-import { SingleQuestionFormFields } from "@/components/questions-bank/SingleQuestionFormFields";
-import { MCQFormFields } from "@/components/questions-bank/MCQFormFields";
-import { ProjectTaskFormFields } from "@/components/questions-bank/ProjectTaskFormFields";
+import { QuestionContentFormFields } from "@/components/questions-bank/QuestionContentFormFields";
 import LoadingSpinner from "@/components/shared/LoadingSpinner";
 import { useDebouncedValue } from "@/hooks/useDebounced";
 import { QuestionsBankFilters } from "@/components/questions-bank/QuestionsBankFilters";
@@ -268,7 +266,7 @@ export default function QuestionsBankCreate() {
     }
     if (selectedSkillIds.length === 0) {
       toast.error("Please select at least one skill.");
-      return;
+      // return;
     }
 
     // Validate content based on selected type
@@ -531,56 +529,17 @@ export default function QuestionsBankCreate() {
         <div className="app-surface-card space-y-2 p-2">
           <div className="flex flex-col gap-2">
             {/* Dynamic fields based on Question Type */}
-            {contentType === "question" && (
-              <SingleQuestionFormFields
-                questionText={questionState.text}
-                onQuestionChange={(v) => questionDispatch({ type: "SET_TEXT", payload: v })}
-                marks={questionState.marks}
-                onMarksChange={(v) => questionDispatch({ type: "SET_MARKS", payload: v })}
-                hours={questionState.hours}
-                onHoursChange={(v) => questionDispatch({ type: "SET_HOURS", payload: v })}
-                minutes={questionState.minutes}
-                onMinutesChange={(v) => questionDispatch({ type: "SET_MINUTES", payload: v })}
-                errors={errors}
-                onClearError={(field) => setErrors((prev) => ({ ...prev, [field]: "" }))}
-              />
-            )}
-
-            {contentType === "mcq" && (
-              <MCQFormFields
-                mcqQuestion={mcqState.question}
-                onMCQQuestionChange={(v) => mcqDispatch({ type: "SET_QUESTION", payload: v })}
-                mcqOptions={mcqState.options}
-                onMCQOptionsChange={(v) => mcqDispatch({ type: "SET_OPTIONS", payload: v })}
-                mcqAnswer={mcqState.answer}
-                onMCQAnswerChange={(v) => mcqDispatch({ type: "SET_ANSWER", payload: v })}
-                marks={mcqState.marks}
-                onMarksChange={(v) => mcqDispatch({ type: "SET_MARKS", payload: v })}
-                hours={mcqState.hours}
-                onHoursChange={(v) => mcqDispatch({ type: "SET_HOURS", payload: v })}
-                minutes={mcqState.minutes}
-                onMinutesChange={(v) => mcqDispatch({ type: "SET_MINUTES", payload: v })}
-                errors={errors}
-                onClearError={(field) => setErrors((prev) => ({ ...prev, [field]: "" }))}
-              />
-            )}
-
-            {contentType === "project_task" && (
-              <ProjectTaskFormFields
-                taskDescription={taskState.description}
-                onDescriptionChange={(v) => taskDispatch({ type: "SET_DESCRIPTION", payload: v })}
-                taskInstructions={taskState.instructions}
-                onInstructionsChange={(v) => taskDispatch({ type: "SET_INSTRUCTIONS", payload: v })}
-                hours={taskState.hours}
-                onHoursChange={(v) => taskDispatch({ type: "SET_HOURS", payload: v })}
-                minutes={taskState.minutes}
-                onMinutesChange={(v) => taskDispatch({ type: "SET_MINUTES", payload: v })}
-                tasks={taskState.tasks}
-                onTasksChange={(v) => taskDispatch({ type: "SET_TASKS", payload: v })}
-                errors={errors}
-                onClearError={(field) => setErrors((prev) => ({ ...prev, [field]: "" }))}
-              />
-            )}
+            <QuestionContentFormFields
+              contentType={contentType}
+              questionState={questionState}
+              questionDispatch={questionDispatch}
+              mcqState={mcqState}
+              mcqDispatch={mcqDispatch}
+              taskState={taskState}
+              taskDispatch={taskDispatch}
+              errors={errors}
+              onClearError={(field) => setErrors((prev) => ({ ...prev, [field]: "" }))}
+            />
           </div>
         </div>
 

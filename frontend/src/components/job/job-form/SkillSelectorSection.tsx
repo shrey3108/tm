@@ -107,7 +107,7 @@ export const SkillSelectorSection = ({
     setSelectedSkill(null);
   };
   return (
-    <div className="app-surface-card space-y-6 p-4 sm:p-5">
+    <div className="app-surface-card space-y-3 p-4 sm:p-5">
       <Accordion defaultValue={["skill-selector"]} className="border-none bg-transparent rounded-none">
         <AccordionItem value="skill-selector" className="border-none bg-transparent">
           <div className="flex items-center justify-between pb-4">
@@ -153,7 +153,7 @@ export const SkillSelectorSection = ({
             )}
           />
 
-          <AccordionContent className="space-y-6 px-0 p-1">
+          <AccordionContent className="space-y-3 px-0 p-1">
             {/* Skill Search */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -225,7 +225,7 @@ export const SkillSelectorSection = ({
 
       {/* Selected Skills & Custom Weightages (Separate Accordion) */}
       {selectedSkillIds.length > 0 && (
-        <div className="pt-6 border-t border-muted-foreground/10 animate-in fade-in duration-300">
+        <div className="border-t border-muted-foreground/10 animate-in fade-in duration-300">
           <Accordion defaultValue={["weightages"]} className="border-none bg-transparent px-1">
             <AccordionItem value="weightages" className="border-none bg-transparent ">
               <AccordionTrigger className="hover:no-underline border-none bg-transparent hover:bg-transparent flex justify-between items-center p-1">
