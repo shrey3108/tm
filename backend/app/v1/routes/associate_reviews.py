@@ -280,16 +280,25 @@ async def serve_review_form(token: uuid.UUID, db: AsyncSession = Depends(get_db)
                 detail="The question paper for this review could no longer be found.",
             )
         else:
-            criteria_names = await _fetch_dbd_criteria_names(db, evaluation.candidate_stage.job_stage)
+            criteria_names = [
+                "Ethics & Confidence",
+                "Technical Skills",
+                "Communication Skills",
+                "Listening Skill",
+                "Detail Oriented",
+                "Attitude & Behavior",
+                "Smartness",
+                "Positivity",
+                "Professionalism",
+                "Can take challenges?",
+            ]
                     
             candidate_full_name = _candidate_full_name(evaluation.candidate) if evaluation.candidate else "Candidate"
             job_title, department_name, position_name = _resolve_job_info(evaluation.job)
             submit_url = f"{settings.APP_BASE_URL.rstrip('/')}/api/v1/associate-reviews/{token}/submit"
             is_submitted = (evaluation.status == "submitted")
             
-            stage_name = "Stage Evaluation"
-            if evaluation.candidate_stage and evaluation.candidate_stage.job_stage and evaluation.candidate_stage.job_stage.template:
-                stage_name = evaluation.candidate_stage.job_stage.template.name or "Stage Evaluation"
+            stage_name = "DBD Form"
 
             return HTMLResponse(content=_render_dbd_form_html(
                 stage_name=stage_name,
@@ -386,7 +395,18 @@ async def submit_review_form(
         
         # Process DBD form
         form = await request.form()
-        criteria_names = await _fetch_dbd_criteria_names(db, evaluation.candidate_stage.job_stage if evaluation.candidate_stage else None)
+        criteria_names = [
+            "Ethics & Confidence",
+            "Technical Skills",
+            "Communication Skills",
+            "Listening Skill",
+            "Detail Oriented",
+            "Attitude & Behavior",
+            "Smartness",
+            "Positivity",
+            "Professionalism",
+            "Can take challenges?",
+        ]
             
         dbd_scores = []
         for i, c_name in enumerate(criteria_names):
@@ -400,8 +420,16 @@ async def submit_review_form(
             dbd_scores.append({"criterion": c_name, "score": score_float})
             
         evaluation.dbd_scores = dbd_scores
+        
+        remarks = form.get("dbd_remarks")
+        if not remarks or not str(remarks).strip():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Remarks cannot be empty or just spaces."
+            )
+            
         evaluation.dbd_hiring_decision = form.get("dbd_hiring_decision")
-        evaluation.dbd_remarks = form.get("dbd_remarks")
+        evaluation.dbd_remarks = remarks
         
         evaluation.submitted_at = datetime.now(timezone.utc)
         evaluation.status = "submitted"
@@ -798,9 +826,9 @@ def _render_dbd_form_html(
             
         rows.append(f"""
         <div class="question-row">
-          <div class="question-text">{i + 1}. {html.escape(crit)}</div>
+          <div class="question-text">{html.escape(crit)} <span style="color:red;">*</span></div>
           <div class="mark-input">
-            <select name="dbd_score_{i}" style="padding: 6px; border-radius: 4px; border: 1px solid #d1d5db;" {disabled_attr} required>
+            <select name="dbd_score_{i}" class="dbd-score-select" style="padding: 6px; border-radius: 4px; border: 1px solid #d1d5db;" {disabled_attr} required>
                 {options_html}
             </select>
           </div>
@@ -809,7 +837,7 @@ def _render_dbd_form_html(
     average_score = (total_score / valid_scores) if valid_scores > 0 else 0.0
     
     # Hiring decision row
-    decisions = ["Pass", "May Be", "Reject"]
+    decisions = ["Hire", "No Hire"]
     decision_options = '<option value="">Select</option>'
     for dec in decisions:
         selected = "selected" if saved_decision == dec else ""
@@ -829,10 +857,18 @@ def _render_dbd_form_html(
     saved_rem = saved_remarks or ""
     rows.append(f"""
     <div style="margin-top: 15px;">
-        <div style="font-weight: 600; margin-bottom: 8px;">Note / Remarks:</div>
-        <textarea name="dbd_remarks" rows="4" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #d1d5db; font-family: inherit;" {'disabled' if is_submitted else ''}>{html.escape(saved_rem)}</textarea>
+        <div style="font-weight: 600; margin-bottom: 8px;">Note / Remarks <span style="color:red;">*</span></div>
+        <textarea name="dbd_remarks" rows="4" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #d1d5db; font-family: inherit;" {'disabled' if is_submitted else ''} required>{html.escape(saved_rem)}</textarea>
     </div>
     """)
+    
+    if not is_submitted:
+        rows.append(f"""
+        <div style="margin-top: 25px; margin-bottom: 5px;">
+            <div style="font-size: 14px; font-weight: 600; margin-bottom: 8px;">Average Ratings</div>
+            <input type="text" id="average_rating" disabled style="padding: 10px; border-radius: 4px; border: 1px solid #d1d5db; background-color: #e5e7eb; width: 150px; font-weight: 600; color: #374151;" value="0.00" />
+        </div>
+        """)
     
     items_html = chr(10).join(rows)
 
@@ -977,6 +1013,53 @@ def _render_dbd_form_html(
       August Infotech &mdash; www.augustinfotech.com
     </div>
   </div>
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {{
+      const selects = document.querySelectorAll('.dbd-score-select');
+      const avgInput = document.getElementById('average_rating');
+      
+      function calculateAverage() {{
+        let total = 0;
+        let count = 0;
+        selects.forEach(sel => {{
+          const val = parseFloat(sel.value);
+          if (!isNaN(val)) {{
+            total += val;
+            count++;
+          }}
+        }});
+        if (avgInput) {{
+            if (count > 0) {{
+              avgInput.value = (total / count).toFixed(2);
+            }} else {{
+              avgInput.value = "0.00";
+            }}
+        }}
+      }}
+      
+      selects.forEach(sel => {{
+        sel.addEventListener('change', calculateAverage);
+      }});
+      
+      // Calculate initial average on load
+      calculateAverage();
+      
+      const remarksInput = document.querySelector('textarea[name="dbd_remarks"]');
+      if (remarksInput) {{
+        remarksInput.addEventListener('input', function() {{
+          if (this.value.trim().length === 0) {{
+            this.setCustomValidity('Please fill out this field with valid remarks.');
+          }} else {{
+            this.setCustomValidity('');
+          }}
+        }});
+        // Set initial validity state
+        if (remarksInput.value.trim().length === 0 && !remarksInput.disabled) {{
+            remarksInput.setCustomValidity('Please fill out this field with valid remarks.');
+        }}
+      }}
+    }});
+  </script>
 </body>
 </html>"""
 
