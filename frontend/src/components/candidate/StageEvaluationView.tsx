@@ -189,7 +189,7 @@ export function StageEvaluationView({
   const latestHrDecision = hrDecisionHistory[0]?.decision.toLowerCase();
   const canTakeDecision = !latestHrDecision || latestHrDecision.includes("may be") || latestHrDecision === "maybe";
   const jobSlug = slugify(job?.title);
-  const isShowChartButtonVisible = 
+  const isShowChartButtonVisible =
     (isDbdEnabled ? (!!dbdAssociates && dbdAssociates.length >= 2) : false) ||
     (!isDbdEnabled && (requiredInputs
       ? (requiredInputs.includes("question") || requiredInputs.includes("github"))
@@ -224,41 +224,42 @@ export function StageEvaluationView({
             stageName.toLowerCase().includes("test")
           )))
         ) && (
-          <>
-            {isGithubUploaded && githubUrl && (
-              <HoverCard>
-                <HoverCardTrigger delay={10} closeDelay={10}
-                  render={(props) => (
-                    <Button
-                      {...props}
-                      variant="ghost"
-                      size="icon-sm"
-                      className="rounded-lg"
-                      onClick={(e) => {
-                        if (props.onClick) props.onClick(e);
-                        window.open(githubUrl, "_blank");
-                      }}
-                    >
-                      <GithubLogo className="h-4 w-4" />
-                    </Button>
-                  )}
-                />
-                <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
-                  Github Submmited link
-                </HoverCardContent>
-              </HoverCard>
-            )}
-            {assignedPaper && (
-              <CandidateAssignPaperButton candidate={candidate} job={job} jobSlug={jobSlug} variant="ghost"
-                size="icon-sm"
-                className="rounded-lg" iconClassName="h-4 w-4" />
-            )}
-          </>
-        )}
+            <>
+              {isGithubUploaded && githubUrl && (
+                <HoverCard>
+                  <HoverCardTrigger delay={10} closeDelay={10}
+                    render={(props) => (
+                      <Button
+                        {...props}
+                        variant="ghost"
+                        size="icon-sm"
+                        className="rounded-lg"
+                        onClick={(e) => {
+                          if (props.onClick) props.onClick(e);
+                          window.open(githubUrl, "_blank");
+                        }}
+                      >
+                        <GithubLogo className="h-4 w-4" />
+                      </Button>
+                    )}
+                  />
+                  <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
+                    Github Submmited link
+                  </HoverCardContent>
+                </HoverCard>
+              )}
+              {assignedPaper && (
+                <CandidateAssignPaperButton candidate={candidate} job={job} jobSlug={jobSlug} variant="ghost"
+                  size="icon-sm"
+                  className="rounded-lg" iconClassName="h-4 w-4" />
+              )}
+            </>
+          )}
 
         {canTakeDecision && (
           <Button
             variant="outline"
+            disabled={showChart}
             onClick={() =>
               window.scroll({
                 top: document.body.scrollHeight,

@@ -10,7 +10,7 @@ export default function DashboardLayout() {
       <SidebarInset className="flex flex-col min-h-screen">
         {/* Mobile-only floating trigger — always visible, opens sidebar Sheet */}
         <SidebarTrigger className="md:hidden fixed top-3 left-3 z-50 h-8 w-8 rounded-xl bg-sidebar/80 backdrop-blur border border-sidebar-border shadow-sm hover:bg-sidebar-accent" />
-        <div className="flex-1 overflow-auto bg-background">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden bg-background">
           <Outlet />
         </div>
 

@@ -217,7 +217,7 @@ export function DataTable<TData, TValue>({
         </div>
 
       )}
-      <div className="overflow-hidden rounded-xl border border-border/70 bg-background/70 backdrop-blur-sm custom-scrollbar">
+      <div className="overflow-x-auto rounded-xl border border-border/70 bg-background/70 backdrop-blur-sm custom-scrollbar">
         <Table className={cn("table-fixed custom-scrollbar", minWidth)}>
           <colgroup>
             {table.getHeaderGroups()[0]?.headers.map((header) => {

@@ -52,7 +52,7 @@ export const TimelineCard = React.memo(function TimelineCard({
       <Card
         onClick={isDisabled ? undefined : onClick}
         className={cn(
-          "flex min-w-57.5 flex-col p-2.5 gap-1.5 shrink-0 border transition-all",
+          "flex w-50 flex-col p-2 gap-1.5 shrink-0 border transition-all",
           isDisabled
             ? "opacity-50 cursor-not-allowed border-muted-foreground/10 bg-card"
             : cn(
