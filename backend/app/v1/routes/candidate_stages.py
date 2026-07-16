@@ -77,6 +77,7 @@ async def get_candidate_stage_evaluation(
             "submitted_at": de.submitted_at,
             "dbd_scores": de.dbd_scores,
             "dbd_hiring_decision": de.dbd_hiring_decision,
+            "dbd_remarks": de.dbd_remarks,
             "average_score": avg_score
         })
 

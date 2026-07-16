@@ -253,6 +253,7 @@ class CandidateTimelineService:
                                 "associate_name": ae.associate.name if ae.associate else "Unknown",
                                 "marks": round(avg_score, 2),
                                 "result": ae.dbd_hiring_decision or "submitted",
+                                "remarks": ae.dbd_remarks,
                             })
                         elif ae.marks:
                             result_5 = self._compute_weighted_result_out_of_5(
