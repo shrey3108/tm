@@ -90,7 +90,7 @@ export function StageOverallSummary({ data }: StageOverallSummaryProps) {
     <Accordion>
       <AccordionItem>
         <AccordionTrigger className={"hover:no-underline px-2 py-2"}> <div className=" flex flex-wrap gap-4 items-center justify-between">
-          <h2 className="text-sm tracking-tight">Overall Summary</h2>
+          <h2 className="text-sm font-bold capitalize tracking-tight text-left">Overall Summary</h2>
           <div className="flex gap-3">
             <Badge className="px-2 h-8" variant="outline">
               <span className="font-semibold">{data.percentage}%</span>
@@ -105,11 +105,11 @@ export function StageOverallSummary({ data }: StageOverallSummaryProps) {
           </div>
         </div></AccordionTrigger>
         <AccordionContent>
-          <div className="space-y-6">
+          <div className="space-y-3">
             {/* Overall Summary Section */}
             {data.overall_summary && (
               <div>
-                <span className="text-sm font-medium tracking-wide block mb-1 uppercase">Summary</span>
+                <span className="text-sm block mb-2 font-bold capitalize tracking-tight text-left">Summary</span>
                 <OverallSummaryText value={data.overall_summary} />
               </div>
             )}
@@ -209,7 +209,8 @@ function SummaryList({
     const { score, remainingItems } = extractLeadingScore(items as string[]);
     return (
       <div className={className}>
-        <span className={`text-sm font-medium tracking-wide block mb-2 uppercase ${titleColor}`}>
+        <span className={`text-sm block mb-2 font-bold capitalize tracking-tight text-left
+          ${titleColor}`}>
           {title}{score && (
             <Badge variant="outline" className="ml-2 text-xs font-semibold px-1.5 py-0 normal-case">
               {score}

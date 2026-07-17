@@ -143,24 +143,15 @@ export default function JobCandidatesBarChart({ isAnimationActive = true, data: 
                                     const value = String(payload.value);
 
                                     const formattedValue = toTitleCase(value)
-                                    const words = formattedValue.split(' ');
 
                                     return (
                                         <g transform={`translate(${x},${y})`}>
-                                            <text
-                                                x={0}
-                                                y={0}
-                                                dy={12}
-                                                textAnchor="middle"
-                                                fill="currentColor"
-                                                className="text-[10px] sm:text-xs font-normal text-muted-foreground fill-muted-foreground"
-                                            >
-                                                {words.map((word, idx) => (
-                                                    <tspan key={idx} x={0} dy={idx === 0 ? 0 : 12}>
-                                                        {word}
-                                                    </tspan>
-                                                ))}
-                                            </text>
+                                            <foreignObject x={-60} y={5} width={120} height={60}>
+                                                <div
+                                                    className="w-full text-[10px] sm:text-xs font-normal text-muted-foreground wrap-break-word text-center leading-tight px-1"
+                                                    dangerouslySetInnerHTML={{ __html: formattedValue }}
+                                                />
+                                            </foreignObject>
                                         </g>
                                     );
                                 }}
@@ -169,7 +160,7 @@ export default function JobCandidatesBarChart({ isAnimationActive = true, data: 
                                     // angle={-90}
                                     position="insideBottom"
                                     style={{ textAnchor: "middle" }}
-                                    className="fill-muted-foreground text-[10px] sm:text-xs font-normal tracking-wider"
+                                    className="fill-muted-foreground text-[10px] sm:text-xs font-bold uppercase tracking-wider"
                                 />
                             </XAxis>
                             <YAxis

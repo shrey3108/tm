@@ -1,4 +1,4 @@
-import { useFormContext, type Control, type FieldValues } from "react-hook-form";
+import { useFormContext, useFormState, type Control, type FieldValues } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import { Required } from "@/components/shared/Required";
 import {
@@ -35,93 +35,107 @@ export function QuestionMetricsInput({
 }: QuestionMetricsInputProps) {
   const context = useFormContext();
   const control = propControl || context?.control;
+  const { errors } = useFormState({ control });
+
+  const marksError = errors[marksName]?.message as string | undefined;
+  const hoursError = errors[hoursName]?.message as string | undefined;
+  const minutesError = errors[minutesName]?.message as string | undefined;
+
+  const hasErrors = marksError || hoursError || minutesError;
 
   return (
-    <div className="flex flex-wrap items-start gap-4">
-      {/* Marks */}
-      {contentType !== "project_task" ? <FormField
-        control={control}
-        name={marksName}
-        render={({ field }) => (
-          <FormItem className="flex flex-col gap-1 w-20">
-            <FormLabel className="text-xs font-semibold">
-              Marks<Required />
-            </FormLabel>
-            <FormControl>
-              <Input
-                type="number"
-                placeholder={marksPlaceholder}
-                min={1}
-                disabled={disabled}
-                className="text-xs h-9 bg-background w-20 font-medium"
-                value={field.value ?? ""}
-                onChange={(e) => {
-                  const val = e.target.value === "" ? "" : Number(e.target.value);
-                  field.onChange(val);
-                }}
-              />
-            </FormControl>
-            <FormMessage className="text-xs" />
-          </FormItem>
-        )}
-      /> : null}
+    <div className="space-y-1">
+      <div className="flex flex-wrap items-start gap-4">
+        {/* Marks */}
+        {contentType !== "project_task" ? <FormField
+          control={control}
+          name={marksName}
+          render={({ field }) => (
+            <FormItem className="flex flex-col gap-1 w-20">
+              <FormLabel className="text-xs font-semibold">
+                Marks<Required />
+              </FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  placeholder={marksPlaceholder}
+                  min={1}
+                  disabled={disabled}
+                  className="text-xs h-9 bg-background w-20 font-medium"
+                  value={field.value ?? ""}
+                  onChange={(e) => {
+                    const val = e.target.value === "" ? "" : Number(e.target.value);
+                    field.onChange(val);
+                  }}
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        /> : null}
 
-      {/* Hours */}
-      <FormField
-        control={control}
-        name={hoursName}
-        render={({ field }) => (
-          <FormItem className="flex flex-col gap-1 w-20">
-            <FormLabel className="text-xs font-semibold">
-              Hours<Required />
-            </FormLabel>
-            <FormControl>
-              <Input
-                type="number"
-                placeholder={hoursPlaceholder}
-                min={0}
-                disabled={disabled}
-                className="text-xs h-9 bg-background w-20 font-medium"
-                value={field.value ?? ""}
-                onChange={(e) => {
-                  const val = e.target.value === "" ? "" : Number(e.target.value);
-                  field.onChange(val);
-                }}
-              />
-            </FormControl>
-            <FormMessage className="text-xs" />
-          </FormItem>
-        )}
-      />
+        {/* Hours */}
+        <FormField
+          control={control}
+          name={hoursName}
+          render={({ field }) => (
+            <FormItem className="flex flex-col gap-1 w-20">
+              <FormLabel className="text-xs font-semibold">
+                Hours<Required />
+              </FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  placeholder={hoursPlaceholder}
+                  min={0}
+                  disabled={disabled}
+                  className="text-xs h-9 bg-background w-20 font-medium"
+                  value={field.value ?? ""}
+                  onChange={(e) => {
+                    const val = e.target.value === "" ? "" : Number(e.target.value);
+                    field.onChange(val);
+                  }}
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
 
-      {/* Minutes */}
-      <FormField
-        control={control}
-        name={minutesName}
-        render={({ field }) => (
-          <FormItem className="flex flex-col gap-1 w-20">
-            <FormLabel className="text-xs font-semibold">
-              Minutes<Required />
-            </FormLabel>
-            <FormControl>
-              <Input
-                type="number"
-                placeholder={minutesPlaceholder}
-                min={0}
-                max={59}
-                disabled={disabled}
-                className="text-xs h-9 bg-background w-20 font-medium"
-                value={field.value ?? ""}
-                onChange={(e) => {
-                  const val = e.target.value === "" ? "" : Number(e.target.value);
-                  field.onChange(val);
-                }}
-              />
-            </FormControl>
-            <FormMessage className="text-xs" />
-          </FormItem>
-        )}
-      />
+        {/* Minutes */}
+        <FormField
+          control={control}
+          name={minutesName}
+          render={({ field }) => (
+            <FormItem className="flex flex-col gap-1 w-20">
+              <FormLabel className="text-xs font-semibold">
+                Minutes<Required />
+              </FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  placeholder={minutesPlaceholder}
+                  min={0}
+                  max={59}
+                  disabled={disabled}
+                  className="text-xs h-9 bg-background w-20 font-medium"
+                  value={field.value ?? ""}
+                  onChange={(e) => {
+                    const val = e.target.value === "" ? "" : Number(e.target.value);
+                    field.onChange(val);
+                  }}
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
+      </div>
+
+      {hasErrors && (
+        <div className="flex flex-col text-[0.8rem] font-medium text-destructive mt-1">
+          {marksError && <FormMessage >{marksError}</FormMessage>}
+          {hoursError && <FormMessage>{hoursError}</FormMessage>}
+          {minutesError && <FormMessage>{minutesError}</FormMessage>}
+        </div>
+      )}
     </div>
   );
 }

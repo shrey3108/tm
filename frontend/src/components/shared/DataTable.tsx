@@ -231,7 +231,7 @@ export function DataTable<TData, TValue>({
               );
             })}
           </colgroup>
-          <TableHeader>
+          <TableHeader className="bg-muted">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
@@ -260,7 +260,7 @@ export function DataTable<TData, TValue>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
-                  className={loading ? "opacity-50 pointer-events-none transition-opacity" : "odd:bg-muted/80 hover:bg-muted-foreground/10"}
+                  className={loading ? "opacity-50 pointer-events-none transition-opacity" : "even:bg-muted/75 hover:bg-[#e4e4e4]"}
                 >
                   {row.getVisibleCells().map((cell) => {
                     const overflow = (cell.column.columnDef.meta as any)?.overflow ?? 'ellipsis';

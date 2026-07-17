@@ -78,36 +78,51 @@ export default function AdminDashboard() {
         }
       />
       {viewMode === "report" && (
-        <div className="flex flex-col md:flex-row gap-6 items-stretch mb-1 animate-in fade-in slide-in-from-top-2 duration-500">
-          <div className="flex-1 mb-2 space-y-2">
-            <h2 className="text-xl font-semibold text-center">Analytics Overview</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-              {/* <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 xl:grid-cols-6"> */}
-              {/* <StatCard label="Total Users" value={analytics?.total_users ?? 0} loading={loading} /> */}
-              {/* <StatCard label="Active Users" value={analytics?.active_users ?? 0} loading={loading} /> */}
-              {/* <StatCard label="Total Roles" value={analytics?.total_roles ?? 0} loading={loading} /> */}
-              <StatCard label="Total Jobs" value={analytics?.total_jobs ?? 0} loading={loading} />
-              <StatCard label="Active Jobs" value={analytics?.active_jobs ?? 0} loading={loading} />
-              <StatCard label="Total Candidates" value={analytics?.total_candidates ?? 0} loading={loading} />
-              {/* <StatCard label="Total Resumes" value={analytics?.total_resumes ?? 0} loading={loading} /> */}
+        <>
+          <div className="flex flex-col md:flex-row gap-2 items-stretch mb-1 animate-in fade-in slide-in-from-top-2 duration-500">
+            <div className="flex-1 mb-2 space-y-2">
+              <h2 className="text-xl font-semibold text-center">Analytics Overview</h2>
+              <div className="grid grid-cols-3 gap-4">
+                {/* <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 xl:grid-cols-6"> */}
+                {/* <StatCard label="Total Users" value={analytics?.total_users ?? 0} loading={loading} /> */}
+                {/* <StatCard label="Active Users" value={analytics?.active_users ?? 0} loading={loading} /> */}
+                {/* <StatCard label="Total Roles" value={analytics?.total_roles ?? 0} loading={loading} /> */}
+                <StatCard label="Total Jobs" value={analytics?.total_jobs ?? 0} loading={loading} />
+                <StatCard label="Active Jobs" value={analytics?.active_jobs ?? 0} loading={loading} />
+                <StatCard label="Total Candidates" value={analytics?.total_candidates ?? 0} loading={loading} />
+                {/* <StatCard label="Total Resumes" value={analytics?.total_resumes ?? 0} loading={loading} /> */}
+              </div>
+            </div>
+            {/* <Separator orientation="vertical" className="hidden md:block" /> */}
+            <Separator orientation="horizontal" className="md:hidden" />
+            <div className="flex-1 mb-2 space-y-2">
+              <h2 className="text-xl font-semibold text-center">Hiring Report Summary</h2>
+              <div className="grid grid-cols-3  gap-4">
+                {/* <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 xl:grid-cols-6"> */}
+                <StatCard label="Resumes (Last 30 Days)" value={report?.resumes_uploaded_last_30_days ?? 0} loading={loading} />
+                {/* <StatCard label="Pass" value={report?.total_passed ?? 0} loading={loading}/> */}
+                {/* <StatCard label="Fail" value={report?.total_failed ?? 0} loading={loading}/> */}
+                {/* <StatCard label="Pending" value={report?.total_pending ?? 0} loading={loading}/> */}
+                {/* <StatCard label="Unprocess" value={report?.total_unprocessed ?? 0} loading={loading} /> */}
+                <StatCard label="HR Decided" value={report?.hr_decided_count ?? 0} loading={loading} />
+                <StatCard label="HR Decision pending" value={report?.pending_count ?? 0} loading={loading} />
+              </div>
             </div>
           </div>
-          <Separator orientation="vertical" className="hidden md:block" />
-          <Separator orientation="horizontal" className="md:hidden" />
-          <div className="flex-1 mb-2 space-y-2">
-            <h2 className="text-xl font-semibold text-center">Hiring Report Summary</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-              {/* <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 xl:grid-cols-6"> */}
-              <StatCard label="Resumes (Last 30 Days)" value={report?.resumes_uploaded_last_30_days ?? 0} loading={loading} />
-              {/* <StatCard label="Pass" value={report?.total_passed ?? 0} loading={loading}/> */}
-              {/* <StatCard label="Fail" value={report?.total_failed ?? 0} loading={loading}/> */}
-              {/* <StatCard label="Pending" value={report?.total_pending ?? 0} loading={loading}/> */}
-              {/* <StatCard label="Unprocess" value={report?.total_unprocessed ?? 0} loading={loading} /> */}
-              <StatCard label="HR Decided" value={report?.hr_decided_count ?? 0} loading={loading} />
-              <StatCard label="HR Decision pending" value={report?.pending_count ?? 0} loading={loading} />
-            </div>
+          <div className="space-y-1 animate-in fade-in slide-in-from-bottom-2 duration-500">
+            <h3>Candidates by Job</h3>
+            <AdminDataTable
+              columns={jobColumns}
+              data={filteredReport?.candidates_by_job || []}
+              loading={loading}
+              error={error ? error.message : null}
+              onRetry={refetch}
+              rowKey="job_id"
+              emptyMessage="No job data available."
+              className="border-0 shadow-none"
+            />
           </div>
-        </div>
+        </>
       )}
 
       {viewMode === "chart" && (
@@ -133,25 +148,7 @@ export default function AdminDashboard() {
           </Suspense>
         </div>
       )}
-
-      {viewMode === "report" && (
-        <div className="space-y-1 animate-in fade-in slide-in-from-bottom-2 duration-500">
-          <div className=" p-1 sm:p-2">
-            <h3 className="mb-3">Candidates by Job</h3>
-            <AdminDataTable
-              columns={jobColumns}
-              data={filteredReport?.candidates_by_job || []}
-              loading={loading}
-              error={error ? error.message : null}
-              onRetry={refetch}
-              rowKey="job_id"
-              emptyMessage="No job data available."
-              className="border-0 shadow-none"
-            />
-          </div>
-        </div>
-      )}
-    </AppPageShell >
+    </AppPageShell>
   );
 };
 

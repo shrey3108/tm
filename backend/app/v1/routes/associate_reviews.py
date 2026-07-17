@@ -815,7 +815,7 @@ def _render_dbd_form_html(
         <div class="question-row">
           <div class="question-text">{html.escape(crit)} <span style="color:red;">*</span></div>
           <div class="mark-input">
-            <select name="dbd_score_{i}" class="dbd-score-select" style="padding: 6px; border-radius: 4px; border: 1px solid #d1d5db;" {disabled_attr} required>
+            <select name="dbd_score_{i}" class="dbd-score-select" style="padding: 6px; border-radius: 4px; border: 1px solid #d1d5db;width: 100px;" {disabled_attr} required>
                 {options_html}
             </select>
           </div>
@@ -831,10 +831,10 @@ def _render_dbd_form_html(
         decision_options += f'<option value="{dec}" {selected}>{dec}</option>'
         
     rows.append(f"""
-    <div class="question-row" style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-top: 20px;">
-      <div class="question-text" style="font-weight: 600;">Hiring Decision <span style="color:red;">*</span></div>
+    <div class="question-row">
+      <div class="question-text">Hiring Decision <span style="color:red;">*</span></div>
       <div class="mark-input">
-        <select name="dbd_hiring_decision" style="padding: 8px; border-radius: 4px; border: 1px solid #d1d5db; width: 150px; font-weight:normal;" {'disabled' if is_submitted else ''} required>
+        <select name="dbd_hiring_decision" style="padding: 6px; border-radius: 4px; border: 1px solid #d1d5db;width: 100px;" {'disabled' if is_submitted else ''} required>
             {decision_options}
         </select>
       </div>

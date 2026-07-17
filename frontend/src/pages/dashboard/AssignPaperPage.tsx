@@ -680,11 +680,11 @@ export default function AssignPaperPage() {
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 rounded-xl font-semibold gap-1 hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-all duration-200"
             onClick={() => navigate(-1)}
+            className="gap-2 h-9"
           >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Back
+            <ArrowLeft className="h-4 w-4" />
+            Go Back
           </Button>
         }
       />

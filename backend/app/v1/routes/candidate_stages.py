@@ -199,9 +199,13 @@ async def get_candidate_stage_evaluation_report(
                 <div class="accordion-item {category_class}" style="background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow: hidden;">
                     <button class="accordion-header" onclick="toggleAccordion(this, '{category_class}')" style="width: 100%; text-align: left; background: none; border: none; cursor: pointer; display: flex; justify-content: space-between; align-items: center; padding: 16px; outline: none;">
                         <span style="font-weight: 600; color: #1f2937; font-size: 16px;">{display_cat}</span>
-                        <span style="background-color: #d1fae5; color: #065f46; padding: 4px 10px; border-radius: 9999px; font-weight: 700; font-size: 14px;">{score}/5.0</span>
+                        <div style="display: flex; align-items: center; gap: 8px; color: #6b7280;">
+                            <span style="background-color: #d1fae5; color: #065f46; padding: 4px 10px; border-radius: 9999px; font-weight: 700; font-size: 14px;">{score}/5.0</span>
+                            <span class="accordion-icon-down"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down-icon lucide-chevron-down"><path d="m6 9 6 6 6-6"/></svg></span>
+                            <span class="accordion-icon-up"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-up-icon lucide-chevron-up"><path d="m18 15-6-6-6 6"/></svg></span>
+                        </div>
                     </button>
-                    <div class="accordion-content" style="max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out;">
+                    <div class="accordion-content" style="max-height: 0; overflow: hidden; transition: max-height 0.2s ease-out;">
                         <div style="font-size: 14px; color: #4b5563; line-height: 1.6; padding: 0 16px 16px 16px; border-top: 1px solid #f3f4f6; margin-top: 0;">
                             {reasoning}
                         </div>
@@ -292,6 +296,10 @@ async def get_candidate_stage_evaluation_report(
                 padding-bottom: 10px;
                 border-bottom: 2px solid #e5e7eb;
             }}
+            .accordion-icon-up {{ display: none; }}
+            .accordion-icon-down {{ display: block; }}
+            .accordion-item.active .accordion-icon-up {{ display: block; }}
+            .accordion-item.active .accordion-icon-down {{ display: none; }}
             @media (max-width: 768px) {{
                 .columns {{
                     flex-direction: column;

@@ -6,14 +6,8 @@ import {
   ChartTooltip,
 } from "@/components/ui/chart";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-
-import { cn } from "@/lib/utils";
+import { cn, toTitleCase } from "@/lib/utils";
 import { CHART_COLORS } from "@/constants";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card"
 import type { JobPipelineStats } from "@/types/job";
 
 interface StageCentricChartProps {
@@ -74,7 +68,7 @@ const CustomTooltipContent = ({ active, payload, label, activeKey }: CustomToolt
               />
               <span className="capitalize max-w-30">{entry.name}</span>
             </div>
-            <span className="font-mono">{entry.value}</span>
+            <span>{entry.value}</span>
           </div>
         );
       })}
@@ -157,7 +151,7 @@ export function StageCentricChart({ data }: StageCentricChartProps) {
         <CardTitle>Stages - Job Distribution</CardTitle>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={chartConfig} className="max-h-[350px] w-full">
+        <ChartContainer config={chartConfig} className="max-h-87.5 w-full">
           <BarChart
             data={cleanData}
             accessibilityLayer
@@ -167,31 +161,26 @@ export function StageCentricChart({ data }: StageCentricChartProps) {
             <XAxis
               dataKey="stage"
               tickLine={false}
-              tickMargin={10}
+              tickMargin={12}
               axisLine={false}
+              interval={0}
+
+              className="text-[10px] sm:text-xs font-normal text-muted-foreground"
               tick={(props) => {
                 const { x, y, payload } = props;
+                if (!payload || !payload.value) return null;
+
+                const value = String(payload.value);
+                const formattedValue = toTitleCase(value);
+
                 return (
                   <g transform={`translate(${x},${y})`}>
-                    <HoverCard >
-                      <HoverCardTrigger delay={0} closeDelay={0}>
-                        <text
-                          x={0}
-                          y={0}
-                          dy={14}
-                          textAnchor="end"
-                          fill="currentColor"
-                          transform="rotate(-45)"
-                          className="text-xs uppercase"
-                        // className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground"
-                        >
-                          {payload.value.length > 15 ? payload.value.substring(0, 12) + "..." : payload.value}
-                        </text>
-                      </HoverCardTrigger>
-                      <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
-                        <p className="text-xs">{payload.value}</p>
-                      </HoverCardContent>
-                    </HoverCard>
+                    <foreignObject x={-60} y={5} width={120} height={60}>
+                      <div
+                        className="w-full text-[10px] sm:text-xs font-normal text-muted-foreground wrap-break-word text-center leading-tight px-1"
+                        dangerouslySetInnerHTML={{ __html: formattedValue }}
+                      />
+                    </foreignObject>
                   </g>
                 );
               }}
@@ -200,7 +189,7 @@ export function StageCentricChart({ data }: StageCentricChartProps) {
                 value="Job Stages"
                 position="insideBottom"
                 offset={-75}
-                className="fill-muted-foreground text-[10px] sm:text-xs font-bold tracking-wider"
+                className="fill-muted-foreground text-[10px] sm:text-xs font-bold uppercase tracking-wider"
               />
             </XAxis>
             <YAxis

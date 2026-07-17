@@ -165,11 +165,11 @@ export default function AssignAssociatePage() {
           <Button
             variant="ghost"
             size="sm"
-            className="h-9 rounded-xl border border-muted-foreground/10 px-3 font-semibold gap-1.5"
             onClick={() => navigate(-1)}
+            className="gap-2 h-9"
           >
-            <ArrowLeft className="w-4 h-4" />
-            Back
+            <ArrowLeft className="h-4 w-4" />
+            Go Back
           </Button>
         }
       />
@@ -305,7 +305,7 @@ export default function AssignAssociatePage() {
                   <InputGroupInput
                     {...field}
                     id="workdrive-input"
-                    className="placeholder:text-muted-foreground/60 h-6 text-sm"
+                    className="text-base rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium"
                     placeholder="https://www.augustinfotech.com/"
                   />
                 )}

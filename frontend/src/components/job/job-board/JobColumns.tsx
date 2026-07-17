@@ -189,7 +189,7 @@ export const getJobColumns = ({
         )
       },
       cell: ({ row }) => (
-        <div className="min-w-40 max-w-55">
+        <div >
           <SkillsBadgeList
             skills={row.original.skills}
             maxVisible={2}

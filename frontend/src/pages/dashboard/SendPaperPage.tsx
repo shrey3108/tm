@@ -397,8 +397,10 @@ export default function SendPaperPage() {
                     navigate(`/dashboard/jobs/${jobSlug}/candidates/${candSlug}/stages/${stgSlug}`, {
                       state: { job, candidateId, candidateName, stageId: jobStageId },
                     });
+                    return;
                   }
                   navigate(-1);
+                  return;
                 }}
                 disabled={sendEmailMutation.isPending || sendBulkEmailMutation.isPending}
               >

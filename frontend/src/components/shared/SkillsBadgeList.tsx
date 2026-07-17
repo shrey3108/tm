@@ -67,7 +67,7 @@ const SkillsBadgeList = ({
                 <Badge
                   {...props}
                   variant="outline"
-                  className="text-sm font-normal h-5 px-1.5 rounded-md border-muted-foreground/20"
+                  className="text-sm font-normal px-1.5 py-0.5 rounded-md border-muted-foreground/20 overflow-visible whitespace-normal [word-break:break-word] leading-snug h-auto"
                 >
                   +{remainingSkills.length} more
                 </Badge>
@@ -75,9 +75,9 @@ const SkillsBadgeList = ({
             />
             <TooltipContent
               side="top"
-              className="flex flex-col gap-1 p-2 bg-popover text-popover-foreground border shadow-md"
+              className="flex flex-col gap-1 p-1 bg-popover text-popover-foreground border shadow-md"
             >
-              <div className="text-sm font-semibold border-b pb-1 mb-1 border-border/50">
+              <div className="text-sm font-semibold border-b  mb-1 border-border/50">
                 Additional Skills
               </div>
               <div className="flex flex-wrap gap-1 max-w-50">

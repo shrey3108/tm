@@ -36,7 +36,7 @@ export function QuestionsBankSkillSelector({
     name: "skill_ids",
     defaultValue: [],
   });
-
+  // console.log(control._formState.errors);
   const debouncedSearch = useDebouncedValue(skillSearch);
   const { data: skills, loading: isLoading, refetch: refetchSkills } = useSkill({ skip: 0, limit: 500, q: debouncedSearch });
 
