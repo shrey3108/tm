@@ -41,7 +41,12 @@ export const mcqFormSchema = z
   .object({
     question: z.string().trim().min(5, "Question must be at least 5 characters long."),
     options: z
-      .array(z.string().trim().min(1, "Option cannot be empty."))
+      .array(
+        z.preprocess(
+          (val) => (val === null || val === undefined ? "" : val),
+          z.string().trim().min(1, "Option cannot be empty.")
+        )
+      )
       .min(2, "At least two options are required."),
     answer: z.string().min(1, "Correct answer is required."),
     marks: z.preprocess(

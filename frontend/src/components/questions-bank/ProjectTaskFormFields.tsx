@@ -1,132 +1,92 @@
+import { useFormContext } from "react-hook-form";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import type { SubTaskItem } from "@/types/taskPaper";
 import { SubTasksFormSection } from "./SubTasksFormSection";
 import { Required } from "@/components/shared/Required";
+import { QuestionMetricsInput } from "./QuestionMetricsInput";
+import {
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form";
 
 interface ProjectTaskFormFieldsProps {
-  taskDescription: string;
-  onDescriptionChange: (value: string) => void;
-  taskInstructions: string;
-  onInstructionsChange: (value: string) => void;
-  hours: number | "";
-  onHoursChange: (value: number | "") => void;
-  minutes: number | "";
-  onMinutesChange: (value: number | "") => void;
-  tasks: SubTaskItem[];
-  onTasksChange: (tasks: SubTaskItem[]) => void;
-  errors: Record<string, string>;
-  onClearError: (field: string) => void;
+  disabled?: boolean;
 }
 
-export function ProjectTaskFormFields({
-  taskDescription,
-  onDescriptionChange,
-  taskInstructions,
-  onInstructionsChange,
-  hours,
-  onHoursChange,
-  minutes,
-  onMinutesChange,
-  tasks = [],
-  onTasksChange,
-  errors,
-  onClearError,
-}: ProjectTaskFormFieldsProps) {
+export function ProjectTaskFormFields({ disabled = false }: ProjectTaskFormFieldsProps) {
+  const { control } = useFormContext();
+  // console.log(control._formState.errors)
   return (
     <div className="space-y-4 animate-in fade-in slide-in-from-top-1 duration-200">
       {/* Description Field */}
-      <div className="flex flex-col gap-1.5">
-        <Label className="text-sm font-semibold">Project Task Description<Required /></Label>
-        <Textarea
-          value={taskDescription}
-          onChange={(e) => {
-            onDescriptionChange(e.target.value);
-            if (errors.project_task) {
-              onClearError("project_task");
-            }
-          }}
-          placeholder="Enter the project task description"
-          aria-invalid={!!errors.project_task}
-          className="min-h-[100px] text-sm bg-background w-full"
-        />
-        {errors.project_task && (
-          <p className="text-xs font-medium text-destructive">{errors.project_task}</p>
+      <FormField
+        control={control}
+        name="project_task"
+        render={({ field }) => (
+          <FormItem className="flex flex-col gap-1.5">
+            <FormLabel className="text-sm font-semibold">
+              Project Task Description<Required />
+            </FormLabel>
+            <FormControl>
+              <Textarea
+                placeholder="Enter the project task description"
+                disabled={disabled}
+                className="min-h-[100px] text-sm bg-background w-full"
+                {...field}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
         )}
-      </div>
+      />
 
       {/* Instructions Field */}
-      <div className="flex flex-col gap-1.5">
-        <Label className="text-sm font-semibold">Instructions<Required /></Label>
-        <Textarea
-          value={taskInstructions}
-          onChange={(e) => {
-            onInstructionsChange(e.target.value);
-            if (errors.instructions) {
-              onClearError("instructions");
-            }
-          }}
-          placeholder="Enter detailed instructions for candidates..."
-          aria-invalid={!!errors.instructions}
-          className="min-h-[80px] text-sm bg-background w-full"
-        />
-        {errors.instructions && (
-          <p className="text-xs font-medium text-destructive">{errors.instructions}</p>
+      <FormField
+        control={control}
+        name="instructions"
+        render={({ field }) => (
+          <FormItem className="flex flex-col gap-1.5">
+            <FormLabel className="text-sm font-semibold">
+              Instructions<Required />
+            </FormLabel>
+            <FormControl>
+              <Textarea
+                placeholder="Enter detailed instructions for candidates..."
+                disabled={disabled}
+                className="min-h-[80px] text-sm bg-background w-full"
+                {...field}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
         )}
-      </div>
+      />
 
       {/* Overall Duration Field */}
       <div className="flex flex-col gap-1.5">
         <Label className="text-sm font-semibold">Overall Project Duration<Required /></Label>
-        <div className="flex gap-3">
-          <div className="flex flex-col gap-1 w-20">
-            <Label className="text-xs font-semibold">Hours</Label>
-            <Input
-              type="number"
-              placeholder="0"
-              min={0}
-              value={hours}
-              onChange={(e) => {
-                const val = e.target.value === "" ? "" : Number(e.target.value);
-                onHoursChange(val);
-                if (errors.minutes) {
-                  onClearError("minutes");
-                }
-              }}
-              className="text-xs h-9 bg-background font-medium"
-            />
-          </div>
-          <div className="flex flex-col gap-1 w-20">
-            <Label className="text-xs font-semibold">Minutes</Label>
-            <Input
-              type="number"
-              placeholder="00"
-              min={0}
-              max={59}
-              value={minutes}
-              onChange={(e) => {
-                const val = e.target.value === "" ? "" : Number(e.target.value);
-                onMinutesChange(val);
-                if (errors.minutes) {
-                  onClearError("minutes");
-                }
-              }}
-              className="text-xs h-9 bg-background font-medium"
-            />
-          </div>
-        </div>
-        {errors.minutes && (
-          <p className="text-xs font-semibold text-destructive mt-1">{errors.minutes}</p>
-        )}
+        <QuestionMetricsInput control={control} disabled={disabled} contentType="project_task" />
       </div>
 
       {/* Reusable Sub-tasks Section */}
-      <SubTasksFormSection
-        tasks={tasks}
-        onTasksChange={onTasksChange}
-        error={errors.tasks}
-        onClearError={() => onClearError("tasks")}
+      <FormField
+        control={control}
+        name="tasks"
+        render={({ field }) => (
+          <FormItem className="flex flex-col gap-1">
+            <FormControl>
+              <SubTasksFormSection
+                tasks={field.value || []}
+                onTasksChange={(updatedTasks) => field.onChange(updatedTasks)}
+                disabled={disabled}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
       />
     </div>
   );

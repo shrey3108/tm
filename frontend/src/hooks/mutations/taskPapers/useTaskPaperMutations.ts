@@ -220,7 +220,7 @@ export function useAddQuestionToPaperMutation() {
       skillIds,
     }: {
       paperId: string;
-      question: QuestionItem | string;
+      question: QuestionItem;
       skillIds?: string[];
     }) => taskService.addQuestionToPaper(paperId, question, skillIds),
     onSuccess: (_data, variables) => {
@@ -251,7 +251,7 @@ export function useUpdateQuestionInPaperMutation() {
     }: {
       paperId: string;
       index: number;
-      question: QuestionItem | string;
+      question: QuestionItem;
       skillIds?: string[];
     }) => taskService.updateQuestionInPaper(paperId, index, question, skillIds),
     onSuccess: (_data, variables) => {

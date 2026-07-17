@@ -1,122 +1,128 @@
-import { Label } from "@/components/ui/label";
+import { useFormContext, type Control, type FieldValues } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import { Required } from "@/components/shared/Required";
-
+import {
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form";
+import type { QuestionType } from "@/pages/dashboard/AssignPaperPage";
 
 interface QuestionMetricsInputProps {
-  marks: number | "";
-  onMarksChange: (value: number | "") => void;
-  hours: number | "";
-  onHoursChange: (value: number | "") => void;
-  minutes: number | "";
-  onMinutesChange: (value: number | "") => void;
-  marksError?: string;
-  durationError?: string;
-  onClearMarksError?: () => void;
-  onClearDurationError?: () => void;
+  control?: Control<FieldValues, any, FieldValues>;
+  marksName?: string;
+  hoursName?: string;
+  minutesName?: string;
   marksPlaceholder?: string;
   hoursPlaceholder?: string;
   minutesPlaceholder?: string;
   disabled?: boolean;
+  contentType?: QuestionType;
 }
 
 export function QuestionMetricsInput({
-  marks,
-  onMarksChange,
-  hours,
-  onHoursChange,
-  minutes,
-  onMinutesChange,
-  marksError,
-  durationError,
-  onClearMarksError,
-  onClearDurationError,
+  control: propControl,
+  marksName = "marks",
+  hoursName = "hours",
+  minutesName = "minutes",
   marksPlaceholder = "00",
   hoursPlaceholder = "00",
   minutesPlaceholder = "00",
   disabled = false,
+  contentType
 }: QuestionMetricsInputProps) {
-  console.log(marksError,
-    durationError,)
+  const context = useFormContext();
+  const control = propControl || context?.control;
+
   return (
-    <div className="flex flex-col gap-1.5">
-      <div className="flex flex-wrap items-center gap-3">
-        {/* Marks */}
-        <div className="flex flex-col gap-1 w-20">
-          <Label className="text-xs font-semibold">Marks<Required /></Label>
-          <Input
-            type="number"
-            placeholder={marksPlaceholder}
-            min={1}
-            value={marks}
-            onChange={(e) => {
-              const val = e.target.value === "" ? "" : Number(e.target.value);
-              onMarksChange(val);
-              if (marksError && onClearMarksError) {
-                onClearMarksError();
-              }
-            }}
-            disabled={disabled}
-            aria-invalid={!!marksError}
-            className="text-xs h-9 bg-background w-20 font-medium"
-          />
-        </div>
+    <div className="flex flex-wrap items-start gap-4">
+      {/* Marks */}
+      {contentType !== "project_task" ? <FormField
+        control={control}
+        name={marksName}
+        render={({ field }) => (
+          <FormItem className="flex flex-col gap-1 w-20">
+            <FormLabel className="text-xs font-semibold">
+              Marks<Required />
+            </FormLabel>
+            <FormControl>
+              <Input
+                type="number"
+                placeholder={marksPlaceholder}
+                min={1}
+                disabled={disabled}
+                className="text-xs h-9 bg-background w-20 font-medium"
+                value={field.value ?? ""}
+                onChange={(e) => {
+                  const val = e.target.value === "" ? "" : Number(e.target.value);
+                  field.onChange(val);
+                }}
+              />
+            </FormControl>
+            <FormMessage className="text-xs" />
+          </FormItem>
+        )}
+      /> : null}
 
-        {/* Hours */}
-        <div className="flex flex-col gap-1 w-20">
-          <Label className="text-xs font-semibold">Hours<Required /></Label>
-          <Input
-            type="number"
-            placeholder={hoursPlaceholder}
-            min={0}
-            value={hours}
-            onChange={(e) => {
-              const val = e.target.value === "" ? "" : Number(e.target.value);
-              onHoursChange(val);
-              if (durationError && onClearDurationError) {
-                onClearDurationError();
-              }
-            }}
-            disabled={disabled}
-            aria-invalid={!!durationError}
-            className="text-xs h-9 bg-background w-20 font-medium"
-          />
-        </div>
+      {/* Hours */}
+      <FormField
+        control={control}
+        name={hoursName}
+        render={({ field }) => (
+          <FormItem className="flex flex-col gap-1 w-20">
+            <FormLabel className="text-xs font-semibold">
+              Hours<Required />
+            </FormLabel>
+            <FormControl>
+              <Input
+                type="number"
+                placeholder={hoursPlaceholder}
+                min={0}
+                disabled={disabled}
+                className="text-xs h-9 bg-background w-20 font-medium"
+                value={field.value ?? ""}
+                onChange={(e) => {
+                  const val = e.target.value === "" ? "" : Number(e.target.value);
+                  field.onChange(val);
+                }}
+              />
+            </FormControl>
+            <FormMessage className="text-xs" />
+          </FormItem>
+        )}
+      />
 
-        {/* Minutes */}
-        <div className="flex flex-col gap-1 w-20">
-          <Label className="text-xs font-semibold">Minutes<Required /></Label>
-          <Input
-            type="number"
-            placeholder={minutesPlaceholder}
-            min={0}
-            max={59}
-            value={minutes}
-            onChange={(e) => {
-              const val = e.target.value === "" ? "" : Number(e.target.value);
-              onMinutesChange(val);
-              if (durationError && onClearDurationError) {
-                onClearDurationError();
-              }
-            }}
-            disabled={disabled}
-            aria-invalid={!!durationError}
-            className="text-xs h-9 bg-background w-20 font-medium"
-          />
-        </div>
-      </div>
-
-      {/* Grouped Errors */}
-      {(marksError || durationError) && (
-        <div className="flex flex-col gap-0.5 mt-1 animate-in fade-in slide-in-from-top-1 duration-150">
-          {marksError && (
-            <p className="text-xs font-semibold text-destructive">{marksError}</p>
-          )}
-          {durationError && (
-            <p className="text-xs font-semibold text-destructive">{durationError}</p>
-          )}
-        </div>
-      )}
+      {/* Minutes */}
+      <FormField
+        control={control}
+        name={minutesName}
+        render={({ field }) => (
+          <FormItem className="flex flex-col gap-1 w-20">
+            <FormLabel className="text-xs font-semibold">
+              Minutes<Required />
+            </FormLabel>
+            <FormControl>
+              <Input
+                type="number"
+                placeholder={minutesPlaceholder}
+                min={0}
+                max={59}
+                disabled={disabled}
+                className="text-xs h-9 bg-background w-20 font-medium"
+                value={field.value ?? ""}
+                onChange={(e) => {
+                  const val = e.target.value === "" ? "" : Number(e.target.value);
+                  field.onChange(val);
+                }}
+              />
+            </FormControl>
+            <FormMessage className="text-xs" />
+          </FormItem>
+        )}
+      />
     </div>
   );
 }
+

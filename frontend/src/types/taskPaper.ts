@@ -50,9 +50,9 @@ export interface QuestionSetPaperRead {
   position_id: string;
   skills: SkillRead[];
   paper_type: string;
-  questions: (QuestionItem | string)[];
+  questions: (QuestionItem)[];
   mcqs: MCQItem[];
-  project_task: (TaskItem | string)[];
+  project_task: (TaskItem)[];
   task_file_path: string | null;
   task_skills: string[] | null;
   created_at: string;
