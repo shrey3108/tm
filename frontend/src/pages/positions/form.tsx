@@ -134,7 +134,7 @@ export default function AdminPositionForm() {
                   <FormItem>
                     <FormLabel>Position Name<Required /></FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g. Senior Frontend Developer" {...field} />
+                      <Input placeholder="e.g. Senior Frontend Developer" {...field} className="text-base rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

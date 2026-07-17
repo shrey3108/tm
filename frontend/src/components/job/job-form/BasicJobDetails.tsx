@@ -27,7 +27,7 @@ export const BasicJobDetails = ({ departments, priorities = [], positions, isEdi
   const { control, setValue } = useFormContext();
 
   return (
-    <div className="grid gap-6">
+    <div className="grid gap-3">
       {/* Job Title */}
       <FormField
         control={control}
@@ -50,7 +50,7 @@ export const BasicJobDetails = ({ departments, priorities = [], positions, isEdi
       />
 
       {/* Job Position, Priority, Reminder Hours, Department, Vacancy Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
         {/* Job Position */}
         <FormField
           control={control}
@@ -67,7 +67,7 @@ export const BasicJobDetails = ({ departments, priorities = [], positions, isEdi
                   options={positions.map((pos) => ({ id: pos.id, label: pos.name }))}
                   placeholder="Select job position"
                   searchPlaceholder="Search job position..."
-                  triggerClassName="h-12 text-base rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium w-full capitalize"
+                  triggerClassName="h-9 text-base rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium w-full capitalize"
                 />
               </FormControl>
               <FormMessage />
@@ -213,7 +213,7 @@ export const BasicJobDetails = ({ departments, priorities = [], positions, isEdi
             <FormControl>
               <Textarea
                 placeholder="Detailed job description..."
-                className="min-h-62.5 text-base rounded-2xl p-5 border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all resize-none font-medium"
+                className="min-h-62.5 text-base rounded-2xl p-4 border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all resize-y font-medium"
                 {...field}
               />
             </FormControl>

@@ -224,13 +224,13 @@ export default function CandidateOverview() {
       size: 20,
       cell: ({ row }) => {
         return (
-          <div className="px-1">
-            <AssociateResultCell
-              event={row.original}
-              jobSlug={jobSlug || ""}
-              candidateNameSlug={candidateName || ""}
-            />
-          </div>
+
+          <AssociateResultCell
+            event={row.original}
+            jobSlug={jobSlug || ""}
+            candidateNameSlug={candidateName || ""}
+          />
+
         );
       },
     },

@@ -195,7 +195,7 @@ export default function CreateJob() {
           <JobFormSkeleton />
         ) : (
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
               <BasicJobDetails departments={departments} priorities={priorities} positions={positions} isEditMode={isEditMode} />
               <JobSettingsSection />
               <CustomFieldsSection />

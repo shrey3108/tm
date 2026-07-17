@@ -42,7 +42,7 @@ export const AssociateSelectorSection = ({
           </div>
           <div>
             <h2 className="text-lg font-semibold tracking-tight text-foreground">Assigned Associates <Required /></h2>
-            <p className="text-sm text-muted-foreground">Select the associates who will be responsible for reviewing candidate submissions for this job.</p>
+            <p className="text-xs text-muted-foreground">Select the associates who will be responsible for reviewing candidate submissions for this job.</p>
           </div>
         </div>
 
@@ -81,7 +81,7 @@ export const AssociateSelectorSection = ({
                       clearLabel="Clear associates"
                       icon={loadingAssociates ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserCheck className="h-3.5 w-3.5 opacity-60" />}
                       triggerClassName={cn(
-                        "w-fit inline-flex items-center gap-2 h-10 px-4 rounded-xl border text-sm font-medium cursor-pointer select-none transition-colors bg-background border-muted/60 hover:bg-muted/10",
+                        "w-fit inline-flex items-center gap-2 h-12 px-4 rounded-xl border text-base border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium cursor-pointer select-none transition-colors bg-background border-muted/60 hover:bg-muted/10 capitalize",
                       )}
                       contentClassName="min-w-[200px]"
                       onSearch={setSearchQuery}

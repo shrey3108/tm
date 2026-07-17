@@ -243,7 +243,9 @@ export default function AdminJobStageForm() {
                                     <FormItem>
                                         <FormLabel>Name<Required /> </FormLabel>
                                         <FormControl>
-                                            <Input placeholder="e.g. Technical Interview" {...field} />
+                                            <Input placeholder="e.g. Technical Interview" {...field}
+                                                className="text-base rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium"
+                                            />
                                         </FormControl>
                                         {/* <FormDescription>
                                             The display name for this stage.
@@ -262,7 +264,7 @@ export default function AdminJobStageForm() {
                                         <FormControl>
                                             <Textarea
                                                 placeholder="Describe the purpose of this stage..."
-                                                className="min-h-30 resize-y"
+                                                className="min-h-30 text-base rounded-2xl p-4 border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all resize-y font-medium"
                                                 {...field}
                                                 value={field.value || ""}
                                             />
@@ -353,6 +355,7 @@ export default function AdminJobStageForm() {
                                                 {...field}
                                                 value={field.value ?? ""}
                                                 onChange={(e) => field.onChange(e.target.value === "" ? null : parseInt(e.target.value, 10))}
+                                                className="text-base rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium"
                                             />
                                         </FormControl>
                                         {/* <FormDescription>
@@ -456,7 +459,7 @@ export default function AdminJobStageForm() {
                                             placeholder="Search criteria..."
                                             value={criteriaSearch}
                                             onChange={(e) => setCriteriaSearch(e.target.value)}
-                                            className="pl-10 h-11 text-base rounded-xl border-muted-foreground/20"
+                                            className="pl-10  text-base rounded-xl border-muted-foreground/20"
                                         />
                                     </div>
                                 </div>

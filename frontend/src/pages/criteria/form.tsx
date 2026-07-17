@@ -180,7 +180,8 @@ export default function AdminJobCriteriaForm() {
                                     <FormItem>
                                         <FormLabel>Name<Required /> </FormLabel>
                                         <FormControl>
-                                            <Input placeholder="e.g. Communication Skills" {...field} />
+                                            <Input placeholder="e.g. Communication Skills" {...field}
+                                                className="text-base rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium" />
                                         </FormControl>
                                         {/* <FormDescription>
                                             The display name for this evaluation criterion.
@@ -212,7 +213,7 @@ export default function AdminJobCriteriaForm() {
                                         <FormControl>
                                             <Textarea
                                                 placeholder="Describe what this criterion evaluates..."
-                                                className="min-h-28 resize-y"
+                                                className="min-h-30 text-base rounded-2xl p-4 border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all resize-y font-medium"
                                                 {...field}
                                             ></Textarea>
                                         </FormControl>
@@ -232,7 +233,7 @@ export default function AdminJobCriteriaForm() {
                                         <FormControl>
                                             <Textarea
                                                 placeholder="Describe what this criterion evaluates..."
-                                                className="min-h-28 resize-y disabled:opacity-80"
+                                                className="min-h-30 text-base rounded-2xl p-4 border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all resize-y font-medium"
                                                 {...field}
                                             // disabled
                                             />

@@ -14,18 +14,18 @@ export const JobSettingsSection = () => {
   const { control } = useFormContext();
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
       {/* Passing Threshold */}
       <FormField
         control={control}
         name="passing_threshold"
         render={({ field }) => (
-          <FormItem className="flex flex-row justify-between items-center rounded-2xl border border-muted-foreground/20 p-6 bg-card/10 backdrop-blur-sm hover:bg-card/20 transition-all shadow-sm">
-            <div className="space-y-1 mb-4">
+          <FormItem className="flex flex-row justify-between items-center rounded-2xl border border-muted-foreground/20 p-3 bg-card/10 backdrop-blur-sm hover:bg-card/20 transition-all shadow-sm">
+            <div className="space-y-1">
               <FormLabel className="text-lg font-bold">
                 AI Passing Threshold
               </FormLabel>
-              <p className="text-sm text-muted-foreground font-medium">
+              <p className="text-xs text-muted-foreground">
                 Minimum matching score required for candidates.
               </p>
             </div>
@@ -35,7 +35,7 @@ export const JobSettingsSection = () => {
                   type="number"
                   min={1}
                   max={100}
-                  className="h-12 text-lg rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-bold text-center w-24"
+                  className="h-12 text-base rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium text-center w-24"
                   {...field}
                   onChange={(e) => field.onChange(Number(e.target.value))}
                 />
@@ -50,12 +50,12 @@ export const JobSettingsSection = () => {
         control={control}
         name="question_bank_passing_threshold"
         render={({ field }) => (
-          <FormItem className="flex flex-row justify-between items-center rounded-2xl border border-muted-foreground/20 p-6 bg-card/10 backdrop-blur-sm hover:bg-card/20 transition-all shadow-sm">
-            <div className="space-y-1 mb-4">
+          <FormItem className="flex flex-row justify-between items-center rounded-2xl border border-muted-foreground/20 p-3 bg-card/10 backdrop-blur-sm hover:bg-card/20 transition-all shadow-sm">
+            <div className="space-y-1">
               <FormLabel className="text-lg font-bold">
                 Question Passing Threshold
               </FormLabel>
-              <p className="text-sm text-muted-foreground font-medium">
+              <p className="text-xs text-muted-foreground">
                 Minimum score required for candidates.
               </p>
             </div>
@@ -65,7 +65,7 @@ export const JobSettingsSection = () => {
                   type="number"
                   min={1}
                   max={100}
-                  className="h-12 text-lg rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-bold text-center w-24"
+                  className="h-12 text-base rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium text-center w-24"
                   {...field}
                   onChange={(e) => field.onChange(Number(e.target.value))}
                 />
@@ -82,12 +82,12 @@ export const JobSettingsSection = () => {
         control={control}
         name="is_active"
         render={({ field }) => (
-          <FormItem className="flex flex-row items-center justify-between rounded-2xl border border-muted-foreground/20 p-6 bg-card/10 backdrop-blur-sm hover:bg-card/20 transition-all shadow-sm">
-            <div className="space-y-0.5">
+          <FormItem className="flex flex-row justify-between items-center rounded-2xl border border-muted-foreground/20 p-3 bg-card/10 backdrop-blur-sm hover:bg-card/20 transition-all shadow-sm">
+            <div className="space-y-1">
               <FormLabel className="text-lg font-bold">
                 Job Status <Required />
               </FormLabel>
-              <p className="text-sm text-muted-foreground font-medium">
+              <p className="text-xs text-muted-foreground">
                 Control visibility on the job board. Currently{" "}
                 {field.value ? "Active" : "Inactive"}.
               </p>

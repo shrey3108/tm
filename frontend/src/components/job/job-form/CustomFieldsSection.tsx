@@ -8,12 +8,12 @@ export const CustomFieldsSection = () => {
   const { control } = useFormContext();
 
   return (
-    <div className="app-surface-card space-y-6 p-4 sm:p-5">
+    <div className="app-surface-card space-y-3 p-3">
       <div className="space-y-1">
         <h2 className="text-lg font-bold tracking-tight">
           Custom Extraction Fields
         </h2>
-        <p className="text-muted-foreground text-sm font-medium">
+        <p className="text-xs text-muted-foreground">
           Add specific information you want the AI to extract from resumes (e.g. "Notice Period", "Willingness to Relocate").
         </p>
       </div>
@@ -24,7 +24,7 @@ export const CustomFieldsSection = () => {
         render={({ field }) => (
           <FormItem>
             <FormControl>
-              <div className="space-y-4">
+              <div className="space-y-2">
                 <div className="flex gap-2">
                   <Input
                     placeholder="Type a field name and press enter..."
@@ -64,7 +64,7 @@ export const CustomFieldsSection = () => {
                     </Badge>
                   ))}
                   {(!field.value || field.value.length === 0) && (
-                    <p className="text-sm text-muted-foreground py-2">
+                    <p className="text-xs text-muted-foreground py-1">
                       No custom fields added yet.
                     </p>
                   )}

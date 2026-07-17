@@ -1,16 +1,6 @@
-import { Loader2, ChevronDown, Plus } from "lucide-react";
-import { Button, buttonVariants } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-
-  DropdownMenuCheckboxItem
-} from "@/components/ui/dropdown-menu";
-import { cn } from "@/lib/utils";
+import { Loader2, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { SearchableSelect } from "@/components/shared/SearchableSelect";
 import type { StageTemplate } from "@/types/stage";
 
 interface AddStageDropdownProps {
@@ -28,65 +18,25 @@ export const AddStageDropdown = ({
   onAdd,
   isAdding,
 }: AddStageDropdownProps) => {
-  const toggleTemplate = (id: string) => {
-    onSelectionChange(
-      selectedTemplateIds.includes(id)
-        ? selectedTemplateIds.filter((tid) => tid !== id)
-        : [...selectedTemplateIds, id],
-    );
-  };
-
   return (
     <div className="flex items-center gap-3">
-      <DropdownMenu>
-        <DropdownMenuTrigger
-          type="button"
-          className={cn(
-            buttonVariants({ variant: "outline" }),
-            "flex-1 h-10 rounded-xl border-muted-foreground/20 font-medium justify-between px-3 max-w-fit")}
-          disabled={availableTemplates.length === 0} >
-          <span className="">
-            {selectedTemplateIds.length === 0
-              ? "Select stage templates..."
-              : `${selectedTemplateIds.length} template(s) selected`}
-          </span>
-          <ChevronDown className="h-4 w-4 " />
-        </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-80 rounded-xl border-primary/10 max-h-80 overflow-y-auto">
-          <DropdownMenuGroup>
-            <DropdownMenuLabel className="font-bold text-xs text-muted-foreground">
-              Available Templates
-            </DropdownMenuLabel>
-            {availableTemplates.map((t) => (
-              <DropdownMenuCheckboxItem
-                key={t.id}
-                onClick={() => {
-                  toggleTemplate(t.id);
-                }}
-                checked={selectedTemplateIds.includes(t.id)}
-                className={cn(
-                  "font-medium py-2.5 flex items-center justify-between gap-2",
-                  selectedTemplateIds.includes(t.id) && "bg-primary/5",
-                )}
-              >
-                <div className="flex flex-col gap-0.5 min-w-0">
-                  <span className="font-bold text-sm leading-tight">{t.name}</span>
-                  {t.description && (
-                    <span className="text-xs text-muted-foreground line-clamp-1 leading-tight">
-                      {t.description}
-                    </span>
-                  )}
-                </div>
-              </DropdownMenuCheckboxItem>
-            ))}
-          </DropdownMenuGroup>
-          {availableTemplates.length === 0 && (
-            <div className="p-4 text-center text-xs text-muted-foreground italic">
-              All templates assigned
-            </div>
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <div className="flex-1 max-w-[320px]">
+        <SearchableSelect
+          multiple
+          options={availableTemplates.sort((a, b) => (a.default_order ?? 0) - (b.default_order ?? 0)).map((t) => ({
+            id: t.id,
+            label: t.name,
+            hoverContent: t.description,
+          }))}
+          value={selectedTemplateIds}
+          onValueChange={onSelectionChange}
+          placeholder="Select stage templates..."
+          pluralLabel="template(s) selected"
+          disabled={availableTemplates.length === 0}
+          emptyMessage="No templates found"
+          triggerClassName="h-12 text-base rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium capitalize"
+        />
+      </div>
 
       <Button
         type="button"

@@ -140,6 +140,7 @@ export default function AdminPriorityForm() {
                         {...field}
                         type="number"
                         placeholder="Number of days"
+                        className="text-base rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium"
                         onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 0)}
                       />
                     </FormControl>
@@ -158,6 +159,8 @@ export default function AdminPriorityForm() {
                       <Input
                         type="number"
                         placeholder="Hours (multiple of 24)"
+                        step={24}
+                        className="text-base rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium"
                         {...field}
                         onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 0)}
                       />

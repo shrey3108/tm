@@ -143,7 +143,7 @@ export default function AdminGuidelineForm() {
                     <FormControl>
                       <Textarea
                         placeholder="Enter terms & conditions instructions here..."
-                        className="min-h-50 resize-y"
+                        className="min-h-30 text-base rounded-2xl p-4 border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all resize-y font-medium"
                         {...field}
                       />
                     </FormControl>

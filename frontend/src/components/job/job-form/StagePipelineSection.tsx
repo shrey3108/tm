@@ -71,7 +71,7 @@ export const StagePipelineSection = ({ jobId, onChange }: StagePipelineSectionPr
   }
 
   return (
-    <div className="app-surface-card space-y-5 p-4 sm:p-5">
+    <div className="app-surface-card space-y-3 p-3">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -79,7 +79,7 @@ export const StagePipelineSection = ({ jobId, onChange }: StagePipelineSectionPr
             <Layers className="h-5 w-5 text-primary" />
             <h2 className="text-lg font-bold tracking-tight">Interview Pipeline</h2>
           </div>
-          <p className="text-muted-foreground text-sm font-medium mt-0.5">
+          <p className="text-xs text-muted-foreground">
             Configure the interview stages for this job. Reorder or add more as needed.
           </p>
         </div>

@@ -107,7 +107,7 @@ export const SkillSelectorSection = ({
     setSelectedSkill(null);
   };
   return (
-    <div className="app-surface-card space-y-3 p-4 sm:p-5">
+    <div className="app-surface-card space-y-3 p-3">
       <Accordion defaultValue={["skill-selector"]} className="border-none bg-transparent rounded-none">
         <AccordionItem value="skill-selector" className="border-none bg-transparent">
           <div className="flex items-center justify-between pb-4">
@@ -121,7 +121,7 @@ export const SkillSelectorSection = ({
                     </span>
                   )}
                 </div>
-                <p className="text-muted-foreground text-sm font-medium">
+                <p className="text-xs text-muted-foreground">
                   {placeholderMessage}
                 </p>
               </div>
@@ -171,7 +171,7 @@ export const SkillSelectorSection = ({
             </div>
 
             {/* Skill Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 max-h-100 overflow-y-auto p-2 pr-4 custom-scrollbar">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-2 max-h-100 overflow-y-auto p-2 pr-4 custom-scrollbar">
               {filteredSkills.length > 0 ? (
                 filteredSkills.map((skill) => {
                   const isSelected = selectedSkillIds.includes(skill.id);

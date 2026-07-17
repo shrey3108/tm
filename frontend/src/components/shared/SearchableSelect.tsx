@@ -229,7 +229,7 @@ export function SearchableSelect({
         disabled={disabled || loading}
         aria-invalid={ariaInvalid}
         className={cn(
-          "w-full h-11 bg-input/20 hover:bg-input/30 text-sm rounded-xl px-3 justify-between font-normal text-foreground inline-flex items-center cursor-pointer transition-all border border-border/50 outline-none focus:border-border/50",
+          "w-full h-11 bg-input/20 hover:bg-input/30 text-sm rounded-xl px-3 py-1 justify-between font-normal text-foreground inline-flex items-center cursor-pointer transition-all border border-border/50 outline-none focus:border-border/50",
           triggerClassName
         )}
       >

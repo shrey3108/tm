@@ -10,7 +10,7 @@ import { usePageFilters } from "@/hooks/usePageFilters";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { X, Save } from "lucide-react";
+import { Save, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import AppPageShell from "@/components/shared/AppPageShell";
 import PageHeader from "@/components/shared/PageHeader";
@@ -437,21 +437,18 @@ export default function QuestionsBankCreate() {
   }
 
   return (
-    <AppPageShell
-      width="wide"
-    >
+    <AppPageShell width="wide">
       <PageHeader
         title={isEditMode ? `Edit Question Paper: ${paperToEdit?.name || ""}` : "Define Question"}
-        actions={
+        breadcrumbActions={
           <Button
             variant="ghost"
-            size="icon"
-            type="button"
-            onClick={() => navigate("/dashboard/questions-bank")}
-            className="rounded-full hover:bg-muted"
+            size="sm"
+            onClick={() => navigate(-1)}
+            className="gap-2 h-9"
           >
-            <X className="h-5 w-5" />
-            <span className="sr-only">Close</span>
+            <ArrowLeft className="h-4 w-4" />
+            Go Back
           </Button>
         }
       />

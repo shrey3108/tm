@@ -157,7 +157,7 @@ export default function AdminUserForm() {
                     <FormItem>
                       <FormLabel>Full Name<Required /></FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter full name" {...field} disabled={isEditMode} />
+                        <Input placeholder="Enter full name" {...field} disabled={isEditMode} className="text-base rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -176,6 +176,7 @@ export default function AdminUserForm() {
                           placeholder="Enter email"
                           disabled={isEditMode}
                           {...field}
+                          className="text-base rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium"
                         />
                       </FormControl>
                       <FormMessage />
@@ -201,7 +202,7 @@ export default function AdminUserForm() {
                           placeholder="Select a role"
                           searchPlaceholder="Search roles..."
                           disabled={isLoadingRoles}
-                          triggerClassName="w-full"
+                          triggerClassName="h-12 text-base rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium w-full capitalize py-1"
                         />
                       </FormControl>
                       <FormMessage />

@@ -100,7 +100,7 @@ export function ClearCacheDialog({ open, onOpenChange }: ClearCacheDialogProps) 
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search cache keys..."
-              className="pl-9 h-10 rounded-xl bg-background/50 border-muted-foreground/20"
+              className="pl-9 text-base rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -132,7 +132,7 @@ export function ClearCacheDialog({ open, onOpenChange }: ClearCacheDialogProps) 
             ) : filteredKeys.length > 0 ? (
               <div className="flex flex-col gap-2">
                 {filteredKeys.map((key) => (
-                  <div key={key} className="flex items-center gap-2 p-2 rounded-lg hover:bg-background transition-colors ">
+                  <div key={key} className="flex items-center gap-2 p-2 rounded-lg transition-colors odd:bg-background/80 hover:bg-background/50">
                     <Checkbox
                       id={`key-${key}`}
                       checked={selectedKeys.has(key)}
