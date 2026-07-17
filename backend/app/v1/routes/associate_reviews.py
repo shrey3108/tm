@@ -236,6 +236,7 @@ HARDCODED_DBD_CRITERIA = [
     "Smartness",
     "Positivity",
     "Professionalism",
+    "Ability to take challenges",
 ]
 
 async def _fetch_dbd_criteria_names(db: AsyncSession, stage_config) -> list[str]:
@@ -264,18 +265,7 @@ async def serve_review_form(token: uuid.UUID, db: AsyncSession = Depends(get_db)
                 detail="The question paper for this review could no longer be found.",
             )
         else:
-            criteria_names = [
-                "Ethics & Confidence",
-                "Technical Skills",
-                "Communication Skills",
-                "Listening Skill",
-                "Detail Oriented",
-                "Attitude & Behavior",
-                "Smartness",
-                "Positivity",
-                "Professionalism",
-                "Can take challenges?",
-            ]
+            criteria_names = HARDCODED_DBD_CRITERIA
                     
             candidate_full_name = _candidate_full_name(evaluation.candidate) if evaluation.candidate else "Candidate"
             job_title, department_name, position_name = _resolve_job_info(evaluation.job)
@@ -384,24 +374,32 @@ async def submit_review_form(
         dbd_scores = []
         for i, c_name in enumerate(criteria_names):
             score_val = form.get(f"dbd_score_{i}")
-            score_float = None
+            if not score_val or not str(score_val).strip():
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Missing score for criteria: {c_name}"
+                )
             try:
-                if score_val is not None and str(score_val).strip():
-                    score_float = float(str(score_val).strip())
+                score_float = float(str(score_val).strip())
             except ValueError:
-                pass
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Invalid score format for criteria: {c_name}"
+                )
             dbd_scores.append({"criterion": c_name, "score": score_float})
             
         evaluation.dbd_scores = dbd_scores
         
-        remarks = form.get("dbd_remarks")
-        if not remarks or not str(remarks).strip():
+        remarks = form.get("dbd_remarks", "")
+        
+        dbd_hiring_decision = form.get("dbd_hiring_decision")
+        if not dbd_hiring_decision or not str(dbd_hiring_decision).strip():
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Remarks cannot be empty or just spaces."
+                detail="Hiring decision is required."
             )
             
-        evaluation.dbd_hiring_decision = form.get("dbd_hiring_decision")
+        evaluation.dbd_hiring_decision = dbd_hiring_decision
         evaluation.dbd_remarks = remarks
         
         evaluation.submitted_at = datetime.now(timezone.utc)
@@ -540,22 +538,26 @@ def _render_form_html(
             
             # Determine saved value and disabled state if submitted
             value_attr = ""
-            disabled_attr = ""
-            if is_submitted and saved_marks_list and global_idx < len(saved_marks_list):
-                awarded = saved_marks_list[global_idx].get("awarded_marks")
-                if awarded is not None:
-                    value_attr = f'value="{awarded:g}"'
-                disabled_attr = "disabled"
+            disabled_attr = "disabled" if is_submitted else ""
+            if is_submitted and saved_marks_list:
+                for sm in saved_marks_list:
+                    if sm.get("question_text") == raw_text:
+                        awarded = sm.get("awarded_marks")
+                        if awarded is not None:
+                            value_attr = f'value="{awarded:g}"'
+                        break
 
             rows.append(f"""
-            <div class="question-row">
-              <div class="question-text">{display_idx}. {display_html}</div>
-              <div class="mark-input">
-                <input type="number" name="marks_{global_idx}" min="0"
-                       {f'max="{max_marks:g}"' if max_marks is not None else ''}
-                       step="0.5" placeholder="0" {value_attr} {disabled_attr} />
-                <span class="max-label">{max_label}</span>
-              </div>
+              <div class="question-row">
+                <div class="question-text">{display_idx}. {display_html}</div>
+                <div class="mark-input">
+                  <input type="number" name="marks_{global_idx}" min="0"
+                         {f'max="{max_marks:g}"' if max_marks is not None else ''}
+                         step="0.5" placeholder="0" 
+                         onfocus="this.placeholder=''" onblur="this.placeholder='0'" 
+                         {value_attr} {disabled_attr} required />
+                  <span class="max-label">{max_label}</span>
+                </div>
             </div>""")
             display_idx += 1
         sections_html_parts.append(f"""
@@ -753,7 +755,7 @@ def _render_form_html(
       </form>
     </div>
     <div class="footer">
-      August Infotech &mdash; www.augustinfotech.com
+      Copyright &copy; 2026 August Infotech Canada and India. All Rights Reserved
     </div>
   </div>
 </body>
@@ -783,18 +785,30 @@ def _render_dbd_form_html(
     
     for i, crit in enumerate(criteria):
         saved_val = ""
-        disabled_attr = ""
-        if is_submitted and saved_scores and i < len(saved_scores):
-            score_val = saved_scores[i].get("score")
-            if score_val is not None:
-                saved_val = str(score_val)
-                total_score += float(score_val)
-                valid_scores += 1
-            disabled_attr = "disabled"
+        disabled_attr = "disabled" if is_submitted else ""
+        if is_submitted and saved_scores:
+            for s in saved_scores:
+                c_name = s.get("criterion")
+                # Handle the rename gracefully if an old submission is loaded
+                if c_name == crit or (crit == "Ability to take challenges" and c_name == "Can take challenges?"):
+                    score_val = s.get("score")
+                    if score_val is not None:
+                        try:
+                            # Normalize value to string matching our options (e.g. "4" or "4.5")
+                            float_val = float(score_val)
+                            if float_val.is_integer():
+                                saved_val = str(int(float_val))
+                            else:
+                                saved_val = str(float_val)
+                            total_score += float_val
+                            valid_scores += 1
+                        except (ValueError, TypeError):
+                            pass
+                    break
             
-        options_html = '<option value="">Select</option>'
+        options_html = '<option value="" disabled selected hidden>Select</option>'
         for opt in options:
-            selected = "selected" if saved_val == opt or saved_val == str(float(opt)) else ""
+            selected = "selected" if saved_val == opt else ""
             options_html += f'<option value="{opt}" {selected}>{opt}</option>'
             
         rows.append(f"""
@@ -811,7 +825,7 @@ def _render_dbd_form_html(
     
     # Hiring decision row
     decisions = ["Hire", "No Hire"]
-    decision_options = '<option value="">Select</option>'
+    decision_options = '<option value="" disabled selected hidden>Select</option>'
     for dec in decisions:
         selected = "selected" if saved_decision == dec else ""
         decision_options += f'<option value="{dec}" {selected}>{dec}</option>'
@@ -820,7 +834,7 @@ def _render_dbd_form_html(
     <div class="question-row" style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-top: 20px;">
       <div class="question-text" style="font-weight: 600;">Hiring Decision <span style="color:red;">*</span></div>
       <div class="mark-input">
-        <select name="dbd_hiring_decision" style="padding: 8px; border-radius: 4px; border: 1px solid #d1d5db; width: 150px; font-weight:600;" {'disabled' if is_submitted else ''} required>
+        <select name="dbd_hiring_decision" style="padding: 8px; border-radius: 4px; border: 1px solid #d1d5db; width: 150px; font-weight:normal;" {'disabled' if is_submitted else ''} required>
             {decision_options}
         </select>
       </div>
@@ -830,8 +844,8 @@ def _render_dbd_form_html(
     saved_rem = saved_remarks or ""
     rows.append(f"""
     <div style="margin-top: 15px;">
-        <div style="font-weight: 600; margin-bottom: 8px;">Note / Remarks <span style="color:red;">*</span></div>
-        <textarea name="dbd_remarks" rows="4" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #d1d5db; font-family: inherit;" {'disabled' if is_submitted else ''} required>{html.escape(saved_rem)}</textarea>
+        <div style="font-weight: 600; margin-bottom: 8px;">Note / Remarks</div>
+        <textarea name="dbd_remarks" rows="4" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #d1d5db; font-family: inherit;" {'disabled' if is_submitted else ''}>{html.escape(saved_rem)}</textarea>
     </div>
     """)
     
@@ -983,7 +997,7 @@ def _render_dbd_form_html(
       </form>
     </div>
     <div class="footer">
-      August Infotech &mdash; www.augustinfotech.com
+      Copyright &copy; 2026 August Infotech Canada and India. All Rights Reserved
     </div>
   </div>
   <script>
@@ -1017,25 +1031,10 @@ def _render_dbd_form_html(
       // Calculate initial average on load
       calculateAverage();
       
-      const remarksInput = document.querySelector('textarea[name="dbd_remarks"]');
-      if (remarksInput) {{
-        remarksInput.addEventListener('input', function() {{
-          if (this.value.trim().length === 0) {{
-            this.setCustomValidity('Please fill out this field with valid remarks.');
-          }} else {{
-            this.setCustomValidity('');
-          }}
-        }});
-        // Set initial validity state
-        if (remarksInput.value.trim().length === 0 && !remarksInput.disabled) {{
-            remarksInput.setCustomValidity('Please fill out this field with valid remarks.');
-        }}
-      }}
+      // Validation removed as per request
     }});
   </script>
 </body>
 </html>"""
-
-
 
 

@@ -10,7 +10,7 @@ def main():
     # Define the commands
     worker_cmd = [
         sys.executable, "-m", "celery", 
-        "-A", "app.v1.core.celery_app.celery_app", 
+        "-A", "app.v1.core.celery_app:celery_app", 
         "worker", 
         "--loglevel=info", 
         "--pool=solo"
@@ -18,7 +18,7 @@ def main():
     
     beat_cmd = [
         sys.executable, "-m", "celery", 
-        "-A", "app.v1.core.celery_app.celery_app", 
+        "-A", "app.v1.core.celery_app:celery_app", 
         "beat", 
         "--loglevel=info"
     ]
