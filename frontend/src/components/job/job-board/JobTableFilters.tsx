@@ -1,6 +1,6 @@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Filter, Calendar as CalendarIcon, ChevronDown, X } from "lucide-react";
+import { Calendar as CalendarIcon, ChevronDown, X, Search } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
@@ -53,17 +53,17 @@ export const JobTableFilters = ({
 
   return (
     <div className="flex flex-col gap-2 p-2 bg-muted/20 rounded-2xl border border-muted-foreground/10 overflow-hidden">
-      <div className="flex flex-col lg:flex-row items-start gap-2 w-full">
+      <div className="flex flex-1 grow items-center max-w-full gap-3">
         {/* All Filters Area */}
         <div className="flex flex-wrap items-center gap-2 flex-1 ">
           {/* Title Search */}
-          <div className="relative w-full lg:w-[320px] group">
-            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" />
+          <div className="relative flex-1 sm:max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" />
             <Input
               placeholder="Search job title..."
               value={titleFilter}
               onChange={(e) => setTitleFilter(e.target.value)}
-              className="pl-10 h-10 rounded-xl text-sm w-full bg-background"
+              className="h-10 rounded-xl border-border/70 bg-background/90 pl-9 transition-all focus:ring-2 focus:ring-primary/20"
             />
           </div>
 

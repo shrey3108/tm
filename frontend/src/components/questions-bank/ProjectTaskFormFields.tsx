@@ -101,7 +101,7 @@ export function ProjectTaskFormFields({
             <Label className="text-xs font-semibold">Minutes</Label>
             <Input
               type="number"
-              placeholder="30"
+              placeholder="00"
               min={0}
               max={59}
               value={minutes}

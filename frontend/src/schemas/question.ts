@@ -49,9 +49,9 @@ export const subTaskSchema = z.object({
   name: z.string().trim().min(3, "Task must be at least 3 characters long."),
   description: z.string().trim().optional().or(z.literal("")),
   marks: z.preprocess(
-    (val) => (val === "" || val === undefined || val === null ? undefined : Number(val)),
-    z.union([z.number().int().positive({ message: "Marks must be at least 1." }), z.undefined()])
-  ).optional(),
+    (val) => (val === "" || val === undefined || val === null ? "" : Number(val)),
+    z.union([z.number().int().positive({ message: "Marks must be at least 1." }), z.literal("")])
+  ).refine(val => val !== "", { message: "Marks is required." }),
 });
 
 /**

@@ -1,6 +1,6 @@
 import { Input } from "@/components/ui/input";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Filter, Star } from "lucide-react";
+import { Filter, Search, Star } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -160,13 +160,13 @@ export const CandidateTableFilters = ({
         {/* Search & Filter Trigger Area */}
         <div className="flex flex-wrap items-center gap-2 flex-1 w-full lg:w-auto">
           {/* Search Field */}
-          <div className="relative w-10/12 lg:w-[320px] group">
-            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" />
+          <div className="relative flex-1 sm:max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" />
             <Input
               placeholder="Search name or email…"
               value={nameFilter}
               onChange={(e) => setNameFilter(e.target.value)}
-              className="pl-10 h-10 rounded-xl text-base w-full bg-background"
+              className="h-10 rounded-xl border-border/70 bg-background/90 pl-9 transition-all focus:ring-2 focus:ring-primary/20"
             />
           </div>
 

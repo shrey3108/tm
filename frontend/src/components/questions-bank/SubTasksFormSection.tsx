@@ -44,7 +44,7 @@ export function SubTasksFormSection({
     // Validate using Zod subTaskSchema
     const result = subTaskSchema.safeParse({
       name,
-      marks: marks === "" ? undefined : Number(marks),
+      marks,
     });
 
     if (!result.success) {
@@ -64,7 +64,7 @@ export function SubTasksFormSection({
       ...tasks,
       {
         name: name.trim(),
-        marks: marks === "" ? undefined : Number(marks),
+        marks: Number(marks),
       },
     ];
     onTasksChange(updatedTasks);
@@ -78,7 +78,6 @@ export function SubTasksFormSection({
       onClearError();
     }
   };
-
   const handleRemoveSubTask = (index: number) => {
     const updatedTasks = tasks.filter((_, idx) => idx !== index);
     onTasksChange(updatedTasks);
@@ -103,7 +102,7 @@ export function SubTasksFormSection({
 
     const result = subTaskSchema.safeParse({
       name: editName,
-      marks: editMarks === "" ? undefined : Number(editMarks),
+      marks: editMarks,
     });
 
     if (!result.success) {
@@ -121,7 +120,7 @@ export function SubTasksFormSection({
     const updatedTasks = [...tasks];
     updatedTasks[index] = {
       name: editName.trim(),
-      marks: editMarks === "" ? undefined : Number(editMarks),
+      marks: Number(editMarks),
     };
     onTasksChange(updatedTasks);
     handleCancelEdit();
@@ -143,9 +142,7 @@ export function SubTasksFormSection({
             )}
           </div>
         </Label>
-        {error && (
-          <span className="text-xs font-semibold text-destructive shrink-0 ml-2">{error}</span>
-        )}
+
       </div>
 
       {/* Tasks List */}
@@ -183,10 +180,10 @@ export function SubTasksFormSection({
 
                     {/* Edit Marks */}
                     <div className="flex flex-col gap-1 md:col-span-2">
-                      <Label className="text-xs font-semibold">Marks</Label>
+                      <Label className="text-xs font-semibold">Marks  <Required /></Label>
                       <Input
                         type="number"
-                        placeholder="10"
+                        placeholder="00"
                         min={1}
                         disabled={disabled}
                         value={editMarks}
@@ -271,11 +268,13 @@ export function SubTasksFormSection({
           ))}
         </div>
       ) : (
-        <div className="text-center py-3 border-2 border-dashed border-border/60 rounded-xl text-muted-foreground text-xs italic">
+        <div className="text-center py-3 border-2 border-dashed border-border/60 rounded-xl text-muted-foreground text-xs">
           No sub-tasks added yet. Define at least one sub-task below.
         </div>
       )}
-
+      {error && (
+        <span className="text-xs font-semibold text-destructive shrink-0 ml-2">{error}</span>
+      )}
       {/* Inline Add Task Form */}
       <div className="p-2 rounded-xl border border-border/60 bg-muted/20 space-y-1">
         <div className="text-xs font-bold text-foreground">Add New Sub-Task</div>
@@ -305,10 +304,10 @@ export function SubTasksFormSection({
 
           {/* Marks */}
           <div className="flex flex-col gap-1 md:col-span-2">
-            <Label className="text-xs font-semibold">Marks</Label>
+            <Label className="text-xs font-semibold">Marks <Required /></Label>
             <Input
               type="number"
-              placeholder="10"
+              placeholder="00"
               min={1}
               disabled={disabled}
               value={marks}

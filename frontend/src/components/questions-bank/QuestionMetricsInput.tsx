@@ -36,6 +36,8 @@ export function QuestionMetricsInput({
   minutesPlaceholder = "00",
   disabled = false,
 }: QuestionMetricsInputProps) {
+  console.log(marksError,
+    durationError,)
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex flex-wrap items-center gap-3">

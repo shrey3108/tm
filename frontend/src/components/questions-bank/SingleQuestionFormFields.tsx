@@ -28,6 +28,7 @@ export function SingleQuestionFormFields({
   errors,
   onClearError,
 }: SingleQuestionFormFieldsProps) {
+  console.log(errors);
   return (
     <div className="space-y-4 animate-in fade-in slide-in-from-top-1 duration-200">
       {/* Question Text */}
@@ -59,7 +60,7 @@ export function SingleQuestionFormFields({
         minutes={minutes}
         onMinutesChange={onMinutesChange}
         marksError={errors.marks}
-        durationError={errors.duration}
+        durationError={errors.minutes}
         onClearMarksError={() => onClearError("marks")}
         onClearDurationError={() => onClearError("duration")}
       />

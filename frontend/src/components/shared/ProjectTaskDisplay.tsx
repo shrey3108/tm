@@ -26,7 +26,7 @@ export function ProjectTaskDisplay({
 
   if (variant === "simple") {
     return (
-      <div className="grid grid-cols-[minmax(0,1fr)_180px] gap-4 w-full text-xs">
+      <div className="grid grid-cols-[minmax(0,1fr)_200px] gap-2 w-full text-xs">
         <div className="min-w-0">
           <p className={cn("text-foreground text-wrap wrap-break-word", titleClassName)}>{taskText}</p>
           {instructions && <p className="text-xs text-wrap wrap-break-word mt-0.5">{instructions}</p>}
@@ -56,7 +56,7 @@ export function ProjectTaskDisplay({
   }
 
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)_180px] gap-4 w-full">
+    <div className="grid grid-cols-[minmax(0,1fr)_280px] gap-2 w-full">
       <div className="min-w-0 space-y-1">
         <div className={cn("font-medium text-foreground text-wrap wrap-break-word whitespace-pre-wrap", titleClassName)}>{taskText}</div>
         {instructions && (

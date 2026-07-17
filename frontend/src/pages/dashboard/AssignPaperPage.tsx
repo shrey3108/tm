@@ -63,7 +63,7 @@ import { TotalMarks } from "@/components/shared/question/TotalMarks";
 import { TotalDuration } from "@/components/shared/question/TotalDuration";
 import { extractErrorMessage } from "@/utils/error";
 import { Required } from "@/components/shared/Required";
-import { Label } from "@/components/ui/label";
+import { toTitleCase } from "@/lib/utils";
 
 export type QuestionType = "question" | "mcq" | "project_task"
 
@@ -664,7 +664,7 @@ export default function AssignPaperPage() {
     }
   };
 
-  const formattedJobTitle = job?.title || "Job Profile";
+  const formattedJobTitle = toTitleCase(job?.title || "Job Profile");
 
   if (loadingJob) {
     return (
@@ -877,7 +877,7 @@ export default function AssignPaperPage() {
           ) : randomPoolQuestions.length === 0 && randomPoolMCQs.length === 0 && randomPoolTasks.length === 0 ? (
             <div className="text-xs text-muted-foreground py-2 text-center">No questions available for this job profile.</div>
           ) : (
-            <div className="space-y-2 overflow-y-auto pr-1">
+            <div className="space-y-2 overflow-y-auto">
               {/* Normal questions in Pool */}
               {randomPoolQuestions.length > 0 && (
                 <div className="space-y-1">

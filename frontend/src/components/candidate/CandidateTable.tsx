@@ -216,7 +216,7 @@ export function CandidateTable<T extends UnifiedCandidate>({
         emptyMessage={emptyMessage}
         rowSelection={rowSelection}
         onRowSelectionChange={onRowSelectionChange}
-      minWidth="min-w-[1200px]"
+        minWidth="min-w-[1200px]"
       />
     </>
   );

@@ -185,7 +185,7 @@ export function MCQFormFields({
           minutes={minutes}
           onMinutesChange={onMinutesChange}
           marksError={errors.marks}
-          durationError={errors.duration}
+          durationError={errors.minutes}
           onClearMarksError={() => onClearError("marks")}
           onClearDurationError={() => onClearError("duration")}
 
