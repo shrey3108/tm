@@ -40,7 +40,7 @@ export const BasicJobDetails = ({ departments, priorities = [], positions, isEdi
             <FormControl>
               <Input
                 placeholder="e.g. Senior Frontend Developer"
-                className="text-base rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium"
+
                 {...field}
               />
             </FormControl>
@@ -67,7 +67,7 @@ export const BasicJobDetails = ({ departments, priorities = [], positions, isEdi
                   options={positions.map((pos) => ({ id: pos.id, label: pos.name }))}
                   placeholder="Select job position"
                   searchPlaceholder="Search job position..."
-                  triggerClassName="h-9 text-base rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium w-full capitalize"
+                  triggerClassName="h-9 w-full min-w-0 rounded-4xl border border-input bg-input/30 px-3 py-1 text-base transition-colors outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-[3px] aria-invalid:ring-destructive/20 md:text-sm dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40"
                 />
               </FormControl>
               <FormMessage />
@@ -100,7 +100,7 @@ export const BasicJobDetails = ({ departments, priorities = [], positions, isEdi
                   }))}
                   placeholder="Select priority"
                   searchPlaceholder="Search priority..."
-                  triggerClassName="h-12 text-base rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium w-full capitalize"
+                  triggerClassName="h-9 w-full min-w-0 rounded-4xl border border-input bg-input/30 px-3 py-1 text-base transition-colors outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-[3px] aria-invalid:ring-destructive/20 md:text-sm dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40"
                 />
               </FormControl>
               <FormDescription className="flex flex-col gap-2">
@@ -132,8 +132,8 @@ export const BasicJobDetails = ({ departments, priorities = [], positions, isEdi
                   min={24}
                   step={24}
                   disabled={isEditMode}
-                  placeholder="e.g. 24"
-                  className="text-base rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium disabled:opacity-50"
+                  placeholder="00"
+
                   value={field.value !== null && field.value !== undefined ? field.value : ""}
                   onChange={(e) => {
                     const val = e.target.value;
@@ -141,7 +141,7 @@ export const BasicJobDetails = ({ departments, priorities = [], positions, isEdi
                   }}
                 />
               </FormControl>
-              <FormDescription>
+              <FormDescription className="text-xs">
                 Frequency of reminder emails send to the associates
               </FormDescription>
               <FormMessage />
@@ -165,7 +165,7 @@ export const BasicJobDetails = ({ departments, priorities = [], positions, isEdi
                   options={departments.map((dept) => ({ id: dept.id, label: dept.name }))}
                   placeholder="Select department"
                   searchPlaceholder="Search department..."
-                  triggerClassName="h-12 text-base rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium w-full capitalize"
+                  triggerClassName="h-9 w-full min-w-0 rounded-4xl border border-input bg-input/30 px-3 py-1 text-base transition-colors outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-[3px] aria-invalid:ring-destructive/20 md:text-sm dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40"
                 />
               </FormControl>
               <FormMessage />
@@ -186,8 +186,7 @@ export const BasicJobDetails = ({ departments, priorities = [], positions, isEdi
                 <Input
                   type="number"
                   min={1}
-                  placeholder="e.g. 5"
-                  className="text-base rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium"
+                  placeholder="0"
                   value={field.value !== null && field.value !== undefined ? field.value : ""}
                   onChange={(e) => {
                     const val = e.target.value;
@@ -213,7 +212,7 @@ export const BasicJobDetails = ({ departments, priorities = [], positions, isEdi
             <FormControl>
               <Textarea
                 placeholder="Detailed job description..."
-                className="min-h-62.5 text-base rounded-2xl p-4 border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all resize-y font-medium"
+                className="min-h-62.5"
                 {...field}
               />
             </FormControl>

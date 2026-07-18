@@ -161,7 +161,7 @@ export const SkillSelectorSection = ({
                 placeholder="Search skills by name..."
                 value={skillSearch}
                 onChange={(e) => setSkillSearch(e.target.value)}
-                className="pl-10 h-10 text-base rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium"
+                className="pl-10"
               />
               {isLoading && (
                 <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -184,7 +184,7 @@ export const SkillSelectorSection = ({
                         "flex items-center justify-between px-2 py-1.5 rounded-xl border-2 transition-all duration-300 text-left group",
                         isSelected
                           ? "bg-primary/10 border-primary text-primary shadow-lg shadow-primary/5"
-                          : "bg-background/50 border-muted-foreground/10 text-muted-foreground hover:border-primary/50 hover:bg-primary/5",
+                          : "bg-background/50 border-muted-foreground/10  hover:border-primary/50 hover:bg-primary/5",
                       )}
                     >
                       <span className="font-bold text-xs lg:text-sm mr-2 whitespace-normal leading-tight">

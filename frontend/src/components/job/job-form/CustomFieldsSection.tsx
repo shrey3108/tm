@@ -28,7 +28,6 @@ export const CustomFieldsSection = () => {
                 <div className="flex gap-2">
                   <Input
                     placeholder="Type a field name and press enter..."
-                    className="h-12 text-base rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium"
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
                         e.preventDefault();

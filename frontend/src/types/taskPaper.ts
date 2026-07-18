@@ -69,9 +69,9 @@ export interface QuestionSetPaperCreate {
   position_id: string;
   skill_ids: string[];
   paper_type: "normal" | "mcq" | "task" | "mixed";
-  questions: (QuestionItem | string)[];
+  questions: (QuestionItem)[];
   mcqs?: MCQItem[];
-  project_task: (TaskItem | string)[];
+  project_task: (TaskItem)[];
 }
 
 export interface CandidateTestPaperRead {
@@ -156,4 +156,10 @@ export interface TaskPaperPreviewResponse {
   questions: (QuestionItem | string)[];
   mcqs: MCQItem[];
   project_task: (TaskItem | string)[];
+}
+
+export interface CandidateTaskRead {
+  task_file_path: string | null;
+  task_skills: string[];
+  is_custom_task: boolean;
 }

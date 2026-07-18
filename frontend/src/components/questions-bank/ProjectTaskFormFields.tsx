@@ -34,7 +34,7 @@ export function ProjectTaskFormFields({ disabled = false }: ProjectTaskFormField
               <Textarea
                 placeholder="Enter the project task description"
                 disabled={disabled}
-                className="min-h-[100px] text-sm bg-background w-full"
+                className="min-h-20"
                 {...field}
               />
             </FormControl>
@@ -56,7 +56,7 @@ export function ProjectTaskFormFields({ disabled = false }: ProjectTaskFormField
               <Textarea
                 placeholder="Enter detailed instructions for candidates..."
                 disabled={disabled}
-                className="min-h-[80px] text-sm bg-background w-full"
+                className="min-h-16"
                 {...field}
               />
             </FormControl>

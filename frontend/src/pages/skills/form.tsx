@@ -135,7 +135,7 @@ export default function AdminSkillForm() {
                   <FormItem>
                     <FormLabel>Skill Name<Required /></FormLabel>
                     <FormControl>
-                      <Input placeholder="React.js" {...field} className="text-base rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium" />
+                      <Input placeholder="React.js" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -151,7 +151,7 @@ export default function AdminSkillForm() {
                     <FormControl>
                       <Textarea
                         placeholder="Briefly describe the skill..."
-                        className="min-h-30 text-base rounded-2xl p-4 border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all resize-y font-medium"
+                        className="min-h-30"
                         {...field}
                       />
                     </FormControl>
@@ -170,7 +170,7 @@ export default function AdminSkillForm() {
                       <Input
                         type="number"
                         min="0"
-                        className="text-base rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium"
+
                         placeholder="00"
                         {...field}
                         onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}

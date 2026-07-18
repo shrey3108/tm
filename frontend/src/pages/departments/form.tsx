@@ -134,7 +134,7 @@ export default function AdminDepartmentForm() {
                   <FormItem>
                     <FormLabel>Department Name<Required /></FormLabel>
                     <FormControl>
-                      <Input placeholder="Engineering" {...field} className="text-base rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium" />
+                      <Input placeholder="Engineering" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -150,7 +150,7 @@ export default function AdminDepartmentForm() {
                     <FormControl>
                       <Textarea
                         placeholder="Briefly describe the department..."
-                        className="min-h-30 text-base rounded-2xl p-4 border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all resize-y font-medium"
+                        className="min-h-30"
                         {...field}
                         value={field.value || ""}
                       />

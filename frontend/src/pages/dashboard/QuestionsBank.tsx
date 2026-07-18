@@ -13,8 +13,6 @@ import AppPageHeader from "@/components/shared/AppPageHeader";
 import { useQuestionSetPapers } from "@/hooks/queries/taskPapers/useTaskPaperQueries";
 import {
   useDeleteQuestionFromPaperMutation,
-  useDeleteProjectTaskFromPaperMutation,
-  useDeleteMCQFromPaperMutation,
 } from "@/hooks/mutations/taskPapers/useTaskPaperMutations";
 import { useDebouncedValue } from "@/hooks/useDebounced";
 import { extractErrorMessage } from "@/utils/error";
@@ -28,6 +26,8 @@ import { QuestionsBankModals } from "@/components/questions-bank/QuestionsBankMo
 import { getQuestionsBankColumns, type FlatItem } from "@/components/questions-bank/QuestionsBankColumns";
 import { DataTable } from "@/components/shared/DataTable";
 import type { PaginationState } from "@tanstack/react-table";
+import { useDeleteMCQFromPaperMutation } from "@/hooks/mutations/taskPapers/useMCQMutations";
+import { useDeleteProjectTaskFromPaperMutation } from "@/hooks/mutations/taskPapers/useProjectTaskMutations";
 
 /** Default filter values for the QuestionsBank page. */
 const questionsBankDefaults = {

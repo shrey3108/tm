@@ -32,7 +32,7 @@ export function SingleQuestionFormFields({ disabled = false }: SingleQuestionFor
               <Textarea
                 placeholder="Enter the question text..."
                 disabled={disabled}
-                className="min-h-[100px] text-sm bg-background w-full"
+                className="min-h-20"
                 {...field}
               />
             </FormControl>

@@ -115,11 +115,11 @@ export const JobTableFilters = ({
           )}
 
           {/* Date Range Picker */}
-          <div className="flex items-center gap-1.5 px-3 h-10 w-fit rounded-xl border border-input text-xs bg-background hover:bg-muted/30 transition-colors">
+          <div className="flex items-center gap-1.5 px-3 h-[40px] w-fit rounded-xl border border-input text-sm bg-background hover:bg-muted/30 transition-colors">
             <Popover>
               <PopoverTrigger
                 className={cn(
-                  "inline-flex items-center justify-between w-full h-full font-normal rounded-md bg-transparent focus-visible:outline-none",
+                  "inline-flex items-center justify-between w-full h-full font-normal rounded-md bg-transparent focus-visible:outline-none ",
                   !dateRange?.from && "text-muted-foreground"
                 )}
               >

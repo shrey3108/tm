@@ -40,6 +40,8 @@ interface QuestionsBankFiltersProps {
   showRequired?: boolean;
   disabled?: boolean;
   contentTypeOptions?: { id: string; label: string }[];
+  departmentError?: string;
+  positionError?: string;
 }
 
 export function QuestionsBankFilters({
@@ -69,6 +71,8 @@ export function QuestionsBankFilters({
   showRequired,
   disabled,
   contentTypeOptions,
+  departmentError,
+  positionError,
 }: QuestionsBankFiltersProps) {
   const defaultContentTypeOptions = [
     { id: "all", label: "All Types" },
@@ -101,11 +105,14 @@ export function QuestionsBankFilters({
             onClear={showRequired ? undefined : () => setSelectedDeptId("")}
             clearLabel="Clear department filter"
           />
+          {departmentError && (
+            <p className="text-destructive text-sm font-medium">{departmentError}</p >
+          )}
         </div>
 
         {/* Experience / Position Level Selector */}
         <div className="flex flex-col gap-0.5 w-full">
-          <Label className="text-xs font-semibold">Experience / Position Level {showRequired && <Required />}</Label>
+          <Label className="text-xs font-semibold">Position Level {showRequired && <Required />}</Label>
           <SearchableSelect
             value={selectedPositionId}
             onValueChange={setSelectedPositionId}
@@ -120,6 +127,9 @@ export function QuestionsBankFilters({
             onClear={showRequired ? undefined : () => setSelectedPositionId("")}
             clearLabel="Clear position filter"
           />
+          {positionError && (
+            <p className="text-destructive text-sm font-medium">{positionError}</p>
+          )}
         </div>
 
         {/* Skill Selector */}

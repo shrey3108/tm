@@ -6,7 +6,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Suspense } from "react";
 import { Outlet } from "react-router-dom";
 import { BackgroundPollingManager } from "@/components/shared/BackgroundPollingManager";
-// import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 
 /**
  * Root Layout that wraps all routes with necessary context providers
@@ -21,8 +21,8 @@ export const RootLayout = () => {
                         <Outlet />
                     </Suspense>
                     <BackgroundPollingManager />
-                    {/* Enable Devtool by uncommenting bellow line */}
-                    {/* <ReactQueryDevtools initialIsOpen={false} /> */}
+                    {/* Enable Devtool by uncommenting below line */}
+                    <ReactQueryDevtools initialIsOpen={false} />
                 </QueryClientProvider>
             </ToastProvider>
         </TooltipProvider>

@@ -136,7 +136,7 @@ export default function AdminAssociateForm() {
                   <FormItem>
                     <FormLabel>Associate Name<Required /></FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g. John Doe" {...field} className="text-base rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium" />
+                      <Input placeholder="e.g. John Doe" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -150,7 +150,7 @@ export default function AdminAssociateForm() {
                   <FormItem>
                     <FormLabel>Email Address <Required /></FormLabel>
                     <FormControl>
-                      <Input type="email" placeholder="e.g. john.doe@example.com" {...field} className="text-base rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium" />
+                      <Input type="email" placeholder="e.g. john.doe@example.com" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

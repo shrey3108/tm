@@ -35,7 +35,7 @@ export const JobSettingsSection = () => {
                   type="number"
                   min={1}
                   max={100}
-                  className="h-12 text-base rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium text-center w-24"
+                  className="text-center w-24"
                   {...field}
                   onChange={(e) => field.onChange(Number(e.target.value))}
                 />
@@ -65,7 +65,7 @@ export const JobSettingsSection = () => {
                   type="number"
                   min={1}
                   max={100}
-                  className="h-12 text-base rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium text-center w-24"
+                  className="text-center w-24"
                   {...field}
                   onChange={(e) => field.onChange(Number(e.target.value))}
                 />

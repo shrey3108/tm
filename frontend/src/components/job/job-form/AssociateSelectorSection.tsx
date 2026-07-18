@@ -5,7 +5,6 @@ import { SearchableSelect } from "@/components/shared/SearchableSelect";
 import { useAssociates } from "@/hooks/queries/admin/useAssociate";
 import type { AssociateRead } from "@/types/associate";
 import { useDebouncedValue } from "@/hooks/useDebounced";
-import { cn } from "@/lib/utils";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Card, CardContent } from "@/components/ui/card";
 import { Required } from "@/components/shared/Required";
@@ -80,9 +79,7 @@ export const AssociateSelectorSection = ({
                       }}
                       clearLabel="Clear associates"
                       icon={loadingAssociates ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserCheck className="h-3.5 w-3.5 opacity-60" />}
-                      triggerClassName={cn(
-                        "w-fit inline-flex items-center gap-2 h-12 px-4 rounded-xl border text-base border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium cursor-pointer select-none transition-colors bg-background border-muted/60 hover:bg-muted/10 capitalize",
-                      )}
+                      triggerClassName={"h-9 w-fit min-w-0 rounded-4xl border border-input bg-input/30 px-3 py-1 text-base transition-colors outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-[3px] aria-invalid:ring-destructive/20 md:text-sm dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40"}
                       contentClassName="min-w-[200px]"
                       onSearch={setSearchQuery}
                     />

@@ -38,8 +38,7 @@ import { useAllQuestionsAndTasks } from "@/hooks/queries/taskPapers/useTaskPaper
 import { useAssignTestPaperMutation, useDeleteJobDefaultTestPaperMutation } from "@/hooks/mutations/taskPapers/useTaskPaperMutations";
 import { taskService } from "@/apis/task";
 import type { MCQItem, TaskItem, QuestionItem } from "@/types/taskPaper";
-import { mcqFormSchema } from "@/schemas/taskPaper";
-import { questionFormSchema, projectTaskSchema } from "@/schemas/question";
+import { questionFormSchema, projectTaskSchema, mcqFormSchema } from "@/schemas/question";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form } from "@/components/ui/form";

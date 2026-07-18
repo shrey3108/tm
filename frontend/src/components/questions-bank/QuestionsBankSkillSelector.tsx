@@ -122,7 +122,7 @@ export function QuestionsBankSkillSelector({
           placeholder="Search skill stack..."
           value={skillSearch}
           onChange={(e) => setSkillSearch(e.target.value)}
-          className="pl-9 h-9 text-xs rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium"
+          className="pl-9"
         />
         {isLoading && (
           <div className="absolute right-3 top-1/2 -translate-y-1/2">

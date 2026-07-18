@@ -61,7 +61,7 @@ export function QuestionMetricsInput({
                   placeholder={marksPlaceholder}
                   min={1}
                   disabled={disabled}
-                  className="text-xs h-9 bg-background w-20 font-medium"
+                  className="w-20"
                   value={field.value ?? ""}
                   onChange={(e) => {
                     const val = e.target.value === "" ? "" : Number(e.target.value);
@@ -88,7 +88,7 @@ export function QuestionMetricsInput({
                   placeholder={hoursPlaceholder}
                   min={0}
                   disabled={disabled}
-                  className="text-xs h-9 bg-background w-20 font-medium"
+                  className="w-20"
                   value={field.value ?? ""}
                   onChange={(e) => {
                     const val = e.target.value === "" ? "" : Number(e.target.value);
@@ -116,7 +116,7 @@ export function QuestionMetricsInput({
                   min={0}
                   max={59}
                   disabled={disabled}
-                  className="text-xs h-9 bg-background w-20 font-medium"
+                  className="w-20"
                   value={field.value ?? ""}
                   onChange={(e) => {
                     const val = e.target.value === "" ? "" : Number(e.target.value);
@@ -130,7 +130,7 @@ export function QuestionMetricsInput({
       </div>
 
       {hasErrors && (
-        <div className="flex flex-col text-[0.8rem] font-medium text-destructive mt-1">
+        <div className="flex flex-col text-xs font-medium text-destructive mt-1">
           {marksError && <FormMessage >{marksError}</FormMessage>}
           {hoursError && <FormMessage>{hoursError}</FormMessage>}
           {minutesError && <FormMessage>{minutesError}</FormMessage>}

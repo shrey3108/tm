@@ -100,7 +100,7 @@ export function ClearCacheDialog({ open, onOpenChange }: ClearCacheDialogProps) 
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search cache keys..."
-              className="pl-9 text-base rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium"
+              className="pl-9"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />

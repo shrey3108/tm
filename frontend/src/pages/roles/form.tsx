@@ -171,7 +171,6 @@ export default function AdminRoleForm() {
                     <FormLabel>Role Name <Required /></FormLabel>
                     <FormControl>
                       <Input placeholder="e.g. HR Manager" {...field}
-                        className="text-base rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium"
                       />
                     </FormControl>
                     <FormMessage />
@@ -186,7 +185,7 @@ export default function AdminRoleForm() {
                     placeholder="Search permissions..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="text-base rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium w-full sm:w-64"
+                    className="sm:w-64"
                   />
                 </div>
 

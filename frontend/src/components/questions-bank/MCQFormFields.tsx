@@ -51,7 +51,7 @@ export function MCQFormFields({ disabled = false }: MCQFormFieldsProps) {
               <Textarea
                 placeholder="Enter the MCQ question..."
                 disabled={disabled}
-                className="min-h-[80px] text-sm bg-background"
+                className="min-h-20"
                 {...field}
               />
             </FormControl>
@@ -107,7 +107,7 @@ export function MCQFormFields({ disabled = false }: MCQFormFieldsProps) {
                         type="text"
                         placeholder={`Enter option ${String.fromCharCode(65 + idx)}`}
                         disabled={disabled}
-                        className="text-sm"
+                        // className="text-sm"
                         {...field}
                       />
                     </FormControl>
@@ -141,7 +141,7 @@ export function MCQFormFields({ disabled = false }: MCQFormFieldsProps) {
           control={control}
           name="answer"
           render={({ field }) => (
-            <FormItem className="flex flex-col gap-1.5 min-w-[200px]">
+            <FormItem className="flex flex-col gap-1.5 min-w-50">
               <FormLabel className="text-sm font-semibold">Correct Answer Option</FormLabel>
               <FormControl>
                 <SearchableSelect

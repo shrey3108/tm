@@ -122,7 +122,7 @@ const CreateSkillModal = ({ show, handleClose, onSkillSaved, skill }: CreateSkil
                 <FormItem>
                   <FormLabel>Default Weightage</FormLabel>
                   <FormControl>
-                    <Input type="number" min="0" step="any" placeholder="e.g. 10" {...field} />
+                    <Input type="number" min="0" step="any" placeholder="00" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

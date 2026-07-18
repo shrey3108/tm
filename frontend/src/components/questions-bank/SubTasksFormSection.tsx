@@ -5,9 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Plus, Trash2, Award, ListTodo, Pencil, Check, X } from "lucide-react";
 import { subTaskSchema } from "@/schemas/question";
 import type { SubTaskItem } from "@/types/taskPaper";
-// import { formatDuration, formatSubTaskDuration } from "@/utils/taskFormatter";
-// import { QuestionMetricsInput } from "./QuestionMetricsInput";
 import { Required } from "@/components/shared/Required";
+
 
 interface SubTasksFormSectionProps {
   tasks: SubTaskItem[];
@@ -147,7 +146,7 @@ export function SubTasksFormSection({
 
       {/* Tasks List */}
       {tasks.length > 0 ? (
-        <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1">
+        <div className="space-y-2 max-h-70 overflow-y-auto pr-1">
           {tasks.map((task, index) => (
             <div
               key={index}
@@ -171,10 +170,10 @@ export function SubTasksFormSection({
                           }
                         }}
                         aria-invalid={!!editErrors.name}
-                        className="text-xs h-8 bg-background"
+
                       />
                       {editErrors.name && (
-                        <p className="text-[10px] font-semibold text-destructive">{editErrors.name}</p>
+                        <p className="text-destructive text-sm font-medium">{editErrors.name}</p>
                       )}
                     </div>
 
@@ -195,10 +194,10 @@ export function SubTasksFormSection({
                           }
                         }}
                         aria-invalid={!!editErrors.marks}
-                        className="text-xs h-8 bg-background font-medium"
+
                       />
                       {editErrors.marks && (
-                        <p className="text-[10px] font-semibold text-destructive">{editErrors.marks}</p>
+                        <p className="text-destructive text-sm font-medium">{editErrors.marks}</p>
                       )}
                     </div>
 
@@ -295,10 +294,10 @@ export function SubTasksFormSection({
                 }
               }}
               aria-invalid={!!subTaskErrors.name}
-              className="text-xs h-9 bg-background"
+
             />
             {subTaskErrors.name && (
-              <p className="text-xs font-semibold text-destructive">{subTaskErrors.name}</p>
+              <p className="text-destructive text-sm font-medium">{subTaskErrors.name}</p>
             )}
           </div>
 
@@ -319,10 +318,10 @@ export function SubTasksFormSection({
                 }
               }}
               aria-invalid={!!subTaskErrors.marks}
-              className="text-xs h-9 bg-background "
+
             />
             {subTaskErrors.marks && (
-              <p className="text-xs font-semibold text-destructive">{subTaskErrors.marks}</p>
+              <p className="text-destructive text-sm font-medium">{subTaskErrors.marks}</p>
             )}
           </div>
 

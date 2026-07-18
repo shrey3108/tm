@@ -14,7 +14,12 @@ import type {
   CandidateTestPaperHistoryRead,
   TaskPaperPreviewResponse,
   TaskItem,
+  CandidateTaskRead,
 } from "@/types/taskPaper";
+import { buildQueryParams } from "@/utils/queryParams";
+import { mcqApis } from "./task/mcq";
+import { projectTaskApis } from "./task/projectTask";
+import { questionApis } from "./task/question";
 
 /**
  * Task service for managing candidate tasks linked to jobs.
@@ -38,7 +43,7 @@ export const taskService = {
   getJobAssignedTask: async (jobId: string, jobStageId?: string): Promise<CandidateTestPaperRead | null> => {
     try {
       const response = await client.get<CandidateTestPaperRead>(`/task-papers/assigned/job/${jobId}`, {
-        params: { job_stage_id: jobStageId },
+        params: buildQueryParams({ jobStageId }),
       });
       return response.data;
     } catch (error: any) {
@@ -148,24 +153,9 @@ export const taskService = {
     },
     positionId?: string
   ): Promise<QuestionSetPaperListRead> => {
-    let params: Record<string, any> = {};
-    if (typeof jobIdOrFilters === "object" && jobIdOrFilters !== null) {
-      params = {
-        department_id: jobIdOrFilters.departmentId || undefined,
-        position_id: jobIdOrFilters.positionId || undefined,
-        skill_id: jobIdOrFilters.skillId || undefined,
-        paper_type: jobIdOrFilters.paperType || undefined,
-        job_id: jobIdOrFilters.jobId || undefined,
-        q: jobIdOrFilters.q || undefined,
-        skip: jobIdOrFilters.skip !== undefined ? jobIdOrFilters.skip : undefined,
-        limit: jobIdOrFilters.limit !== undefined ? jobIdOrFilters.limit : undefined,
-      };
-    } else {
-      params = {
-        job_id: jobIdOrFilters || undefined,
-        position_id: positionId || undefined,
-      };
-    }
+    const params = typeof jobIdOrFilters === "object" && jobIdOrFilters !== null
+      ? buildQueryParams(jobIdOrFilters)
+      : buildQueryParams({ jobId: jobIdOrFilters, positionId });
     const response = await client.get<QuestionSetPaperListRead>("/task-papers", {
       params,
     });
@@ -186,22 +176,10 @@ export const taskService = {
       skip?: number;
       limit?: number;
     }
-  ): Promise<{ questions: (QuestionItem | string)[]; project_task: (TaskItem | string)[]; mcqs: MCQItem[] }> => {
-    const params = filters
-      ? {
-        department_id: filters.departmentId || undefined,
-        position_id: filters.positionId || undefined,
-        skill_id: filters.skillId || undefined,
-        paper_type: filters.paperType || undefined,
-        job_id: filters.jobId || undefined,
-        q: filters.q || undefined,
-        skip: filters.skip !== undefined ? filters.skip : undefined,
-        limit: filters.limit !== undefined ? filters.limit : undefined,
-      }
-      : {};
-    const response = await client.get<{ questions: (QuestionItem | string)[]; project_task: (TaskItem | string)[]; mcqs: MCQItem[] }>(
+  ): Promise<{ questions: QuestionItem[]; project_task: TaskItem[]; mcqs: MCQItem[] }> => {
+    const response = await client.get<{ questions: QuestionItem[]; project_task: TaskItem[]; mcqs: MCQItem[] }>(
       "/task-papers/all-content",
-      { params }
+      { params: buildQueryParams(filters) }
     );
     return response.data;
   },
@@ -266,7 +244,7 @@ export const taskService = {
       const response = await client.get<CandidateTestPaperRead>(
         `/task-papers/assigned/${candidateId}`,
         {
-          params: { job_stage_id: jobStageId, job_id },
+          params: buildQueryParams({ jobStageId, jobId: job_id }),
         }
       );
       return response.data;
@@ -283,7 +261,7 @@ export const taskService = {
    */
   deleteCandidateTestPaper: async (candidateId: string, jobStageId?: string): Promise<void> => {
     await client.delete(`/task-papers/assigned/${candidateId}`, {
-      params: { job_stage_id: jobStageId },
+      params: buildQueryParams({ jobStageId }),
     });
   },
 
@@ -292,7 +270,7 @@ export const taskService = {
    */
   deleteJobDefaultTestPaper: async (jobId: string, jobStageId?: string): Promise<void> => {
     await client.delete(`/task-papers/assigned/job/${jobId}`, {
-      params: { job_stage_id: jobStageId },
+      params: buildQueryParams({ jobStageId }),
     });
   },
 
@@ -366,136 +344,10 @@ export const taskService = {
     return response.data;
   },
 
-  /**
-   * Adds a question to a predefined question set paper.
-   */
-  addQuestionToPaper: async (
-    paperId: string,
-    question: QuestionItem | string,
-    skillIds?: string[]
-  ): Promise<QuestionSetPaperRead> => {
-    const response = await client.post<QuestionSetPaperRead>(
-      `/task-papers/${paperId}/questions`,
-      { question, skill_ids: skillIds }
-    );
-    return response.data;
-  },
-
-  /**
-   * Updates an existing question in a predefined question set paper.
-   */
-  updateQuestionInPaper: async (
-    paperId: string,
-    index: number,
-    question: QuestionItem | string,
-    skillIds?: string[]
-  ): Promise<QuestionSetPaperRead> => {
-    const response = await client.put<QuestionSetPaperRead>(
-      `/task-papers/${paperId}/questions/${index}`,
-      { question, skill_ids: skillIds }
-    );
-    return response.data;
-  },
-
-  /**
-   * Deletes a question from a predefined question set paper.
-   */
-  deleteQuestionFromPaper: async (
-    paperId: string,
-    index: number
-  ): Promise<QuestionSetPaperRead> => {
-    const response = await client.delete<QuestionSetPaperRead>(
-      `/task-papers/${paperId}/questions/${index}`
-    );
-    return response.data;
-  },
-  /**
-   * Adds a mcq to a predefined question set paper.
-   */
-  addMCQToPaper: async (
-    paperId: string,
-    mcq: MCQItem,
-    skillIds?: string[]
-  ): Promise<QuestionSetPaperRead> => {
-    const response = await client.post<QuestionSetPaperRead>(
-      `/task-papers/${paperId}/mcqs`,
-      { mcq, skill_ids: skillIds }
-    );
-    return response.data;
-  },
-
-  /**
-   * Updates an existing msq in a predefined question set paper.
-   */
-  updateMCQInPaper: async (
-    paperId: string,
-    index: number,
-    mcq: MCQItem,
-    skillIds?: string[]
-  ): Promise<QuestionSetPaperRead> => {
-    const response = await client.put<QuestionSetPaperRead>(
-      `/task-papers/${paperId}/mcqs/${index}`,
-      { mcq, skill_ids: skillIds }
-    );
-    return response.data;
-  },
-
-  /**
-   * Deletes a mcq from a predefined question set paper.
-   */
-  deleteMCQFromPaper: async (
-    paperId: string,
-    index: number
-  ): Promise<QuestionSetPaperRead> => {
-    const response = await client.delete<QuestionSetPaperRead>(
-      `/task-papers/${paperId}/mcqs/${index}`
-    );
-    return response.data;
-  },
-
-  /**
-   * Adds a project task to a predefined question set paper.
-   */
-  addProjectTaskToPaper: async (
-    paperId: string,
-    projectTask: TaskItem | string,
-    skillIds?: string[]
-  ): Promise<QuestionSetPaperRead> => {
-    const response = await client.post<QuestionSetPaperRead>(
-      `/task-papers/${paperId}/tasks`,
-      { task: projectTask, skill_ids: skillIds }
-    );
-    return response.data;
-  },
-
-  /**
-   * Updates a project task in a predefined question set paper.
-   */
-  updateProjectTaskInPaper: async (
-    paperId: string,
-    index: number,
-    projectTask: TaskItem | string,
-    skillIds?: string[]
-  ): Promise<QuestionSetPaperRead> => {
-    const response = await client.put<QuestionSetPaperRead>(
-      `/task-papers/${paperId}/tasks/${index}`,
-      { task: projectTask, skill_ids: skillIds }
-    );
-    return response.data;
-  },
-
-  /**
-   * Deletes a project task from a predefined question set paper.
-   */
-  deleteProjectTaskFromPaper: async (
-    paperId: string,
-    index: number
-  ): Promise<QuestionSetPaperRead> => {
-    const response = await client.delete<QuestionSetPaperRead>(
-      `/task-papers/${paperId}/tasks/${index}`
-    );
-    return response.data;
-  },
+  // Question, MCQ, and Project Task APIs imported from subfiles
+  ...questionApis,
+  ...mcqApis,
+  ...projectTaskApis,
 
 
 
@@ -509,7 +361,7 @@ export const taskService = {
     const response = await client.get<CandidateTestPaperHistoryRead[]>(
       `/task-papers/assigned/${candidateId}/history`,
       {
-        params: { job_stage_id: jobStageId },
+        params: buildQueryParams({ jobStageId }),
       }
     );
     return response.data;
@@ -525,7 +377,7 @@ export const taskService = {
     const response = await client.get<CandidateTestPaperHistoryRead[]>(
       `/task-papers/assigned/job/${jobId}/history`,
       {
-        params: { job_stage_id: jobStageId },
+        params: buildQueryParams({ jobStageId }),
       }
     );
     return response.data;
@@ -547,21 +399,10 @@ export const taskService = {
     const response = await client.get<TaskPaperPreviewResponse>(
       "/task-papers/preview-random",
       {
-        params: {
-          job_id: params.jobId || undefined,
-          department_id: params.departmentId || undefined,
-          position_id: params.positionId || undefined,
-          skill_ids: params.skillIds || undefined,
-          count: params.count || undefined,
-        },
+        params: buildQueryParams(params),
       }
     );
     return response.data;
   },
 };
 
-export interface CandidateTaskRead {
-  task_file_path: string | null;
-  task_skills: string[];
-  is_custom_task: boolean;
-}

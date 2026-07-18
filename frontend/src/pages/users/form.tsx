@@ -157,7 +157,7 @@ export default function AdminUserForm() {
                     <FormItem>
                       <FormLabel>Full Name<Required /></FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter full name" {...field} disabled={isEditMode} className="text-base rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium" />
+                        <Input placeholder="Enter full name" {...field} disabled={isEditMode} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -176,7 +176,6 @@ export default function AdminUserForm() {
                           placeholder="Enter email"
                           disabled={isEditMode}
                           {...field}
-                          className="text-base rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium"
                         />
                       </FormControl>
                       <FormMessage />
@@ -199,10 +198,10 @@ export default function AdminUserForm() {
                           options={roles.flatMap((role) =>
                             role.name !== "superadmin" ? [{ id: role.id, label: role.name }] : []
                           )}
-                          placeholder="Select a role"
+                          placeholder="Select a role Enter email"
                           searchPlaceholder="Search roles..."
                           disabled={isLoadingRoles}
-                          triggerClassName="h-12 text-base rounded-xl border-muted-foreground/20 focus:ring-2 focus:ring-primary/20 transition-all font-medium w-full capitalize py-1"
+                          triggerClassName="h-9 transition-all w-full capitalize py-1 px-3"
                         />
                       </FormControl>
                       <FormMessage />
