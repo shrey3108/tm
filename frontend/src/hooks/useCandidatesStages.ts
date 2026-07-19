@@ -254,9 +254,7 @@ export function useCandidatesStages() {
 
   // 6. Evaluation History Query
   const { data: evaluationHistoryData, isLoading: isLoadingHistory } =
-    useCandidateEvaluationHistoryQuery(
-      currentStage === "Resume Screening" ? undefined : instanceId
-    );
+    useCandidateEvaluationHistoryQuery(instanceId);
   const evaluationHistory = evaluationHistoryData ?? [];
 
   const handleSelectHistoryVersion = (version: EvaluationHistoryRead) => {
@@ -289,17 +287,14 @@ export function useCandidatesStages() {
   const transcriptHistory = transcriptHistoryData ?? [];
 
   // 8. HR Decision History Query
-  const queryStageId = currentStage === "Resume Screening" ? undefined : configId;
   const { data: hrDecisionHistoryResponse, refetch: refetchHrDecisionHistory } =
-    useHrDecisionHistoryQuery(candidate?.id, job?.id, queryStageId);
+    useHrDecisionHistoryQuery(candidate?.id, job?.id, configId);
 
   const hrDecisionHistory = hrDecisionHistoryResponse?.decisions ?? [];
 
   // 9. Candidate associate results query
   const { data: associateResults, isLoading: isLoadingAssociateResults } =
-    useCandidateAssociateResultsQuery(
-      currentStage === "Resume Screening" ? undefined : instanceId
-    );
+    useCandidateAssociateResultsQuery(instanceId);
 
   const totalAssociates = associateResults?.total_associates ?? 0;
   const submittedCount = associateResults?.submitted_count ?? 0;
@@ -354,7 +349,7 @@ export function useCandidatesStages() {
         candidate_id: candidate.id,
         decision: data.decision,
         note: data.note,
-        stage_config_id: currentStage === "Resume Screening" ? undefined : (configId as string),
+        stage_config_id: configId || undefined,
         job_id: job!.id,
         score: data.score,
       });
@@ -507,13 +502,14 @@ export function useCandidatesStages() {
   }, [evaluation]);
 
   const isResumeScreening = currentStage === "Resume Screening";
-  const filteredHistory = isResumeScreening
-    ? hrDecisionHistory?.filter(
-      (item: HrDecisionHistoryItem) => item.stage_config_id == null || item?.stage_name === "Resume Screening"
-    )
-    : hrDecisionHistory?.filter(
-      (item: HrDecisionHistoryItem) => item.stage_config_id !== null && item.stage_config_id === configId
-    );
+  const filteredHistory = useMemo(() => {
+    return hrDecisionHistory?.filter((item: HrDecisionHistoryItem) => {
+      if (isResumeScreening) {
+        return item.stage_config_id === configId || item.stage_config_id == null || item.stage_name === "Resume Screening";
+      }
+      return item.stage_config_id === configId;
+    });
+  }, [hrDecisionHistory, configId, isResumeScreening]);
 
   const latestDecision = filteredHistory ? filteredHistory[0] : hrDecisionHistory[0];
   const canTakeDecision = !latestDecision || latestDecision.decision.toLowerCase() === "may be";

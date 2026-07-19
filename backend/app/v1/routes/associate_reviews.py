@@ -553,8 +553,7 @@ def _render_form_html(
                 <div class="mark-input">
                   <input type="number" name="marks_{global_idx}" min="0"
                          {f'max="{max_marks:g}"' if max_marks is not None else ''}
-                         step="0.5" placeholder="0" 
-                         onfocus="this.placeholder=''" onblur="this.placeholder='0'" 
+                         step="0.5" onfocus="this.placeholder=''"
                          {value_attr} {disabled_attr} required />
                   <span class="max-label">{max_label}</span>
                 </div>

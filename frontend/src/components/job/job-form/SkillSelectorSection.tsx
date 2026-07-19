@@ -171,7 +171,7 @@ export const SkillSelectorSection = ({
             </div>
 
             {/* Skill Grid */}
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-2 max-h-100 overflow-y-auto p-2 pr-4 custom-scrollbar">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-2 max-h-100 overflow-y-auto p-2 pr-4 custom-scrollbar ">
               {filteredSkills.length > 0 ? (
                 filteredSkills.map((skill) => {
                   const isSelected = selectedSkillIds.includes(skill.id);
@@ -181,7 +181,7 @@ export const SkillSelectorSection = ({
                       type="button"
                       onClick={() => toggleSkill(skill.id)}
                       className={cn(
-                        "flex items-center justify-between px-2 py-1.5 rounded-xl border-2 transition-all duration-300 text-left group",
+                        "flex items-center justify-between px-2 py-1.5 rounded-xl border-2 transition-all duration-300 text-left group max-w-52",
                         isSelected
                           ? "bg-primary/10 border-primary text-primary shadow-lg shadow-primary/5"
                           : "bg-background/50 border-muted-foreground/10  hover:border-primary/50 hover:bg-primary/5",

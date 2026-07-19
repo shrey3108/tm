@@ -374,6 +374,7 @@ export default function JobCandidates() {
                               </HoverCard>
                             </PermissionGuard>
                             <CandidateAssignPaperButton candidate={candidate}
+                              disabled={!candidate.is_parsed}
                               jobSlug={jobSlug}
                               job={job}
                               buttonClassName="h-7 w-7 p-0 rounded-xl bg-muted/50 hover:bg-gray-200/60 text-foreground border border-muted-foreground/10 flex items-center justify-center shrink-0"

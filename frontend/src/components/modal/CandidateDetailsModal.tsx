@@ -134,11 +134,19 @@ export function CandidateDetailsModal({
     return null;
   }, [isOpen, job, activeVersionId, fetchedVersionData]);
 
+  const resumeScreeningStage = useMemo(() => {
+    const pipeline = (candidate as any)?.pipeline;
+    return Array.isArray(pipeline)
+      ? (pipeline as any[]).find((s) => s.template_name === "Resume Screening")
+      : undefined;
+  }, [candidate]);
+  const stageConfigId = resumeScreeningStage?.job_stage_id;
+
   // 3. Fetch HR Decision History using TanStack query hook
   const { data: decisionHistoryData, isLoading: isLoadingHistory } = useHrDecisionHistoryQuery(
     isOpen && candidate?.id ? candidate.id : null,
     currentJobId,
-    undefined
+    stageConfigId || undefined
   );
 
   const decisionHistory = useMemo(() => {
@@ -174,6 +182,7 @@ export function CandidateDetailsModal({
         note: data.note || undefined,
         score: data.score,
         job_id: currentJobId || undefined,
+        stage_config_id: stageConfigId || undefined,
       });
 
       await onDecisionSubmitted?.();
@@ -191,10 +200,12 @@ export function CandidateDetailsModal({
     setSelectedVersionId(val);
   };
 
-  const filterHrDecision = decisionHistory.filter(
-    (d) => d.stage_config_id == null
-  )
-  const finalHrDecision = filterHrDecision.length > 0 ? filterHrDecision[0] : hrDecision
+  const filterHrDecision = useMemo(() => {
+    return decisionHistory.filter((d) => {
+      return d.stage_config_id === stageConfigId || d.stage_config_id == null || d.stage_name === "Resume Screening";
+    });
+  }, [decisionHistory, stageConfigId]);
+  const finalHrDecision = filterHrDecision.length > 0 ? filterHrDecision[0] : hrDecision;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose} >

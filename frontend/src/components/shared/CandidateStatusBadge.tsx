@@ -22,13 +22,15 @@ function CandidateStatusBadge({ status, className, label: customLabel, icon }: C
   const s = status.toLowerCase().trim();
   let statusClasses = "";
   let label = (customLabel || status).replace(/ed$/, "");
-
+  if (label === "submitt") { // backend return 'submitted' // http://localhost:8000/api/v1/candidate-stages/${ID}associate-results
+    label = "submit";
+  }
   // Success / Positive
-  if (["pass", "approve", "active", "completed", "complete", "complet", "success"].includes(s)) {
+  if (["pass", "approve", "active", "completed", "complete", "complet", "success", "submit", "submitt", "submitted", "hire"].includes(s.toLocaleLowerCase())) {
     statusClasses = " bg-green-300 dark:bg-green-300";
   }
   // Destructive / Negative
-  else if (["fail", "failed", "reject", "inactive", "error", "rejected"].includes(s)) {
+  else if (["fail", "failed", "reject", "inactive", "error", "rejected"].includes(s.toLocaleLowerCase())) {
     statusClasses = "bg-red-300 dark:bg-red-300";
   }
   // Neutral / Pending
@@ -39,7 +41,7 @@ function CandidateStatusBadge({ status, className, label: customLabel, icon }: C
   return (
     <>
       <Badge
-        variant={s === "pass" ? "default" : "destructive"}
+        variant={s === "pass" || "submit" || "hire" ? "default" : "destructive"}
         className={cn(
           "rounded-full px-2 py-0.5 flex items-center gap-1 w-fit border shadow-none text-black uppercase font-extrabold text-[0.65rem] tracking-wider",
           statusClasses,

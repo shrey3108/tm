@@ -63,7 +63,7 @@ export default function JobCandidatesBarChart({ isAnimationActive = true, data: 
     const minWidth = displayData ? displayData.length * (isMobile ? 75 : 95) : 0;
 
     return (
-        <div className="w-full overflow-x-auto custom-scrollbar animate-in fade-in zoom-in-95 duration-700">
+        <div className="w-full custom-scrollbar animate-in fade-in zoom-in-95 duration-700">
             <div style={{ minWidth: minWidth ? `${minWidth}px` : '100%', width: '100%' }}>
                 <ChartContainer config={chartConfig} className="w-full aspect-auto h-90 sm:h-110">
                     <ResponsiveContainer width="100%" height="100%">
