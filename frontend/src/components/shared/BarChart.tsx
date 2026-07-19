@@ -3,6 +3,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig, } 
 import { MAX_LOCATION_BAR_CHART_DISPLAY_LIMIT, HR_DECISION_OPTIONS, CHART_COLORS } from "@/constants";
 import type { JobCandidatesStatsProps } from "@/components/job/candidates/JobCandidatesStats";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { toTitleCase } from "@/lib/utils";
 
 const chartConfig = {
   value: {
@@ -131,7 +132,7 @@ export function CandidatesDistributionChart({ stats }: CandidatesDistributionCha
               tickMargin={12}
               axisLine={false}
               interval={0}
-              className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground"
+              className="text-[10px] sm:text-xs font-normal text-muted-foreground"
             >
               <Label
                 value="Hr Decision"
@@ -144,7 +145,7 @@ export function CandidatesDistributionChart({ stats }: CandidatesDistributionCha
               tickLine={false}
               axisLine={false}
               tickMargin={12}
-              className="text-[10px] sm:text-xs font-medium text-muted-foreground"
+              className="text-[10px] sm:text-xs font-normal text-muted-foreground"
               allowDecimals={false}
             >
               <Label
@@ -282,7 +283,26 @@ export function StagesBarChart({ stages, onStageClick, selectedStage }: StagesBa
               tickMargin={12}
               axisLine={false}
               interval={0}
-              className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground"
+              className="text-[10px] sm:text-xs font-normal text-muted-foreground"
+              tick={(props) => {
+                const { x, y, payload } = props;
+                if (!payload || !payload.value) return null;
+
+                const value = String(payload.value);
+                const formattedValue = toTitleCase(value);
+
+                return (
+                  <g transform={`translate(${x},${y})`}>
+                    <foreignObject x={-60} y={-10} width={120} height={60}>
+                      <div
+                        className="w-full text-[10px] sm:text-xs font-normal text-muted-foreground wrap-break-word text-center leading-tight px-1"
+                      >
+                        {formattedValue}
+                      </div>
+                    </foreignObject>
+                  </g>
+                );
+              }}
             >
               <Label
                 value="Recruitment Stages"
@@ -295,7 +315,7 @@ export function StagesBarChart({ stages, onStageClick, selectedStage }: StagesBa
               tickLine={false}
               axisLine={false}
               tickMargin={12}
-              className="text-[10px] sm:text-xs font-medium text-muted-foreground"
+              className="text-[10px] sm:text-xs font-normal text-muted-foreground"
               allowDecimals={false}
             >
               <Label
@@ -464,7 +484,7 @@ export function LocationBarChart({ locations }: LocationBarChartProps) {
               tickMargin={12}
               axisLine={false}
               interval={0}
-              className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground"
+              className="text-[10px] sm:text-xs font-normal text-muted-foreground"
             >
               <Label
                 value="Candidate Locations"
@@ -477,7 +497,7 @@ export function LocationBarChart({ locations }: LocationBarChartProps) {
               tickLine={false}
               axisLine={false}
               tickMargin={12}
-              className="text-[10px] sm:text-xs font-medium text-muted-foreground"
+              className="text-[10px] sm:text-xs font-normal text-muted-foreground"
               allowDecimals={false}
             >
               <Label

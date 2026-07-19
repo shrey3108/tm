@@ -18,6 +18,7 @@ import { slugify } from "@/utils/slug";
 import { Check, Edit2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { NativeScrollArea } from "@/components/ui/native-scroll-area";
 
 /**
  * Props for the JobInfoModal component.
@@ -126,7 +127,7 @@ export function JobInfoModal({ isOpen, onClose, job }: JobInfoModalProps) {
       <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-3xl md:max-w-4xl lg:max-w-5xl max-h-[90vh] flex flex-col p-0 overflow-hidden bg-card/95 backdrop-blur-xl border-muted-foreground/20 shadow-2xl rounded-2xl h-150 gap-2">
         <DialogHeader className="p-2 pb-1 border-b border-muted-foreground/10 bg-muted/30">
           <div className="flex flex-col items-start justify-between gap-1">
-            <DialogTitle className="text-lg font-bold tracking-tight text-foreground capitalize flex flex-row items-center justify-between gap-2 ">
+            <DialogTitle className="text-lg font-bold  capitalize flex flex-row items-center justify-between gap-2 ">
               {job.title}
               <Button
                 size={"icon-sm"}
@@ -178,128 +179,130 @@ export function JobInfoModal({ isOpen, onClose, job }: JobInfoModalProps) {
             </div>
           </div>
         </DialogHeader>
+        <NativeScrollArea>
 
-        <div className="flex-1 p-2 overflow-y-auto overflow-x-hidden min-h-0 bg-muted/5">
-          <div className="space-y-4 pb-4">
-            {/* Job Description Card */}
-            <InfoSection
-              title="Job Description"
-              action={
-                sortedVersions.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {sortedVersions.map((v) => {
-                      const isProcessing = job.processing_version === v.version_num;
-                      const button = (
-                        <Button
-                          key={v.id}
-                          variant={selectedVersionId === v.id ? "default" : "secondary"}
-                          size="sm"
-                          onClick={() => setSelectedVersionId(v.id)}
-                          className={cn(
-                            "rounded-full h-7 px-3 text-[10px] font-bold uppercase transition-all",
-                            selectedVersionId === v.id
-                              ? "border border-primary shadow-sm"
-                              : "opacity-70 hover:opacity-100",
-                          )}
-                        >
-                          V{v.version_num} {isProcessing && <Check className="w-2.5 h-2.5 ml-1" />}
-                        </Button>
-                      );
 
-                      if (isProcessing) {
-                        return (
-                          <HoverCard key={v.id}>
-                            <HoverCardTrigger>{button}</HoverCardTrigger>
-                            <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
-                              This version is currently being processed.
-                            </HoverCardContent>
-                          </HoverCard>
+          <div className="flex-1 p-2 overflow-y-auto overflow-x-hidden min-h-0 bg-muted/5">
+            <div className="space-y-2 pb-2">
+              {/* Job Description Card */}
+              <InfoSection
+                title="Job Description"
+                action={
+                  sortedVersions.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {sortedVersions.map((v) => {
+                        const isProcessing = job.processing_version === v.version_num;
+                        const button = (
+                          <Button
+                            key={v.id}
+                            variant={selectedVersionId === v.id ? "default" : "secondary"}
+                            size="sm"
+                            onClick={() => setSelectedVersionId(v.id)}
+                            className={cn(
+                              "rounded-full h-7 px-3 text-[10px] font-bold uppercase transition-all",
+                              selectedVersionId === v.id
+                                ? "border border-primary shadow-sm"
+                                : "opacity-70 hover:opacity-100",
+                            )}
+                          >
+                            V{v.version_num} {isProcessing && <Check className="w-2.5 h-2.5 ml-1" />}
+                          </Button>
                         );
-                      }
 
-                      return button;
-                    })}
+                        if (isProcessing) {
+                          return (
+                            <HoverCard key={v.id}>
+                              <HoverCardTrigger>{button}</HoverCardTrigger>
+                              <HoverCardContent className="w-fit px-3 py-1.5 text-xs" side="top">
+                                This version is currently being processed.
+                              </HoverCardContent>
+                            </HoverCard>
+                          );
+                        }
+
+                        return button;
+                      })}
+                    </div>
+                  )
+                }
+              >
+                {isLoadingVersion ? (
+                  <div className="h-40 w-full rounded-xl bg-muted/20 animate-pulse flex items-center justify-center">
+                    <span className="text-xs font-medium text-muted-foreground">
+                      Loading specific version...
+                    </span>
                   </div>
-                )
-              }
-            >
-              {isLoadingVersion ? (
-                <div className="h-40 w-full rounded-xl bg-muted/20 animate-pulse flex items-center justify-center">
-                  <span className="text-xs font-medium text-muted-foreground">
-                    Loading specific version...
-                  </span>
-                </div>
-              ) : selectedVersion?.jd_text || job.jd_text ? (
-                <div className="text-sm text-foreground/80 whitespace-pre-wrap leading-relaxed py-1">
-                  {selectedVersion?.jd_text || job.jd_text}
-                </div>
-              ) : (
-                <div className="text-sm text-muted-foreground italic py-1">
-                  N/A
-                </div>
-              )}
-            </InfoSection>
+                ) : selectedVersion?.jd_text || job.jd_text ? (
+                  <div className="text-sm whitespace-pre-wrap leading-relaxed py-1">
+                    {selectedVersion?.jd_text || job.jd_text}
+                  </div>
+                ) : (
+                  <div className="text-sm text-muted-foreground italic py-1">
+                    N/A
+                  </div>
+                )}
+              </InfoSection>
 
-            {/* Required Skills Card */}
-            {job.skills && job.skills.length > 0 ? (
-              <InfoSection title="Required Skills">
-                <div className="flex flex-wrap gap-2 py-1">
-                  {job.skills.map((skill) => (
-                    <Badge
-                      key={skill.name}
-                      variant="secondary"
-                      className="rounded-xl px-1.5 py-1 text-xs font-semibold bg-secondary/40 hover:bg-secondary text-secondary-foreground border-muted-foreground/5 transition-colors"
-                    >
-                      {skill.name}{" - "} {skill.default_weightage}%
-                    </Badge>
+              {/* Required Skills Card */}
+              {job.skills && job.skills.length > 0 ? (
+                <InfoSection title="Required Skills">
+                  <div className="flex flex-wrap gap-2 py-1">
+                    {job.skills.map((skill) => (
+                      <Badge
+                        key={skill.name}
+                        variant="secondary"
+                        className="rounded-xl px-1.5 py-1 text-xs font-semibold bg-secondary/40 hover:bg-secondary text-secondary-foreground border-muted-foreground/5 transition-colors"
+                      >
+                        {skill.name}{" - "} {skill.default_weightage}%
+                      </Badge>
+                    ))}
+                  </div>
+                </InfoSection>
+              ) : null}
+
+              {/* Key Information Row */}
+              <Card className="border-muted-foreground/10 bg-card/50 shadow-sm transition-all hover:shadow-md hover:border-primary/20 p-1">
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-4 px-2 py-1 ">
+                  <InfoLabel
+                    label="Passing Threshold"
+                    value={`${job.passing_threshold}%`}
+                  />
+                  <Separator orientation="vertical" className="h-12 bg-gray-300" />
+                  <InfoLabel
+                    label="Question Passing Threshold"
+                    value={`${job.question_bank_passing_threshold}%`}
+
+                  />
+                  <Separator orientation="vertical" className="h-12 bg-gray-300" />
+                  <InfoLabel label="Vacancy" value={job.vacancy} valueClassName="text-base" />
+                  <Separator orientation="vertical" className="h-12 bg-gray-300" />
+                  <InfoLabel
+                    label="Position Level"
+                    value={job.position?.name || "N/A"}
+
+                  />
+                  {/* <Separator orientation="vertical" className="h-12 bg-gray-300" /> */}
+                </div>
+              </Card>
+              {/* Job Stages Card */}
+              <InfoSection title="Job Stages">
+                <div className="flex flex-wrap gap-2 py-1 flex-col">
+                  {job?.stages?.map((stage, idx) => (
+                    <div key={stage.id} className="flex items-center gap-2 ">
+                      <div className="flex  items-center justify-center w-6 h-6 rounded-full text-sm font-bold">
+                        {stage.template.default_order}
+                      </div>
+                      <span className="text-sm font-semibold">
+                        {stage.template?.name}
+                      </span>
+
+                    </div>
                   ))}
                 </div>
               </InfoSection>
-            ) : null}
-
-            {/* Key Information Row */}
-            <Card className="border-muted-foreground/10 bg-card/50 shadow-sm transition-all hover:shadow-md hover:border-primary/20 p-1">
-              <div className="flex flex-wrap items-center gap-x-10 gap-y-4 px-2 py-1 ">
-                <InfoLabel
-                  label="Passing Threshold"
-                  value={`${job.passing_threshold}%`}
-                />
-                <InfoLabel
-                  label="Question Passing Threshold"
-                  value={`${job.question_bank_passing_threshold}%`}
-
-                />
-                <Separator orientation="vertical" className="h-12 bg-gray-300" />
-                <InfoLabel label="Vacancy" value={job.vacancy} valueClassName="text-base" />
-                <Separator orientation="vertical" className="h-12 bg-gray-300" />
-                <InfoLabel
-                  label="Position Level"
-                  value={job.position?.name || "N/A"}
-
-                />
-                <Separator orientation="vertical" className="h-12 bg-gray-300" />
-              </div>
-            </Card>
-            {/* Job Stages Card */}
-            <InfoSection title="Job Stages">
-              <div className="flex flex-wrap gap-2 py-1 flex-col">
-                {job?.stages?.map((stage, idx) => (
-                  <div key={stage.id} className="flex items-center gap-2 ">
-                    <div className="flex  items-center justify-center w-6 h-6 rounded-full  text-sm font-bold">
-                      {idx + 1}
-                    </div>
-                    <span className="text-sm font-semibold text-foreground/80">
-                      {stage.template?.name}
-                    </span>
-                    {idx < (job.stages?.length || 0) - 1 && (
-                      <div className="h-px w-4 bg-muted-foreground/20 mx-1" />
-                    )}
-                  </div>
-                ))}
-              </div>
-            </InfoSection>
+            </div>
           </div>
-        </div>
+        </NativeScrollArea>
       </DialogContent>
     </Dialog>
   );

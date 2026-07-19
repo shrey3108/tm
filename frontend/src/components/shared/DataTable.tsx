@@ -260,7 +260,8 @@ export function DataTable<TData, TValue>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
-                  className={loading ? "opacity-50 pointer-events-none transition-opacity" : "even:bg-muted/75 hover:bg-[#e4e4e4]"}
+                  // className={loading ? "opacity-50 pointer-events-none transition-opacity" : "even:bg-muted/75 hover:bg-[#e4e4e4] dark:hover:bg-accent/50 transition-colors"}
+                  className={loading ? "opacity-50 pointer-events-none transition-opacity" : "even:bg-muted/75 hover:bg-muted-foreground/15 dark:hover:bg-muted-foreground/20"}
                 >
                   {row.getVisibleCells().map((cell) => {
                     const overflow = (cell.column.columnDef.meta as any)?.overflow ?? 'ellipsis';

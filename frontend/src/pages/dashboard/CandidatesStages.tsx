@@ -181,7 +181,7 @@ export default function CandidatesStages() {
       />
       <div className="flex w-full min-w-0 overflow-hidden">
         {/* Main Content Area */}
-        <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative custom-scrollbar">
           {/* Header */}
           <CandidateTimeline
             candidateId={candidate?.id}

@@ -138,7 +138,7 @@ export function ProjectSubmissionDialog({
                       <Input
                         type="url"
                         placeholder="https://github.com/username/repository"
-                        className="h-11 rounded-2xl border-muted-foreground/20 focus:border-primary/30 transition-colors"
+                        className="h-11"
                         {...field}
                       />
                     </FormControl>

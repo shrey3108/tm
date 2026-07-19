@@ -32,7 +32,7 @@ export const InfoLabel = ({
       <span className="text-muted-foreground/30 font-light">:</span>
       <span
         className={cn(
-          "text-sm font-bold text-foreground/90 ",
+          "text-sm font-bold ",
           valueClassName
         )}
       >

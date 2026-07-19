@@ -284,7 +284,21 @@ export function useCandidatesStages() {
   // 7. Transcript History Query
   const { data: transcriptHistoryData, refetch: refetchHistory } =
     useCandidateTranscriptsQuery(candidate?.id, evaluation?.transcript_id);
-  const transcriptHistory = transcriptHistoryData ?? [];
+  const rawTranscriptHistory = transcriptHistoryData ?? [];
+
+  const transcriptHistory = useMemo(() => {
+    if (!evaluation && evaluationHistory.length === 0) return [];
+    const stageTranscriptIds = new Set<string>();
+    if (evaluation?.transcript_id) {
+      stageTranscriptIds.add(evaluation.transcript_id);
+    }
+    evaluationHistory.forEach((h) => {
+      if (h.transcript_id) {
+        stageTranscriptIds.add(h.transcript_id);
+      }
+    });
+    return rawTranscriptHistory.filter((t) => stageTranscriptIds.has(t.id));
+  }, [rawTranscriptHistory, evaluation, evaluationHistory]);
 
   // 8. HR Decision History Query
   const { data: hrDecisionHistoryResponse, refetch: refetchHrDecisionHistory } =

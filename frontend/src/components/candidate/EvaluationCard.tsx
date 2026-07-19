@@ -56,8 +56,8 @@ export function EvaluationCard({
       <AccordionContent>
         <div className="space-y-2 px-2 pb-2">
           {reasoning && (
-            <div className="text-sm text-foreground/80 leading-relaxed font-medium">
-              <span className="font-bold capitalize text-muted-foreground block mb-1">Reasoning:</span>
+            <div className="text-sm leading-relaxed font-medium">
+              <span className="font-bold capitalize block mb-1">Reasoning:</span>
               {reasoning}
             </div>
           )}

@@ -85,7 +85,7 @@ export default function DbdCompareBarChart({
     const minWidth = displayData ? displayData.length * (isMobile ? 75 : 95) : 0;
 
     return (
-        <div className="w-full overflow-x-auto custom-scrollbar animate-in fade-in zoom-in-95 duration-700">
+        <div className="w-full custom-scrollbar overflow-y-auto animate-in fade-in zoom-in-95 duration-700">
             <div style={{ minWidth: minWidth ? `${minWidth}px` : '100%', width: '100%' }}>
                 <ChartContainer config={dynamicConfig} className="w-full aspect-auto h-90 sm:h-110">
                     <ResponsiveContainer width="100%" height="100%">
@@ -260,7 +260,7 @@ export default function DbdCompareBarChart({
                                         name={assoc.label}
                                         fill={`var(--color-${assoc.key})`}
                                         radius={[10, 10, 0, 0]}
-                                        barSize={isMobile ? 30 : 50}
+                                        barSize={isMobile ? 20 : 40}
                                         isAnimationActive={isAnimationActive}
                                         animationBegin={200}
                                         animationDuration={1300}

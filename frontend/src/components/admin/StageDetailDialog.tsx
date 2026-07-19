@@ -37,7 +37,7 @@ export const StageDetailDialog = ({
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-3xl md:max-w-4xl lg:max-w-5xl max-h-[90vh] flex flex-col p-0 overflow-hidden bg-card/95 backdrop-blur-xl border-muted-foreground/20 shadow-2xl rounded-2xl h-150 gap-2">
-                <div className="absolute inset-0 bg-linear-to-br from-primary/5 via-background to-background -z-10" />
+
 
                 <DialogHeader className="pt-3 px-2 pb-2 sm:pt-4 sm:px-3">
                     <div className="flex items-center justify-between">

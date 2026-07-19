@@ -203,7 +203,7 @@ export const CandidateTableFilters = ({
               </SheetHeader>
 
               {/* Scrollable Filters */}
-              <div className="flex-1 overflow-y-auto p-2 space-y-2">
+              <div className="flex-1 overflow-y-auto p-2 space-y-2 custom-scrollbar">
                 {/* Jobs Filter */}
                 {showJobContext && (
                   <CollapsibleFilterSection title="Jobs" count={jobFilter.length}>
