@@ -53,7 +53,7 @@ class DocumentParser:
 
         if ext == ".pdf":
             return DocumentParser._extract_from_pdf(path)
-        elif ext in [".docx", ".doc"]:
+        elif ext == ".docx":
             return DocumentParser._extract_from_docx(path)
         else:
             raise ValueError(f"Unsupported file format: {ext}")

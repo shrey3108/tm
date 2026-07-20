@@ -5,12 +5,12 @@ logger = logging.getLogger(__name__)
 
 # Default weights as defined in the system requirements (sums to 100%)
 DEFAULT_WEIGHTS = {
-    "correctness": 0.50,
-    "code_quality": 0.0,
-    "architecture": 0.0,
-    "security": 0.0,
-    "performance": 0.20,
-    "documentation": 0.30,
+    "correctness": 0.40,
+    "code_quality": 0.10,
+    "architecture": 0.10,
+    "security": 0.10,
+    "performance": 0.15,
+    "documentation": 0.15,
 }
 
 

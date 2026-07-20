@@ -30,7 +30,7 @@ dependencies = [
     "autogen>=0.11.4",
     "openai>=2.29.0",
     "torch",
-    "markitdown[docx]>=0.1.5",
+    "markitdown[all]>=0.1.5",
     "dspy>=3.2.0",
     "opentelemetry-sdk>=1.41.1",
     "opentelemetry-exporter-otlp>=1.41.1",

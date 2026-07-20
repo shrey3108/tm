@@ -10,7 +10,6 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
-from sqlalchemy.pool import NullPool
 
 from app.v1.core.config import settings
 from app.v1.core.logging import get_logger
@@ -20,8 +19,10 @@ logger = get_logger(__name__)
 
 engine = create_async_engine(
     settings.database_url,
-    echo=True,
-    poolclass=NullPool,
+    echo=settings.DEBUG,
+    pool_size=10,
+    max_overflow=20,
+    pool_pre_ping=True,
 )
 
 async_session_maker = async_sessionmaker(
