@@ -32,7 +32,6 @@ import {
   questionFormSchema,
   projectTaskSchema,
   mcqFormSchema,
-  type ProjectTaskFormValues,
   skillFormSchema
 } from "@/schemas/question";
 import { extractErrorMessage } from "@/utils/error";
@@ -178,10 +177,10 @@ export default function QuestionsBankCreate() {
     defaultValues: {
       project_task: "",
       instructions: "",
-      hours: "" as unknown as number,
-      minutes: "" as unknown as number,
+      hours: "",
+      minutes: "",
       tasks: [],
-    } as unknown as ProjectTaskFormValues,
+    },
   });
 
   // Sync backend paper state to local Form in Edit Mode

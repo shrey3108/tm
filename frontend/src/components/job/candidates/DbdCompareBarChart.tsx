@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Rectangle, ResponsiveContainer, Label, Legend } from 'recharts';
+import { Bar, ComposedChart, Line, CartesianGrid, XAxis, YAxis, Rectangle, ResponsiveContainer, Label, Legend } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 import { CHART_COLORS } from "@/constants";
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -46,10 +46,10 @@ export default function DbdCompareBarChart({
     const isMobile = useIsMobile()
     // Dynamically build Recharts chart config for the legend and tooltips
     const dynamicConfig = {
-        // jd: {
-        //     label: "AI Result",
-        //     color: CHART_COLORS.criteria.jd.solid,
-        // },
+        jd: {
+            label: "AI Result",
+            color: CHART_COLORS.criteria.jd.solid,
+        },
         ...associates.reduce((acc, assoc, index) => {
             const colorInfo = DBD_COLORS[index % DBD_COLORS.length];
             acc[assoc.key] = {
@@ -85,11 +85,11 @@ export default function DbdCompareBarChart({
     const minWidth = displayData ? displayData.length * (isMobile ? 75 : 95) : 0;
 
     return (
-        <div className="w-full custom-scrollbar overflow-y-auto animate-in fade-in zoom-in-95 duration-700">
+        <div className="w-full custom-scrollbar animate-in fade-in zoom-in-95 duration-700">
             <div style={{ minWidth: minWidth ? `${minWidth}px` : '100%', width: '100%' }}>
                 <ChartContainer config={dynamicConfig} className="w-full aspect-auto h-90 sm:h-110">
                     <ResponsiveContainer width="100%" height="100%">
-                        <BarChart
+                        <ComposedChart
                             data={displayData}
                             barGap={6}
                             margin={{
@@ -223,32 +223,20 @@ export default function DbdCompareBarChart({
                                 cursor={false}
                                 content={<ChartTooltipContent />}
                             />
-                            {/* <Bar
+                            <Line
+                                type="linear"
                                 dataKey="jd"
                                 name="AI Result"
-                                fill="var(--color-jd)"
-                                radius={[10, 10, 0, 0]}
-                                barSize={isMobile ? 30 : 50}
+                                stroke="var(--color-jd)"
+                                strokeWidth={3}
+                                dot={{ r: 4, fill: "var(--color-jd)", strokeWidth: 2, stroke: "white" }}
+                                activeDot={{ r: 3 }}
                                 isAnimationActive={isAnimationActive}
                                 animationBegin={200}
                                 animationDuration={1300}
                                 hide={activeBar !== 'all' && activeBar !== 'jd'}
-                                label={renderLabel}
-                                shape={(props: any) => {
-                                    const { x, y, width, height } = props;
-                                    return (
-                                        <Rectangle
-                                            x={x}
-                                            y={y}
-                                            width={width}
-                                            height={height}
-                                            radius={[10, 10, 0, 0]}
-                                            fill="url(#gradientJd)"
-                                            className="transition-all duration-300 hover:opacity-80"
-                                        />
-                                    );
-                                }}
-                            /> */}
+                                connectNulls
+                            />
 
                             {associates.map((assoc) => {
                                 // const colorInfo = DBD_COLORS[index % DBD_COLORS.length];
@@ -283,7 +271,7 @@ export default function DbdCompareBarChart({
                                     />
                                 );
                             })}
-                        </BarChart>
+                        </ComposedChart>
                     </ResponsiveContainer>
                 </ChartContainer>
             </div>

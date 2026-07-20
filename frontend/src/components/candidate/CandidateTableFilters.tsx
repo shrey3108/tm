@@ -155,8 +155,8 @@ export const CandidateTableFilters = ({
   ]);
 
   return (
-    <div className="flex flex-col gap-4 p-2 bg-muted/20 rounded-2xl border border-muted-foreground/10 overflow-hidden">
-      <div className="flex flex-col lg:flex-row items-center gap-4 w-full">
+    <div className="flex flex-col gap-2 my-4 p-2 bg-muted/20 rounded-2xl border border-muted-foreground/10 overflow-hidden">
+      <div className="flex flex-col lg:flex-row items-center gap-2 w-full">
         {/* Search & Filter Trigger Area */}
         <div className="flex flex-wrap items-center gap-2 flex-1 w-full lg:w-auto">
           {/* Search Field */}

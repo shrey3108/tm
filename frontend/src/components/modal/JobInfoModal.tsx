@@ -287,7 +287,7 @@ export function JobInfoModal({ isOpen, onClose, job }: JobInfoModalProps) {
               {/* Job Stages Card */}
               <InfoSection title="Job Stages">
                 <div className="flex flex-wrap gap-2 py-1 flex-col">
-                  {job?.stages?.map((stage, idx) => (
+                  {job?.stages?.map((stage) => (
                     <div key={stage.id} className="flex items-center gap-2 ">
                       <div className="flex  items-center justify-center w-6 h-6 rounded-full text-sm font-bold">
                         {stage.template.default_order}
