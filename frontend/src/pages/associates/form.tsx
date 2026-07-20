@@ -10,6 +10,7 @@ import PageHeader from "@/components/shared/PageHeader";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useCreateAssociateMutation, useUpdateAssociateMutation } from "@/hooks/mutations/admin/useAssociate";
 import { useAssociates } from "@/hooks/queries/admin/useAssociate";
+import { useDesignations } from "@/hooks/queries/admin/useDesignation";
 import { associateCreateSchema, type AssociateCreateFormValues } from "@/schemas/associate";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -18,6 +19,7 @@ import ErrorDisplay from "@/components/shared/ErrorDisplay";
 import { slugify } from "@/utils/slug";
 import { extractErrorMessage } from "@/utils/error";
 import { Required } from "@/components/shared/Required";
+import { SearchableSelect } from "@/components/shared/SearchableSelect";
 
 export default function AdminAssociateForm() {
   const navigate = useNavigate();
@@ -30,6 +32,8 @@ export default function AdminAssociateForm() {
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
   const isEditMode = !!slug;
+
+  const { data: designations, loading: isLoadingDesignations } = useDesignations();
 
   // Retrieve associate details matching the slug
   const { data: associates, loading: isLoadingAssociates } = useAssociates({
@@ -45,6 +49,7 @@ export default function AdminAssociateForm() {
     defaultValues: {
       name: "",
       email: "",
+      designation_id: "",
     },
   });
 
@@ -53,6 +58,7 @@ export default function AdminAssociateForm() {
       form.reset({
         name: associate.name,
         email: associate.email,
+        designation_id: associate.designation_id || associate.designation?.id || "",
       });
     }
   }, [isEditMode, associate, form]);
@@ -78,6 +84,11 @@ export default function AdminAssociateForm() {
       toast.error(errorMessage);
     }
   };
+
+  const designationOptions = designations.map((d) => ({
+    id: d.id,
+    label: d.name,
+  }));
 
   if (isEditMode && isLoadingAssociates && !associate) {
     return (
@@ -120,12 +131,7 @@ export default function AdminAssociateForm() {
       />
 
       <Card className="border-border/50 shadow-sm">
-        <CardHeader>
-          {/* <CardTitle>{isEditMode ? "Associate Details" : "New Associate"}</CardTitle>
-          <CardDescription>
-            Configure the name and email address of this associate.
-          </CardDescription> */}
-        </CardHeader>
+        <CardHeader />
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -134,7 +140,9 @@ export default function AdminAssociateForm() {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Associate Name<Required /></FormLabel>
+                    <FormLabel>
+                      Associate Name <Required />
+                    </FormLabel>
                     <FormControl>
                       <Input placeholder="e.g. John Doe" {...field} />
                     </FormControl>
@@ -148,10 +156,33 @@ export default function AdminAssociateForm() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email Address <Required /></FormLabel>
+                    <FormLabel>
+                      Email Address <Required />
+                    </FormLabel>
                     <FormControl>
                       <Input type="email" placeholder="e.g. john.doe@example.com" {...field} />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="designation_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Designation <Required />
+                    </FormLabel>
+                    <SearchableSelect
+                      value={field.value || ""}
+                      onValueChange={field.onChange}
+                      options={designationOptions}
+                      placeholder="Select designation..."
+                      searchPlaceholder="Search designation..."
+                      disabled={isLoadingDesignations}
+                    />
                     <FormMessage />
                   </FormItem>
                 )}

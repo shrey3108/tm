@@ -22,6 +22,7 @@ import { priorityRoutes } from "./priorityRoutes";
 import { guidelineRoutes } from "./guidelineRoutes";
 import { positionRoutes } from "./positionRoutes";
 import { associateRoutes } from "./associateRoutes";
+import { designationRoutes } from "./designationRoutes";
 import { userRoutes } from "./userRoutes";
 import { roleRoutes } from "./roleRoutes";
 import { dashboardRoutes } from "./dashboardRoutes";
@@ -95,6 +96,7 @@ export const router = createBrowserRouter([
               ...jobRoutes,
               skillRoutes,
               associateRoutes,
+              designationRoutes,
               departmentRoutes,
               positionRoutes,
               criteriaStagesRoutes,

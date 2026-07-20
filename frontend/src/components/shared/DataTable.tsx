@@ -162,7 +162,7 @@ export function DataTable<TData, TValue>({
   return (
     <div className="w-full space-y-1 sm:space-y-2">
       {searchKey && (
-        <div className="flex w-full items-stretch justify-between gap-2 sm:flex-row sm:items-center p-2 bg-muted/20 rounded-2xl border border-muted-foreground/10 my-4">
+        <div className="flex w-full items-stretch justify-between gap-2 sm:flex-row sm:items-center p-2 bg-muted/20 rounded-2xl border border-muted-foreground/10 mb-4">
           <div className="flex flex-1 grow items-center max-w-full gap-3">
             <div className="relative flex-1 sm:max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" />

@@ -65,6 +65,7 @@ const ROUTE_META: Record<string, { label: string; icon?: LucideIcon }> = {
   "questions-bank": { label: "Questions Bank", icon: ListChecks },
   transcript: { label: "Transcript", icon: ScrollText },
   associates: { label: "Associates", icon: Users },
+  designations: { label: "Designations", icon: User },
   "assign-associate": { label: "Assign Associate", icon: UserCog },
 
   //  Path-Specific Context Overrides 
@@ -80,6 +81,8 @@ const ROUTE_META: Record<string, { label: string; icon?: LucideIcon }> = {
   "dashboard/admin/criteria-stages/positions/*/edit": { label: "Edit Position", icon: PencilIcon },
   "dashboard/admin/associates/new": { label: "Create Associate", icon: PlusCircle },
   "dashboard/admin/associates/*/edit": { label: "Edit Associate", icon: PencilIcon },
+  "dashboard/admin/designations/new": { label: "Create Designation", icon: PlusCircle },
+  "dashboard/admin/designations/*/edit": { label: "Edit Designation", icon: PencilIcon },
   "dashboard/admin/users/new": { label: "Create User", icon: PlusCircle },
   "dashboard/admin/users/*/edit": { label: "Edit User", icon: PencilIcon },
   "dashboard/admin/roles/new": { label: "Create Role", icon: PlusCircle },

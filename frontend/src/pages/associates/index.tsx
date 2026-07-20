@@ -21,6 +21,7 @@ import { PERMISSIONS, hasPermissions } from "@/lib/permissions";
 import { useAppSelector } from "@/store/hooks";
 import { selectCurrentUser } from "@/store/slices/authSlice";
 import { useAssociates } from "@/hooks/queries/admin/useAssociate";
+import { useDesignations } from "@/hooks/queries/admin/useDesignation";
 import { useDeleteAssociateMutation } from "@/hooks/mutations/admin/useAssociate";
 import { usePageFilters } from "@/hooks/usePageFilters";
 import DeleteModal from "@/components/modal/DeleteModal";
@@ -28,6 +29,7 @@ import { useDebouncedValue } from "@/hooks/useDebounced";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { slugify } from "@/utils/slug";
+import { SearchableSelect } from "@/components/shared/SearchableSelect";
 
 export default function AdminAssociates() {
   const toast = useToast();
@@ -40,8 +42,9 @@ export default function AdminAssociates() {
     pageIndex: 0,
     pageSize: 10,
     search: "",
+    designationId: "",
   });
-  const { pageIndex, pageSize, search } = filters;
+  const { pageIndex, pageSize, search, designationId } = filters;
 
   const setPagination = (val: PaginationState | ((prev: PaginationState) => PaginationState)) => {
     const currentPagination = { pageIndex: filters.pageIndex, pageSize: filters.pageSize };
@@ -58,6 +61,8 @@ export default function AdminAssociates() {
   const [itemToDelete, setItemToDelete] = useState<AssociateRead | null>(null);
   const [overallTotal, setOverallTotal] = useState(0);
 
+  const { data: designations, loading: isLoadingDesignations } = useDesignations();
+
   const handleSearchChange = (value: string) => {
     setFilters({
       search: value,
@@ -70,15 +75,16 @@ export default function AdminAssociates() {
     skip: pageIndex * pageSize,
     limit: pageSize,
     q: debouncedSearch,
+    designation_id: designationId || undefined,
   });
 
   useEffect(() => {
-    if (!debouncedSearch && total !== overallTotal) {
+    if (!debouncedSearch && !designationId && total !== overallTotal) {
       queueMicrotask(() => {
         setOverallTotal(total);
       });
     }
-  }, [total, debouncedSearch, overallTotal]);
+  }, [total, debouncedSearch, designationId, overallTotal]);
 
   /**
    * Performs immediate deletion of an associate.
@@ -124,11 +130,16 @@ export default function AdminAssociates() {
     navigate(`/dashboard/admin/associates/${slugify(associate.name)}/edit`, { state: { associate } });
   };
 
+  const designationOptions = [
+    { id: "", label: "All Designations" },
+    ...designations.map((d) => ({ id: d.id, label: d.name })),
+  ];
+
   const columns: ColumnDef<AssociateRead>[] = [
     {
       accessorKey: "name",
       size: 35,
-      meta: { overflow: 'ellipsis' },
+      meta: { overflow: "ellipsis" },
       header: ({ column }) => (
         <div className="max-w-50">
           <Button
@@ -150,7 +161,7 @@ export default function AdminAssociates() {
     {
       accessorKey: "email",
       size: 45,
-      meta: { overflow: 'ellipsis' },
+      meta: { overflow: "ellipsis" },
       header: ({ column }) => (
         <div className="max-w-75">
           <Button
@@ -169,62 +180,84 @@ export default function AdminAssociates() {
         </div>
       ),
     },
+    {
+      accessorKey: "designation",
+      size: 35,
+      meta: { overflow: "ellipsis" },
+      header: ({ column }) => (
+        <div className="max-w-50">
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="hover:bg-transparent p-0 font-semibold text-base"
+          >
+            Designation
+            <ArrowUpDown className="h-4 w-4" />
+          </Button>
+        </div>
+      ),
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2 min-w-50 truncate">
+          {row.original.designation?.name || "-"}
+        </div>
+      ),
+    },
     ...(hasManagePermission
       ? [
-        {
-          id: "actions",
-          size: 20,
-          meta: { overflow: 'ellipsis' },
-          header: () => (
-            <div className="flex items-center justify-center gap-0.5">
-              <span className="text-base">Actions</span>
-            </div>
-          ),
-          cell: ({ row }) => (
-            <div className="gap-0.5 flex items-center justify-center">
-              <HoverCard>
-                <HoverCardTrigger
-                  render={(props) => (
-                    <Button
-                      {...props}
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleEditClick(row.original)}
-                      className="h-7 w-7 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
-                    >
-                      <Edit2 className="h-4 w-4 shrink-0" />
-                      <span className="sr-only">Edit</span>
-                    </Button>
-                  )}
-                />
-                <HoverCardContent className="w-fit px-3 py-1 text-xs" side="top">
-                  Edit Associate
-                </HoverCardContent>
-              </HoverCard>
+          {
+            id: "actions",
+            size: 20,
+            meta: { overflow: "ellipsis" },
+            header: () => (
+              <div className="flex items-center justify-center gap-0.5">
+                <span className="text-base">Actions</span>
+              </div>
+            ),
+            cell: ({ row }) => (
+              <div className="gap-0.5 flex items-center justify-center">
+                <HoverCard>
+                  <HoverCardTrigger
+                    render={(props) => (
+                      <Button
+                        {...props}
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleEditClick(row.original)}
+                        className="h-7 w-7 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
+                      >
+                        <Edit2 className="h-4 w-4 shrink-0" />
+                        <span className="sr-only">Edit</span>
+                      </Button>
+                    )}
+                  />
+                  <HoverCardContent className="w-fit px-3 py-1 text-xs" side="top">
+                    Edit Associate
+                  </HoverCardContent>
+                </HoverCard>
 
-              <HoverCard>
-                <HoverCardTrigger
-                  render={(props) => (
-                    <Button
-                      {...props}
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDeleteClick(row.original)}
-                      className="h-7 w-7 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
-                    >
-                      <Trash2Icon className="h-4 w-4 shrink-0" />
-                      <span className="sr-only">Delete</span>
-                    </Button>
-                  )}
-                />
-                <HoverCardContent className="w-fit px-3 py-1 text-xs" side="top">
-                  Delete Associate
-                </HoverCardContent>
-              </HoverCard>
-            </div>
-          ),
-        } as ColumnDef<AssociateRead>,
-      ]
+                <HoverCard>
+                  <HoverCardTrigger
+                    render={(props) => (
+                      <Button
+                        {...props}
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDeleteClick(row.original)}
+                        className="h-7 w-7 rounded-xl hover:bg-gray-200/60 flex items-center justify-center shrink-0"
+                      >
+                        <Trash2Icon className="h-4 w-4 shrink-0" />
+                        <span className="sr-only">Delete</span>
+                      </Button>
+                    )}
+                  />
+                  <HoverCardContent className="w-fit px-3 py-1 text-xs" side="top">
+                    Delete Associate
+                  </HoverCardContent>
+                </HoverCard>
+              </div>
+            ),
+          } as ColumnDef<AssociateRead>,
+        ]
       : []),
   ];
 
@@ -262,13 +295,30 @@ export default function AdminAssociates() {
           totalCount={overallTotal}
           resultCount={associates.length}
           entityName="Associates"
+          tableActions={
+            <div className="w-56">
+              <SearchableSelect
+                value={designationId || ""}
+                onValueChange={(val) =>
+                  setFilters({
+                    designationId: val,
+                    pageIndex: 0,
+                  })
+                }
+                options={designationOptions}
+                placeholder="All Designations"
+                searchPlaceholder="Search designation..."
+                loading={isLoadingDesignations}
+              />
+            </div>
+          }
         />
       )}
 
       <DeleteModal
         show={showDeleteModal}
         handleClose={() => setShowDeleteModal(false)}
-        handleConfirm={() => { }}
+        handleConfirm={() => {}}
         title="Delete Associate Error"
         message={itemToDelete ? `Unable to delete associate "${itemToDelete.name}"` : ""}
         isLoading={false}
