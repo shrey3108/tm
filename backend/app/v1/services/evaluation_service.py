@@ -164,6 +164,11 @@ class EvaluationService:
             if not active_criteria_configs:
                 # Fallback to evaluation_criteria key if active_criteria is empty or missing
                 active_criteria_configs = config.get("evaluation_criteria", [])
+            
+            if not active_criteria_configs and cs.job_stage.template and cs.job_stage.template.default_config:
+                logger.info("Falling back to stage template's JSON config for evaluation_criteria")
+                active_criteria_configs = cs.job_stage.template.default_config.get("evaluation_criteria", [])
+            
             logger.info(f"Initial active_criteria_configs from stage config: {len(active_criteria_configs)}")
 
         if not active_criteria_configs:

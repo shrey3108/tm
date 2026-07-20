@@ -17,6 +17,7 @@ from seed.seed_criteria import seed as seed_criteria_main
 from seed.seed_job import main as seed_job_main
 from seed.seed_new_job import main as seed_new_job_main
 from seed.seed_frontend_dev import main as seed_frontend_dev_main
+from seed.seed_associates import seed_associates as seed_associates_main
 
 SEED_STEPS = [
     ("seed.py", seed_main),
@@ -31,6 +32,7 @@ SEED_STEPS = [
     ("seed_job.py", seed_job_main),
     ("seed_new_job.py", seed_new_job_main),
     ("seed_frontend_dev.py", seed_frontend_dev_main),
+    ("seed_associates.py", seed_associates_main),
 ]
 
 

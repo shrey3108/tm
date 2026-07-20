@@ -14,6 +14,7 @@ class AssociateBase(BaseModel):
 
     name: str
     email: EmailStr
+    designation: str
 
 
 class AssociateCreate(AssociateBase):
@@ -31,6 +32,7 @@ class AssociateUpdate(BaseModel):
 
     name: str | None = None
     email: EmailStr | None = None
+    designation: str | None = None
 
 
 class AssociateRead(AssociateBase):

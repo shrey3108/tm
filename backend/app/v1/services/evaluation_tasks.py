@@ -86,11 +86,25 @@ def evaluate_candidate_transcript_task(candidate_stage_id_str: str):
                     
                     if stage and stage.job_stage and stage.job_stage.config:
                         is_dbd_enabled = stage.job_stage.config.get("is_dbd_enabled", False)
-                        if is_dbd_enabled and stage.job_stage.job and stage.job_stage.job.associates:
+                        if is_dbd_enabled and stage.job_stage.job:
                             from app.v1.db.models.associate_evaluations import AssociateEvaluation
                             from app.v1.services.email_service import send_associate_notification_email
+                            from app.v1.db.models.associates import Associate
                             
-                            for associate in stage.job_stage.job.associates:
+                            associates_to_email = {a.id: a for a in (stage.job_stage.job.associates or [])}
+                            
+                            stage_name = stage.job_stage.template.name.lower() if stage.job_stage and stage.job_stage.template else ""
+                            
+                            hr_stmt = select(Associate).where(Associate.designation.ilike("%HR%"))
+                            for hr in (await db.execute(hr_stmt)).scalars():
+                                associates_to_email[hr.id] = hr
+                                
+                            if "cto" in stage_name or "chief technology officer" in stage_name:
+                                cto_stmt = select(Associate).where(Associate.designation.ilike("%CTO%"))
+                                for cto in (await db.execute(cto_stmt)).scalars():
+                                    associates_to_email[cto.id] = cto
+                            
+                            for associate in associates_to_email.values():
                                 # Check if already assigned
                                 exist_stmt = select(AssociateEvaluation).where(
                                     AssociateEvaluation.candidate_stage_id == stage.id,

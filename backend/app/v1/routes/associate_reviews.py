@@ -277,6 +277,7 @@ async def serve_review_form(token: uuid.UUID, db: AsyncSession = Depends(get_db)
             return HTMLResponse(content=_render_dbd_form_html(
                 stage_name=stage_name,
                 associate_name=evaluation.associate.name if evaluation.associate else "Reviewer",
+                associate_designation=evaluation.associate.designation if evaluation.associate and evaluation.associate.designation else "N/A",
                 candidate_full_name=candidate_full_name,
                 job_title=job_title,
                 department_name=department_name,
@@ -321,6 +322,7 @@ async def serve_review_form(token: uuid.UUID, db: AsyncSession = Depends(get_db)
 
     return HTMLResponse(content=_render_form_html(
         associate_name=evaluation.associate.name if evaluation.associate else "Reviewer",
+        associate_designation=evaluation.associate.designation if evaluation.associate and evaluation.associate.designation else "N/A",
         candidate_full_name=candidate_full_name,
         job_title=job_title,
         department_name=department_name,
@@ -476,6 +478,7 @@ async def submit_review_form(
 
 def _render_form_html(
     associate_name: str,
+    associate_designation: str,
     candidate_full_name: str,
     job_title: str,
     department_name: str,
@@ -722,6 +725,10 @@ def _render_form_html(
           <div class="info-value">{html.escape(associate_name)}</div>
         </div>
         <div class="info-row">
+          <div class="info-label">Designation:</div>
+          <div class="info-value">{html.escape(associate_designation)}</div>
+        </div>
+        <div class="info-row">
           <div class="info-label">Candidate Name:</div>
           <div class="info-value">{html.escape(candidate_full_name)}</div>
         </div>
@@ -764,6 +771,7 @@ def _render_form_html(
 def _render_dbd_form_html(
     stage_name: str,
     associate_name: str,
+    associate_designation: str,
     candidate_full_name: str,
     job_title: str,
     department_name: str,
@@ -968,6 +976,10 @@ def _render_dbd_form_html(
         <div class="info-row">
           <div class="info-label">Interviewer Name:</div>
           <div class="info-value">{html.escape(associate_name)}</div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">Designation:</div>
+          <div class="info-value">{html.escape(associate_designation)}</div>
         </div>
         <div class="info-row">
           <div class="info-label">Candidate Name:</div>
