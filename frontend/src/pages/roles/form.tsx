@@ -104,14 +104,26 @@ export default function AdminRoleForm() {
       toast.error(errorMessage);
     }
   };
+  const searchLower = searchTerm.toLowerCase();
 
-  const filteredPermissions = permissions.filter((permission) => {
-    const searchLower = searchTerm.toLowerCase();
-    return (
+  const selected: typeof permissions = [];
+  const unselected: typeof permissions = [];
+
+  for (const permission of permissions) {
+    const matches =
       permission.name.toLowerCase().includes(searchLower) ||
-      permission.description.toLowerCase().includes(searchLower)
-    );
-  });
+      permission.description.toLowerCase().includes(searchLower);
+
+    if (!matches) continue;
+
+    if (selectedPermissionIds.includes(permission.id)) {
+      selected.push(permission);
+    } else {
+      unselected.push(permission);
+    }
+  }
+
+  const filteredPermissions = [...selected, ...unselected];
 
   if (isEditMode && isLoading && !roleDetails) {
     return (

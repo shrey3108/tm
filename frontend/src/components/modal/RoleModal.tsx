@@ -103,13 +103,21 @@ const RoleModal = ({ show, handleClose, onSuccess, editRoleId }: RoleModalProps)
 
   const selectedPermissionIds = watch("permission_ids") || [];
 
-  const filteredPermissions = permissions.filter((permission) => {
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      permission.name.toLowerCase().includes(searchLower) ||
-      permission.description.toLowerCase().includes(searchLower)
-    );
-  });
+  const filteredPermissions = permissions
+    .filter((permission) => {
+      const searchLower = searchTerm.toLowerCase();
+      return (
+        permission.name.toLowerCase().includes(searchLower) ||
+        permission.description.toLowerCase().includes(searchLower)
+      );
+    })
+    .sort((a, b) => {
+      const aSelected = selectedPermissionIds.includes(a.id);
+      const bSelected = selectedPermissionIds.includes(b.id);
+      if (aSelected && !bSelected) return -1;
+      if (!aSelected && bSelected) return 1;
+      return 0;
+    });
 
   // Reset search term when modal opens
   useEffect(() => {

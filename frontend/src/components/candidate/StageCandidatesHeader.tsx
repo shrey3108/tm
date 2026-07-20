@@ -17,6 +17,8 @@ import { History } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { slugify } from "@/utils/slug";
 import { isQuestionStage } from "@/utils/stage";
+import PermissionGuard from "@/components/auth/PermissionGuard";
+import { PERMISSIONS } from "@/lib/permissions";
 
 interface StageCandidatesHeaderProps {
   /** Associated job for the candidate stage view */
@@ -240,28 +242,30 @@ export const StageCandidatesHeader = ({
           )}
 
           {(showQuestion || showGithub) && (
-            <Button
-              variant="outline"
-              className="rounded-xl border border-muted-foreground/10 px-5 font-semibold text-center h-9 ml-2"
-              onClick={() => {
-                const jobSlug = slugify(job?.title || "");
-                const candSlug = slugify(candidateName || "");
-                const stgSlug = slugify(stageName || "");
-                navigate(`/dashboard/jobs/${jobSlug}/candidates/${candSlug}/stages/${stgSlug}/assign-associate`, {
-                  state: {
-                    job,
-                    candidate: {
-                      id: candidateId,
-                      first_name: candidateName?.split(" ")[0] || "",
-                      last_name: candidateName?.split(" ").slice(1).join(" ") || "",
+            <PermissionGuard permissions={PERMISSIONS.CANDIDATES_DECIDE} hideWhenDenied>
+              <Button
+                variant="outline"
+                className="rounded-xl border border-muted-foreground/10 px-5 font-semibold text-center h-9 ml-2"
+                onClick={() => {
+                  const jobSlug = slugify(job?.title || "");
+                  const candSlug = slugify(candidateName || "");
+                  const stgSlug = slugify(stageName || "");
+                  navigate(`/dashboard/jobs/${jobSlug}/candidates/${candSlug}/stages/${stgSlug}/assign-associate`, {
+                    state: {
+                      job,
+                      candidate: {
+                        id: candidateId,
+                        first_name: candidateName?.split(" ")[0] || "",
+                        last_name: candidateName?.split(" ").slice(1).join(" ") || "",
+                      }
                     }
-                  }
-                });
-              }}
-              disabled={!job?.is_active || allAssociatesSubmitted || !!associateResults || !isGithubRequirementMet}
-            >
-              Assign Associate
-            </Button>
+                  });
+                }}
+                disabled={!job?.is_active || allAssociatesSubmitted || !!associateResults || !isGithubRequirementMet}
+              >
+                Assign Associate
+              </Button>
+            </PermissionGuard>
           )}
 
           {showTranscript && (

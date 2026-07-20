@@ -141,7 +141,7 @@ function AdminDataTable<T>({
               </TableRow>
             ) : (
               data.map((item) => (
-                <TableRow key={getRowKey(item)} className="even:bg-muted/75 hover:bg-muted-foreground/15">
+                <TableRow key={getRowKey(item)} className="even:bg-muted/60 hover:bg-muted-foreground/15 dark:hover:bg-muted-foreground/20">
                   {columns.map((column, index) => {
                     const overflow = column.overflow ?? 'ellipsis';
                     return (
