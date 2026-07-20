@@ -95,12 +95,14 @@ def evaluate_candidate_transcript_task(candidate_stage_id_str: str):
                             
                             stage_name = stage.job_stage.template.name.lower() if stage.job_stage and stage.job_stage.template else ""
                             
-                            hr_stmt = select(Associate).where(Associate.designation.ilike("%HR%"))
+                            from app.v1.db.models.designations import Designation
+                            
+                            hr_stmt = select(Associate).join(Designation).where(Designation.name.ilike("%HR%"))
                             for hr in (await db.execute(hr_stmt)).scalars():
                                 associates_to_email[hr.id] = hr
                                 
                             if "cto" in stage_name or "chief technology officer" in stage_name:
-                                cto_stmt = select(Associate).where(Associate.designation.ilike("%CTO%"))
+                                cto_stmt = select(Associate).join(Designation).where(Designation.name.ilike("%CTO%"))
                                 for cto in (await db.execute(cto_stmt)).scalars():
                                     associates_to_email[cto.id] = cto
                             

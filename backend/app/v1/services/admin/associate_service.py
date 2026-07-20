@@ -110,6 +110,7 @@ class AssociateService:
         associate = Associate(
             name=associate_in.name,
             email=associate_in.email,
+            designation_id=associate_in.designation_id,
         )
         db.add(associate)
         await db.commit()

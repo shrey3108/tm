@@ -8,7 +8,7 @@ in the hiring platform.
 import uuid
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Text
+from sqlalchemy import Text, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -17,6 +17,7 @@ from app.v1.utils.uuid import UUIDHelper
 
 if TYPE_CHECKING:
     from app.v1.db.models.jobs import Job
+    from app.v1.db.models.designations import Designation
 from app.v1.db.models.job_associates import job_associates
 
 
@@ -52,9 +53,16 @@ class Associate(Base):
         nullable=False,
     )
 
-    designation: Mapped[str] = mapped_column(
-        Text,
+    designation_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("designations.id", ondelete="RESTRICT"),
         nullable=False,
+    )
+
+    designation: Mapped["Designation"] = relationship(
+        "Designation",
+        back_populates="associates",
+        lazy="selectin",
     )
 
     jobs: Mapped[list["Job"]] = relationship(
