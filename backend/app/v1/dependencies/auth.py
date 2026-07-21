@@ -8,7 +8,7 @@ specifically for retrieving the current authenticated user.
 import jwt
 import json
 from uuid import UUID
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -26,6 +26,7 @@ oauth2_scheme = OAuth2PasswordBearer(
 
 
 async def get_current_user(
+    request: Request,
     token: str | None = Depends(oauth2_scheme),
     db: AsyncSession = Depends(get_db),
 ) -> UserRead:
@@ -42,6 +43,8 @@ async def get_current_user(
     Raises:
         HTTPException: If authentication fails, token is invalid, or user is inactive.
     """
+    token = request.cookies.get("access_token") or token
+
     if token is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

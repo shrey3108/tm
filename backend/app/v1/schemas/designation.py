@@ -8,6 +8,9 @@ class DesignationBase(BaseModel):
 class DesignationCreate(DesignationBase):
     pass
 
+class DesignationUpdate(DesignationBase):
+    pass
+
 class DesignationRead(DesignationBase):
     id: uuid.UUID
     created_at: datetime
