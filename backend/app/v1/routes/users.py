@@ -22,6 +22,7 @@ from app.v1.schemas.user import (
     UserLogin,
     UserRead,
     UserRegister,
+    PublicLoginResponse,
 )
 from app.v1.services.user_service import user_service
 from app.v1.core.rate_limit import limiter
@@ -101,7 +102,7 @@ async def create_user(
     return await user_service.create_user(db=db, user_in=user_in)
 
 
-@router.post("/login", response_model=LoginResponse)
+@router.post("/login", response_model=PublicLoginResponse)
 @limiter.exempt
 
 async def login_user(
@@ -146,7 +147,7 @@ async def login_user(
     return login_response
 
 
-@router.post("/refresh", response_model=LoginResponse)
+@router.post("/refresh", response_model=PublicLoginResponse)
 @limiter.exempt
 
 async def refresh_token(

@@ -110,6 +110,14 @@ class LoginResponse(BaseModel):
     user: UserRead
 
 
+class PublicLoginResponse(BaseModel):
+    """Schema for the public login response sent to clients.
+    
+    Omits access and refresh tokens from the JSON body (these are sent via cookies).
+    """
+    token_type: str = "bearer"
+    user: UserRead
+
 class RefreshTokenRequest(BaseModel):
     """Schema for refreshing an access token."""
 
