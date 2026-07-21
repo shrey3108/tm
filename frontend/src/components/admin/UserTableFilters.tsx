@@ -106,7 +106,7 @@ export const UserTableFilters = ({
 
           {/* Date Range Picker */}
           <div className={cn(
-            "flex items-center gap-1.5 px-1.5 h-9 rounded-xl border text-sm transition-colors w-fit",
+            "flex items-center gap-1.5 px-3 h-9 rounded-xl border text-sm transition-colors w-fit",
             dateRange?.from
               ? "border-primary/40 bg-primary/5 text-foreground"
               : "border-input bg-background/50 text-muted-foreground"
@@ -153,11 +153,11 @@ export const UserTableFilters = ({
           <Button
             variant="ghost"
             size="sm"
-            className="h-9 px-3 rounded-xl text-muted-foreground hover:text-foreground hover:bg-destructive/5 transition-all"
+            className="h-10 px-3 rounded-xl text-xs font-semibold text-muted-foreground hover:bg-gray-200/60"
             onClick={clearFilters}
           >
-            <X className="h-3.5 w-3.5 mr-1.5" />
-            Clear
+            <X className="h-4 w-4" />
+
           </Button>
         )}
       </div>

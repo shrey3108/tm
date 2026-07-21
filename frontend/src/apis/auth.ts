@@ -66,7 +66,7 @@ export const authService = {
    * @returns Promise resolving to login response with new tokens and user data
    * @throws {Error} When refresh token is invalid or expired
    */
-  refreshToken: async (params: RefreshTokenRequest): Promise<LoginResponse> => {
+  refreshToken: async (params?: RefreshTokenRequest): Promise<LoginResponse> => {
     const response = await apiClient.post<LoginResponse>("/users/refresh", params);
     return response.data;
   },

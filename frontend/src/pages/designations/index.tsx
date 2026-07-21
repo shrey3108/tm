@@ -6,7 +6,7 @@
  * Displays all designations with ability to create, edit, and delete.
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import type { DesignationRead } from "@/types/designation";
 import AppPageShell from "@/components/shared/AppPageShell";
@@ -15,6 +15,7 @@ import { useToast } from "@/components/shared/ToastProvider";
 import { DataTable } from "@/components/shared/DataTable";
 import ErrorDisplay from "@/components/shared/ErrorDisplay";
 import DeleteModal from "@/components/modal/DeleteModal";
+import { useDebouncedValue } from "@/hooks/useDebounced";
 import { Edit2, Trash2Icon, ArrowUpDown, AlertCircle, Plus } from "lucide-react";
 import { extractErrorMessage } from "@/utils/error";
 import type { ColumnDef, PaginationState } from "@tanstack/react-table";
@@ -53,17 +54,16 @@ export default function AdminDesignations() {
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<DesignationRead | null>(null);
+  const [overallTotal, setOverallTotal] = useState(0);
 
-  const { data: rawDesignations, loading, error, refetch } = useDesignations();
+  const debouncedSearch = useDebouncedValue(search);
 
-  const filteredDesignations = rawDesignations.filter((d) =>
-    search ? d.name.toLowerCase().includes(search.toLowerCase()) : true
-  );
 
-  const paginatedDesignations = filteredDesignations.slice(
-    pageIndex * pageSize,
-    (pageIndex + 1) * pageSize
-  );
+  const { data: designations, total, loading, error, refetch } = useDesignations({
+    skip: pageIndex * pageSize,
+    limit: pageSize,
+    q: debouncedSearch,
+  });
 
   const handleSearchChange = (value: string) => {
     setFilters({
@@ -71,6 +71,14 @@ export default function AdminDesignations() {
       pageIndex: 0,
     });
   };
+
+  useEffect(() => {
+    if (!debouncedSearch && total !== overallTotal) {
+      queueMicrotask(() => {
+        setOverallTotal(total);
+      });
+    }
+  }, [total, debouncedSearch, overallTotal]);
 
   const handleCreateClick = () => {
     navigate("/dashboard/admin/designations/new");
@@ -235,25 +243,25 @@ export default function AdminDesignations() {
         }
       />
 
-      {error && !rawDesignations.length ? (
+      {error && !designations.length ? (
         <ErrorDisplay message={error.message} onRetry={refetch} />
       ) : (
         <DataTable
           columns={columns}
-          data={paginatedDesignations}
+          data={designations}
           loading={loading}
           searchKey="name"
           searchValue={search}
           onSearchChange={handleSearchChange}
           searchPlaceholder="Filter designations by name..."
-          isServerSide={false}
+          isServerSide={true}
           pageIndex={pageIndex}
           pageSize={pageSize}
-          pageCount={Math.ceil(filteredDesignations.length / pageSize)}
+          pageCount={Math.ceil(total / pageSize)}
           onPaginationChange={setPagination}
-          totalRecords={filteredDesignations.length}
-          totalCount={rawDesignations.length}
-          resultCount={paginatedDesignations.length}
+          totalRecords={total}
+          totalCount={overallTotal}
+          resultCount={designations.length}
           entityName="Designations"
         />
       )}
@@ -261,7 +269,7 @@ export default function AdminDesignations() {
       <DeleteModal
         show={showDeleteModal}
         handleClose={() => setShowDeleteModal(false)}
-        handleConfirm={() => {}}
+        handleConfirm={() => { }}
         title="Delete Designation Error"
         message={itemToDelete ? `Unable to delete designation "${itemToDelete.name}"` : ""}
         isLoading={false}

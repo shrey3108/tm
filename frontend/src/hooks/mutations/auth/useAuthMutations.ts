@@ -20,8 +20,6 @@ export function useLoginMutation() {
       dispatch(
         setCredentials({
           user: response.user,
-          access_token: response.access_token,
-          refresh_token: response.refresh_token,
         }),
       );
       navigate("/dashboard");

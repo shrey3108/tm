@@ -12,26 +12,20 @@ import type { UserRead } from "@/types/auth";
 interface AuthState {
   /** Currently authenticated user, null if not logged in */
   user: UserRead | null;
-  /** JWT access token for API authentication */
-  token: string | null;
-  /** JWT refresh token for obtaining new access tokens */
-  refreshToken: string | null;
   /** Whether the user is currently authenticated */
   isAuthenticated: boolean;
 }
 
 /**
- * Utility to safe parse JSON from localStorage or sessionStorage depending on the implementation.
+ * Utility to safe parse JSON from sessionStorage.
  */
 const getStoredUser = (): UserRead | null => {
-  // const storedUser = localStorage.getItem("user");
   const storedUser = sessionStorage.getItem("user");
   if (!storedUser) return null;
   try {
     return JSON.parse(storedUser);
   } catch (error) {
     console.error("Failed to parse stored user:", error);
-    // localStorage.removeItem("user");
     sessionStorage.removeItem("user");
     return null;
   }
@@ -39,12 +33,7 @@ const getStoredUser = (): UserRead | null => {
 
 const initialState: AuthState = {
   user: getStoredUser(),
-  // token: localStorage.getItem("token"),
-  // refreshToken: localStorage.getItem("refreshToken"),
-  // isAuthenticated: !!localStorage.getItem("token"),
-  token: sessionStorage.getItem("token"),
-  refreshToken: sessionStorage.getItem("refreshToken"),
-  isAuthenticated: !!sessionStorage.getItem("token"),
+  isAuthenticated: !!getStoredUser(),
 };
 
 /**
@@ -57,43 +46,23 @@ const authSlice = createSlice({
   reducers: {
     /**
      * Sets user credentials after successful login.
-     * Updates state and persists tokens and user data to localStorage or sessionStorage depending on the implementation.
+     * Updates state and persists user data to sessionStorage.
      */
     setCredentials: (
       state,
-      {
-        payload: { user, access_token, refresh_token },
-      }: PayloadAction<{
-        user: UserRead;
-        access_token: string;
-        refresh_token: string;
-      }>,
+      action: PayloadAction<{ user: UserRead }>,
     ) => {
-      state.user = user;
-      state.token = access_token;
-      state.refreshToken = refresh_token;
+      state.user = action.payload.user;
       state.isAuthenticated = true;
-      // localStorage.setItem("token", access_token);
-      // localStorage.setItem("refreshToken", refresh_token);
-      // localStorage.setItem("user", JSON.stringify(user));
-      sessionStorage.setItem("token", access_token);
-      sessionStorage.setItem("refreshToken", refresh_token);
-      sessionStorage.setItem("user", JSON.stringify(user));
+      sessionStorage.setItem("user", JSON.stringify(action.payload.user));
     },
     /**
      * Clears all authentication data on logout.
-     * Removes tokens and user data from both state and localStorage or sessionStorage depending on the implementation.
+     * Removes user data from state and sessionStorage.
      */
     logout: (state) => {
       state.user = null;
-      state.token = null;
-      state.refreshToken = null;
       state.isAuthenticated = false;
-      // localStorage.removeItem("token");
-      // localStorage.removeItem("refreshToken");
-      // localStorage.removeItem("user");
-      sessionStorage.removeItem("token");
-      sessionStorage.removeItem("refreshToken");
       sessionStorage.removeItem("user");
     },
     /**

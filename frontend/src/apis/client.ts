@@ -16,6 +16,7 @@ const BASE_URL = import.meta.env.VITE_API_URL || "/api/v1";
  */
 const apiClient = axios.create({
   baseURL: BASE_URL,
+  withCredentials: true,
   headers: {
     "Content-Type": "application/json",
   },
@@ -24,19 +25,9 @@ const apiClient = axios.create({
   },
 });
 
-/**
- * Request interceptor that adds JWT token to outgoing requests.
- * Retrieves token from localStorage or sessionStorage depending on the implementation and includes it in Authorization header.
- */
+// Request interceptor: browser handles cookie forwarding via withCredentials: true
 apiClient.interceptors.request.use(
-  (config) => {
-    // const token = localStorage.getItem("token");
-    const token = sessionStorage.getItem("token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
+  (config) => config,
   (error) => Promise.reject(error),
 );
 
@@ -53,14 +44,13 @@ let failedQueue: any[] = [];
 /**
  * Processes the queue of failed requests after a token refresh attempt.
  * @param error - Error object if refresh failed, null otherwise
- * @param token - New access token if refresh succeeded, null otherwise
  */
-const processQueue = (error: any, token: string | null = null) => {
+const processQueue = (error: any) => {
   failedQueue.forEach((prom) => {
     if (error) {
       prom.reject(error);
     } else {
-      prom.resolve(token);
+      prom.resolve();
     }
   });
   failedQueue = [];
@@ -68,7 +58,7 @@ const processQueue = (error: any, token: string | null = null) => {
 
 /**
  * Response interceptor that handles authentication errors.
- * Attempts to automatically refresh tokens on 401 Unauthorized responses.
+ * Attempts to automatically refresh tokens on 401 Unauthorized responses via HttpOnly cookie.
  */
 apiClient.interceptors.response.use(
   (response) => response,
@@ -86,48 +76,27 @@ apiClient.interceptors.response.use(
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         })
-          .then((token) => {
-            originalRequest.headers.Authorization = `Bearer ${token}`;
-            return apiClient(originalRequest);
-          })
+          .then(() => apiClient(originalRequest))
           .catch((err) => Promise.reject(err));
       }
 
       originalRequest._retry = true;
       isRefreshing = true;
 
-      // const refreshToken = localStorage.getItem("refreshToken");
-      const refreshToken = sessionStorage.getItem("refreshToken");
-
-      if (!refreshToken) {
-        store.dispatch(logout());
-        isRefreshing = false;
-        return Promise.reject(error);
-      }
-
       try {
-        // Use apiClient directly to avoid circular dependency with authService
-        const response = await apiClient.post("/users/refresh", {
-          refresh_token: refreshToken,
-        });
+        // Use apiClient directly to avoid circular dependency with authService.
+        // Refresh token is automatically sent via HttpOnly cookie.
+        const response = await apiClient.post("/users/refresh");
+        const { user } = response.data;
 
-        const { access_token, refresh_token, user } = response.data;
+        // Update Redux state & user storage
+        store.dispatch(setCredentials({ user }));
 
-        // Update storage and Redux state
-        store.dispatch(
-          setCredentials({
-            user,
-            access_token,
-            refresh_token,
-          }),
-        );
-
-        processQueue(null, access_token);
-        originalRequest.headers.Authorization = `Bearer ${access_token}`;
+        processQueue(null);
         return apiClient(originalRequest);
       } catch (refreshError) {
         // If refresh fails, log out the user
-        processQueue(refreshError, null);
+        processQueue(refreshError);
         store.dispatch(logout());
         return Promise.reject(refreshError);
       } finally {
