@@ -35,14 +35,61 @@ const DBD_COLORS = [
     { solid: "#f472b6", gradient: ["#fbcfe8", "#f472b6"] as const }, // Pink
     { solid: "#fb923c", gradient: ["#fed7aa", "#fb923c"] as const }, // Orange
 ];
+const renderCustomDot = (props: any) => {
+    const { cx, cy, value, isActive } = props;
+    if (value === undefined || value === null) return null;
+
+    const badgeHeight = 18;
+    const badgeWidth = 18;
+    const badgeX = cx - badgeWidth / 2;
+    const badgeY = cy - 27;
+
+    return (
+        <g key={`custom-dot-${cx}-${cy}`}>
+            {/* Value badge above the dot */}
+            <rect
+                x={badgeX}
+                y={badgeY}
+                width={badgeWidth}
+                height={badgeHeight}
+                rx={badgeHeight / 2}
+                ry={badgeHeight / 2}
+                fill="var(--color-jd)"
+                stroke="white"
+                strokeWidth={1}
+                className="transition-all duration-200 shadow-sm"
+            />
+            <text
+                x={cx}
+                y={badgeY + badgeHeight / 2}
+                dominantBaseline="central"
+                textAnchor="middle"
+                className="fill-black dark:fill-slate-950 text-[10px] sm:text-xs font-bold select-none"
+            >
+                {value}
+            </text>
+            {/* Dot on the line chart */}
+            <circle
+                cx={cx}
+                cy={cy}
+                r={isActive ? 6 : 4}
+                fill="var(--color-jd)"
+                stroke="white"
+                strokeWidth={2}
+                className="transition-all duration-200"
+            />
+        </g>
+    );
+};
 
 export default function DbdCompareBarChart({
     isAnimationActive = true,
     data: chartData,
     associates = []
 }: DbdCompareBarChartProps) {
-    const [activeBar, setActiveBar] = useState<string>('all');
+    const [hiddenBars, setHiddenBars] = useState<Set<string>>(new Set());
     const displayData = chartData;
+
     const isMobile = useIsMobile()
     // Dynamically build Recharts chart config for the legend and tooltips
     const dynamicConfig = {
@@ -63,7 +110,15 @@ export default function DbdCompareBarChart({
     const handleLegendClick = (entry: any) => {
         const dataKey = entry.dataKey || entry.payload?.dataKey;
         if (dataKey) {
-            setActiveBar((prev) => (prev === dataKey ? 'all' : dataKey));
+            setHiddenBars((prev) => {
+                const next = new Set(prev);
+                if (next.has(dataKey)) {
+                    next.delete(dataKey);
+                } else {
+                    next.add(dataKey);
+                }
+                return next;
+            });
         }
     };
 
@@ -82,10 +137,11 @@ export default function DbdCompareBarChart({
         );
     };
 
-    const minWidth = displayData ? displayData.length * (isMobile ? 75 : 95) : 0;
 
+
+    const minWidth = displayData ? displayData.length * (isMobile ? 75 : 95) : 0;
     return (
-        <div className="w-full custom-scrollbar animate-in fade-in zoom-in-95 duration-700">
+        <div className="w-full overflow-auto md:overflow-hidden custom-scrollbar animate-in fade-in  duration-700">
             <div style={{ minWidth: minWidth ? `${minWidth}px` : '100%', width: '100%' }}>
                 <ChartContainer config={dynamicConfig} className="w-full aspect-auto h-90 sm:h-110">
                     <ResponsiveContainer width="100%" height="100%">
@@ -107,11 +163,10 @@ export default function DbdCompareBarChart({
                                 onClick={handleLegendClick}
                                 formatter={(value, entry: any) => {
                                     const dataKey = entry.dataKey || entry.payload?.dataKey;
-                                    const isInactive = activeBar !== 'all' && activeBar !== dataKey;
+                                    const isHidden = hiddenBars.has(dataKey);
                                     return (
                                         <span
-                                            className={`text-xs font-bold text-black dark:text-white cursor-pointer transition-all duration-300 select-none ${isInactive ? "line-through" : ""
-                                                }`}
+                                            className={`text-xs font-bold text-black dark:text-white cursor-pointer transition-all duration-300 select-none ${isHidden ? "line-through opacity-40" : ""}`}
                                         >
                                             {value}
                                         </span>
@@ -229,17 +284,16 @@ export default function DbdCompareBarChart({
                                 name="AI Result"
                                 stroke="var(--color-jd)"
                                 strokeWidth={3}
-                                dot={{ r: 4, fill: "var(--color-jd)", strokeWidth: 2, stroke: "white" }}
-                                activeDot={{ r: 3 }}
+                                dot={renderCustomDot}
+                                activeDot={(props: any) => renderCustomDot({ ...props, isActive: true })}
                                 isAnimationActive={isAnimationActive}
                                 animationBegin={200}
                                 animationDuration={1300}
-                                hide={activeBar !== 'all' && activeBar !== 'jd'}
+                                hide={hiddenBars.has('jd')}
                                 connectNulls
                             />
 
                             {associates.map((assoc) => {
-                                // const colorInfo = DBD_COLORS[index % DBD_COLORS.length];
                                 const gradientId = `gradientDbd_${assoc.key}`;
                                 return (
                                     <Bar
@@ -252,7 +306,7 @@ export default function DbdCompareBarChart({
                                         isAnimationActive={isAnimationActive}
                                         animationBegin={200}
                                         animationDuration={1300}
-                                        hide={activeBar !== 'all' && activeBar !== assoc.key}
+                                        hide={hiddenBars.has(assoc.key)}
                                         label={renderLabel}
                                         shape={(props: any) => {
                                             const { x, y, width, height } = props;

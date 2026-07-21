@@ -109,7 +109,7 @@ export default function AdminDashboard() {
               </div>
             </div>
           </div>
-          <div className="space-y-1 animate-in fade-in slide-in-from-bottom-2 duration-500">
+          <div className="space-y-2 animate-in fade-in slide-in-from-bottom-2 duration-500">
             <h3>Candidates by Job</h3>
             <AdminDataTable
               columns={jobColumns}
@@ -151,4 +151,3 @@ export default function AdminDashboard() {
     </AppPageShell>
   );
 };
-
