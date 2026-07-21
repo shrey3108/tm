@@ -54,6 +54,7 @@ export default function AdminUsers() {
     setRoleFilter,
     dateRange,
     setDateRange,
+    statusOptions,
     roleOptions,
     filteredUsers,
     hasActiveFilters,
@@ -275,11 +276,12 @@ export default function AdminUsers() {
             setSearchFilter={handleSearchChange}
             statusFilter={statusFilter}
             setStatusFilter={setStatusFilter}
+            statusOptions={statusOptions}
             roleFilter={roleFilter}
             setRoleFilter={setRoleFilter}
+            roleOptions={roleOptions}
             dateRange={dateRange}
             setDateRange={setDateRange}
-            roleOptions={roleOptions}
             hasActiveFilters={hasActiveFilters}
             clearFilters={clearFilters}
             resultCount={filteredUsers.length}

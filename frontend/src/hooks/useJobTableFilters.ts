@@ -2,6 +2,9 @@
  * @fileoverview Hooks for managing and applying filters to job tables.
  * Provides state management for filter criteria and logic for filtering job lists
  * and extracting unique filter options (departments, statuses) from job data.
+ *
+ * Core principle: filter options are derived dynamically from the data present
+ * in the table (`filteredJobs`), plus any currently selected filter items.
  */
 
 import { useMemo } from "react";
@@ -17,11 +20,9 @@ import type { PaginationState } from "@tanstack/react-table";
 /**
  * Hook for managing the state of job table filters.
  * Handles search text, status chips, department selection, date ranges, and pagination.
- * 
+ *
  * @param pageKey - Session persistence key.
  * @returns An object containing filter states, their setters, and utility functions.
- * @example
- * const { titleFilter, setTitleFilter, clearFilters } = useJobTableFilters();
  */
 export const useJobTableFilters = (pageKey: string = "jobBoard") => {
   const { filters, setFilter, resetFilters } = usePageFilters(pageKey, {
@@ -96,7 +97,7 @@ export const useJobTableFilters = (pageKey: string = "jobBoard") => {
 
 /**
  * Filters a list of jobs based on a selected date range and determines the date bounds.
- * 
+ *
  * @param jobs - The list of jobs to filter.
  * @param dateRange - The start and end dates for the filter.
  * @returns An object containing the filtered jobs and the minimum date found in the original list.
@@ -124,36 +125,27 @@ export const useFilteredJobs = (jobs: Job[], dateRange: DateRange | undefined) =
 };
 
 /**
- * Extracts and sorts unique department options from a list of jobs or all available departments.
- * If server-side filters (title, status, department) are active, it derives options from the current job list.
- * Otherwise, it returns all available departments.
- * 
- * @param jobs - The current list of jobs (potentially filtered by server).
- * @param allDepartments - The full list of departments from the API.
- * @param titleFilter - Current job title search string.
- * @param statusFilter - Current list of selected status filters.
- * @param departmentFilter - Current list of selected department filters.
- * @returns A sorted list of unique department objects.
+ * Derives department filter options dynamically from whatever jobs are currently present
+ * in the table data (`filteredJobs`), plus preserving any currently selected department filters.
+ *
+ * @param jobs - The current list of filtered jobs displayed in the table.
+ * @param allDepartments - The full list of departments from the API (used to look up selected items).
+ * @param departmentFilter - Current list of selected department IDs.
+ * @returns A sorted list of unique department objects present in the current table data.
  */
 export const useFilteredDepartmentOptions = (
   jobs: Job[],
   allDepartments: DepartmentRead[],
-  titleFilter: string,
-  statusFilter: string[] = [],
   departmentFilter: string[] = []
 ) => {
-  const hasServerFilter = !!titleFilter || statusFilter.length > 0 || departmentFilter.length > 0;
-
   return useMemo(() => {
-    if (!hasServerFilter) {
-      return allDepartments;
-    }
     const uniqueDeptsMap = new Map<string, DepartmentRead>();
+
     jobs.forEach((job) => {
       if (job.department) {
         const trimmedName = job.department.name.trim();
-        if (!uniqueDeptsMap.has(trimmedName)) {
-          uniqueDeptsMap.set(trimmedName, {
+        if (!uniqueDeptsMap.has(job.department.id)) {
+          uniqueDeptsMap.set(job.department.id, {
             id: job.department.id,
             name: trimmedName,
             description: job.department.description,
@@ -161,8 +153,8 @@ export const useFilteredDepartmentOptions = (
         }
       } else if (job.department_id && job.department_name) {
         const trimmedName = job.department_name.trim();
-        if (!uniqueDeptsMap.has(trimmedName)) {
-          uniqueDeptsMap.set(trimmedName, {
+        if (!uniqueDeptsMap.has(job.department_id)) {
+          uniqueDeptsMap.set(job.department_id, {
             id: job.department_id,
             name: trimmedName,
           } as DepartmentRead);
@@ -170,43 +162,41 @@ export const useFilteredDepartmentOptions = (
       }
     });
 
-    // Ensure currently selected departments are always preserved in the options to avoid displaying UUIDs
+    // Preserve currently selected departments so selected items remain visible in the dropdown
     if (departmentFilter && departmentFilter.length > 0) {
       departmentFilter.forEach((id) => {
-        const found = allDepartments.find((d) => d.id === id);
-        if (found) {
-          const trimmedName = found.name.trim();
-          if (!uniqueDeptsMap.has(trimmedName)) {
-            uniqueDeptsMap.set(trimmedName, found);
+        if (!Array.from(uniqueDeptsMap.values()).some((d) => d.id === id)) {
+          const found = allDepartments.find((d) => d.id === id);
+          if (found) {
+            uniqueDeptsMap.set(found.id, found);
           }
         }
       });
     }
 
-    return Array.from(uniqueDeptsMap.values())
-      .sort((a, b) => a.name.localeCompare(b.name));
-  }, [jobs, allDepartments, hasServerFilter, departmentFilter]);
+    return Array.from(uniqueDeptsMap.values()).sort((a, b) =>
+      a.name.localeCompare(b.name)
+    );
+  }, [jobs, allDepartments, departmentFilter]);
 };
 
 /**
- * Extracts unique status options from the current list of jobs.
- * 
- * @param jobs - The current list of jobs.
- * @param titleFilter - Current job title search string.
- * @returns An array of unique status strings ("open", "closed").
+ * Derives status filter options dynamically from whatever jobs are currently present
+ * in the table data (`filteredJobs`), plus preserving any currently selected status filters.
+ *
+ * @param jobs - The current list of filtered jobs displayed in the table.
+ * @param statusFilter - Current list of selected status filters.
+ * @returns An array of unique status strings present in the current table data.
  */
 export const useFilteredStatusOptions = (
   jobs: Job[],
-  titleFilter: string
+  statusFilter: string[] = []
 ) => {
   return useMemo(() => {
-    if (!titleFilter) {
-      return ["open", "closed"];
-    }
-    const uniqueStatuses = new Set<string>();
+    const uniqueStatuses = new Set<string>(statusFilter);
     jobs.forEach((job) => {
       uniqueStatuses.add(job.is_active ? "open" : "closed");
     });
     return Array.from(uniqueStatuses);
-  }, [jobs, titleFilter]);
+  }, [jobs, statusFilter]);
 };

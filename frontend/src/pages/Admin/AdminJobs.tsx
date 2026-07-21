@@ -114,8 +114,8 @@ export default function AdminJobs() {
   const jobsList = (queryData || []) as unknown as Job[];
 
   const { filteredJobs, minDate } = useFilteredJobs(jobsList, dateRange);
-  const departmentOptions = useFilteredDepartmentOptions(jobsList, allDepartments, titleFilter, statusFilter, departmentFilter);
-  const statusOptions = useFilteredStatusOptions(jobsList, titleFilter);
+  const departmentOptions = useFilteredDepartmentOptions(filteredJobs, allDepartments, departmentFilter);
+  const statusOptions = useFilteredStatusOptions(filteredJobs, statusFilter);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });

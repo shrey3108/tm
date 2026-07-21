@@ -86,33 +86,29 @@ export const JobTableFilters = ({
           // contentClassName="w-[50%]"
           />
 
-          {/* Department Dropdown */}
-          {departmentOptions.length > 0 && (
-            <SearchableSelect
-              multiple
-              value={departmentFilter}
-
-              onValueChange={setDepartmentFilter}
-              options={departmentOptions.map((d) => ({ id: d.id, label: d.name }))}
-              placeholder="Departments"
-              pluralLabel="Departments"
-              onSearch={setDepartmentSearch}
-              onClear={() => setDepartmentFilter([])}
-              clearLabel="Clear departments"
-              getTriggerLabel={(selected) =>
-                selected.length <= FILTER_DISPLAY_LIMIT
-                  ? selected.map((s) => s.label).join(", ")
-                  : `${selected.slice(0, FILTER_DISPLAY_LIMIT).map((s) => s.label).join(", ")} and ${selected.length - FILTER_DISPLAY_LIMIT} more`
-              }
-              triggerClassName={cn(
-                "h-10 w-[160px] border select-none bg-background hover:bg-muted/50 hover:text-foreground",
-                departmentFilter.length > 0
-                  ? "border-primary/40 bg-primary/10 text-primary hover:bg-primary/10 hover:text-primary"
-                  : "border-input text-muted-foreground"
-              )}
-            // contentClassName="min-w-40"
-            />
-          )}
+          {/* Department Dropdown — always rendered; options built from current server data */}
+          <SearchableSelect
+            multiple
+            value={departmentFilter}
+            onValueChange={setDepartmentFilter}
+            options={departmentOptions.map((d) => ({ id: d.id, label: d.name }))}
+            placeholder="Departments"
+            pluralLabel="Departments"
+            onSearch={setDepartmentSearch}
+            onClear={() => setDepartmentFilter([])}
+            clearLabel="Clear departments"
+            getTriggerLabel={(selected) =>
+              selected.length <= FILTER_DISPLAY_LIMIT
+                ? selected.map((s) => s.label).join(", ")
+                : `${selected.slice(0, FILTER_DISPLAY_LIMIT).map((s) => s.label).join(", ")} and ${selected.length - FILTER_DISPLAY_LIMIT} more`
+            }
+            triggerClassName={cn(
+              "h-10 w-[160px] border select-none bg-background hover:bg-muted/50 hover:text-foreground",
+              departmentFilter.length > 0
+                ? "border-primary/40 bg-primary/10 text-primary hover:bg-primary/10 hover:text-primary"
+                : "border-input text-muted-foreground"
+            )}
+          />
 
           {/* Date Range Picker */}
           <div className="flex items-center gap-1.5 px-3 h-[40px] w-fit rounded-xl border border-input text-sm bg-background hover:bg-muted/30 transition-colors">
