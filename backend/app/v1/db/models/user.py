@@ -53,6 +53,13 @@ class User(Base):
         nullable=False,
     )
 
+    auth_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        unique=True,
+        index=True,
+        nullable=True,
+    )
+
     password_hash: Mapped[str] = mapped_column(
         String(255),
         nullable=False,

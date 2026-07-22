@@ -23,6 +23,7 @@ from app.v1.core.resume_executor import (
 )
 from app.v1.db.session import init_db
 from app.v1.core.observability import setup_phoenix_tracing
+from app.v1.integrations.augustlab_auth import initialize_auth_package
 
 try:
     from github_code_evaluator.app.main import app as evaluator_app
@@ -46,6 +47,7 @@ async def lifespan(app: FastAPI):
         f"Starting {settings.PROJECT_NAME} in {settings.ENVIRONMENT} mode"
     )
     await init_db()
+    await initialize_auth_package()
     
     # Arize Phoenix — AI Observability
     setup_phoenix_tracing(project_name=settings.PHOENIX_PROJECT_NAME)

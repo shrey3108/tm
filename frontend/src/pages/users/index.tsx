@@ -257,14 +257,14 @@ export default function AdminUsers() {
     <AppPageShell width="wide">
       <PageHeader
         title="User Management"
-        breadcrumbActions={
-          <PermissionGuard permissions={PERMISSIONS.USERS_MANAGE} hideWhenDenied>
-            <Button onClick={handleCreateClick} size={"sm"} className="gap-2">
-              <Plus className="h-4 w-4" />
-              Create User
-            </Button>
-          </PermissionGuard>
-        }
+        // breadcrumbActions={
+        //   <PermissionGuard permissions={PERMISSIONS.USERS_MANAGE} hideWhenDenied>
+        //     <Button onClick={handleCreateClick} size={"sm"} className="gap-2">
+        //       <Plus className="h-4 w-4" />
+        //       Create User
+        //     </Button>
+        //   </PermissionGuard>
+        // }
       />
 
       {error && !users.length ? (

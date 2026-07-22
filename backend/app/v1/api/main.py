@@ -28,11 +28,13 @@ from app.v1.routes.associates import router as associates_router
 from app.v1.routes.designations import router as designations_router
 from app.v1.routes.associate_reviews import router as associate_reviews_router
 from app.v1.routes.guidelines import router as guidelines_router
+from app.v1.routes.zoho_auth import router as zoho_auth_router
 
 api_router = APIRouter()
 
 api_router.include_router(health_router)
 api_router.include_router(auth_router, prefix="/users", tags=["users"])
+api_router.include_router(zoho_auth_router, tags=["zoho-auth"])
 api_router.include_router(resume_upload_router, tags=["resume-upload"])
 api_router.include_router(jobs_router, prefix="/jobs", tags=["jobs"])
 api_router.include_router(skills_router, prefix="/skills", tags=["skills"])

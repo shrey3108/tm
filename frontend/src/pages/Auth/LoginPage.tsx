@@ -1,58 +1,27 @@
 /**
- * @module LoginPage
- * @component LoginPage
- *
- * Login page for user authentication.
- * Provides email/password form with validation and error handling.
+ * Login page for Zoho-only authentication.
  */
 
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Link } from "react-router-dom";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
-import {
-  Form,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormMessage,
-} from "@/components/ui/form";
-import { Logo } from "@/components/logo/index"
+import { Link, useSearchParams } from "react-router-dom";
+import { Loader2 } from "lucide-react";
+import { Logo } from "@/components/logo/index";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { loginSchema, type LoginFormValues } from "@/schemas/auth";
-import { extractErrorMessage } from "@/utils/error";
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { INFO } from "@/constants";
-import { InputGroup, InputGroupInput, InputGroupAddon, InputGroupButton } from "@/components/ui/input-group";
-import { useLoginMutation } from "@/hooks/mutations/auth/useAuthMutations";
 
 export default function LoginPage() {
-  const [showPassword, setShowPassword] = useState(false)
-  const loginMutation = useLoginMutation();
+  const [searchParams] = useSearchParams();
+  const error = searchParams.get("error");
+  const apiBaseUrl = import.meta.env.VITE_API_URL || "/api/v1";
 
-  const error = loginMutation.error
-    ? extractErrorMessage(loginMutation.error, "Failed to login. Please check your credentials.")
-    : null;
-
-  const form = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-    },
-  });
-
-  const onSubmit = (data: LoginFormValues) => {
-    loginMutation.mutate(data);
+  const handleZohoLogin = () => {
+    window.location.assign(`${apiBaseUrl}/oauth/zoho/login`);
   };
 
   return (
@@ -72,7 +41,7 @@ export default function LoginPage() {
                   Welcome Back
                 </CardTitle>
                 <CardDescription className="text-muted-foreground text-base">
-                  Sign in to manage your hiring
+                  Sign in with your Zoho account to manage your hiring
                 </CardDescription>
               </CardHeader>
               <CardContent className="px-8 pb-5">
@@ -84,90 +53,17 @@ export default function LoginPage() {
                     {error}
                   </div>
                 )}
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                    <div className="space-y-4">
-                      <FormField
-                        control={form.control}
-                        name="email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-sm font-semibold">Email Address</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="email"
-                                placeholder="name@example.com"
-                                autoComplete="email"
-                                className="h-11 rounded-xl"
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="password"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-sm font-semibold">Password</FormLabel>
-                            <InputGroup className="h-11 rounded-xl">
-                              <InputGroupInput
-                                type={showPassword ? "text" : "password"}
-                                placeholder="Enter your password"
-                                autoComplete="current-password"
-                                {...field}
-                                className="h-11 rounded-xl"
-                              />
-                              <InputGroupAddon align={"inline-end"}>
-                                <InputGroupButton
-                                  onClick={() => setShowPassword(!showPassword)}
-                                  size="icon-sm"
-                                  variant="ghost"
-                                >
-                                  {showPassword ? (
-                                    <EyeOff className="size-5 text-muted-foreground/70" />
-                                  ) : (
-                                    <Eye className="size-5 text-muted-foreground/70" />
-                                  )}
-                                </InputGroupButton>
-                              </InputGroupAddon>
-                            </InputGroup>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                <div className="space-y-4">
+                  <Button
+                    type="button"
+                    className="w-full h-12 text-base font-bold rounded-xl transition-all hover:scale-[1.01] active:scale-[0.99]"
+                    onClick={handleZohoLogin}
+                  >
+                    <div className="flex items-center justify-center gap-2">
+                      <Loader2 className="h-5 w-5 opacity-0" />
+                      <span>Login with Zoho</span>
                     </div>
-
-                    <Button
-                      type="submit"
-                      className="w-full h-12 text-base font-bold rounded-xl transition-all hover:scale-[1.01] active:scale-[0.99]"
-                      disabled={loginMutation.isPending}
-                    >
-                      {loginMutation.isPending ? (
-                        <div className="flex items-center justify-center gap-2">
-                          <Loader2 className="h-5 w-5 animate-spin" />
-                          <span>Signing In...</span>
-                        </div>
-                      ) : (
-                        "Sign In"
-                      )}
-                    </Button>
-                  </form>
-                </Form>
-
-                <div className="mt-4 text-center">
-                  <p className="text-sm text-muted-foreground">
-                    Don't have an account?{" "}
-                    <Link
-                      to="/register"
-                      className="text-primary font-bold hover:underline underline-offset-4"
-                    >
-                      Create one
-                    </Link>
-                  </p>
+                  </Button>
                 </div>
               </CardContent>
             </Card>

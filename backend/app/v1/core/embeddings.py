@@ -54,7 +54,7 @@ class EmbeddingService:
     def __init__(self) -> None:
         self.target_dim = settings.EMBEDDING_VECTOR_DIM
         self.use_instructions = settings.EMBEDDING_USE_INSTRUCTIONS
-        self.truncate_dim = settings.EMBEDDING_TRUNCATE_DIM
+        # self.truncate_dim = settings.EMBEDDING_TRUNCATE_DIM
 
     @property
     def model(self) -> SentenceTransformer | None:
@@ -113,7 +113,7 @@ class EmbeddingService:
         vector = self.model.encode(
             payload,
             normalize_embeddings=True,
-            truncate_dim=self.truncate_dim,
+            # truncate_dim=self.truncate_dim,
         )
         
         res_vector = self._fit_vector_dim(vector.tolist())
@@ -209,7 +209,7 @@ class EmbeddingService:
         vectors = self.model.encode(
             payloads,
             normalize_embeddings=True,
-            truncate_dim=self.truncate_dim,
+            # truncate_dim=self.truncate_dim,
         )
         return [self._fit_vector_dim(vector.tolist()) for vector in vectors]
 
