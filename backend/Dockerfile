@@ -13,6 +13,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Install uv package manager
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 
+# Disable bytecode compilation to prevent timeouts on large binary packages like PyMuPDF and Torch
+ENV UV_COMPILE_BYTECODE=0
+
 # Copy project files
 COPY pyproject.toml .
 COPY README.md .
@@ -20,8 +23,8 @@ COPY backend ./backend
 COPY augustlab_packages ./augustlab_packages
 COPY github-evaluation-package ./github-evaluation-package
 
-# Install dependencies
-RUN uv pip install --system -e ./augustlab_packages/auth -e ./github-evaluation-package -e ./backend
+# Install dependencies without bytecode compilation
+RUN uv pip install --no-compile-bytecode --system -e ./augustlab_packages/auth -e ./github-evaluation-package -e ./backend
 
 WORKDIR /app/backend
 
