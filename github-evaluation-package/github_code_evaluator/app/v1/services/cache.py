@@ -20,7 +20,7 @@ class RedisCacheService:
         """Retrieve or initialize the async Redis client."""
         if self.client is None:
             self.client = aioredis.from_url(
-                self.redis_url, encoding="utf-8", decode_responses=True
+                self.redis_url, encoding="utf-8", decode_responses=True, protocol=2
             )
         return self.client
 

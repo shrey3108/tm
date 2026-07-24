@@ -169,6 +169,14 @@ export default function CreateJob() {
     }
   };
 
+  const onInvalid = (errors: any) => {
+    console.error("Form Validation Errors:", errors);
+    const firstKey = Object.keys(errors)[0];
+    const firstError = errors[firstKey];
+    const msg = firstError?.message || (typeof firstError === "object" ? JSON.stringify(firstError) : `${firstKey} is invalid`);
+    toast.error(`Please check required fields: ${msg}`);
+  };
+
   return (
     <AppPageShell
       width="wide"
@@ -195,7 +203,7 @@ export default function CreateJob() {
           <JobFormSkeleton />
         ) : (
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
+            <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="space-y-3">
               <BasicJobDetails departments={departments} priorities={priorities} positions={positions} isEditMode={isEditMode} />
               <JobSettingsSection />
               <CustomFieldsSection />

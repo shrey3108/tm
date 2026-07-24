@@ -21,7 +21,7 @@ import { UserTableFilters } from "@/components/admin/UserTableFilters";
 import { useUserTableFilters } from "@/hooks/useUserTableFilters";
 
 import type { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown, Edit2, Trash2, Plus } from "lucide-react";
+import { ArrowUpDown, Edit2, Trash2 } from "lucide-react";
 
 import { useAuth } from "@/store/hooks";
 import { useAdminUsers } from "@/hooks/queries/admin/useAdminUsers";
@@ -101,9 +101,6 @@ export default function AdminUsers() {
     itemTitle: (user) => `user "${user.full_name || user.email}"`,
   });
 
-  const handleCreateClick = () => {
-    navigate("/dashboard/admin/users/new");
-  };
 
   const handleEditClick = (user: UserAdminRead) => {
     navigate(`/dashboard/admin/users/${slugify(user.full_name || user.email)}/edit`, { state: { user } });

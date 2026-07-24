@@ -5,7 +5,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 
 
 AUTH_PACKAGE_ROOT = Path(__file__).resolve().parents[4] / "augustlab_packages" / "auth"
@@ -38,6 +38,8 @@ async def initialize_auth_package() -> None:
     from v1.db.session import AsyncSessionLocal, engine as auth_engine
 
     async with auth_engine.begin() as conn:
+        schema_name = getattr(auth_settings, "DB_SCHEMA", "auth")
+        await conn.execute(text(f"CREATE SCHEMA IF NOT EXISTS {schema_name};"))
         await conn.run_sync(AuthBase.metadata.create_all)
 
     async with AsyncSessionLocal() as session:

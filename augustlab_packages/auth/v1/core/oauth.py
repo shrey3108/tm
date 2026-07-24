@@ -1,6 +1,7 @@
 """
 OAuth configuration for Google and Zoho providers (Global Credentials).
 """
+from pathlib import Path
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -12,9 +13,9 @@ class OAuthSettings(BaseSettings):
     These credentials are shared across all organizations.
     For per-organization credentials, see advanced implementation.
     """
-    AUTH_ENABLE_CUSTOM_LOGIN: bool 
-    AUTH_ENABLE_GOOGLE: bool 
-    AUTH_ENABLE_ZOHO: bool
+    AUTH_ENABLE_CUSTOM_LOGIN: bool = Field(default=True)
+    AUTH_ENABLE_GOOGLE: bool = Field(default=False)
+    AUTH_ENABLE_ZOHO: bool = Field(default=False)
     
     # Google OAuth
     GOOGLE_CLIENT_ID: str = Field(
@@ -49,7 +50,7 @@ class OAuthSettings(BaseSettings):
     )
     
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=str(Path(__file__).resolve().parents[4] / ".env"),
         env_file_encoding="utf-8",
         extra="ignore",
     )

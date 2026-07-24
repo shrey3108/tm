@@ -25,6 +25,13 @@ from app.v1.db.session import init_db
 from app.v1.core.observability import setup_phoenix_tracing
 from app.v1.integrations.augustlab_auth import initialize_auth_package
 
+import sys
+from pathlib import Path
+
+GITHUB_EVAL_PATH = str((Path(__file__).resolve().parents[2] / "github-evaluation-package").resolve())
+if GITHUB_EVAL_PATH not in sys.path:
+    sys.path.insert(0, GITHUB_EVAL_PATH)
+
 try:
     from github_code_evaluator.app.main import app as evaluator_app
 except ImportError:
@@ -49,6 +56,27 @@ async def lifespan(app: FastAPI):
     await init_db()
     await initialize_auth_package()
     
+    # Auto-run database seed scripts on startup so admin user, roles, and settings are created automatically
+    try:
+        from pathlib import Path
+        backend_dir = str(Path(__file__).resolve().parent.parent)
+        if backend_dir not in sys.path:
+            sys.path.insert(0, backend_dir)
+        from seed.main import main as run_all_seeds
+        await run_all_seeds()
+        logger.info("Database initial seeding completed successfully.")
+    except Exception as seed_err:
+        logger.warning(f"Database auto-seeding note: {seed_err}")
+    if evaluator_app:
+        try:
+            from github_code_evaluator.app.v1.db.session import init_db as init_evaluator_db
+            from github_code_evaluator.app.v1.core.security import generate_dev_keypair
+            await init_evaluator_db()
+            generate_dev_keypair()
+            logger.info("GitHub Evaluator database tables initialized successfully")
+        except Exception as e:
+            logger.error(f"Failed to initialize GitHub Evaluator database: {e}")
+
     # Arize Phoenix — AI Observability
     setup_phoenix_tracing(project_name=settings.PHOENIX_PROJECT_NAME)
     

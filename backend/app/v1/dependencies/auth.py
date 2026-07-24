@@ -19,7 +19,7 @@ from app.v1.schemas.user import UserRead
 from app.v1.services.user_service import user_service
 
 oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl="/api/v1/users/login/swagger",
+    tokenUrl="api/v1/users/login/swagger",
     auto_error=False,
     description="Use your email in the username field and your account password.",
 )

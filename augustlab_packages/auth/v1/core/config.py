@@ -7,6 +7,7 @@ Strict configuration:
 - Safe for production & packages
 """
 
+from pathlib import Path
 from uuid import UUID
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -27,22 +28,22 @@ class Settings(BaseSettings):
     # ------------------------------------------------------------------
     # Security
     # ------------------------------------------------------------------
-    SECRET_KEY: str
+    SECRET_KEY: str = Field(default="qFGvpqymuiJymAy1oZyZmDzKAEMXGMQ2wEwu5ocg7Wo=")
 
     # ------------------------------------------------------------------
     # Database
     # ------------------------------------------------------------------
-    DATABASE_URL: str  # for compatibility
-    DB_HOST: str
+    DATABASE_URL: str = Field(default="postgresql+asyncpg://postgres:root@localhost:5432/abl")
+    DB_HOST: str = Field(default="localhost")
     DB_PORT: int = Field(default=5432)
-    DB_USER: str
-    DB_PASSWORD: str
-    DB_NAME: str
+    DB_USER: str = Field(default="postgres")
+    DB_PASSWORD: str = Field(default="root")
+    DB_NAME: str = Field(default="abl")
     DB_SCHEMA: str = Field(default="auth")
 
 
-    FRONTEND_BASE_URL: str = Field(default="http://localhost:3001")
-    REDIS_URL: str
+    FRONTEND_BASE_URL: str = Field(default="http://localhost:3000")
+    REDIS_URL: str = Field(default="redis://localhost:6379/0")
     RATE_LIMIT_DEFAULT: str = Field(default="100/minute")
     RATE_LIMIT_LOGIN: str = Field(default="5/minute")
     RATE_LIMIT_REGISTER: str = Field(default="3/minute")
@@ -53,13 +54,15 @@ class Settings(BaseSettings):
     DB_MAX_OVERFLOW: int = Field(default=10)
     DB_ECHO: bool = Field(default=False)
 
-    DEFAULT_ORGANIZATION_ID: UUID
+    DEFAULT_ORGANIZATION_ID: UUID = Field(
+        default=UUID("00000000-0000-0000-0000-000000000001")
+    )
 
     # ------------------------------------------------------------------
     # JWT
     # ------------------------------------------------------------------
-    JWT_SECRET: str
-    JWT_EXPIRE_SECONDS: int 
+    JWT_SECRET: str = Field(default="qFGvpqymuiJymAy1oZyZmDzKAEMXGMQ2wEwu5ocg7Wo=")
+    JWT_EXPIRE_SECONDS: int = Field(default=86400)
     JWT_ALGORITHM: str = Field(default="HS256")
 
     ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=30)
@@ -69,9 +72,9 @@ class Settings(BaseSettings):
     # Pydantic settings config
     # ------------------------------------------------------------------
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=str(Path(__file__).resolve().parents[4] / ".env"),
         env_file_encoding="utf-8",
-        extra="allow",  # ⬅️ strict (keep this)
+        extra="allow",
     )
 
 

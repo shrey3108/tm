@@ -1,100 +1,91 @@
+version: "3.8"
+
 services:
-  db:
-    image: pgvector/pgvector:pg16
-    container_name: postgres-pgvector
+  postgres:
+    image: ankane/pgvector:v0.5.1
+    container_name: hr_postgres
     restart: always
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      POSTGRES_DB: ${POSTGRES_DB:-app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres123}
+      POSTGRES_DB: ${POSTGRES_DB:-hr_interview_db}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./backend/setup_extensions.sql:/docker-entrypoint-initdb.d/setup_extensions.sql
-
-  pgadmin:
-    image: dpage/pgadmin4
-    container_name: pgadmin
-    restart: always
-    environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@admin.com}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
-    ports:
-      - "5050:80"
-    depends_on:
-      - db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:7-alpine
-    container_name: redis
+    container_name: hr_redis
     restart: always
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
-  redisinsight:
-    image: redis/redisinsight:latest
-    container_name: redisinsight
-    restart: always
-    ports:
-      - "5540:5540"
-    depends_on:
-      - redis
-
-  api:
-    build: .
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
     container_name: hr_backend
     restart: always
     ports:
       - "8000:8000"
-    volumes:
-      - ./backend:/app/backend
-      - ./uploads:/app/uploads
-    env_file:
-      - .env
     environment:
-      POSTGRES_SERVER: db
-      REDIS_URL: redis://redis:6379/0
-      PHOENIX_COLLECTOR_ENDPOINT: http://phoenix:4317
+      - ENVIRONMENT=production
+      - POSTGRES_SERVER=postgres
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres123}
+      - POSTGRES_DB=${POSTGRES_DB:-hr_interview_db}
+      - REDIS_URL=redis://redis:6379/0
+      - GITHUB_EVALUATOR_URL=http://localhost:8000/evaluator
     depends_on:
-      - db
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
-  worker:
-    build: .
-    container_name: hr_worker
+  celery_worker:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: hr_celery_worker
     restart: always
-    volumes:
-      - ./backend:/app/backend
-      - ./uploads:/app/uploads
-    env_file:
-      - .env
+    command: python -m celery -A app.v1.core.celery_app worker --loglevel=info
     environment:
-      POSTGRES_SERVER: db
-      REDIS_URL: redis://redis:6379/0
-      PHOENIX_COLLECTOR_ENDPOINT: http://phoenix:4317
-    command: celery -A app.v1.core.celery_app worker --loglevel=info --pool=solo
+      - ENVIRONMENT=production
+      - POSTGRES_SERVER=postgres
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres123}
+      - POSTGRES_DB=${POSTGRES_DB:-hr_interview_db}
+      - REDIS_URL=redis://redis:6379/0
     depends_on:
-      - db
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
-  phoenix:
-    image: arizephoenix/phoenix:latest
-    container_name: phoenix_observability
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: hr_frontend
     restart: always
     ports:
-      - "6006:6006" # Dashboard UI
-      - "4317:4317" # OTLP gRPC collector
-      - "4318:4318" # OTLP HTTP collector
-    environment:
-      PHOENIX_COLLECTOR_ENDPOINT: http://localhost:4317
-
-    volumes:
-      - ./phoenix_data:/root/.phoenix
+      - "80:80"
+    depends_on:
+      - backend
 
 volumes:
   postgres_data:
   redis_data:
-  phoenix_data:

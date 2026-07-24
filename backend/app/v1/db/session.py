@@ -52,9 +52,10 @@ async def init_db():
     # is aware of all tables before create_all is called
     import app.v1.db  # noqa: F401
     import app.v1.db.base  # noqa: F401
-    # import packages.auth.v1.models  # noqa: F401
+    from sqlalchemy import text
 
     logger.info("Creating database tables...")
     async with engine.begin() as conn:
+        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector;"))
         await conn.run_sync(Base.metadata.create_all)
     logger.info("Database tables created successfully")
