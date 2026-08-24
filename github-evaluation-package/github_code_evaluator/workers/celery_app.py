@@ -1,3 +1,26 @@
+try:
+    import redis
+    from redis.exceptions import ResponseError
+
+    _orig_on_connect = redis.Connection.on_connect_check_health
+
+    def _patched_on_connect(self, check_health: bool = True):
+        try:
+            _orig_on_connect(self, check_health=check_health)
+        except ResponseError as err:
+            if "HELLO" in str(err) or "unknown command" in str(err):
+                self.protocol = 2
+                if hasattr(self, "maint_notifications_config") and self.maint_notifications_config:
+                    self.maint_notifications_config.enabled = False
+                self.set_parser(redis.connection._RESP2Parser)
+                _orig_on_connect(self, check_health=check_health)
+            else:
+                raise
+
+    redis.Connection.on_connect_check_health = _patched_on_connect
+except Exception:
+    pass
+
 import sys
 from celery import Celery
 from github_code_evaluator.app.v1.core.config import settings

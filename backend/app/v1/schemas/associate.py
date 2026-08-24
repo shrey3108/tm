@@ -5,6 +5,7 @@ Pydantic schemas for Associate-related data transfer.
 import uuid
 
 from pydantic import BaseModel, ConfigDict, EmailStr
+from app.v1.schemas.designation import DesignationRead
 
 
 class AssociateBase(BaseModel):
@@ -14,7 +15,8 @@ class AssociateBase(BaseModel):
 
     name: str
     email: EmailStr
-    designation: str | None = None
+    designation_id: uuid.UUID
+
 
 
 class AssociateCreate(AssociateBase):
@@ -32,7 +34,7 @@ class AssociateUpdate(BaseModel):
 
     name: str | None = None
     email: EmailStr | None = None
-    designation: str | None = None
+    designation_id: uuid.UUID | None = None
 
 
 class AssociateRead(AssociateBase):
@@ -41,5 +43,6 @@ class AssociateRead(AssociateBase):
     """
 
     id: uuid.UUID
+    designation: DesignationRead | None = None
 
     model_config = ConfigDict(from_attributes=True)

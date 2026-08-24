@@ -207,6 +207,10 @@ class Settings(BaseSettings):
     ADMIN_ROLE_NAME: str = Field(
         default="admin", description="Role name for the admin user"
     )
+    PENDING_ROLE_NAME: str = Field(
+        default="hr user",
+        description="Default role assigned to auto-provisioned Zoho users",
+    )
     ADMIN_EMAIL: str = Field(
         default="admin@example.com",
         description="Email address for the default admin user",

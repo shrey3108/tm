@@ -23,11 +23,11 @@ class AssociateService:
     """
 
     async def get_all_associates(
-        self, db: AsyncSession, skip: int = 0, limit: int = 100, q: str | None = None
+        self, db: AsyncSession, skip: int = 0, limit: int = 100, q: str | None = None, designation_id: uuid.UUID | None = None
     ) -> PaginatedData[AssociateRead]:
         """Get all associates with pagination."""
         # 0. Cache lookup
-        cache_key = f"associates:list:{skip}:{limit}:{q or 'none'}"
+        cache_key = f"associates:list:{skip}:{limit}:{q or 'none'}:{designation_id or 'none'}"
         cached = await cache.get(cache_key)
         if cached:
             try:
@@ -48,6 +48,10 @@ class AssociateService:
             )
             stmt = stmt.where(search_filter)
             count_stmt = count_stmt.where(search_filter)
+
+        if designation_id:
+            stmt = stmt.where(Associate.designation_id == designation_id)
+            count_stmt = count_stmt.where(Associate.designation_id == designation_id)
 
         stmt = stmt.order_by(Associate.id.desc()).offset(skip).limit(limit)
 
@@ -110,6 +114,7 @@ class AssociateService:
         associate = Associate(
             name=associate_in.name,
             email=associate_in.email,
+            designation_id=associate_in.designation_id,
         )
         db.add(associate)
         await db.commit()

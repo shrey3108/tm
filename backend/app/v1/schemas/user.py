@@ -20,6 +20,7 @@ class UserModel(BaseModel):
     id: uuid.UUID
     full_name: str | None = None
     email: EmailStr
+    auth_user_id: uuid.UUID | None = None
     password_hash: str
     refresh_token: str | None = None
     refresh_token_expires_at: datetime | None = None
@@ -72,6 +73,7 @@ class UserCreateInternal(BaseModel):
     email: EmailStr
     password_hash: str
     full_name: str | None = None
+    auth_user_id: uuid.UUID | None = None
     is_active: bool = True
     role_id: uuid.UUID
 
@@ -109,6 +111,14 @@ class LoginResponse(BaseModel):
     refresh_token_expires_at: datetime
     user: UserRead
 
+
+class PublicLoginResponse(BaseModel):
+    """Schema for the public login response sent to clients.
+    
+    Omits access and refresh tokens from the JSON body (these are sent via cookies).
+    """
+    token_type: str = "bearer"
+    user: UserRead
 
 class RefreshTokenRequest(BaseModel):
     """Schema for refreshing an access token."""

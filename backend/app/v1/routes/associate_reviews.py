@@ -277,7 +277,7 @@ async def serve_review_form(token: uuid.UUID, db: AsyncSession = Depends(get_db)
             return HTMLResponse(content=_render_dbd_form_html(
                 stage_name=stage_name,
                 associate_name=evaluation.associate.name if evaluation.associate else "Reviewer",
-                associate_designation=evaluation.associate.designation if evaluation.associate and evaluation.associate.designation else "N/A",
+                associate_designation=evaluation.associate.designation.name if evaluation.associate and evaluation.associate.designation else "N/A",
                 candidate_full_name=candidate_full_name,
                 job_title=job_title,
                 department_name=department_name,
@@ -322,7 +322,7 @@ async def serve_review_form(token: uuid.UUID, db: AsyncSession = Depends(get_db)
 
     return HTMLResponse(content=_render_form_html(
         associate_name=evaluation.associate.name if evaluation.associate else "Reviewer",
-        associate_designation=evaluation.associate.designation if evaluation.associate and evaluation.associate.designation else "N/A",
+        associate_designation=evaluation.associate.designation.name if evaluation.associate and evaluation.associate.designation else "N/A",
         candidate_full_name=candidate_full_name,
         job_title=job_title,
         department_name=department_name,
@@ -822,7 +822,7 @@ def _render_dbd_form_html(
         <div class="question-row">
           <div class="question-text">{html.escape(crit)} <span style="color:red;">*</span></div>
           <div class="mark-input">
-            <select name="dbd_score_{i}" class="dbd-score-select" style="padding: 6px; border-radius: 4px; border: 1px solid #d1d5db;width: 100px;" {disabled_attr} required>
+            <select name="dbd_score_{i}" class="dbd-score-select" style="padding: 6px; border-radius: 4px; border: 1px solid #d1d5db; width: 100px; background-color: #f3f4f6;" {disabled_attr} required>
                 {options_html}
             </select>
           </div>
@@ -841,7 +841,7 @@ def _render_dbd_form_html(
     <div class="question-row">
       <div class="question-text">Hiring Decision <span style="color:red;">*</span></div>
       <div class="mark-input">
-        <select name="dbd_hiring_decision" style="padding: 6px; border-radius: 4px; border: 1px solid #d1d5db;width: 100px;" {'disabled' if is_submitted else ''} required>
+        <select name="dbd_hiring_decision" style="padding: 6px; border-radius: 4px; border: 1px solid #d1d5db; width: 100px; background-color: #f3f4f6;" {'disabled' if is_submitted else ''} required>
             {decision_options}
         </select>
       </div>

@@ -13,13 +13,15 @@ export const adminAssociateService = {
     skip = 0,
     limit = 100,
     q,
+    designation_id,
   }: {
     skip?: number;
     limit?: number;
     q?: string;
+    designation_id?: string;
   } = {}): Promise<{ data: AssociateRead[]; total: number }> => {
     const response = await apiClient.get<{ data: AssociateRead[]; total: number }>("/associates", {
-      params: { skip, limit, q: q ? q : undefined },
+      params: { skip, limit, q: q ? q : undefined, designation_id: designation_id ? designation_id : undefined },
     });
     return response.data;
   },

@@ -14,11 +14,14 @@ interface UserTableFiltersProps {
   setSearchFilter: (value: string) => void;
   statusFilter: string[];
   setStatusFilter: (value: string[]) => void;
+  /** Status options derived from the current server data — what we have = what we show. */
+  statusOptions: string[];
   roleFilter: string[];
   setRoleFilter: (value: string[]) => void;
+  /** Role options derived from the current server data — what we have = what we show. */
+  roleOptions: string[];
   dateRange: DateRange | undefined;
   setDateRange: (range: DateRange | undefined) => void;
-  roleOptions: string[];
   hasActiveFilters: boolean;
   clearFilters: () => void;
   resultCount: number;
@@ -31,24 +34,22 @@ export const UserTableFilters = ({
   setSearchFilter,
   statusFilter,
   setStatusFilter,
+  statusOptions,
   roleFilter,
   setRoleFilter,
+  roleOptions,
   dateRange,
   setDateRange,
-  roleOptions,
   hasActiveFilters,
   clearFilters,
   resultCount,
   totalCount,
   minDate,
 }: UserTableFiltersProps) => {
-  const statusOptions = ["active", "inactive"];
-
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[auto_1fr_auto] items-center gap-2 p-2 bg-muted/20 rounded-2xl border border-muted-foreground/10 text-center">
       {/* User Search */}
       <div className="flex flex-1 grow items-center max-w-full gap-3">
-
 
         <div className="relative flex-1 sm:max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" />
@@ -62,8 +63,7 @@ export const UserTableFilters = ({
 
         <div className="grid grid-cols-3 lg:flex lg:flex-wrap lg:items-center gap-1 min-w-0">
 
-
-          {/* Status Dropdown */}
+          {/* Status Dropdown — options = unique statuses in current server data */}
           <SearchableSelect
             multiple
             value={statusFilter}
@@ -82,31 +82,29 @@ export const UserTableFilters = ({
             contentClassName="min-w-[150px]"
           />
 
-          {/* Role Dropdown */}
-          {roleOptions.length > 0 && (
-            <SearchableSelect
-              multiple
-              value={roleFilter}
-              onValueChange={setRoleFilter}
-              options={roleOptions.map((r) => ({ id: r, label: r }))}
-              placeholder="Roles"
-              pluralLabel="roles"
-              onClear={() => setRoleFilter([])}
-              clearLabel="Clear roles"
-              icon={<UserCheck className="h-3.5 w-3.5 opacity-60" />}
-              triggerClassName={cn(
-                "w-full sm:w-fit inline-flex items-center gap-2 h-9 px-2 rounded-xl border text-sm cursor-pointer select-none transition-colors font-normal",
-                roleFilter.length > 0
-                  ? "border-primary/40 bg-primary/5 text-foreground hover:bg-primary/5 hover:text-foreground"
-                  : "border-input bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-              )}
-              contentClassName="min-w-[150px]"
-            />
-          )}
+          {/* Role Dropdown — options = unique roles in current server data */}
+          <SearchableSelect
+            multiple
+            value={roleFilter}
+            onValueChange={setRoleFilter}
+            options={roleOptions.map((r) => ({ id: r, label: r }))}
+            placeholder="Roles"
+            pluralLabel="roles"
+            onClear={() => setRoleFilter([])}
+            clearLabel="Clear roles"
+            icon={<UserCheck className="h-3.5 w-3.5 opacity-60" />}
+            triggerClassName={cn(
+              "w-full sm:w-fit inline-flex items-center gap-2 h-9 px-2 rounded-xl border text-sm cursor-pointer select-none transition-colors font-normal",
+              roleFilter.length > 0
+                ? "border-primary/40 bg-primary/5 text-foreground hover:bg-primary/5 hover:text-foreground"
+                : "border-input bg-background text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+            )}
+            contentClassName="min-w-[150px]"
+          />
 
           {/* Date Range Picker */}
           <div className={cn(
-            "flex items-center gap-1.5 px-1.5 h-9 rounded-xl border text-sm transition-colors w-fit",
+            "flex items-center gap-1.5 px-3 h-9 rounded-xl border text-sm transition-colors w-fit",
             dateRange?.from
               ? "border-primary/40 bg-primary/5 text-foreground"
               : "border-input bg-background/50 text-muted-foreground"
@@ -148,19 +146,20 @@ export const UserTableFilters = ({
             </Popover>
           </div>
         </div>
+
         {/* Clear Button */}
         {hasActiveFilters && (
           <Button
             variant="ghost"
             size="sm"
-            className="h-9 px-3 rounded-xl text-muted-foreground hover:text-foreground hover:bg-destructive/5 transition-all"
+            className="h-10 px-3 rounded-xl text-xs font-semibold text-muted-foreground hover:bg-gray-200/60"
             onClick={clearFilters}
           >
-            <X className="h-3.5 w-3.5 mr-1.5" />
-            Clear
+            <X className="h-4 w-4" />
           </Button>
         )}
       </div>
+
       {/* Result Count */}
       <div className="shrink-0 lg:ml-auto text-xs font-medium flex items-center gap-2 border rounded-xl bg-background/50 h-10 self-start">
         <div className="text-xs font-medium flex items-center gap-2 justify-self-center px-2">

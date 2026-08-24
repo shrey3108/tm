@@ -106,7 +106,7 @@ export const taskService = {
       responseType: "blob",
       headers: { "Content-Type": undefined },
     });
-    const contentType = response.headers["content-type"] || "application/octet-stream"; // content type from response headers other wise octet-stream handle all binary type files.
+    const contentType = String(response.headers["content-type"] || "application/octet-stream"); // content type from response headers other wise octet-stream handle all binary type files.
     return new Blob([response.data], { type: contentType });
   },
   /**
@@ -119,7 +119,7 @@ export const taskService = {
       responseType: "blob",
       headers: { "Content-Type": undefined },
     });
-    const contentType = response.headers["content-type"] || "application/octet-stream";
+    const contentType = String(response.headers["content-type"] || "application/octet-stream");
     return new Blob([response.data], { type: contentType });
   },
 
@@ -209,7 +209,7 @@ export const taskService = {
       responseType: "blob",
       headers: { "Content-Type": undefined },
     });
-    const contentType = response.headers["content-type"] || "application/octet-stream";
+    const contentType = String(response.headers["content-type"] || "application/octet-stream");
     return new Blob([response.data], { type: contentType });
   },
 
@@ -312,7 +312,7 @@ export const taskService = {
         headers: { "Content-Type": undefined },
       }
     );
-    const contentType = response.headers["content-type"] || "application/octet-stream";
+    const contentType = String(response.headers["content-type"] || "application/octet-stream");
     return new Blob([response.data], { type: contentType });
   },
 

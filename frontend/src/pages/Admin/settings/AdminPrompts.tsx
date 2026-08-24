@@ -5,7 +5,7 @@
  * Admin page for viewing AI prompts.
  * Displays all prompts used by the system with ability to view their content.
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import type { PromptRead } from "@/types/admin";
 import AppPageShell from "@/components/shared/AppPageShell";
 import PageHeader from "@/components/shared/PageHeader";
@@ -53,7 +53,6 @@ export default function AdminPrompts() {
 
     const [selectedPrompt, setSelectedPrompt] = useState<PromptRead | null>(null);
     const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-    const [allStages, setAllStages] = useState<string[]>([]);
     const [isCopied, setIsCopied] = useState(false);
     const [overallTotal, setOverallTotal] = useState(0);
 
@@ -69,21 +68,19 @@ export default function AdminPrompts() {
 
 
 
-    // Collect all unique stages from the response data over time
-    useEffect(() => {
-        if (prompts.length > 0) {
-            const currentStages = prompts.flatMap(p => p.stage ? [p.stage] : []);
-            const hasNewStages = currentStages.some(s => !allStages.includes(s));
-            if (hasNewStages) {
-                queueMicrotask(() => {
-                    setAllStages(prev => {
-                        const combined = Array.from(new Set([...prev, ...currentStages]));
-                        return combined.sort();
-                    });
-                });
-            }
-        }
-    }, [prompts, allStages]);
+    const filteredPrompts = useMemo(() => {
+        return prompts.filter(
+            (p) => selectedStages.length === 0 || selectedStages.includes(p.stage)
+        );
+    }, [prompts, selectedStages]);
+
+    const stageOptions = useMemo(() => {
+        const set = new Set<string>(selectedStages);
+        filteredPrompts.forEach((p) => {
+            if (p.stage) set.add(p.stage);
+        });
+        return Array.from(set).sort();
+    }, [filteredPrompts, selectedStages]);
 
 
     useEffect(() => {
@@ -204,9 +201,7 @@ export default function AdminPrompts() {
         }, 2000);
     };
 
-    const filteredPrompts = prompts.filter(
-        (p) => selectedStages.length === 0 || selectedStages.includes(p.stage)
-    );
+
 
     return (
         <AppPageShell width="wide">
@@ -241,7 +236,7 @@ export default function AdminPrompts() {
                                 multiple
                                 value={selectedStages}
                                 onValueChange={handleStageChange}
-                                options={allStages.map((s) => ({ id: s, label: s }))}
+                                options={stageOptions.map((s) => ({ id: s, label: s }))}
                                 placeholder="Stages"
                                 pluralLabel="Stages"
                                 onClear={() => handleStageChange([])}

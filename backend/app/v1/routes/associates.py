@@ -29,10 +29,11 @@ async def get_all_associates(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     q: str | None = Query(None),
+    designation_id: uuid.UUID | None = Query(None),
 ) -> Any:
     """Get all associates with pagination."""
     return await associate_service.get_all_associates(
-        db=db, skip=skip, limit=limit, q=q
+        db=db, skip=skip, limit=limit, q=q, designation_id=designation_id
     )
 
 

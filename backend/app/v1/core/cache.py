@@ -33,6 +33,7 @@ class RedisCache:
                 encoding="utf-8",
                 decode_responses=True,
                 socket_connect_timeout=1,
+                protocol=2,
             )
         except Exception as exc:  # noqa: BLE001
             _log.warning("Redis unavailable, caching disabled: %s", exc)

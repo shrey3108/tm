@@ -5,6 +5,30 @@ This module initializes the Celery application and configures it to use
 Redis as the message broker.
 """
 
+# Fallback redis-py connection to RESP2 protocol if HELLO command fails on older Redis servers
+try:
+    import redis
+    from redis.exceptions import ResponseError
+
+    _orig_on_connect = redis.Connection.on_connect_check_health
+
+    def _patched_on_connect(self, check_health: bool = True):
+        try:
+            _orig_on_connect(self, check_health=check_health)
+        except ResponseError as err:
+            if "HELLO" in str(err) or "unknown command" in str(err):
+                self.protocol = 2
+                if hasattr(self, "maint_notifications_config") and self.maint_notifications_config:
+                    self.maint_notifications_config.enabled = False
+                self.set_parser(redis.connection._RESP2Parser)
+                _orig_on_connect(self, check_health=check_health)
+            else:
+                raise
+
+    redis.Connection.on_connect_check_health = _patched_on_connect
+except Exception:
+    pass
+
 from celery import Celery
 from celery.signals import worker_process_init
 
@@ -51,6 +75,8 @@ celery_app.conf.update(
     enable_utc=True,
     task_acks_late=True,
     worker_prefetch_multiplier=1,
+    broker_transport_options={"protocol": 2},
+    result_backend_transport_options={"protocol": 2},
 )
 
 # Configure Celery Beat for periodic tasks

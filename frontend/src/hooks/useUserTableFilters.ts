@@ -49,37 +49,39 @@ export const useUserTableFilters = (users: UserAdminRead[], pageKey: string = "a
     return new Date(Math.min(...dates));
   }, [users]);
 
-  const roleOptions = useMemo(() => {
-    const set = new Set<string>();
-    users.forEach((u) => {
-      if (u.role_name) set.add(u.role_name);
-    });
-    return Array.from(set).sort();
-  }, [users]);
-
+  // Client-side filtering applied on top of the server-returned page
   const filteredUsers = useMemo(() => {
     return users.filter((u) => {
-      // Status filter
       if (statusFilter.length > 0) {
         const userStatus = u.is_active ? "active" : "inactive";
         if (!statusFilter.includes(userStatus)) return false;
       }
-
-      // Role filter
       if (roleFilter.length > 0) {
         if (!roleFilter.includes(u.role_name)) return false;
       }
-
-      // Date range filter (created_at)
       if (u.created_at && (dateRange?.from || dateRange?.to)) {
         const d = new Date(u.created_at);
         if (dateRange.from && d < startOfDay(dateRange.from)) return false;
         if (dateRange.to && d > endOfDay(dateRange.to)) return false;
       }
-
       return true;
     });
   }, [users, searchFilter, statusFilter, roleFilter, dateRange]);
+
+  // Options are dynamically derived from filteredUsers + currently selected filters
+  const statusOptions = useMemo(() => {
+    const set = new Set<string>(statusFilter);
+    filteredUsers.forEach((u) => set.add(u.is_active ? "active" : "inactive"));
+    return Array.from(set).sort();
+  }, [filteredUsers, statusFilter]);
+
+  const roleOptions = useMemo(() => {
+    const set = new Set<string>(roleFilter);
+    filteredUsers.forEach((u) => {
+      if (u.role_name) set.add(u.role_name);
+    });
+    return Array.from(set).sort();
+  }, [filteredUsers, roleFilter]);
 
   const hasActiveFilters =
     !!searchFilter ||
@@ -101,6 +103,7 @@ export const useUserTableFilters = (users: UserAdminRead[], pageKey: string = "a
     setRoleFilter,
     dateRange,
     setDateRange,
+    statusOptions,
     roleOptions,
     filteredUsers,
     hasActiveFilters,

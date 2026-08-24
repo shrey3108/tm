@@ -6,6 +6,7 @@
 import { useCallback } from "react";
 import type { AssociateRead, AssociateCreate, AssociateUpdate } from "@/types/associate";
 import { useCreateAssociateMutation, useUpdateAssociateMutation } from "@/hooks/mutations/admin/useAssociate";
+import { useDesignations } from "@/hooks/queries/admin/useDesignation";
 import {
   Form,
   FormField,
@@ -16,6 +17,7 @@ import {
 } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { SearchableSelect } from "@/components/shared/SearchableSelect";
 import {
   Dialog,
   DialogContent,
@@ -24,7 +26,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useFormModal } from "@/hooks/useFormModal";
-import { associateCreateSchema, } from "@/schemas/associate";
+import { associateCreateSchema } from "@/schemas/associate";
 import ErrorDisplay from "@/components/shared/ErrorDisplay";
 
 interface CreateAssociateModalProps {
@@ -37,17 +39,20 @@ interface CreateAssociateModalProps {
 const DEFAULT_ASSOCIATE_VALUES: AssociateCreate = {
   name: "",
   email: "",
+  designation_id: "",
 };
 
 const CreateAssociateModal = ({ show, handleClose, onAssociateSaved, associate }: CreateAssociateModalProps) => {
   const isEditMode = !!associate;
   const createAssociateMutation = useCreateAssociateMutation();
   const updateAssociateMutation = useUpdateAssociateMutation();
+  const { data: designations, loading: isLoadingDesignations } = useDesignations();
 
   const mapItemToValues = useCallback(
     (a: AssociateRead): AssociateCreate => ({
       name: a.name,
       email: a.email,
+      designation_id: a.designation_id || a.designation?.id || "",
     }),
     [],
   );
@@ -72,6 +77,11 @@ const CreateAssociateModal = ({ show, handleClose, onAssociateSaved, associate }
   });
 
   const { handleFormSubmit, isSubmitting, submitError, control } = formModal;
+
+  const designationOptions = designations.map((d) => ({
+    id: d.id,
+    label: d.name,
+  }));
 
   return (
     <Dialog open={show} onOpenChange={(open) => !open && handleClose()}>
@@ -107,6 +117,25 @@ const CreateAssociateModal = ({ show, handleClose, onAssociateSaved, associate }
                   <FormControl>
                     <Input type="email" placeholder="e.g. john.doe@example.com" {...field} />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={control}
+              name="designation_id"
+              render={({ field }) => (
+                <FormItem className="space-y-1">
+                  <FormLabel>Designation</FormLabel>
+                  <SearchableSelect
+                    value={field.value || ""}
+                    onValueChange={field.onChange}
+                    options={designationOptions}
+                    placeholder="Select designation..."
+                    searchPlaceholder="Search designation..."
+                    disabled={isLoadingDesignations}
+                  />
                   <FormMessage />
                 </FormItem>
               )}

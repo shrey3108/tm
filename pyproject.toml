@@ -18,7 +18,7 @@ dependencies = [
     "pydantic>=2.12.5",
     "pgvector>=0.3.0",
     "pydantic-settings>=2.11.0",
-    "sentence-transformers>=5.3.0",
+    "sentence-transformers==2.7.0",
     "pymupdf>=1.27.2",
     "pytest>=9.0.2",
     "pytest-asyncio>=0.24.0",
@@ -52,9 +52,13 @@ explicit = true
 [tool.uv]
 package = false
 
+[tool.uv.workspace]
+members = ["augustlab_packages/auth"]
+
 [tool.uv.sources]
 torch = { index = "pytorch-cpu" }
 github-code-evaluator = { path = "./github-evaluation-package", editable = true }
+augustlab-packages = { workspace = true, editable = true }
 
 # temp solution for modules not found
 [project.scripts]

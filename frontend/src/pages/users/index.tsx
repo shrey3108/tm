@@ -21,7 +21,7 @@ import { UserTableFilters } from "@/components/admin/UserTableFilters";
 import { useUserTableFilters } from "@/hooks/useUserTableFilters";
 
 import type { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown, Edit2, Trash2, Plus } from "lucide-react";
+import { ArrowUpDown, Edit2, Trash2 } from "lucide-react";
 
 import { useAuth } from "@/store/hooks";
 import { useAdminUsers } from "@/hooks/queries/admin/useAdminUsers";
@@ -54,6 +54,7 @@ export default function AdminUsers() {
     setRoleFilter,
     dateRange,
     setDateRange,
+    statusOptions,
     roleOptions,
     filteredUsers,
     hasActiveFilters,
@@ -100,9 +101,6 @@ export default function AdminUsers() {
     itemTitle: (user) => `user "${user.full_name || user.email}"`,
   });
 
-  const handleCreateClick = () => {
-    navigate("/dashboard/admin/users/new");
-  };
 
   const handleEditClick = (user: UserAdminRead) => {
     navigate(`/dashboard/admin/users/${slugify(user.full_name || user.email)}/edit`, { state: { user } });
@@ -256,14 +254,14 @@ export default function AdminUsers() {
     <AppPageShell width="wide">
       <PageHeader
         title="User Management"
-        breadcrumbActions={
-          <PermissionGuard permissions={PERMISSIONS.USERS_MANAGE} hideWhenDenied>
-            <Button onClick={handleCreateClick} size={"sm"} className="gap-2">
-              <Plus className="h-4 w-4" />
-              Create User
-            </Button>
-          </PermissionGuard>
-        }
+        // breadcrumbActions={
+        //   <PermissionGuard permissions={PERMISSIONS.USERS_MANAGE} hideWhenDenied>
+        //     <Button onClick={handleCreateClick} size={"sm"} className="gap-2">
+        //       <Plus className="h-4 w-4" />
+        //       Create User
+        //     </Button>
+        //   </PermissionGuard>
+        // }
       />
 
       {error && !users.length ? (
@@ -275,11 +273,12 @@ export default function AdminUsers() {
             setSearchFilter={handleSearchChange}
             statusFilter={statusFilter}
             setStatusFilter={setStatusFilter}
+            statusOptions={statusOptions}
             roleFilter={roleFilter}
             setRoleFilter={setRoleFilter}
+            roleOptions={roleOptions}
             dateRange={dateRange}
             setDateRange={setDateRange}
-            roleOptions={roleOptions}
             hasActiveFilters={hasActiveFilters}
             clearFilters={clearFilters}
             resultCount={filteredUsers.length}

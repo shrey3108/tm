@@ -51,6 +51,22 @@ class UserRepository:
             return user_data
         return None
 
+    async def get_by_auth_user_id(self, db: AsyncSession, auth_user_id):
+        """Get a user by linked auth package user ID."""
+        stmt = (
+            select(User)
+            .where(User.auth_user_id == auth_user_id)
+            .options(selectinload(User.role))
+        )
+        result = await db.execute(stmt)
+        user = result.scalar_one_or_none()
+        if user:
+            user_data = UserModel.model_validate(user)
+            if user.role:
+                user_data.role_name = user.role.name
+            return user_data
+        return None
+
     async def get_by_id(self, db: AsyncSession, user_id):
         """Get a user by their unique ID.
 
@@ -100,6 +116,26 @@ class UserRepository:
             user_id = created_user["id"]
         # Fetch again with role info
         return await self.get_by_id(db=db, user_id=user_id)
+
+    async def update_auth_user_link(
+        self,
+        db: AsyncSession,
+        *,
+        user_id,
+        auth_user_id,
+        full_name: str | None = None,
+    ) -> None:
+        """Link an application user to an auth package user ID."""
+        values: dict[str, object] = {"auth_user_id": auth_user_id}
+        if full_name:
+            values["full_name"] = full_name
+
+        await db.execute(
+            update(User)
+            .where(User.id == user_id)
+            .values(**values)
+        )
+        await db.commit()
 
     async def update_refresh_token(
         self,

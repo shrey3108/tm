@@ -7,13 +7,14 @@ including user creation, retrieval, and listing.
 
 import uuid
 import json
+import secrets
 
 import jwt
 from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.v1.core import settings
+from app.v1.core.config import settings
 from app.v1.core.security import get_fernet_cipher
 from app.v1.core.logging import get_logger
 from app.v1.core.security import (
@@ -53,6 +54,14 @@ class UserService:
             The user object if found, None otherwise.
         """
         return await user_repository.get_by_email(db=db, email=email)
+
+    async def get_user_by_auth_user_id(
+        self, db: AsyncSession, auth_user_id: uuid.UUID
+    ):
+        """Get a user by linked auth package user ID."""
+        return await user_repository.get_by_auth_user_id(
+            db=db, auth_user_id=auth_user_id
+        )
 
     async def get_user_by_id(self, db: AsyncSession, user_id: uuid.UUID):
         """Get a user by their unique ID.
@@ -157,6 +166,108 @@ class UserService:
         logger.info(f"Created new user with email: {user_in.email}")
         return created_user
 
+    async def ensure_pending_role(self, db: AsyncSession) -> Role:
+        """Get or create the restricted pending role for new Zoho users."""
+        stmt = select(Role).where(Role.name == settings.PENDING_ROLE_NAME)
+        result = await db.execute(stmt)
+        role = result.scalar_one_or_none()
+
+        if role:
+            return role
+
+        role = Role(name=settings.PENDING_ROLE_NAME)
+        db.add(role)
+        await db.commit()
+        await db.refresh(role)
+        return role
+
+    async def resolve_user_for_oauth(
+        self,
+        db: AsyncSession,
+        *,
+        auth_user_id: uuid.UUID,
+        email: str,
+        full_name: str,
+    ):
+        """Resolve or auto-provision an application user for a Zoho-authenticated identity."""
+        linked_user = await self.get_user_by_auth_user_id(
+            db=db, auth_user_id=auth_user_id
+        )
+        if linked_user:
+            return await self.get_user_by_id(db=db, user_id=linked_user.id)
+
+        existing_user = await self.get_user_by_email(db=db, email=email)
+        if existing_user:
+            if (
+                existing_user.auth_user_id is not None
+                and existing_user.auth_user_id != auth_user_id
+            ):
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="This email is already linked to another auth account.",
+                )
+
+            await user_repository.update_auth_user_link(
+                db=db,
+                user_id=existing_user.id,
+                auth_user_id=auth_user_id,
+                full_name=existing_user.full_name or full_name,
+            )
+            return await self.get_user_by_id(db=db, user_id=existing_user.id)
+
+        pending_role = await self.ensure_pending_role(db=db)
+        created_user = await user_repository.create(
+            db=db,
+            user=UserCreateInternal(
+                email=email,
+                password_hash=hash_password(secrets.token_urlsafe(32)),
+                full_name=full_name,
+                auth_user_id=auth_user_id,
+                is_active=True,
+                role_id=pending_role.id,
+            ),
+        )
+        logger.info(f"Auto-provisioned Zoho user with email: {email}")
+        return created_user
+
+    async def issue_login_response_for_user(
+        self,
+        db: AsyncSession,
+        *,
+        user_id: uuid.UUID,
+    ) -> LoginResponse:
+        """Issue app access and refresh tokens for an already resolved user."""
+        user = await self.get_user_by_id(db=db, user_id=user_id)
+
+        if not user.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Inactive user.",
+            )
+
+        access_token, expires_at = create_access_token(
+            subject=str(user.id),
+            email=user.email,
+        )
+        refresh_token, refresh_token_expires_at = create_refresh_token(
+            subject=str(user.id),
+            email=user.email,
+        )
+        await user_repository.update_refresh_token(
+            db=db,
+            user_id=user.id,
+            refresh_token=refresh_token,
+            refresh_token_expires_at=refresh_token_expires_at,
+        )
+
+        return LoginResponse(
+            access_token=access_token,
+            refresh_token=refresh_token,
+            expires_at=expires_at,
+            refresh_token_expires_at=refresh_token_expires_at,
+            user=user,
+        )
+
     async def login_user(
         self, db: AsyncSession, credentials: UserLogin
     ) -> LoginResponse:
@@ -187,27 +298,9 @@ class UserService:
                 detail="Inactive user.",
             )
 
-        access_token, expires_at = create_access_token(
-            subject=str(user.id),
-            email=user.email,
-        )
-        refresh_token, refresh_token_expires_at = create_refresh_token(
-            subject=str(user.id),
-            email=user.email,
-        )
-        await user_repository.update_refresh_token(
+        return await self.issue_login_response_for_user(
             db=db,
             user_id=user.id,
-            refresh_token=refresh_token,
-            refresh_token_expires_at=refresh_token_expires_at,
-        )
-        user_read = await self.get_user_by_id(db=db, user_id=user.id)
-        return LoginResponse(
-            access_token=access_token,
-            refresh_token=refresh_token,
-            expires_at=expires_at,
-            refresh_token_expires_at=refresh_token_expires_at,
-            user=user_read,
         )
 
     async def logout_user(self, db: AsyncSession, user_id: uuid.UUID) -> None:
@@ -300,29 +393,9 @@ class UserService:
                 detail="Invalid or revoked refresh token.",
             )
 
-        access_token, expires_at = create_access_token(
-            subject=str(user.id),
-            email=user.email,
-        )
-        new_refresh_token, refresh_token_expires_at = create_refresh_token(
-            subject=str(user.id),
-            email=user.email,
-        )
-
-        await user_repository.update_refresh_token(
+        return await self.issue_login_response_for_user(
             db=db,
             user_id=user.id,
-            refresh_token=new_refresh_token,
-            refresh_token_expires_at=refresh_token_expires_at,
-        )
-
-        user_read = await self.get_user_by_id(db=db, user_id=user.id)
-        return LoginResponse(
-            access_token=access_token,
-            refresh_token=new_refresh_token,
-            expires_at=expires_at,
-            refresh_token_expires_at=refresh_token_expires_at,
-            user=user_read,
         )
 
 

@@ -170,6 +170,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           url: "/dashboard/admin/associates",
           permission: PERMISSIONS.ASSOCIATES_ACCESS,
         },
+        {
+          title: "Designations",
+          url: "/dashboard/admin/designations",
+          permission: PERMISSIONS.ASSOCIATES_ACCESS,
+        },
       ],
     },
     {

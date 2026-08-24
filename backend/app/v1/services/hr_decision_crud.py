@@ -75,6 +75,7 @@ async def create_decision_impl(
             if stage_zero_id:
                 stage_config_id = stage_zero_id
 
+<<<<<<< HEAD
     # Validate latest decision for duplicate consecutive decisions
     latest_decision_query = select(HrDecision).where(
         HrDecision.candidate_id == candidate_id,
@@ -93,6 +94,49 @@ async def create_decision_impl(
         raise ValueError(
             f"This candidate is already marked as '{decision_data.decision}'{stage_msg}."
         )
+=======
+
+    # Check "May Be" decision limit (only 1 per candidate per stage)
+    if decision_data.decision == "May Be":
+        query = select(func.count(HrDecision.id)).where(
+            HrDecision.candidate_id == candidate_id, HrDecision.decision == "May Be"
+        )
+        if stage_config_id:
+            query = query.where(HrDecision.stage_config_id == stage_config_id)
+        elif actual_job_id:
+            query = query.where(HrDecision.job_id == actual_job_id, HrDecision.stage_config_id.is_(None))
+
+        existing_may_be = await db.execute(query)
+        may_be_count = existing_may_be.scalar() or 0
+
+        if may_be_count >= 1:
+            stage_msg = f" for the current stage" if stage_config_id else " for resume screening"
+            raise ValueError(
+                f"Only one 'May Be' decision is allowed per candidate{stage_msg}."
+            )
+
+    # Check "pass" decision limit (only 1 per candidate per stage for THIS job)
+    if decision_data.decision.lower() == "pass" and actual_job_id:
+        query = select(func.count(HrDecision.id)).where(
+            HrDecision.candidate_id == candidate_id,
+            HrDecision.job_id == actual_job_id,
+            func.lower(HrDecision.decision) == "pass",
+        )
+
+        if stage_config_id:
+            query = query.where(HrDecision.stage_config_id == stage_config_id)
+        else:
+            query = query.where(HrDecision.stage_config_id.is_(None))
+        
+        existing_approve = await db.execute(query)
+        approve_count = existing_approve.scalar() or 0
+
+        if approve_count >= 1:
+            stage_msg = f" for this stage" if stage_config_id else " for resume screening"
+            raise ValueError(
+                f"This candidate has already passed{stage_msg}. "
+            )
+>>>>>>> github/main
 
     # Create the decision
     hr_decision = HrDecision(

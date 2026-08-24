@@ -32,6 +32,7 @@ from app.v1.db.models.candidate_test_paper_history import CandidateTestPaperHist
 from app.v1.db.models.associates import Associate  # noqa: F401
 from app.v1.db.models.associate_evaluations import AssociateEvaluation  # noqa: F401
 from app.v1.db.models.guidelines import Guideline  # noqa: F401
+from app.v1.db.models.designations import Designation  # noqa: F401
 
 
 

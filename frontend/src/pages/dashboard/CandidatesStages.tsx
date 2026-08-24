@@ -118,7 +118,7 @@ export default function CandidatesStages() {
 
     // Get base AI chart data to show as Line
     const baseData = evaluation.evaluation_data ? getChartData(evaluation.evaluation_data) : [];
-    
+
     // Create a quick lookup for AI skills
     const aiSkillsMap: Record<string, any> = {};
     baseData.forEach((point) => {
@@ -252,7 +252,7 @@ export default function CandidatesStages() {
                   dbdAssociates={dbdAssociates}
                 />
                 {showChart && (
-                  <div className="w-full flex justify-center bg-card/30 p-4 sm:p-6 pb-4 rounded-2xl border border-border/50 animate-in fade-in duration-300">
+                  <div className="w-full flex justify-center bg-card/30 p-2 sm:p-3 pb-2 rounded-2xl border border-border/50 animate-in fade-in duration-300">
                     <div className="w-full">
                       {isDbdEnabled ? (
                         <Suspense fallback={<LoadingSpinner message="Loading comparison chart..." fullPage={true} />}>

@@ -8,6 +8,7 @@ import { nameSchema, emailSchema } from "@/schemas/schema-utils";
 export const associateCreateSchema = z.object({
   name: nameSchema(2, "Associate name"),
   email: emailSchema,
+  designation_id: z.string().min(1, "Please select a designation"),
 });
 
 /**
@@ -17,6 +18,7 @@ export const associateCreateSchema = z.object({
 export const associateUpdateSchema = z.object({
   name: nameSchema(2, "Associate name").optional(),
   email: emailSchema.optional(),
+  designation_id: z.string().min(1, "Please select a designation").optional(),
 });
 
 export type AssociateCreateFormValues = z.infer<typeof associateCreateSchema>;

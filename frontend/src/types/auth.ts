@@ -67,16 +67,16 @@ export interface UserRegister {
  * Contains tokens for API access and the authenticated user data.
  */
 export interface LoginResponse {
-  /** JWT access token for API authentication */
-  access_token: string;
-  /** JWT refresh token for obtaining new access tokens */
-  refresh_token: string;
+  /** JWT access token for API authentication (optional if delivered via HttpOnly cookie) */
+  access_token?: string;
+  /** JWT refresh token for obtaining new access tokens (optional if delivered via HttpOnly cookie) */
+  refresh_token?: string;
   /** Type of token (e.g., "bearer") */
   token_type: string;
   /** Timestamp when the access token expires */
-  expires_at: string;
+  expires_at?: string;
   /** Timestamp when the refresh token expires */
-  refresh_token_expires_at: string;
+  refresh_token_expires_at?: string;
   /** The authenticated user's data */
   user: UserRead;
 }

@@ -1,19 +1,29 @@
 import { lazy } from "react";
-import { type RouteObject } from "react-router-dom";
+import { Navigate, type RouteObject } from "react-router-dom";
 import PublicRoute from "@/components/auth/PublicRoute";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 const LoginPage = lazy(() => import("@/pages/Auth/LoginPage"));
-const RegisterPage = lazy(() => import("@/pages/Auth/RegisterPage"));
+const ZohoCallbackPage = lazy(() => import("@/pages/Auth/ZohoCallbackPage"));
+const PendingApprovalPage = lazy(() => import("@/pages/Auth/PendingApprovalPage"));
 
 
 export const authRoutes: RouteObject[] = [
   {
-    path: "register",
+    path: "auth/callback",
+    element: <ZohoCallbackPage />,
+  },
+  {
+    path: "auth/pending",
     element: (
-      <PublicRoute>
-        <RegisterPage />
-      </PublicRoute>
+      <ProtectedRoute>
+        <PendingApprovalPage />
+      </ProtectedRoute>
     ),
+  },
+  {
+    path: "register",
+    element: <Navigate to="/login" replace />,
   },
   {
     path: "login",

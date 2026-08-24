@@ -7,7 +7,7 @@ This module provides endpoints for user registration, login, and retrieval.
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, Depends, Response, status
+from fastapi import APIRouter, Depends, Response, status, Request, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -22,6 +22,7 @@ from app.v1.schemas.user import (
     UserLogin,
     UserRead,
     UserRegister,
+    PublicLoginResponse,
 )
 from app.v1.services.user_service import user_service
 from app.v1.core.rate_limit import limiter
@@ -101,7 +102,7 @@ async def create_user(
     return await user_service.create_user(db=db, user_in=user_in)
 
 
-@router.post("/login", response_model=LoginResponse)
+@router.post("/login", response_model=PublicLoginResponse)
 @limiter.exempt
 
 async def login_user(
@@ -146,14 +147,14 @@ async def login_user(
     return login_response
 
 
-@router.post("/refresh", response_model=LoginResponse)
+@router.post("/refresh", response_model=PublicLoginResponse)
 @limiter.exempt
 
 async def refresh_token(
     *,
     db: AsyncSession = Depends(get_db),
     response: Response,
-    request: RefreshTokenRequest,
+    request: Request,
 ) -> Any:
     """
     Refresh access token using a refresh token.
@@ -161,14 +162,21 @@ async def refresh_token(
     Args:
         db: Async database session.
         response: FastAPI response object.
-        request: Refresh token request schema.
+        request: FastAPI request object.
 
     Returns:
         New login response with tokens.
     """
     logger.info("Token refresh attempt")
+    refresh_token = request.cookies.get("refresh_token")
+    if not refresh_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token missing from cookies.",
+        )
+    
     login_response = await user_service.refresh_token(
-        db=db, refresh_token=request.refresh_token
+        db=db, refresh_token=refresh_token
     )
 
     response.set_cookie(

@@ -65,7 +65,7 @@ export const AssociateSelectorSection = ({
                             const existing = prev.find((a) => a.id === id);
                             if (existing) return existing;
                             const found = associates.find((a) => a.id === id);
-                            return found || { id, name: id, email: "" };
+                            return found || { id, name: id, email: "", designation_id: "" };
                           });
                           return newSelection;
                         });
