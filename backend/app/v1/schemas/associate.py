@@ -14,7 +14,7 @@ class AssociateBase(BaseModel):
 
     name: str
     email: EmailStr
-    designation: str
+    designation: str | None = None
 
 
 class AssociateCreate(AssociateBase):

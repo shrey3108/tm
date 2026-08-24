@@ -21,6 +21,18 @@ Scoring rubric:
 - 5: Highly articulate, structured, and easy to understand with strong examples"""
     },
     {
+        "name": "Confidence",
+        "description": "Evaluate the candidate's confidence: Certainty, hesitation (filler words), and overall assurance.",
+        "prompt_text": """Evaluate the candidate's confidence level during the interview.
+Consider: Certainty, absence of hesitation or filler words, poise under questioning, and self-assurance.
+Scoring rubric:
+- 1: Extremely hesitant, overly nervous, lacks self-assurance
+- 2: Frequent hesitation, noticeable lack of confidence
+- 3: Moderate confidence with occasional hesitation
+- 4: Confident and clear with minor hesitation
+- 5: Highly confident, articulate, and poised throughout"""
+    },
+    {
         "name": "Cultural Fit",
         "description": "Evaluate cultural fit: Alignment with values (ownership, teamwork, growth mindset), attitude, adaptability.",
         "prompt_text": """Evaluate cultural fit using job description and candidate behavior.
@@ -67,115 +79,6 @@ Scoring rubric:
 - 3: Slight mismatch but negotiable
 - 4: Mostly aligned with minor deviation
 - 5: Fully aligned with role and market"""
-    },
-    {
-        "name": "Ethics & Confidence",
-        "description": "Evaluate the candidate's ethics and confidence during the panel interview.",
-        "prompt_text": """Evaluate the candidate's ethics and confidence during the panel interview.
-Consider: Honesty in answering, owning up to mistakes or lack of knowledge, self-assurance without arrogance, and ethical considerations in problem-solving.
-Scoring rubric:
-- 1: Dishonest, overly defensive, or completely lacks confidence
-- 2: Avoids taking responsibility or shows signs of arrogance
-- 3: Acceptable ethics and confidence, but somewhat defensive or uncertain
-- 4: Strong ethics and good confidence with minor gaps
-- 5: Highly ethical, honest, takes extreme ownership, and exudes calm self-assurance"""
-    },
-    {
-        "name": "Technical Skills",
-        "description": "Evaluate technical skills relevant to the role during a panel interview.",
-        "prompt_text": """Evaluate technical skills relevant to the role during a panel interview.
-PAY SPECIAL ATTENTION to questions asked by the Technical Interviewer, Tech Lead, or CTO.
-Consider: Relevance to job, Depth of knowledge, Problem-solving ability, Practical usage.
-Scoring rubric:
-- 1: Not relevant or very weak
-- 2: Limited relevance or shallow knowledge
-- 3: Meets basic requirements
-- 4: Strong skills with minor gaps
-- 5: Deep expertise and highly relevant"""
-    },
-    {
-        "name": "Skill articulation",
-        "description": "Evaluate the candidate's ability to articulate their skills clearly.",
-        "prompt_text": """Evaluate the candidate's ability to articulate their skills clearly.
-Consider: How well they explain their past projects, the tools they've used, their specific contributions, and avoiding buzzword dropping without substance.
-Scoring rubric:
-- 1: Incoherent, heavily relies on buzzwords without explaining actual contributions
-- 2: Frequently unclear, struggles to explain how they used specific skills
-- 3: Understandable but lacks depth when pressed on specific skills
-- 4: Clear and structured articulation of skills with minor lapses
-- 5: Highly articulate, structured, and completely transparent about their skill depth"""
-    },
-    {
-        "name": "Detail-oriented thinking",
-        "description": "Evaluate the candidate's detail-oriented thinking.",
-        "prompt_text": """Evaluate the candidate's detail-oriented thinking.
-Consider: Did they ask clarifying questions? Did they consider edge cases in technical or behavioral scenarios? Did their answers show a thorough understanding of the nuances involved?
-Scoring rubric:
-- 1: Misses crucial details, makes sweeping assumptions
-- 2: Overlooks important edge cases, does not ask clarifying questions
-- 3: Mentions some details but misses deeper nuances
-- 4: Considers most edge cases and details with minor misses
-- 5: Highly meticulous, consistently identifies edge cases and clarifies ambiguities"""
-    },
-    {
-        "name": "Attitude & behavior",
-        "description": "Evaluate the candidate's attitude and behavior throughout the panel interview.",
-        "prompt_text": """Evaluate the candidate's attitude and behavior throughout the panel interview.
-Consider: Respect towards all interviewers (both HR and Technical), verbal tone, receptiveness to feedback, and overall demeanor.
-Scoring rubric:
-- 1: Disrespectful, argumentative, or completely dismissive
-- 2: Defensive when questioned or overly casual
-- 3: Polite but somewhat guarded or rigid
-- 4: Respectful, open to feedback, and pleasant
-- 5: Exceptionally professional, warmly collaborative, and highly receptive to feedback"""
-    },
-    {
-        "name": "Smartness (problem solving ability)",
-        "description": "Evaluate the candidate's smartness and problem-solving ability.",
-        "prompt_text": """Evaluate the candidate's smartness and problem-solving ability.
-Consider: Quick thinking on their feet, logical approach to unexpected or tricky questions, breaking down complex problems, and finding creative solutions.
-Scoring rubric:
-- 1: Cannot break down problems, gives up easily
-- 2: Struggles with unexpected questions, rigid thinking
-- 3: Uses standard approaches but struggles with novel twists
-- 4: Thinks logically and adapts well to tricky questions
-- 5: Exceptionally sharp, breaks down complex problems effortlessly and creatively"""
-    },
-    {
-        "name": "Positivity",
-        "description": "Evaluate the candidate's positivity and optimism.",
-        "prompt_text": """Evaluate the candidate's positivity and optimism.
-Consider: How they talk about past failures, their approach to difficult challenges, enthusiasm for the role, and whether they maintain a constructive mindset under pressure.
-Scoring rubric:
-- 1: Highly negative, complains about past employers or teams
-- 2: Focuses on roadblocks rather than solutions, lacks enthusiasm
-- 3: Neutral demeanor, neither particularly positive nor negative
-- 4: Constructive mindset, shows genuine enthusiasm
-- 5: Highly optimistic, reframes failures as learnings, brings strong positive energy"""
-    },
-    {
-        "name": "Professionalism",
-        "description": "Evaluate the candidate's professionalism.",
-        "prompt_text": """Evaluate the candidate's professionalism.
-Consider: Communication style, appropriate language, courtesy, and maintaining composure during technical stress tests or panel pressure.
-Scoring rubric:
-- 1: Unprofessional language, highly inappropriate demeanor
-- 2: Too casual, interrupts interviewers, or loses composure
-- 3: Acceptable professionalism but lacks polish under pressure
-- 4: Maintains strong composure and courtesy throughout
-- 5: Exemplary professionalism, remains highly polished and respectful even under pressure"""
-    },
-    {
-        "name": "Ability to take challenges",
-        "description": "Evaluate the candidate's ability to take on challenges.",
-        "prompt_text": """Evaluate the candidate's ability to take on challenges.
-Consider: Willingness to tackle unfamiliar problems, past examples of overcoming significant hurdles, and eagerness to step out of their comfort zone.
-Scoring rubric:
-- 1: Actively avoids challenges, highly risk-averse
-- 2: Hesitant to step out of comfort zone, relies only on familiar tools
-- 3: Willing to face challenges if required, but lacks strong proactive examples
-- 4: Shows strong history of tackling difficult problems
-- 5: Highly driven by challenges, actively seeks out complex hurdles to solve"""
     }
 ]
 
@@ -210,7 +113,7 @@ async def seed():
                     "template_id": tid,
                     "criterion_id": cid,
                     "is_active": True,
-                    "default_weight": 20.0 if i < 5 else 0.0 # Equal weight for first 5, salary is extra
+                    "default_weight": 16.66
                 })
         
         if links:

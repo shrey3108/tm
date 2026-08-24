@@ -52,9 +52,9 @@ class Associate(Base):
         nullable=False,
     )
 
-    designation: Mapped[str] = mapped_column(
+    designation: Mapped[str | None] = mapped_column(
         Text,
-        nullable=False,
+        nullable=True,
     )
 
     jobs: Mapped[list["Job"]] = relationship(

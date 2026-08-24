@@ -31,9 +31,6 @@ class HrDecision(Base):
     """
 
     __tablename__ = "hr_decisions"
-    __table_args__ = (
-        UniqueConstraint("candidate_id", "stage_config_id", "user_id", name="uq_hr_decision_cand_stage_user"),
-    )
 
     # PRIMARY KEY
     id: Mapped[uuid.UUID] = mapped_column(
