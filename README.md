@@ -2,7 +2,10 @@
 
 An AI-powered interview evaluation and screening platform that automates candidate matching, transcribes multi-round interviews, and evaluates soft & technical skills using an LLM-as-a-Judge architecture.
 
+> 📋 **AI Coding Session Log:** For job application & technical review, see the consolidated 82-session development log in **[AI_CODING_SESSION.md](AI_CODING_SESSION.md)**.
+
 ---
+
 
 ## Features & Capabilities
 
